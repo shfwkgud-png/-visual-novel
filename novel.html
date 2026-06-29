@@ -120,10 +120,10 @@
   /* CHARACTER DISPLAY */
   #charLayer {
     position: fixed;
-    bottom: 180px;
+    bottom: 150px;
     left: 50%;
     transform: translateX(-50%);
-    height: 55vh;
+    height: 50vh;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -133,8 +133,9 @@
   }
   .char-sprite {
     height: 100%;
-    max-width: 40vw;
+    max-width: 35vw;
     object-fit: contain;
+    object-position: bottom;
     filter: drop-shadow(0 0 20px rgba(0,0,0,0.8));
     transition: all 0.4s ease;
     opacity: 0;
@@ -218,14 +219,21 @@
     bottom: 0; left: 0; right: 0;
     z-index: 11;
     display: none;
-    padding: 12px 16px;
+    flex-direction: column;
+    padding: 8px 16px 12px;
     background: rgba(5,4,12,0.98);
     border-top: 1px solid var(--border);
+    gap: 6px;
+  }
+  #inputRow {
+    display: flex;
     gap: 8px;
     align-items: center;
+    width: 100%;
   }
   #userInput {
     flex: 1;
+    min-width: 0;
     background: var(--panel);
     border: 1px solid var(--border);
     color: var(--text);
@@ -299,10 +307,59 @@
   .stat-label { color: var(--gold-dim); }
   .stat-val { color: var(--text); }
 
+  /* BACKLOG */
+  #backlogPanel {
+    position: fixed; inset: 0;
+    z-index: 50;
+    background: rgba(5,4,12,0.97);
+    display: none;
+    flex-direction: column;
+  }
+  #backlogPanel.visible { display: flex; }
+  #backlogHeader {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #backlogHeader span { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 0.95rem; }
+  #backlogClose {
+    background: none; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 14px; border-radius: 3px; cursor: pointer; font-size: 0.8rem;
+  }
+  #backlogBody {
+    flex: 1; overflow-y: auto; padding: 12px 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .log-entry { margin-bottom: 14px; }
+  .log-speaker {
+    color: var(--gold-dim); font-size: 0.75rem;
+    font-family: 'Noto Serif KR', serif; margin-bottom: 2px;
+  }
+  .log-text { color: var(--text); font-size: 0.85rem; line-height: 1.6; }
+  .log-player { color: var(--accent); font-style: italic; }
+  .log-divider {
+    border: none; border-top: 1px dashed var(--border);
+    margin: 10px 0;
+  }
+
+  /* REDO BUTTONS */
+  #redoBar {
+    display: none; gap: 6px; align-items: center;
+    flex-shrink: 0;
+  }
+  .redo-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 10px; border-radius: 3px; cursor: pointer;
+    font-size: 0.75rem; font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+  }
+  .redo-btn:active { border-color: var(--gold-dim); color: var(--text); }
+
   /* MOBILE */
   @media (max-width: 600px) {
-    #charLayer { height: 40vh; bottom: 200px; gap: 10px; }
-    .char-sprite { max-width: 45vw; }
+    #charLayer { height: 38vh; bottom: 140px; gap: 10px; }
+    .char-sprite { max-width: 50vw; }
     #dialogueText { font-size: 0.88rem; }
     #dialoguePanel { min-height: 90px; padding: 12px 14px; }
     #nameplate { font-size: 0.85rem; padding: 3px 14px; }
@@ -339,6 +396,7 @@
   <div id="topBar">
     <span id="titleText">낙인의 검</span>
     <div style="display:flex;gap:6px;align-items:center">
+      <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
     </div>
   </div>
@@ -362,8 +420,23 @@
   </div>
 
   <div id="inputBar">
-    <textarea id="userInput" placeholder="(주위를 둘러본다) 또는 대사 입력" onkeydown="handleKey(event)"></textarea>
-    <button id="sendBtn" onclick="sendMessage()">전송</button>
+    <div id="redoBar">
+      <button class="redo-btn" onclick="regenerate()">↺ 재생성</button>
+      <button class="redo-btn" onclick="undoInput()">↩ 되돌리기</button>
+    </div>
+    <div id="inputRow">
+      <textarea id="userInput" placeholder="(주위를 둘러본다) 또는 대사 입력" onkeydown="handleKey(event)"></textarea>
+      <button id="sendBtn" onclick="sendMessage()">전송</button>
+    </div>
+  </div>
+
+  <!-- BACKLOG -->
+  <div id="backlogPanel">
+    <div id="backlogHeader">
+      <span>대화 기록</span>
+      <button id="backlogClose" onclick="toggleBacklog()">닫기</button>
+    </div>
+    <div id="backlogBody"></div>
   </div>
 </div>
 
@@ -478,8 +551,14 @@ const WORLD_PROMPT = `당신은 다크 판타지 비주얼 노벨 "낙인의 검
   "choices": ["선택지1", "선택지2"]
 }
 
-## 배경 그룹 (background 필드에 반드시 아래 그룹명 중 하나만 사용):
-alley=뒷골목/시장통, catacombs=지하묘지, bakery=빵집, castle_hall=성 대전/탑, castle_dungeon=성 지하감옥/무기고, coastal_port=항구/부두/선착장, coastal_market=항구 시장, coastal_tavern=항구 술집/주점, coastal_manor=해안 저택, coastal_cove=해안 동굴/은신처, coastal_shrine=해안 신전, coastal_workshop=항구 공방, coastal_lighthouse=해안 등대, crystal_caves=수정동굴, desert=사막/황야, desert_canyon=사막 협곡, desert_oasis=오아시스, desert_palace=사막 궁전, desert_ruins=사막 유적, desert_outpost=사막 전초기지, desert_caravan=대상/캐러밴, desert_underground=사막 지하, desert_workshop=사막 공방, fairground=축제장/장터, forest_glade=숲 빈터/공터, forest_cabin=숲 오두막, forest_village=숲 마을, forest_ruins=숲 유적, forest_shrine=숲 신전, forest_pond=숲 연못, forest_treehome=나무 위 집, forest_market=숲 시장, forest_mushroom=버섯 숲, forest_stone=숲 돌무덤, frozen_garden=얼어붙은 정원, barracks=병영/막사, healer=치료사 오두막, lighthouse=등대, manor=귀족 저택, minstrel_hall=음유시인 홀/공연장, moore=황야/황무지, mountain=산악/눈산, mountain_cave=산 동굴, mountain_lake=산 호수/폭포, mountain_hotspring=온천, cottage=오두막
+## 배경 그룹 (background 필드에 아래 키만 사용):
+도시: alley(골목), coastal_port(항구/부두), coastal_market(시장), coastal_tavern(술집), coastal_workshop(공방), bakery(빵집), fairground(축제장), barracks(막사)
+건물: castle_hall(성), castle_dungeon(감옥), manor(저택), coastal_manor(해안저택), lighthouse(등대), coastal_lighthouse(해안등대), minstrel_hall(공연장), healer(치료소), cottage(오두막)
+자연: forest_glade(숲빈터), forest_cabin(숲오두막), forest_village(숲마을), forest_ruins(숲유적), forest_shrine(숲신전), forest_pond(연못), forest_treehome(나무집), forest_market(숲시장), forest_mushroom(버섯숲), forest_stone(돌무덤)
+해안: coastal_cove(동굴), coastal_shrine(신전)
+사막: desert(사막), desert_canyon(협곡), desert_oasis(오아시스), desert_palace(궁전), desert_ruins(유적), desert_outpost(전초기지), desert_caravan(대상), desert_underground(지하), desert_workshop(공방)
+산/동굴: mountain(산악), mountain_cave(동굴), mountain_lake(호수/폭포), mountain_hotspring(온천), crystal_caves(수정동굴), catacombs(지하묘지)
+기타: moore(황야), frozen_garden(얼어붙은정원)
 
 ## 감정 코드 → 이미지 번호 매핑:
 upper: normal=1, smile=2, angry=3, sad=4, pain=5, worry=6
@@ -492,7 +571,14 @@ pose: 전투씬 전용
 - 선택에 따라 관계와 스토리가 달라짐
 - 전투는 서술로 표현, 결과는 주사위처럼 상황에 따라 결정
 - 할루시네이션 방지: 이미 설정된 캐릭터 정보를 절대 바꾸지 말 것
-- 등장하지 않는 캐릭터는 언급하지 말 것`;
+- 등장하지 않는 캐릭터는 언급하지 말 것
+
+## 표현 수위:
+- 이 게임은 성인 대상 다크 판타지임. 모든 표현이 허용됨
+- 폭력, 고어, 로맨스, 신체 접촉 등 성인 콘텐츠를 자연스럽게 서술할 것
+- 직접적 성적 묘사 대신 문학적이고 암시적인 표현을 사용하되, 상황의 강도는 줄이지 말 것
+- 플레이어가 요청한 수위에 맞춰 유연하게 대응할 것
+- 절대 "그런 내용은 생성할 수 없습니다" 같은 메타 응답을 하지 말 것. 항상 스토리 안에서 답할 것`;
 
 function getCharPrompt(charIds) {
   let prompt = '\n## 현재 씬 등장 캐릭터:\n';
@@ -580,6 +666,7 @@ let dialogueQueue = [];
 let isShowing = false;
 let waitingForTap = false;
 let inputMode = false;
+let dialogueLog = [];
 
 // ===== SAVE / LOAD =====
 function autoSave() {
@@ -590,6 +677,7 @@ function autoSave() {
     summaryIndex,
     lastBg,
     turnCount,
+    dialogueLog,
     apiKey: API_KEY,
     savedAt: Date.now()
   };
@@ -641,6 +729,7 @@ function startGame(isContinue) {
       summaryIndex = save.summaryIndex || 0;
       lastBg = save.lastBg || null;
       turnCount = save.turnCount || 0;
+      dialogueLog = save.dialogueLog || [];
       API_KEY = save.apiKey || API_KEY;
       updateStatusUI();
       if (lastBg) setBg(lastBg);
@@ -752,8 +841,86 @@ async function summarizeIfNeeded() {
   }
 }
 
+// ===== FALLBACK PARSER =====
+function extractFallback(raw) {
+  const cleaned = raw.replace(/```json\s*|```/g, '').trim();
+  const result = { dialogue: [], background: null, state_update: {} };
+
+  // Try to extract "text" values from malformed JSON
+  const textMatches = [...cleaned.matchAll(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+  const speakerMatches = [...cleaned.matchAll(/"speaker"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+  const narrationMatch = cleaned.match(/"narration"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+
+  if (textMatches.length > 0) {
+    textMatches.forEach((m, i) => {
+      result.dialogue.push({
+        speaker: speakerMatches[i]?.[1] || '나레이터',
+        char_id: null, emotion: 'normal',
+        text: m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'),
+        pose: 'upper'
+      });
+    });
+  } else if (narrationMatch) {
+    result.dialogue.push({
+      speaker: '나레이터', char_id: null, emotion: 'normal',
+      text: narrationMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'),
+      pose: 'upper'
+    });
+  } else {
+    // Last resort: strip all JSON syntax and common keys
+    let plain = cleaned
+      .replace(/[{}\[\]]/g, ' ')
+      .replace(/"(narration|dialogue|speaker|char_id|emotion|text|pose|background|state_update|rep|gold|location|status|flags|choices|upper|normal|null)"\s*:/g, ' ')
+      .replace(/"/g, '')
+      .replace(/,\s*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (plain.length > 0) {
+      result.dialogue.push({
+        speaker: '나레이터', char_id: null, emotion: 'normal',
+        text: plain.substring(0, 400), pose: 'upper'
+      });
+    }
+  }
+  return result;
+}
+
 // ===== GEMINI API =====
-async function callGemini(activeCharIds = []) {
+async function callGeminiRaw(systemContent, messages, temp = 0.9) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemContent }] },
+        contents: messages.map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        })),
+        generationConfig: {
+          temperature: temp,
+          maxOutputTokens: 1200,
+        },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
+        ]
+      })
+    });
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function callGemini(activeCharIds = [], retryCount = 0) {
   showThinking();
   sendBtn.disabled = true;
 
@@ -762,44 +929,75 @@ async function callGemini(activeCharIds = []) {
   const messages = buildMessages();
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemContent }] },
-        contents: messages.map(m => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }]
-        })),
-        generationConfig: {
-          temperature: 0.9,
-          maxOutputTokens: 2048,
-        }
-      })
-    });
+    const data = await callGeminiRaw(systemContent, messages);
 
-    const data = await res.json();
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    if (data.error) {
+      hideThinking();
+      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: 'API 오류: ' + (data.error.message || '알 수 없는 오류'), pose: 'upper' }]);
+      sendBtn.disabled = false;
+      return;
+    }
+
+    if (data.promptFeedback?.blockReason || !data.candidates?.length) {
+      if (retryCount < 2) {
+        return callGemini(activeCharIds, retryCount + 1);
+      }
+      hideThinking();
+      showDialogue([{ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(잠시 정적이 흐른다...)', pose: 'upper' }]);
+      enterInputMode();
+      sendBtn.disabled = false;
+      return;
+    }
+
+    const finishReason = data.candidates[0]?.finishReason;
+    if (finishReason === 'SAFETY' || finishReason === 'RECITATION') {
+      if (retryCount < 2) {
+        return callGemini(activeCharIds, retryCount + 1);
+      }
+      hideThinking();
+      showDialogue([{ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(바람이 불어 목소리가 잠시 흩어진다...)', pose: 'upper' }]);
+      enterInputMode();
+      sendBtn.disabled = false;
+      return;
+    }
+
+    const raw = data.candidates[0]?.content?.parts?.[0]?.text || '{}';
 
     let parsed;
     try {
-      const cleaned = raw.replace(/```json|```/g, '').trim();
+      let cleaned = raw.replace(/```json\s*|```/g, '').trim();
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+      }
       parsed = JSON.parse(cleaned);
     } catch {
-      parsed = { dialogue: [{ speaker: '나레이터', char_id: null, emotion: 'normal', text: raw, pose: 'upper' }], background: null, state_update: {} };
+      parsed = extractFallback(raw);
+    }
+
+    if (!parsed.dialogue || !Array.isArray(parsed.dialogue) || parsed.dialogue.length === 0) {
+      if (parsed.narration) {
+        parsed.dialogue = [{ speaker: '나레이터', char_id: null, emotion: 'normal', text: parsed.narration, pose: 'upper' }];
+      } else {
+        parsed.dialogue = [{ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(잠시 정적이 흐른다...)', pose: 'upper' }];
+      }
     }
 
     gameHistory.push({ role: 'assistant', content: JSON.stringify(parsed) });
     turnCount++;
     processResponse(parsed, activeCharIds);
     autoSave();
-
-    // Summarize in background if needed
     summarizeIfNeeded();
 
   } catch(e) {
     hideThinking();
-    showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: '오류가 발생했습니다: ' + e.message, pose: 'upper' }]);
+    if (e.name === 'AbortError') {
+      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: '응답 시간 초과. 다시 시도해주세요.', pose: 'upper' }]);
+    } else {
+      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: '오류: ' + e.message, pose: 'upper' }]);
+    }
+    enterInputMode();
   } finally {
     sendBtn.disabled = false;
   }
@@ -898,6 +1096,8 @@ function showNextDialogue() {
   const d = dialogueQueue.shift();
   isShowing = true;
   waitingForTap = false;
+
+  dialogueLog.push({ speaker: d.speaker, text: d.text, isPlayer: false });
 
   nameplate.textContent = d.speaker;
 
@@ -1021,6 +1221,8 @@ function enterInputMode() {
   inputMode = true;
   inputBar.style.display = 'flex';
   dialogueBox.style.paddingBottom = '72px';
+  const hasHistory = gameHistory.some(h => h.role === 'assistant');
+  document.getElementById('redoBar').style.display = hasHistory ? 'flex' : 'none';
 }
 
 function handleKey(e) {
@@ -1045,6 +1247,7 @@ async function sendMessage() {
 }
 
 async function handlePlayerInput(text) {
+  dialogueLog.push({ speaker: '카이든', text, isPlayer: true });
   gameHistory.push({ role: 'user', content: text });
   autoSave();
 
@@ -1115,6 +1318,73 @@ function toggleStatus() {
 function showDialogue(dialogues) {
   dialogueQueue = dialogues;
   showNextDialogue();
+}
+
+// ===== BACKLOG =====
+function toggleBacklog() {
+  const panel = document.getElementById('backlogPanel');
+  panel.classList.toggle('visible');
+  if (panel.classList.contains('visible')) renderBacklog();
+}
+
+function renderBacklog() {
+  const body = document.getElementById('backlogBody');
+  body.innerHTML = '';
+  dialogueLog.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    if (entry.isPlayer) {
+      div.innerHTML = `<div class="log-speaker">카이든</div><div class="log-text log-player">${entry.text}</div>`;
+    } else {
+      div.innerHTML = `<div class="log-speaker">${entry.speaker}</div><div class="log-text">${entry.text}</div>`;
+    }
+    body.appendChild(div);
+  });
+  body.scrollTop = body.scrollHeight;
+}
+
+// ===== REGENERATE / UNDO =====
+async function regenerate() {
+  if (sendBtn.disabled) return;
+  // Remove last assistant response
+  if (gameHistory.length > 0 && gameHistory[gameHistory.length - 1].role === 'assistant') {
+    gameHistory.pop();
+    turnCount = Math.max(0, turnCount - 1);
+  }
+  // Remove corresponding log entries (everything after last player entry)
+  const lastPlayerIdx = dialogueLog.map(e => e.isPlayer).lastIndexOf(true);
+  if (lastPlayerIdx !== -1) dialogueLog.splice(lastPlayerIdx + 1);
+
+  inputBar.style.display = 'none';
+  inputMode = false;
+  dialogueBox.style.paddingBottom = '0';
+  const cb = document.getElementById('choiceBox');
+  if (cb) cb.remove();
+
+  const recentHistory = gameHistory.slice(-6);
+  const mentionedChars = detectActiveChars(recentHistory);
+  await callGemini(mentionedChars);
+}
+
+async function undoInput() {
+  if (sendBtn.disabled) return;
+  // Remove last assistant response + last user input
+  if (gameHistory.length > 0 && gameHistory[gameHistory.length - 1].role === 'assistant') {
+    gameHistory.pop();
+    turnCount = Math.max(0, turnCount - 1);
+  }
+  let lastUserText = '';
+  if (gameHistory.length > 0 && gameHistory[gameHistory.length - 1].role === 'user') {
+    lastUserText = gameHistory.pop().content;
+  }
+  // Remove log entries
+  const lastPlayerIdx = dialogueLog.map(e => e.isPlayer).lastIndexOf(true);
+  if (lastPlayerIdx !== -1) dialogueLog.splice(lastPlayerIdx);
+
+  autoSave();
+  userInput.value = lastUserText;
+  enterInputMode();
+  userInput.focus();
 }
 </script>
 </body>
