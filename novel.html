@@ -202,10 +202,10 @@
     pointer-events: none;
   }
   .char-sprite {
-    height: 82%;
-    max-width: 96vw;
+    height: 92%;
+    max-width: 100vw;
     object-fit: contain;
-    object-position: bottom center;
+    object-position: center top;
     transition: filter 0.4s ease, opacity 0.5s ease;
     opacity: 0;
   }
@@ -557,7 +557,7 @@
 
   /* MOBILE */
   @media (max-width: 600px) {
-    .char-sprite { height: 76%; max-width: 90vw; }
+    .char-sprite { height: 90%; max-width: 100vw; }
     #dialogueText { font-size: 0.84rem; line-height: 1.68; }
     #dialoguePanel { min-height: 78px; }
     #speakerName { font-size: 0.85rem; }
@@ -566,7 +566,7 @@
   }
 
   @media (max-height: 600px) {
-    .char-sprite { height: 70%; }
+    .char-sprite { height: 84%; }
     #dialoguePanel { min-height: 64px; }
   }
 </style>
@@ -598,7 +598,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v26</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v27</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1902,16 +1902,7 @@ function showChoices(choices) {
     choiceDiv.appendChild(btn);
   });
 
-  const customBtn = document.createElement('button');
-  customBtn.textContent = '✎ 직접 입력';
-  customBtn.className = 'choice-btn choice-custom';
-  customBtn.onclick = () => {
-    choiceDiv.remove();
-    enterInputMode();
-    userInput.focus();
-  };
-  choiceDiv.appendChild(customBtn);
-
+  // No "직접 입력" button — the input box below is always available for free input
   document.body.appendChild(choiceDiv);
 }
 
