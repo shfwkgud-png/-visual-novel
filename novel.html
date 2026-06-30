@@ -167,9 +167,11 @@
     height: 100dvh;
   }
 
-  /* BACKGROUND */
+  /* BACKGROUND — fill the entire physical screen incl. home-indicator area */
   #bgLayer {
-    position: fixed; inset: 0;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100vh; height: 100lvh;
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
@@ -177,7 +179,9 @@
     z-index: 0;
   }
   #bgOverlay {
-    position: fixed; inset: 0;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100vh; height: 100lvh;
     background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.25) 100%);
     z-index: 1;
   }
@@ -214,15 +218,15 @@
     z-index: 2;
   }
 
-  /* DIALOGUE — floating text over gradient scrim (no box) */
+  /* DIALOGUE — floating text over a light scrim (bg shows through) */
   #dialogueBox {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 10;
-    padding: 70px 30px calc(50px + env(safe-area-inset-bottom));
+    padding: 56px 30px calc(46px + env(safe-area-inset-bottom));
     background: linear-gradient(to top,
-      rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 40%,
-      rgba(0,0,0,0.32) 75%, transparent 100%);
+      rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.4) 48%,
+      rgba(0,0,0,0.12) 80%, transparent 100%);
     transition: padding-bottom 0.2s ease;
   }
   #nameplate {
@@ -269,7 +273,7 @@
     color: #f8f3ea;
     white-space: pre-wrap;
     letter-spacing: 0.01em;
-    text-shadow: 0 2px 12px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,1);
+    text-shadow: 0 1px 3px #000, 0 2px 8px #000, 0 0 16px rgba(0,0,0,0.9);
   }
   #dialoguePanel.narration-mode #dialogueText {
     color: #e9e3f2;
@@ -589,7 +593,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v22</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v23</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
