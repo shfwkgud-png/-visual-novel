@@ -38,13 +38,17 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  html { height: 100%; overflow: hidden; }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Noto Sans KR', sans-serif;
-    height: 100vh;
-    height: 100dvh;
+    /* Lock the page so the keyboard can't push the whole layout up */
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
     display: flex;
     flex-direction: column;
     -webkit-tap-highlight-color: transparent;
@@ -163,8 +167,7 @@
   #gameScreen {
     display: none;
     flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
   }
 
   /* BACKGROUND — overshoot top & bottom so it ALWAYS covers the full screen
@@ -598,7 +601,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v28</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v29</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1730,6 +1733,24 @@ function setupInputHandlers() {
     if (e.key === 'ArrowLeft') historyBack();
     else if (e.key === 'ArrowRight') historyForward();
   });
+
+  setupKeyboardHandling();
+}
+
+// Keep the background fixed and float the input bar above the on-screen keyboard
+// (instead of letting iOS push the whole page up).
+function setupKeyboardHandling() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const onChange = () => {
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    inputBar.style.transform = kb > 1 ? `translateY(-${kb}px)` : '';
+    // also lift choices a touch when keyboard is huge (rare) — keep simple for now
+  };
+  vv.addEventListener('resize', onChange);
+  vv.addEventListener('scroll', onChange);
+  // Reset on blur
+  userInput.addEventListener('blur', () => { inputBar.style.transform = ''; });
 }
 
 // ===== AUTO-PLAY =====
