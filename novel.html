@@ -522,7 +522,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v6</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v7</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -660,6 +660,13 @@ const WORLD_PROMPT = `당신은 다크 판타지 비주얼 노벨 "낙인의 검
 - ()없이 오면 대사 또는 자유 입력
 - 매 응답 시 반드시 JSON 형식으로만 응답할 것 (마크다운 코드블록 없이 순수 JSON)
 - 응답 언어: 한국어
+
+## 분량·구성 규칙 (반드시 지킬 것):
+- narration은 짧게. 최대 2~3문장. 장황한 묘사 금지
+- 한 응답 전체는 짧고 빠른 호흡으로. 나레이션 1개 + 대사 1~3개 정도가 이상적
+- **절대 나레이션만으로 응답을 끝내지 말 것.** dialogue 배열에 반드시 캐릭터 대사가 1개 이상 있어야 함 (주인공 카이든 혼자 있는 장면이면 그의 독백/혼잣말을 나레이터가 아닌 '카이든' speaker로 넣을 것)
+- 대사는 한 번에 한 인물씩, 자연스러운 길이로
+- 플레이어가 행동/대사할 여지를 남기고 끝낼 것. 혼자 다 진행하지 말 것
 
 ## 응답 JSON 형식:
 {
@@ -1105,7 +1112,7 @@ async function callGeminiRaw(systemContent, messages, temp = 0.9) {
         contents: apiContents,
         generationConfig: {
           temperature: temp,
-          maxOutputTokens: 1200,
+          maxOutputTokens: 900,
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' },
@@ -1125,6 +1132,10 @@ async function callGeminiRaw(systemContent, messages, temp = 0.9) {
 async function callGemini(activeCharIds = [], retryCount = 0) {
   showThinking();
   sendBtn.disabled = true;
+  // Hide input while the AI is generating/outputting
+  inputBar.style.display = 'none';
+  inputMode = false;
+  dialogueBox.style.paddingBottom = '0';
 
   const charPrompt = activeCharIds.length > 0 ? getCharPrompt(activeCharIds) : '';
   const systemContent = WORLD_PROMPT + charPrompt + '\n\n현재 게임 상태:\n' + JSON.stringify(gameState);
@@ -1223,6 +1234,31 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   }
 }
 
+// ===== TEXT CHUNKING =====
+// Split long text into bite-sized chunks so each tap reveals a manageable amount
+function splitNarration(text) {
+  text = (text || '').trim();
+  if (!text) return [];
+  const MAX = 110;
+  if (text.length <= MAX) return [text];
+
+  // Split by explicit paragraph breaks first
+  const paras = text.split(/\n\s*\n|\n/).map(s => s.trim()).filter(Boolean);
+  const chunks = [];
+  paras.forEach(p => {
+    if (p.length <= MAX) { chunks.push(p); return; }
+    // Break long paragraph at sentence boundaries
+    const sentences = p.match(/[^.!?。…”"]*[.!?。…”"]+|\S+$/g) || [p];
+    let buf = '';
+    sentences.forEach(s => {
+      if ((buf + s).length > MAX && buf) { chunks.push(buf.trim()); buf = s; }
+      else buf += s;
+    });
+    if (buf.trim()) chunks.push(buf.trim());
+  });
+  return chunks.length ? chunks : [text];
+}
+
 // ===== PROCESS RESPONSE =====
 function processResponse(data, activeCharIds) {
   hideThinking();
@@ -1245,12 +1281,22 @@ function processResponse(data, activeCharIds) {
 
   dialogueQueue = [];
 
-  if (data.narration) {
-    dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: data.narration, pose: 'upper' });
+  if (data.narration && data.narration.trim()) {
+    splitNarration(data.narration).forEach(chunk => {
+      dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: chunk, pose: 'upper' });
+    });
   }
 
   if (data.dialogue) {
-    dialogueQueue.push(...data.dialogue);
+    // Split overly long dialogue lines too
+    data.dialogue.forEach(d => {
+      const chunks = splitNarration(d.text || '');
+      if (chunks.length <= 1) {
+        dialogueQueue.push(d);
+      } else {
+        chunks.forEach(c => dialogueQueue.push({ ...d, text: c }));
+      }
+    });
   }
 
   window._pendingChoices = data.choices || null;
@@ -1505,8 +1551,10 @@ function exitHistory() {
 // ===== CHOICES =====
 function showChoices(choices) {
   inputMode = true;
+  clearTimeout(autoTimer);
+  document.getElementById('continueHint').style.display = 'none';
   inputBar.style.display = 'flex';
-  dialogueBox.style.paddingBottom = '72px';
+  dialogueBox.style.paddingBottom = '88px';
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
   document.getElementById('redoBar').style.display = hasHistory ? 'flex' : 'none';
 
@@ -1545,8 +1593,10 @@ function showChoices(choices) {
 // ===== INPUT MODE =====
 function enterInputMode() {
   inputMode = true;
+  clearTimeout(autoTimer);
+  document.getElementById('continueHint').style.display = 'none';
   inputBar.style.display = 'flex';
-  dialogueBox.style.paddingBottom = '72px';
+  dialogueBox.style.paddingBottom = '88px';
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
   document.getElementById('redoBar').style.display = hasHistory ? 'flex' : 'none';
 }
