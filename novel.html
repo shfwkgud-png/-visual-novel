@@ -170,14 +170,11 @@
     height: 100%;
   }
 
-  /* BACKGROUND — overshoot top & bottom so it ALWAYS covers the full screen
-     (incl. the home-indicator / safe-area strip). No exposed background. */
+  /* BACKGROUND — inset:0 exactly like #apiScreen (which IS fullscreen).
+     This is what covers the full physical screen on iOS. */
   #bgLayer {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;            /* large viewport = full physical screen on iOS */
-    min-height: 100dvh;
+    inset: 0;
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
@@ -185,10 +182,7 @@
   }
   #bgOverlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    min-height: 100dvh;
+    inset: 0;
     background: linear-gradient(to top, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 45%, rgba(0,0,0,0.2) 100%);
     z-index: 1;
   }
@@ -196,10 +190,9 @@
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
   #charLayer {
     position: fixed;
-    bottom: 0;
+    top: 0; bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    height: 100dvh;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -604,7 +597,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v31</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v32</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1742,19 +1735,24 @@ function setupInputHandlers() {
   setTimeout(updateDbg, 150);
 }
 
-// Keep the background fixed and float the input bar above the on-screen keyboard
+// Keep the background fixed and float ONLY the input bar above the keyboard
 // (instead of letting iOS push the whole page up).
 function setupKeyboardHandling() {
   const vv = window.visualViewport;
   if (!vv) return;
   const onChange = () => {
+    // Undo any iOS auto-scroll so the locked page never shifts
+    if (window.scrollY !== 0) window.scrollTo(0, 0);
     const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
     inputBar.style.transform = kb > 1 ? `translateY(-${kb}px)` : '';
-    updateDbg();
   };
   vv.addEventListener('resize', onChange);
   vv.addEventListener('scroll', onChange);
-  userInput.addEventListener('blur', () => { inputBar.style.transform = ''; });
+  userInput.addEventListener('focus', () => { setTimeout(onChange, 60); setTimeout(onChange, 300); });
+  userInput.addEventListener('blur', () => {
+    inputBar.style.transform = '';
+    setTimeout(() => window.scrollTo(0, 0), 50);
+  });
 }
 
 // ===== TEMP DEBUG READOUT =====
