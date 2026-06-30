@@ -202,10 +202,10 @@
     pointer-events: none;
   }
   .char-sprite {
-    height: 92%;
-    max-width: 100vw;
+    height: 100%;
+    max-width: 112vw;
     object-fit: contain;
-    object-position: center top;
+    object-position: bottom center;
     transition: filter 0.4s ease, opacity 0.5s ease;
     opacity: 0;
   }
@@ -557,7 +557,7 @@
 
   /* MOBILE */
   @media (max-width: 600px) {
-    .char-sprite { height: 90%; max-width: 100vw; }
+    .char-sprite { height: 100%; max-width: 112vw; }
     #dialogueText { font-size: 0.84rem; line-height: 1.68; }
     #dialoguePanel { min-height: 78px; }
     #speakerName { font-size: 0.85rem; }
@@ -598,7 +598,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v27</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v28</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
