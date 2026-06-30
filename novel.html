@@ -60,6 +60,24 @@
     letter-spacing: 0.2em;
   }
   #apiScreen p { color: var(--text-dim); font-size: 0.85rem; }
+  #providerRow { display: flex; gap: 8px; }
+  .prov-btn {
+    background: rgba(20,16,32,0.7); border: 1px solid rgba(201,168,76,0.3);
+    color: var(--text-dim); padding: 8px 18px; border-radius: 20px;
+    cursor: pointer; font-size: 0.82rem; font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.18s;
+  }
+  .prov-btn.active {
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    color: #1a1208; border-color: var(--gold); font-weight: 700;
+  }
+  #nimUrlInput {
+    background: var(--panel); border: 1px solid rgba(201,168,76,0.3); color: var(--text);
+    padding: 13px 18px; border-radius: 24px; width: min(360px, 85vw);
+    font-size: 0.82rem; outline: none; text-align: center;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  #nimUrlInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
   #apiKeyInput {
     background: var(--panel);
     border: 1px solid rgba(201,168,76,0.3);
@@ -522,8 +540,13 @@
 <!-- API KEY SCREEN -->
 <div id="apiScreen">
   <h1>낙인의 검</h1>
-  <p>Gemini API 키를 입력하세요</p>
+  <div id="providerRow">
+    <button type="button" class="prov-btn active" id="provGemini" onclick="setProvider('gemini')">Gemini</button>
+    <button type="button" class="prov-btn" id="provNim" onclick="setProvider('nim')">Mistral 675B</button>
+  </div>
+  <p id="provHint">Gemini API 키를 입력하세요</p>
   <input type="password" id="apiKeyInput" placeholder="AIza...">
+  <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
   <div id="newGameFields">
     <input type="text" id="playerNameInput" placeholder="주인공 이름 (필수)" value="카이든" maxlength="20">
     <textarea id="playerDescInput" placeholder="주인공 특징 (선택) — 외모·성격·과거 등 자유롭게. 비워두면 기본 설정 사용"></textarea>
@@ -539,7 +562,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v14</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v15</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -600,6 +623,9 @@ let lastBg = null;
 let turnCount = 0;
 let playerName = '카이든';
 let playerDesc = '';
+let PROVIDER = 'gemini';   // 'gemini' | 'nim'
+let NIM_URL = 'https://aichat.pasokong99.workers.dev';
+let NIM_MODEL = 'mistralai/mistral-large-3-675b-instruct-2512';
 
 const SUMMARY_INTERVAL = 8;
 const CONTEXT_RECENT = 8;
@@ -871,6 +897,8 @@ function autoSave() {
     dialogueLog,
     playerName,
     playerDesc,
+    provider: PROVIDER,
+    nimUrl: NIM_URL,
     apiKey: API_KEY,
     savedAt: Date.now()
   };
@@ -900,13 +928,35 @@ function deleteSave() {
     if (save.apiKey) {
       document.getElementById('apiKeyInput').value = save.apiKey;
     }
+    if (save.nimUrl) document.getElementById('nimUrlInput').value = save.nimUrl;
+    if (save.provider) setProvider(save.provider);
   }
 })();
 
+// ===== PROVIDER TOGGLE =====
+function setProvider(p) {
+  PROVIDER = p;
+  document.getElementById('provGemini').classList.toggle('active', p === 'gemini');
+  document.getElementById('provNim').classList.toggle('active', p === 'nim');
+  document.getElementById('apiKeyInput').style.display = p === 'gemini' ? 'block' : 'none';
+  document.getElementById('nimUrlInput').style.display = p === 'nim' ? 'block' : 'none';
+  document.getElementById('provHint').textContent = p === 'gemini'
+    ? 'Gemini API 키를 입력하세요'
+    : 'Mistral 675B (NVIDIA) — Worker 주소 확인';
+  if (p === 'nim' && !document.getElementById('nimUrlInput').value) {
+    document.getElementById('nimUrlInput').value = NIM_URL;
+  }
+}
+
 // ===== START =====
 function startGame(isContinue) {
-  API_KEY = document.getElementById('apiKeyInput').value.trim();
-  if (!API_KEY) return;
+  if (PROVIDER === 'gemini') {
+    API_KEY = document.getElementById('apiKeyInput').value.trim();
+    if (!API_KEY) return;
+  } else {
+    NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
+    if (!NIM_URL) return;
+  }
 
   if (!isContinue) {
     const nameVal = document.getElementById('playerNameInput').value.trim();
@@ -936,6 +986,8 @@ function startGame(isContinue) {
       playerName = save.playerName || gameState.name || '카이든';
       playerDesc = save.playerDesc || '';
       API_KEY = save.apiKey || API_KEY;
+      if (save.provider) PROVIDER = save.provider;
+      if (save.nimUrl) NIM_URL = save.nimUrl;
       updateStatusUI();
       if (lastBg) setBg(lastBg);
 
@@ -1059,19 +1111,46 @@ async function summarizeIfNeeded() {
     } catch { return `[이야기]: ${h.content}`; }
   }).join('\n');
 
+  const sysText = '당신은 비주얼 노벨 스토리 요약가입니다. 핵심 사건, 캐릭터 관계 변화, 중요한 선택과 결과, 밝혀진 정보만 간결하게 요약하세요. 400자 이내. 서술형으로.';
+  const userText = `${existingCtx}새로운 내용:\n${newContent}\n\n위 내용을 포함하여 전체 이야기를 하나의 통합 요약으로 작성하세요.`;
+
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: '당신은 비주얼 노벨 스토리 요약가입니다. 핵심 사건, 캐릭터 관계 변화, 중요한 선택과 결과, 밝혀진 정보만 간결하게 요약하세요. 400자 이내. 서술형으로.' }] },
-        contents: [{ role: 'user', parts: [{ text: `${existingCtx}새로운 내용:\n${newContent}\n\n위 내용을 포함하여 전체 이야기를 하나의 통합 요약으로 작성하세요.` }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 600 }
-      })
-    });
-    const data = await res.json();
-    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (summary) {
+    let summary = '';
+    if (PROVIDER === 'nim') {
+      const res = await fetch(NIM_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: NIM_MODEL,
+          messages: [{ role: 'system', content: sysText }, { role: 'user', content: userText }],
+          max_tokens: 700, temperature: 0.3, stream: true
+        })
+      });
+      if (res.ok) {
+        const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+        while (true) {
+          const { done, value } = await reader.read(); if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n'); buf = lines.pop();
+          for (const ln of lines) {
+            const t = ln.trim(); if (!t.startsWith('data:')) continue;
+            const p = t.slice(5).trim(); if (p === '[DONE]') continue;
+            try { const j = JSON.parse(p); const dc = j.choices?.[0]?.delta?.content; if (dc) summary += dc; } catch {}
+          }
+        }
+      }
+    } else {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: sysText }] },
+          contents: [{ role: 'user', parts: [{ text: userText }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 600 }
+        })
+      });
+      const data = await res.json();
+      summary = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+    if (summary && summary.trim()) {
       storySummary = summary.trim();
       summaryIndex = gameHistory.length - CONTEXT_RECENT;
       autoSave();
@@ -1145,18 +1224,17 @@ function isSoftRefusal(parsed, raw) {
   return hasRefusal && isShort;
 }
 
-// ===== GEMINI API =====
-async function callGeminiRaw(systemContent, messages, temp = 0.9) {
+// ===== LLM PROVIDERS =====
+// Each returns { text } on success, { error:{code,message} }, or { blocked:true }
+async function fetchGemini(systemContent, messages, temp = 0.9) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
-
+  const timeout = setTimeout(() => controller.abort(), 45000);
   // Prefill: force model to start with JSON body, preventing refusal preamble
   const apiContents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }]
   }));
   apiContents.push({ role: 'model', parts: [{ text: '{"narration":"' }] });
-
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`, {
       method: 'POST',
@@ -1165,10 +1243,7 @@ async function callGeminiRaw(systemContent, messages, temp = 0.9) {
       body: JSON.stringify({
         system_instruction: { parts: [{ text: systemContent }] },
         contents: apiContents,
-        generationConfig: {
-          temperature: temp,
-          maxOutputTokens: 1500,
-        },
+        generationConfig: { temperature: temp, maxOutputTokens: 1500 },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' },
           { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'OFF' },
@@ -1178,7 +1253,70 @@ async function callGeminiRaw(systemContent, messages, temp = 0.9) {
         ]
       })
     });
-    return await res.json();
+    const data = await res.json();
+    if (data.error) return { error: data.error };
+    if (data.promptFeedback?.blockReason || !data.candidates?.length) return { blocked: true };
+    const fr = data.candidates[0]?.finishReason;
+    if (fr === 'SAFETY' || fr === 'RECITATION') return { blocked: true };
+    let raw = data.candidates[0]?.content?.parts?.[0]?.text || '';
+    if (!raw.trimStart().startsWith('{') && !raw.includes('```')) raw = '{"narration":"' + raw;
+    return { text: raw };
+  } catch (e) {
+    return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// NVIDIA NIM (via Cloudflare Worker proxy) — OpenAI-compatible, streaming required
+async function fetchNim(systemContent, messages, temp = 0.7) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120000);
+  const oai = [{ role: 'system', content: systemContent }];
+  messages.forEach(m => oai.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }));
+  try {
+    const res = await fetch(NIM_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: NIM_MODEL,
+        messages: oai,
+        max_tokens: 2000,
+        temperature: temp,
+        top_p: 1.0,
+        stream: true
+      })
+    });
+    if (!res.ok) {
+      let msg = 'HTTP ' + res.status;
+      try { const j = await res.json(); msg = j.error?.message || j.detail || msg; } catch {}
+      return { error: { code: res.status, message: msg } };
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '', full = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t.startsWith('data:')) continue;
+        const payload = t.slice(5).trim();
+        if (payload === '[DONE]') continue;
+        try {
+          const j = JSON.parse(payload);
+          const dc = j.choices?.[0]?.delta?.content;
+          if (dc) full += dc;
+        } catch {}
+      }
+    }
+    return { text: full };
+  } catch (e) {
+    return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
   } finally {
     clearTimeout(timeout);
   }
@@ -1201,25 +1339,28 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   const messages = buildMessages();
 
   try {
-    const data = await callGeminiRaw(systemContent, messages);
+    const result = PROVIDER === 'nim'
+      ? await fetchNim(systemContent, messages)
+      : await fetchGemini(systemContent, messages);
 
-    if (data.error) {
+    if (result.error) {
+      const em = result.error.message || '알 수 없는 오류';
       // Rate limit (429) — wait and auto-retry gracefully
-      if (data.error.code === 429 || /quota|rate limit|RESOURCE_EXHAUSTED/i.test(data.error.message || '')) {
-        const m = (data.error.message || '').match(/retry in ([\d.]+)\s*s/i);
+      if (result.error.code === 429 || /quota|rate limit|RESOURCE_EXHAUSTED|too many requests/i.test(em)) {
+        const m = em.match(/retry in ([\d.]+)\s*s/i);
         let wait = m ? Math.ceil(parseFloat(m[1])) + 2 : 30;
         if (wait > 90) wait = 90;
         await waitWithCountdown(wait);
-        return callGemini(activeCharIds, retryCount); // retry same turn, don't count
+        return callGemini(activeCharIds, retryCount);
       }
       hideThinking();
-      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: 'API 오류: ' + (data.error.message || '알 수 없는 오류'), pose: 'upper' }]);
+      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: 'API 오류: ' + em, pose: 'upper' }]);
       enterInputMode();
       sendBtn.disabled = false;
       return;
     }
 
-    if (data.promptFeedback?.blockReason || !data.candidates?.length) {
+    if (result.blocked) {
       if (retryCount < 1) {
         return callGemini(activeCharIds, retryCount + 1);
       }
@@ -1230,23 +1371,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       return;
     }
 
-    const finishReason = data.candidates[0]?.finishReason;
-    if (finishReason === 'SAFETY' || finishReason === 'RECITATION') {
-      if (retryCount < 1) {
-        return callGemini(activeCharIds, retryCount + 1);
-      }
-      hideThinking();
-      showDialogue([{ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(바람이 불어 목소리가 잠시 흩어진다...)', pose: 'upper' }]);
-      enterInputMode();
-      sendBtn.disabled = false;
-      return;
-    }
-
-    let raw = data.candidates[0]?.content?.parts?.[0]?.text || '';
-    // Reattach prefill prefix if model continued from it
-    if (!raw.trimStart().startsWith('{') && !raw.includes('```')) {
-      raw = '{"narration":"' + raw;
-    }
+    let raw = result.text || '';
     if (!raw.trim()) raw = '{}';
 
     let parsed;
