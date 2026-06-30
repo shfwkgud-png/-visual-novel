@@ -2,10 +2,17 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<!-- Fullscreen when added to home screen (PWA) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="낙인의 검">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.webmanifest">
 <title>낙인의 검 - 비주얼 노벨</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap');
@@ -278,6 +285,28 @@
     animation: blink 1.6s infinite;
   }
   @keyframes blink { 0%,100%{opacity:0.65} 50%{opacity:0.2} }
+
+  /* HISTORY NAV BUTTONS */
+  .nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(10,8,18,0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(236,230,218,0.85);
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 12;
+    transition: transform 0.12s, background 0.18s;
+  }
+  .nav-btn:active { transform: translateY(-50%) scale(0.88); background: rgba(40,32,56,0.7); }
+  #navPrev { left: 4px; }
+  #navNext { right: 4px; }
 
   /* THINKING INDICATOR */
   .thinking-text {
@@ -562,7 +591,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v15</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v16</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -590,6 +619,8 @@
       <div id="dialogueText"></div>
       <div id="continueHint">▼ 탭하여 계속</div>
     </div>
+    <button id="navPrev" class="nav-btn" onclick="historyBack()">◀</button>
+    <button id="navNext" class="nav-btn" onclick="navNext()">▶</button>
   </div>
 
   <div id="inputBar">
@@ -839,6 +870,25 @@ const EMOTION_MAP = {
   upper: { normal: 1, smile: 2, angry: 3, sad: 4, pain: 5, worry: 6 },
   full: { normal: 1, reaction: 2, weapon: 3 }
 };
+
+// Map many emotion synonyms (the AI often invents its own) to the 6 base expressions
+const EMOTION_SYNONYMS = {
+  smile: ['smile','happy','joy','joyful','pleased','amused','smirk','grin','gentle','warm','playful','laugh','content','seductive','flirty'],
+  angry: ['angry','anger','rage','furious','annoyed','irritated','cold','stern','serious','glare','displeased','hostile','fierce','cocky','arrogant','disdain'],
+  sad: ['sad','sorrow','sorrowful','cry','crying','tears','tearful','grief','melancholy','depressed','lonely','hurt_emotional','regret','disappointed'],
+  pain: ['pain','painful','hurt','agony','suffering','wince','injured','exhausted','weak','dying'],
+  worry: ['worry','worried','anxious','anxiety','fear','fearful','nervous','tense','concerned','uneasy','scared','afraid','surprised','shock','shocked','startled','confused','wary','cautious','desperate','panic']
+};
+function normalizeEmotion(emo) {
+  if (!emo) return 'normal';
+  emo = String(emo).toLowerCase().trim();
+  if (['normal','neutral','calm','default','plain'].includes(emo)) return 'normal';
+  if (EMOTION_MAP.upper[emo]) return emo; // already a base emotion
+  for (const base in EMOTION_SYNONYMS) {
+    if (EMOTION_SYNONYMS[base].includes(emo)) return base;
+  }
+  return 'normal';
+}
 
 // ===== DOM =====
 const bgLayer = document.getElementById('bgLayer');
@@ -1495,33 +1545,61 @@ function processResponse(data, activeCharIds) {
   window._pendingChoices = data.choices || null;
   window._activeCharIds = activeCharIds;
 
-  updateCharSprites(data.dialogue || [], activeCharIds);
+  // Sprites now appear lazily — only when a character actually speaks
+  resetSprites();
   showNextDialogue();
 }
 
 // ===== CHARACTER SPRITES =====
-function updateCharSprites(dialogues, activeCharIds) {
-  charLayer.innerHTML = '';
-  const uniqueChars = [...new Set(activeCharIds)];
+let shownSprites = [];           // char_ids currently on screen
+let currentEmotion = 'normal';
+let currentPose = 'upper';
 
-  uniqueChars.forEach(charId => {
-    const img = document.createElement('img');
-    img.className = 'char-sprite';
-    img.id = 'sprite_' + charId;
-    const num = charId.replace('f', '');
-    img.src = `character/25_upper/${num}_1.webp`;
-    img.onerror = function() {
-      if (this.dataset.fallback === '1') {
-        this.style.opacity = '0';
-        return;
-      }
-      this.dataset.fallback = '1';
-      this.src = `character/25_full/f_${num}_1.webp`;
-      this.onerror = function() { this.style.opacity = '0'; };
-    };
-    charLayer.appendChild(img);
-    setTimeout(() => img.classList.add('visible'), 50);
+function resetSprites() {
+  charLayer.innerHTML = '';
+  shownSprites = [];
+}
+
+// Create + reveal a character's sprite the moment they first appear
+function ensureSprite(charId) {
+  if (!charId || shownSprites.includes(charId)) return;
+  shownSprites.push(charId);
+  const img = document.createElement('img');
+  img.className = 'char-sprite';
+  img.id = 'sprite_' + charId;
+  const num = charId.replace('f', '');
+  img.src = `character/25_upper/${num}_1.webp`;
+  img.onerror = function() {
+    if (this.dataset.fallback === '1') { this.style.opacity = '0'; return; }
+    this.dataset.fallback = '1';
+    this.src = `character/25_full/f_${num}_1.webp`;
+    this.onerror = function() { this.style.opacity = '0'; };
+  };
+  charLayer.appendChild(img);
+  setTimeout(() => img.classList.add('visible'), 30);
+}
+
+// Apply speaker highlight (bright speaker, dim others)
+function highlightSpeaker(charId, emotion, pose) {
+  if (charId) {
+    document.querySelectorAll('.char-sprite').forEach(s => { s.classList.remove('speaking'); s.classList.add('silent'); });
+    const sp = document.getElementById('sprite_' + charId);
+    if (sp) { sp.classList.remove('silent'); sp.classList.add('speaking'); updateSpriteEmotion(charId, emotion || 'normal', pose || 'upper'); }
+  } else {
+    document.querySelectorAll('.char-sprite').forEach(s => s.classList.remove('speaking', 'silent'));
+  }
+}
+
+// Rebuild an exact sprite set (for history restore)
+function rebuildSprites(charIds, speakingId, emotion, pose) {
+  charLayer.innerHTML = '';
+  shownSprites = [];
+  (charIds || []).forEach(cid => {
+    ensureSprite(cid);
+    const sp = document.getElementById('sprite_' + cid);
+    if (sp) sp.classList.add('visible');
   });
+  highlightSpeaker(speakingId, emotion, pose);
 }
 
 function updateSpriteEmotion(charId, emotion, pose) {
@@ -1537,7 +1615,7 @@ function updateSpriteEmotion(charId, emotion, pose) {
     const emoNum = EMOTION_MAP.full[emotion] || 1;
     sprite.src = `character/25_full/f_${num}_${emoNum}.webp`;
   } else {
-    const emoNum = EMOTION_MAP.upper[emotion] || 1;
+    const emoNum = EMOTION_MAP.upper[normalizeEmotion(emotion)] || 1;
     sprite.src = `character/25_upper/${num}_${emoNum}.webp`;
   }
 }
@@ -1558,24 +1636,21 @@ function showNextDialogue() {
   isShowing = true;
   waitingForTap = false;
 
-  if (!replaying) dialogueLog.push({ speaker: d.speaker, text: d.text, isPlayer: false, char_id: d.char_id || null });
-
   setNameplate(d.speaker, d.char_id);
 
-  if (d.char_id) {
-    document.querySelectorAll('.char-sprite').forEach(s => {
-      s.classList.remove('speaking');
-      s.classList.add('silent');
-    });
-    const speaking = document.getElementById('sprite_' + d.char_id);
-    if (speaking) {
-      speaking.classList.remove('silent');
-      speaking.classList.add('speaking');
-      updateSpriteEmotion(d.char_id, d.emotion || 'normal', d.pose || 'upper');
-    }
-  } else {
-    document.querySelectorAll('.char-sprite').forEach(s => {
-      s.classList.remove('speaking', 'silent');
+  // Reveal the speaker's sprite the moment they speak, then highlight
+  if (d.char_id) ensureSprite(d.char_id);
+  const emo = d.emotion || 'normal';
+  const pose = d.pose || 'upper';
+  highlightSpeaker(d.char_id || null, emo, pose);
+  currentEmotion = emo; currentPose = pose;
+
+  // Log full scene state so history can restore bg + sprites + expression
+  if (!replaying) {
+    dialogueLog.push({
+      speaker: d.speaker, text: d.text, isPlayer: false,
+      char_id: d.char_id || null, emotion: emo, pose: pose,
+      bgFile: currentBgFile, sprites: [...shownSprites]
     });
   }
 
@@ -1665,6 +1740,21 @@ function scheduleAuto() {
   }, 1500);
 }
 
+// ▶ button: step forward through history, or advance dialogue if at present
+function navNext() {
+  clearTimeout(autoTimer);
+  if (historyMode) { historyForward(); return; }
+  if (inputMode) return;
+  if (isShowing) {
+    clearInterval(window._typeTimer);
+    dialogueText.textContent = window._typeFull;
+    document.getElementById('continueHint').style.display = 'block';
+    isShowing = false; waitingForTap = true;
+    return;
+  }
+  if (waitingForTap) { waitingForTap = false; showNextDialogue(); }
+}
+
 function handleTap() {
   if (document.getElementById('backlogPanel').classList.contains('visible')) return;
   clearTimeout(autoTimer);
@@ -1702,9 +1792,13 @@ function historyBack() {
   if (!historyMode) {
     historyMode = true;
     historyPos = dialogueLog.length - 1;       // present line = last log entry
-    window._presentSpeaker = speakerNameEl.textContent;
-    window._presentText = dialogueText.textContent;
-    window._presentCharId = currentSpeakerCharId;
+    window._present = {
+      speaker: speakerNameEl.textContent,
+      text: dialogueText.textContent,
+      charId: currentSpeakerCharId,
+      emotion: currentEmotion, pose: currentPose,
+      bgFile: currentBgFile, sprites: [...shownSprites]
+    };
   }
   if (historyPos > 0) {
     historyPos--;
@@ -1725,6 +1819,9 @@ function historyForward() {
 function renderHistoryEntry() {
   const entry = dialogueLog[historyPos];
   if (!entry) return;
+  // Restore the full scene at this moment: background, sprites, expression
+  if (entry.bgFile) setBgFile(entry.bgFile);
+  if (entry.sprites) rebuildSprites(entry.sprites, entry.char_id, entry.emotion, entry.pose);
   setNameplate(entry.isPlayer ? (entry.speaker || playerName) : entry.speaker, entry.char_id);
   dialogueText.textContent = entry.text;
   const hint = document.getElementById('continueHint');
@@ -1734,8 +1831,11 @@ function renderHistoryEntry() {
 
 function exitHistory() {
   historyMode = false;
-  setNameplate(window._presentSpeaker || '', window._presentCharId);
-  dialogueText.textContent = window._presentText || '';
+  const p = window._present || {};
+  if (p.bgFile) setBgFile(p.bgFile);
+  if (p.sprites) rebuildSprites(p.sprites, p.charId, p.emotion, p.pose);
+  setNameplate(p.speaker || '', p.charId);
+  dialogueText.textContent = p.text || '';
   const hint = document.getElementById('continueHint');
   hint.textContent = '▼ 탭하여 계속';
   hint.style.display = waitingForTap ? 'block' : 'none';
@@ -1866,9 +1966,17 @@ function detectActiveChars(history) {
 }
 
 // ===== BACKGROUND =====
+let currentBgFile = null;
 function setBg(name) {
   const resolved = pickBg(name);
+  currentBgFile = resolved;
   bgLayer.style.backgroundImage = `url('background/${resolved}.webp')`;
+}
+// Restore an exact background file (for history scrubbing)
+function setBgFile(file) {
+  if (!file || file === currentBgFile) return;
+  currentBgFile = file;
+  bgLayer.style.backgroundImage = `url('background/${file}.webp')`;
 }
 
 // ===== STATUS UI =====
