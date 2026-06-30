@@ -223,10 +223,15 @@
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 10;
-    padding: 56px 30px calc(46px + env(safe-area-inset-bottom));
+    padding: 54px 30px calc(54px + env(safe-area-inset-bottom));
+    /* dark behind the text, but fades back near the very bottom so the
+       background shows through there (no black strip) */
     background: linear-gradient(to top,
-      rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.4) 48%,
-      rgba(0,0,0,0.12) 80%, transparent 100%);
+      rgba(0,0,0,0.28) 0%,
+      rgba(0,0,0,0.72) 16%,
+      rgba(0,0,0,0.62) 42%,
+      rgba(0,0,0,0.22) 70%,
+      transparent 100%);
     transition: padding-bottom 0.2s ease;
   }
   #nameplate {
@@ -273,7 +278,7 @@
     color: #f8f3ea;
     white-space: pre-wrap;
     letter-spacing: 0.01em;
-    text-shadow: 0 1px 3px #000, 0 2px 8px #000, 0 0 16px rgba(0,0,0,0.9);
+    text-shadow: 0 1px 2px #000, 0 1px 5px #000, 0 2px 10px #000, 0 0 18px rgba(0,0,0,0.85);
   }
   #dialoguePanel.narration-mode #dialogueText {
     color: #e9e3f2;
@@ -592,7 +597,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v24</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v25</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
