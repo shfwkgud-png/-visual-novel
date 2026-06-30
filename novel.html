@@ -397,7 +397,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v4</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v5</span></span>
     <div style="display:flex;gap:6px;align-items:center">
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
@@ -673,6 +673,7 @@ let isShowing = false;
 let waitingForTap = false;
 let inputMode = false;
 let dialogueLog = [];
+let replaying = false;
 
 // ===== SAVE / LOAD =====
 function autoSave() {
@@ -723,8 +724,7 @@ function startGame(isContinue) {
 
   document.getElementById('apiScreen').style.display = 'none';
   document.getElementById('gameScreen').style.display = 'flex';
-  document.addEventListener('click', onTap);
-  document.addEventListener('touchend', onTap);
+  setupInputHandlers();
 
   if (isContinue) {
     const save = loadSave();
@@ -740,17 +740,15 @@ function startGame(isContinue) {
       updateStatusUI();
       if (lastBg) setBg(lastBg);
 
-      // Replay last response to restore screen
+      // Replay last response to fully restore the previous scene
       const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
       if (lastAssistant) {
         try {
           const data = JSON.parse(lastAssistant.content);
           const chars = detectActiveChars(gameHistory.slice(-6));
-          updateCharSprites(data.dialogue || [], chars);
-          showDialogue([{
-            speaker: '시스템', char_id: null, emotion: 'normal',
-            text: '— 이전 이야기에서 이어갑니다 —', pose: 'upper'
-          }]);
+          // Replay without re-logging or re-applying state
+          replaying = true;
+          processResponse({ ...data, state_update: null }, chars);
         } catch {
           enterInputMode();
         }
@@ -1073,6 +1071,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
 // ===== PROCESS RESPONSE =====
 function processResponse(data, activeCharIds) {
   hideThinking();
+  historyMode = false;
 
   if (data.background) {
     lastBg = data.background;
@@ -1152,6 +1151,7 @@ function updateSpriteEmotion(charId, emotion, pose) {
 // ===== DIALOGUE SYSTEM =====
 function showNextDialogue() {
   if (dialogueQueue.length === 0) {
+    replaying = false;
     if (window._pendingChoices && window._pendingChoices.length > 0) {
       showChoices(window._pendingChoices);
     } else {
@@ -1164,7 +1164,7 @@ function showNextDialogue() {
   isShowing = true;
   waitingForTap = false;
 
-  dialogueLog.push({ speaker: d.speaker, text: d.text, isPlayer: false });
+  if (!replaying) dialogueLog.push({ speaker: d.speaker, text: d.text, isPlayer: false });
 
   nameplate.textContent = d.speaker;
 
@@ -1210,8 +1210,50 @@ function typeText(text, callback) {
   window._typeFull = text;
 }
 
-function onTap(e) {
-  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+// ===== INPUT HANDLERS (tap + swipe history) =====
+let touchStartX = 0, touchStartY = 0, lastHandledTime = 0;
+let historyMode = false, historyPos = 0;
+
+function isInteractive(el) {
+  return el.closest && el.closest('button, textarea, input, #backlogPanel, #inputBar, #choiceBox, #topBar, #statusPanel');
+}
+
+function setupInputHandlers() {
+  document.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchStartX = t.clientX; touchStartY = t.clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (isInteractive(e.target)) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      // Horizontal swipe → history navigation
+      if (dx > 0) historyBack(); else historyForward();
+    } else {
+      handleTap();
+    }
+    lastHandledTime = Date.now();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (Date.now() - lastHandledTime < 500) return; // touch already handled this
+    if (isInteractive(e.target)) return;
+    handleTap();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (document.activeElement === userInput) return;
+    if (e.key === 'ArrowLeft') historyBack();
+    else if (e.key === 'ArrowRight') historyForward();
+  });
+}
+
+function handleTap() {
+  if (document.getElementById('backlogPanel').classList.contains('visible')) return;
+  if (historyMode) { exitHistory(); return; }
   if (inputMode) return;
 
   if (isShowing) {
@@ -1227,6 +1269,60 @@ function onTap(e) {
     waitingForTap = false;
     showNextDialogue();
   }
+}
+
+// ===== INLINE HISTORY (swipe left/right) =====
+function historyBack() {
+  if (document.getElementById('backlogPanel').classList.contains('visible')) return;
+  if (dialogueLog.length === 0) return;
+
+  // If text is still typing, complete it first
+  if (isShowing) {
+    clearInterval(window._typeTimer);
+    dialogueText.textContent = window._typeFull;
+    isShowing = false;
+    waitingForTap = true;
+  }
+
+  if (!historyMode) {
+    historyMode = true;
+    historyPos = dialogueLog.length - 1;       // present line = last log entry
+    window._presentSpeaker = nameplate.textContent;
+    window._presentText = dialogueText.textContent;
+  }
+  if (historyPos > 0) {
+    historyPos--;
+    renderHistoryEntry();
+  }
+}
+
+function historyForward() {
+  if (!historyMode) return;
+  if (historyPos < dialogueLog.length - 1) {
+    historyPos++;
+    renderHistoryEntry();
+  } else {
+    exitHistory();
+  }
+}
+
+function renderHistoryEntry() {
+  const entry = dialogueLog[historyPos];
+  if (!entry) return;
+  nameplate.textContent = entry.isPlayer ? '카이든' : entry.speaker;
+  dialogueText.textContent = entry.text;
+  const hint = document.getElementById('continueHint');
+  hint.textContent = `◀ 기록 ${historyPos + 1}/${dialogueLog.length} ▶`;
+  hint.style.display = 'block';
+}
+
+function exitHistory() {
+  historyMode = false;
+  nameplate.textContent = window._presentSpeaker || '';
+  dialogueText.textContent = window._presentText || '';
+  const hint = document.getElementById('continueHint');
+  hint.textContent = '▼ 탭하여 계속';
+  hint.style.display = waitingForTap ? 'block' : 'none';
 }
 
 // ===== CHOICES =====
