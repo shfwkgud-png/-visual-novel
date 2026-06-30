@@ -38,19 +38,14 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html { height: 100%; overflow: hidden; }
+  html, body { overflow: hidden; overscroll-behavior: none; }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Noto Sans KR', sans-serif;
-    /* Lock the page so the keyboard can't push the whole layout up */
+    /* Lock the page exactly like #apiScreen so nothing can scroll */
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    width: 100%; height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-    display: flex;
-    flex-direction: column;
+    inset: 0;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
@@ -163,11 +158,12 @@
   }
   #deleteBtn:hover { color: var(--red); }
 
-  /* GAME SCREEN */
+  /* GAME SCREEN — same fullscreen lock as #apiScreen */
   #gameScreen {
     display: none;
-    flex-direction: column;
-    height: 100%;
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
   }
 
   /* BACKGROUND — inset:0 exactly like #apiScreen (which IS fullscreen).
@@ -597,7 +593,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v32</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v33</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
