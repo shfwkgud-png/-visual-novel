@@ -20,8 +20,13 @@
     --text-dim: #8a8070;
     --accent: #6b3fa0;
     --accent2: #3a1f60;
+    --accent-glow: rgba(140, 90, 200, 0.45);
     --red: #8b2020;
     --shadow: rgba(0,0,0,0.8);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --glass: rgba(14, 11, 24, 0.72);
+    --glass-strong: rgba(10, 8, 18, 0.9);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -57,33 +62,37 @@
   #apiScreen p { color: var(--text-dim); font-size: 0.85rem; }
   #apiKeyInput {
     background: var(--panel);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(201,168,76,0.3);
     color: var(--text);
-    padding: 12px 16px;
-    border-radius: 4px;
+    padding: 13px 18px;
+    border-radius: 24px;
     width: min(360px, 85vw);
     font-size: 0.9rem;
     outline: none;
+    text-align: center;
   }
-  #apiKeyInput:focus { border-color: var(--gold); }
+  #apiKeyInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
   .start-btn {
-    background: var(--gold);
-    color: #000;
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    color: #1a1208;
     border: none;
-    padding: 12px 32px;
-    border-radius: 4px;
+    padding: 13px 36px;
+    border-radius: 24px;
     font-weight: 700;
     cursor: pointer;
     font-size: 1rem;
     letter-spacing: 0.1em;
+    box-shadow: 0 4px 18px rgba(201,168,76,0.35);
+    transition: transform 0.15s;
   }
-  .start-btn:hover { background: #e0be6a; }
+  .start-btn:active { transform: scale(0.96); }
+  .start-btn:hover { background: linear-gradient(135deg, #e0be6a, var(--gold)); }
   #continueBtn {
-    background: transparent;
+    background: var(--glass);
     border: 1px solid var(--gold-dim);
     color: var(--gold);
-    padding: 10px 28px;
-    border-radius: 4px;
+    padding: 11px 30px;
+    border-radius: 24px;
     cursor: pointer;
     font-size: 0.9rem;
     display: none;
@@ -160,43 +169,84 @@
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 10;
-    padding: 0 16px 16px;
+    padding: 0 12px 14px;
   }
   #nameplate {
-    display: inline-block;
-    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
-    border: 1px solid var(--gold-dim);
-    padding: 4px 20px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: fit-content;
+    max-width: 80%;
+    background: linear-gradient(100deg, var(--accent) 0%, var(--accent2) 100%);
+    border: 1px solid rgba(201,168,76,0.5);
+    border-bottom: none;
+    padding: 6px 18px 6px 6px;
+    border-radius: 14px 14px 0 0;
+    margin-left: 6px;
+    margin-bottom: -2px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 -2px 12px var(--accent-glow);
+  }
+  #speakerAvatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top center;
+    border: 1.5px solid var(--gold);
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  #speakerName {
     font-family: 'Noto Serif KR', serif;
     font-size: 0.95rem;
-    color: var(--gold);
-    letter-spacing: 0.1em;
-    margin-bottom: -1px;
-    min-width: 80px;
-    text-align: center;
+    color: #fff;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+  #nameplate.narrator {
+    background: linear-gradient(100deg, rgba(60,50,90,0.85), rgba(30,24,50,0.85));
+    padding-left: 18px;
+  }
+  #nameplate.narrator #speakerAvatar { display: none; }
+  #nameplate.narrator #speakerName {
+    color: var(--gold); font-weight: 400; font-style: italic;
+    letter-spacing: 0.15em; font-size: 0.85rem;
   }
   #dialoguePanel {
-    background: linear-gradient(180deg, rgba(10,8,20,0.96) 0%, rgba(5,4,12,0.98) 100%);
-    border: 1px solid var(--border);
-    border-top: 1px solid var(--gold-dim);
-    padding: 16px 20px;
-    min-height: 110px;
+    background: var(--glass);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    border: 1px solid rgba(201,168,76,0.28);
+    padding: 18px 20px 30px;
+    min-height: 116px;
     position: relative;
+    border-radius: 0 var(--radius) var(--radius) var(--radius);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04);
   }
   #dialogueText {
-    font-size: 0.95rem;
-    line-height: 1.8;
+    font-size: 1rem;
+    line-height: 1.85;
     color: var(--text);
     white-space: pre-wrap;
+    letter-spacing: 0.01em;
+  }
+  #dialoguePanel.narration-mode #dialogueText {
+    color: #cfc8d8;
+    font-style: italic;
+    font-size: 0.95rem;
   }
   #continueHint {
     position: absolute;
-    bottom: 12px; right: 16px;
-    color: var(--gold-dim);
-    font-size: 0.75rem;
-    animation: blink 1.5s infinite;
+    bottom: 9px; right: 16px;
+    color: var(--gold);
+    opacity: 0.7;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    animation: blink 1.6s infinite;
   }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes blink { 0%,100%{opacity:0.7} 50%{opacity:0.25} }
 
   /* THINKING INDICATOR */
   .thinking-text {
@@ -223,10 +273,11 @@
     z-index: 11;
     display: none;
     flex-direction: column;
-    padding: 8px 16px 12px;
-    background: rgba(5,4,12,0.98);
-    border-top: 1px solid var(--border);
-    gap: 6px;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, var(--glass-strong) 22%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    gap: 8px;
   }
   #inputRow {
     display: flex;
@@ -237,32 +288,38 @@
   #userInput {
     flex: 1;
     min-width: 0;
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: rgba(20,16,32,0.92);
+    border: 1px solid rgba(201,168,76,0.25);
     color: var(--text);
-    padding: 10px 14px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+    padding: 12px 18px;
+    border-radius: 22px;
+    font-size: 0.92rem;
     font-family: 'Noto Sans KR', sans-serif;
     outline: none;
     resize: none;
-    height: 44px;
+    height: 46px;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
-  #userInput:focus { border-color: var(--gold-dim); }
+  #userInput:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+  }
   #sendBtn {
-    background: var(--gold);
-    color: #000;
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    color: #1a1208;
     border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
+    width: 46px; height: 46px;
+    border-radius: 50%;
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.85rem;
-    height: 44px;
-    white-space: nowrap;
+    font-size: 1.1rem;
     flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 14px rgba(201,168,76,0.35);
+    transition: transform 0.15s;
   }
-  #sendBtn:disabled { background: var(--gold-dim); cursor: not-allowed; }
+  #sendBtn:active { transform: scale(0.92); }
+  #sendBtn:disabled { background: var(--gold-dim); box-shadow: none; cursor: not-allowed; }
 
   /* TOP BAR */
   #topBar {
@@ -272,75 +329,145 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 16px;
-    background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+    padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, transparent 100%);
   }
   #titleText {
     font-family: 'Noto Serif KR', serif;
-    color: var(--gold-dim);
-    font-size: 0.8rem;
-    letter-spacing: 0.2em;
+    color: var(--gold);
+    opacity: 0.85;
+    font-size: 0.82rem;
+    letter-spacing: 0.22em;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.7);
   }
+  .top-btns { display: flex; gap: 7px; align-items: center; }
   .top-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 4px 12px;
-    border-radius: 3px;
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--text);
+    padding: 6px 13px;
+    border-radius: 20px;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    transition: all 0.18s;
   }
-  .top-btn:active { border-color: var(--gold-dim); }
+  .top-btn:active { transform: scale(0.94); }
+  .top-btn.active {
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    color: #1a1208; border-color: var(--gold); font-weight: 700;
+  }
 
   /* STATUS PANEL */
   #statusPanel {
     position: fixed;
-    top: 40px; right: 16px;
+    top: calc(48px + env(safe-area-inset-top)); right: 14px;
     z-index: 15;
-    background: rgba(10,8,20,0.9);
-    border: 1px solid var(--border);
-    padding: 10px 14px;
-    font-size: 0.75rem;
+    background: var(--glass-strong);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 14px 16px;
+    font-size: 0.8rem;
     color: var(--text-dim);
-    min-width: 140px;
+    min-width: 168px;
     display: none;
+    border-radius: var(--radius);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    animation: panelIn 0.22s ease;
   }
+  @keyframes panelIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
   #statusPanel.visible { display: block; }
-  .stat-row { display: flex; justify-content: space-between; gap: 16px; margin: 3px 0; }
-  .stat-label { color: var(--gold-dim); }
-  .stat-val { color: var(--text); }
+  #statusPanel .panel-title {
+    color: var(--gold); font-family: 'Noto Serif KR', serif;
+    font-size: 0.82rem; letter-spacing: 0.1em;
+    padding-bottom: 8px; margin-bottom: 8px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+  .stat-row { display: flex; justify-content: space-between; gap: 16px; margin: 7px 0; align-items: center; }
+  .stat-label { color: var(--text-dim); }
+  .stat-val { color: var(--text); font-weight: 500; }
+  .stat-val.gold-val { color: var(--gold); }
+
+  /* CHOICE BUTTONS */
+  .choice-btn {
+    display: flex; align-items: center; gap: 11px;
+    background: var(--glass-strong);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(201,168,76,0.35);
+    color: var(--text);
+    padding: 13px 18px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.92rem;
+    text-align: left;
+    width: 100%; max-width: 440px;
+    transition: all 0.18s;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+  }
+  .choice-btn:active { transform: scale(0.98); }
+  .choice-btn:hover { border-color: var(--gold); background: rgba(40,30,60,0.92); }
+  .choice-num {
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    color: #1a1208; font-weight: 700; font-size: 0.8rem;
+  }
+  .choice-custom {
+    justify-content: center;
+    border-style: dashed; border-color: var(--accent);
+    color: var(--gold); font-size: 0.86rem;
+    box-shadow: none;
+  }
+  .choice-custom:hover { border-color: var(--gold); }
 
   /* BACKLOG */
   #backlogPanel {
     position: fixed; inset: 0;
     z-index: 50;
-    background: rgba(5,4,12,0.97);
+    background: rgba(5,4,12,0.96);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     display: none;
     flex-direction: column;
   }
   #backlogPanel.visible { display: flex; }
   #backlogHeader {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
+    padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
     flex-shrink: 0;
   }
-  #backlogHeader span { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 0.95rem; }
+  #backlogHeader span { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 1rem; letter-spacing: 0.1em; }
   #backlogClose {
-    background: none; border: 1px solid var(--border); color: var(--text-dim);
-    padding: 4px 14px; border-radius: 3px; cursor: pointer; font-size: 0.8rem;
+    background: var(--glass); border: 1px solid rgba(201,168,76,0.3); color: var(--text);
+    padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;
   }
   #backlogBody {
-    flex: 1; overflow-y: auto; padding: 12px 16px;
+    flex: 1; overflow-y: auto; padding: 16px;
     -webkit-overflow-scrolling: touch;
   }
-  .log-entry { margin-bottom: 14px; }
+  .log-entry { margin-bottom: 16px; }
   .log-speaker {
-    color: var(--gold-dim); font-size: 0.75rem;
-    font-family: 'Noto Serif KR', serif; margin-bottom: 2px;
+    color: var(--gold); font-size: 0.76rem;
+    font-family: 'Noto Serif KR', serif; margin-bottom: 4px; letter-spacing: 0.05em;
   }
-  .log-text { color: var(--text); font-size: 0.85rem; line-height: 1.6; }
-  .log-player { color: var(--accent); font-style: italic; }
+  .log-text {
+    color: var(--text); font-size: 0.9rem; line-height: 1.7;
+    background: rgba(255,255,255,0.03);
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    border-left: 2px solid rgba(201,168,76,0.3);
+  }
+  .log-player .log-text, .log-text.log-player {
+    color: #d9c8f0; font-style: italic;
+    border-left-color: var(--accent);
+    background: rgba(107,63,160,0.1);
+  }
   .log-divider {
     border: none; border-top: 1px dashed var(--border);
     margin: 10px 0;
@@ -348,33 +475,31 @@
 
   /* REDO BUTTONS */
   #redoBar {
-    display: none; gap: 6px; align-items: center;
+    display: none; gap: 8px; align-items: center;
     flex-shrink: 0;
   }
   .redo-btn {
-    background: none; border: 1px solid var(--border); color: var(--text-dim);
-    padding: 6px 10px; border-radius: 3px; cursor: pointer;
-    font-size: 0.75rem; font-family: 'Noto Sans KR', sans-serif;
-    white-space: nowrap;
+    background: var(--glass); border: 1px solid rgba(201,168,76,0.28); color: var(--text-dim);
+    padding: 7px 14px; border-radius: 18px; cursor: pointer;
+    font-size: 0.76rem; font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap; transition: all 0.18s;
   }
-  .redo-btn:active { border-color: var(--gold-dim); color: var(--text); }
+  .redo-btn:active { transform: scale(0.95); border-color: var(--gold); color: var(--text); }
 
   /* MOBILE */
   @media (max-width: 600px) {
-    #charLayer { height: 62vh; bottom: 120px; gap: 10px; }
+    #charLayer { height: 62vh; bottom: 116px; gap: 10px; }
     .char-sprite { max-width: 85vw; }
-    #dialogueText { font-size: 0.88rem; }
-    #dialoguePanel { min-height: 90px; padding: 12px 14px; }
-    #nameplate { font-size: 0.85rem; padding: 3px 14px; }
-    #inputBar { padding: 8px 10px; gap: 6px; }
-    #userInput { font-size: 0.85rem; padding: 8px 10px; height: 40px; }
-    #sendBtn { padding: 8px 14px; font-size: 0.8rem; height: 40px; }
+    #dialogueText { font-size: 0.95rem; line-height: 1.8; }
+    #dialoguePanel { min-height: 100px; padding: 15px 17px 28px; }
+    #speakerName { font-size: 0.9rem; }
+    #speakerAvatar { width: 30px; height: 30px; }
     .start-btn { width: min(280px, 80vw); }
     #continueBtn { width: min(280px, 80vw); }
   }
 
   @media (max-height: 600px) {
-    #charLayer { height: 30vh; bottom: 160px; }
+    #charLayer { height: 50vh; bottom: 110px; }
     #dialoguePanel { min-height: 70px; }
   }
 </style>
@@ -397,25 +522,30 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v5</span></span>
-    <div style="display:flex;gap:6px;align-items:center">
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v6</span></span>
+    <div class="top-btns">
+      <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
     </div>
   </div>
 
   <div id="statusPanel">
-    <div class="stat-row"><span class="stat-label">이름</span><span class="stat-val" id="stName">카이든</span></div>
+    <div class="panel-title">⚜ 카이든</div>
     <div class="stat-row"><span class="stat-label">신분</span><span class="stat-val" id="stStatus">신원불명</span></div>
     <div class="stat-row"><span class="stat-label">평판</span><span class="stat-val" id="stRep">0</span></div>
-    <div class="stat-row"><span class="stat-label">골드</span><span class="stat-val" id="stGold">3</span></div>
+    <div class="stat-row"><span class="stat-label">골드</span><span class="stat-val gold-val" id="stGold">3G</span></div>
     <div class="stat-row"><span class="stat-label">위치</span><span class="stat-val" id="stLocation">항구도시 베른</span></div>
+    <span class="stat-val" id="stName" style="display:none">카이든</span>
   </div>
 
   <div id="charLayer"></div>
 
   <div id="dialogueBox">
-    <div id="nameplate">나레이터</div>
+    <div id="nameplate" class="narrator">
+      <img id="speakerAvatar" alt="">
+      <span id="speakerName">나레이터</span>
+    </div>
     <div id="dialoguePanel">
       <div id="dialogueText"></div>
       <div id="continueHint">▼ 탭하여 계속</div>
@@ -424,12 +554,12 @@
 
   <div id="inputBar">
     <div id="redoBar">
-      <button class="redo-btn" onclick="regenerate()">↺ 재생성</button>
+      <button class="redo-btn" onclick="regenerate()">↺ 다시 답변</button>
       <button class="redo-btn" onclick="undoInput()">↩ 되돌리기</button>
     </div>
     <div id="inputRow">
       <textarea id="userInput" placeholder="(주위를 둘러본다) 또는 대사 입력" onkeydown="handleKey(event)"></textarea>
-      <button id="sendBtn" onclick="sendMessage()">전송</button>
+      <button id="sendBtn" onclick="sendMessage()">➤</button>
     </div>
   </div>
 
@@ -661,12 +791,35 @@ const EMOTION_MAP = {
 const bgLayer = document.getElementById('bgLayer');
 const charLayer = document.getElementById('charLayer');
 const nameplate = document.getElementById('nameplate');
+const speakerNameEl = document.getElementById('speakerName');
+const avatarEl = document.getElementById('speakerAvatar');
 const dialogueText = document.getElementById('dialogueText');
+const dialoguePanel = document.getElementById('dialoguePanel');
 const dialogueBox = document.getElementById('dialogueBox');
 const inputBar = document.getElementById('inputBar');
 const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
 const statusPanel = document.getElementById('statusPanel');
+
+// Set nameplate name + avatar based on speaker
+let currentSpeakerCharId = null;
+function setNameplate(name, charId) {
+  currentSpeakerCharId = charId || null;
+  speakerNameEl.textContent = name || '';
+  if (charId && CHARACTERS[charId]) {
+    const num = charId.replace('f', '');
+    avatarEl.onerror = function() {
+      this.onerror = null;
+      this.src = `character/25_full/f_${num}_1.png`;
+    };
+    avatarEl.src = `character/25_upper/${num}_1.png`;
+    nameplate.classList.remove('narrator');
+    dialoguePanel.classList.remove('narration-mode');
+  } else {
+    nameplate.classList.add('narrator');
+    dialoguePanel.classList.add('narration-mode');
+  }
+}
 
 let dialogueQueue = [];
 let isShowing = false;
@@ -674,6 +827,8 @@ let waitingForTap = false;
 let inputMode = false;
 let dialogueLog = [];
 let replaying = false;
+let autoPlay = false;
+let autoTimer = null;
 
 // ===== SAVE / LOAD =====
 function autoSave() {
@@ -774,7 +929,7 @@ async function beginStory() {
 // ===== THINKING INDICATOR =====
 function showThinking() {
   const msg = THINKING_MSGS[Math.floor(Math.random() * THINKING_MSGS.length)];
-  nameplate.textContent = '···';
+  setNameplate('···', null);
   dialogueText.innerHTML = `<span class="thinking-text">${msg}<span class="thinking-dots"></span></span>`;
   document.getElementById('continueHint').style.display = 'none';
 }
@@ -1164,9 +1319,9 @@ function showNextDialogue() {
   isShowing = true;
   waitingForTap = false;
 
-  if (!replaying) dialogueLog.push({ speaker: d.speaker, text: d.text, isPlayer: false });
+  if (!replaying) dialogueLog.push({ speaker: d.speaker, text: d.text, isPlayer: false, char_id: d.char_id || null });
 
-  nameplate.textContent = d.speaker;
+  setNameplate(d.speaker, d.char_id);
 
   if (d.char_id) {
     document.querySelectorAll('.char-sprite').forEach(s => {
@@ -1188,6 +1343,7 @@ function showNextDialogue() {
   typeText(d.text, () => {
     waitingForTap = true;
     isShowing = false;
+    scheduleAuto();
   });
 }
 
@@ -1251,8 +1407,28 @@ function setupInputHandlers() {
   });
 }
 
+// ===== AUTO-PLAY =====
+function toggleAuto() {
+  autoPlay = !autoPlay;
+  document.getElementById('autoBtn').classList.toggle('active', autoPlay);
+  if (autoPlay) scheduleAuto();
+  else clearTimeout(autoTimer);
+}
+
+function scheduleAuto() {
+  clearTimeout(autoTimer);
+  if (!autoPlay || !waitingForTap || inputMode || historyMode) return;
+  autoTimer = setTimeout(() => {
+    if (autoPlay && waitingForTap && !inputMode && !historyMode) {
+      waitingForTap = false;
+      showNextDialogue();
+    }
+  }, 1500);
+}
+
 function handleTap() {
   if (document.getElementById('backlogPanel').classList.contains('visible')) return;
+  clearTimeout(autoTimer);
   if (historyMode) { exitHistory(); return; }
   if (inputMode) return;
 
@@ -1287,8 +1463,9 @@ function historyBack() {
   if (!historyMode) {
     historyMode = true;
     historyPos = dialogueLog.length - 1;       // present line = last log entry
-    window._presentSpeaker = nameplate.textContent;
+    window._presentSpeaker = speakerNameEl.textContent;
     window._presentText = dialogueText.textContent;
+    window._presentCharId = currentSpeakerCharId;
   }
   if (historyPos > 0) {
     historyPos--;
@@ -1309,7 +1486,7 @@ function historyForward() {
 function renderHistoryEntry() {
   const entry = dialogueLog[historyPos];
   if (!entry) return;
-  nameplate.textContent = entry.isPlayer ? '카이든' : entry.speaker;
+  setNameplate(entry.isPlayer ? '카이든' : entry.speaker, entry.char_id);
   dialogueText.textContent = entry.text;
   const hint = document.getElementById('continueHint');
   hint.textContent = `◀ 기록 ${historyPos + 1}/${dialogueLog.length} ▶`;
@@ -1318,7 +1495,7 @@ function renderHistoryEntry() {
 
 function exitHistory() {
   historyMode = false;
-  nameplate.textContent = window._presentSpeaker || '';
+  setNameplate(window._presentSpeaker || '', window._presentCharId);
   dialogueText.textContent = window._presentText || '';
   const hint = document.getElementById('continueHint');
   hint.textContent = '▼ 탭하여 계속';
@@ -1341,18 +1518,10 @@ function showChoices(choices) {
     gap:8px; z-index:20; padding:0 16px;
   `;
 
-  choices.forEach(choice => {
+  choices.forEach((choice, i) => {
     const btn = document.createElement('button');
-    btn.textContent = choice;
-    btn.style.cssText = `
-      background:rgba(10,8,20,0.95); border:1px solid var(--gold-dim);
-      color:var(--text); padding:10px 24px; border-radius:3px;
-      cursor:pointer; font-family:'Noto Sans KR',sans-serif;
-      font-size:0.9rem; width:100%; max-width:400px;
-      transition:all 0.2s;
-    `;
-    btn.onmouseover = () => btn.style.borderColor = 'var(--gold)';
-    btn.onmouseout = () => btn.style.borderColor = 'var(--gold-dim)';
+    btn.innerHTML = `<span class="choice-num">${i + 1}</span><span>${choice}</span>`;
+    btn.className = 'choice-btn';
     btn.onclick = () => {
       choiceDiv.remove();
       handlePlayerInput(choice);
@@ -1362,15 +1531,7 @@ function showChoices(choices) {
 
   const customBtn = document.createElement('button');
   customBtn.textContent = '✎ 직접 입력';
-  customBtn.style.cssText = `
-    background:transparent; border:1px dashed var(--accent);
-    color:var(--gold-dim); padding:8px 24px; border-radius:3px;
-    cursor:pointer; font-family:'Noto Sans KR',sans-serif;
-    font-size:0.85rem; width:100%; max-width:400px;
-    transition:all 0.2s; margin-top:4px;
-  `;
-  customBtn.onmouseover = () => { customBtn.style.borderColor = 'var(--gold)'; customBtn.style.color = 'var(--text)'; };
-  customBtn.onmouseout = () => { customBtn.style.borderColor = 'var(--accent)'; customBtn.style.color = 'var(--gold-dim)'; };
+  customBtn.className = 'choice-btn choice-custom';
   customBtn.onclick = () => {
     choiceDiv.remove();
     enterInputMode();
@@ -1412,7 +1573,7 @@ async function sendMessage() {
 }
 
 async function handlePlayerInput(text) {
-  dialogueLog.push({ speaker: '카이든', text, isPlayer: true });
+  dialogueLog.push({ speaker: '카이든', text, isPlayer: true, char_id: null });
   gameHistory.push({ role: 'user', content: text });
   autoSave();
 
