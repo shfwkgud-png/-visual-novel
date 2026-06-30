@@ -172,7 +172,7 @@
     pointer-events: none;
   }
   .char-sprite {
-    height: 98%;
+    height: 88%;
     max-width: 100vw;
     object-fit: contain;
     object-position: bottom center;
@@ -208,25 +208,25 @@
   #speakerAvatar { display: none; }
   #speakerName {
     font-family: 'Noto Serif KR', serif;
-    font-size: 1.02rem;
+    font-size: 0.9rem;
     color: var(--gold);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     font-weight: 700;
     text-shadow: 0 2px 8px rgba(0,0,0,0.9);
   }
   #speakerName::before {
     content: '';
     display: inline-block;
-    width: 14px; height: 1px;
+    width: 12px; height: 1px;
     background: var(--gold);
     vertical-align: middle;
-    margin-right: 8px;
+    margin-right: 7px;
     opacity: 0.7;
   }
   #nameplate.narrator #speakerName {
-    color: rgba(220,212,235,0.85);
+    color: rgba(220,212,235,0.8);
     font-weight: 400; font-style: italic;
-    letter-spacing: 0.12em; font-size: 0.85rem;
+    letter-spacing: 0.1em; font-size: 0.78rem;
   }
   #nameplate.narrator #speakerName::before { display: none; }
   #dialoguePanel {
@@ -234,12 +234,12 @@
     border: none;
     box-shadow: none;
     padding: 0;
-    min-height: 92px;
+    min-height: 84px;
     position: relative;
   }
   #dialogueText {
-    font-size: 1.06rem;
-    line-height: 1.82;
+    font-size: 0.94rem;
+    line-height: 1.74;
     color: #f2ecdf;
     white-space: pre-wrap;
     letter-spacing: 0.01em;
@@ -248,7 +248,7 @@
   #dialoguePanel.narration-mode #dialogueText {
     color: #d6cfe0;
     font-style: italic;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
   #continueHint {
     position: absolute;
@@ -302,15 +302,15 @@
     flex: 1;
     min-width: 0;
     background: rgba(20,16,32,0.92);
-    border: 1px solid rgba(201,168,76,0.25);
+    border: 1px solid rgba(201,168,76,0.22);
     color: var(--text);
-    padding: 12px 18px;
-    border-radius: 22px;
-    font-size: 0.92rem;
+    padding: 9px 16px;
+    border-radius: 19px;
+    font-size: 0.85rem;
     font-family: 'Noto Sans KR', sans-serif;
     outline: none;
     resize: none;
-    height: 46px;
+    height: 39px;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
   #userInput:focus {
@@ -321,14 +321,14 @@
     background: linear-gradient(135deg, var(--gold), #b8923a);
     color: #1a1208;
     border: none;
-    width: 46px; height: 46px;
+    width: 39px; height: 39px;
     border-radius: 50%;
     cursor: pointer;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 3px 14px rgba(201,168,76,0.35);
+    box-shadow: 0 3px 12px rgba(201,168,76,0.3);
     transition: transform 0.15s;
   }
   #sendBtn:active { transform: scale(0.92); }
@@ -348,22 +348,22 @@
   #titleText {
     font-family: 'Noto Serif KR', serif;
     color: var(--gold);
-    opacity: 0.85;
-    font-size: 0.82rem;
-    letter-spacing: 0.22em;
+    opacity: 0.8;
+    font-size: 0.74rem;
+    letter-spacing: 0.2em;
     text-shadow: 0 1px 6px rgba(0,0,0,0.7);
   }
-  .top-btns { display: flex; gap: 6px; align-items: center; }
+  .top-btns { display: flex; gap: 5px; align-items: center; }
   .top-btn {
     background: rgba(15,12,22,0.5);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.14);
-    color: rgba(236,230,218,0.92);
-    padding: 5px 12px;
-    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(236,230,218,0.9);
+    padding: 4px 10px;
+    border-radius: 15px;
     cursor: pointer;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     letter-spacing: 0.03em;
     transition: all 0.18s;
   }
@@ -404,39 +404,39 @@
   .stat-val { color: var(--text); font-weight: 500; }
   .stat-val.gold-val { color: var(--gold); }
 
-  /* CHOICE BUTTONS — minimal translucent rows (Frontia-style) */
+  /* CHOICE BUTTONS — fine translucent rows (Frontia-style) */
   .choice-btn {
-    display: flex; align-items: center; gap: 11px;
-    background: rgba(18,14,26,0.62);
+    display: flex; align-items: center; gap: 9px;
+    background: rgba(16,12,22,0.58);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: #ece6da;
-    padding: 13px 17px;
-    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e6e0d4;
+    padding: 9px 13px;
+    border-radius: 10px;
     cursor: pointer;
     font-family: 'Noto Sans KR', sans-serif;
-    font-size: 0.9rem;
-    line-height: 1.4;
+    font-size: 0.82rem;
+    line-height: 1.35;
     text-align: left;
-    width: 100%; max-width: 460px;
+    width: 100%; max-width: 440px;
     transition: all 0.18s;
   }
-  .choice-btn:active { transform: scale(0.985); background: rgba(40,32,56,0.75); }
-  .choice-btn:hover { border-color: rgba(201,168,76,0.6); }
+  .choice-btn:active { transform: scale(0.985); background: rgba(40,32,56,0.72); }
+  .choice-btn:hover { border-color: rgba(201,168,76,0.55); }
   .choice-num {
     display: flex; align-items: center; justify-content: center;
-    width: 21px; height: 21px; flex-shrink: 0;
+    width: 17px; height: 17px; flex-shrink: 0;
     border-radius: 50%;
-    border: 1px solid rgba(201,168,76,0.55);
-    color: var(--gold); font-weight: 600; font-size: 0.74rem;
+    border: 1px solid rgba(201,168,76,0.5);
+    color: var(--gold); font-weight: 600; font-size: 0.66rem;
     background: rgba(201,168,76,0.08);
   }
   .choice-custom {
     justify-content: center;
-    background: rgba(18,14,26,0.45);
-    border-style: dashed; border-color: rgba(201,168,76,0.4);
-    color: var(--gold); font-size: 0.85rem;
+    background: rgba(16,12,22,0.4);
+    border-style: dashed; border-color: rgba(201,168,76,0.35);
+    color: var(--gold); font-size: 0.78rem; padding: 8px 13px;
   }
   .choice-custom:hover { border-color: var(--gold); }
 
@@ -493,9 +493,9 @@
     flex-shrink: 0;
   }
   .redo-btn {
-    background: var(--glass); border: 1px solid rgba(201,168,76,0.28); color: var(--text-dim);
-    padding: 7px 14px; border-radius: 18px; cursor: pointer;
-    font-size: 0.76rem; font-family: 'Noto Sans KR', sans-serif;
+    background: var(--glass); border: 1px solid rgba(201,168,76,0.25); color: var(--text-dim);
+    padding: 5px 11px; border-radius: 14px; cursor: pointer;
+    font-size: 0.7rem; font-family: 'Noto Sans KR', sans-serif;
     white-space: nowrap; transition: all 0.18s;
   }
   .redo-btn:active { transform: scale(0.95); border-color: var(--gold); color: var(--text); }
@@ -539,7 +539,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v12</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v13</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1629,9 +1629,9 @@ function showChoices(choices) {
   const choiceDiv = document.createElement('div');
   choiceDiv.id = 'choiceBox';
   choiceDiv.style.cssText = `
-    position:fixed; bottom:230px; left:0; right:0;
+    position:fixed; bottom:210px; left:0; right:0;
     display:flex; flex-direction:column; align-items:center;
-    gap:8px; z-index:20; padding:0 16px;
+    gap:6px; z-index:20; padding:0 16px;
   `;
 
   choices.forEach((choice, i) => {
