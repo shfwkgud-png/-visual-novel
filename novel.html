@@ -539,7 +539,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v11</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v12</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -839,9 +839,9 @@ function setNameplate(name, charId) {
     const num = charId.replace('f', '');
     avatarEl.onerror = function() {
       this.onerror = null;
-      this.src = `character/25_full/f_${num}_1.png`;
+      this.src = `character/25_full/f_${num}_1.webp`;
     };
-    avatarEl.src = `character/25_upper/${num}_1.png`;
+    avatarEl.src = `character/25_upper/${num}_1.webp`;
     nameplate.classList.remove('narrator');
     dialoguePanel.classList.remove('narration-mode');
   } else {
@@ -1384,14 +1384,14 @@ function updateCharSprites(dialogues, activeCharIds) {
     img.className = 'char-sprite';
     img.id = 'sprite_' + charId;
     const num = charId.replace('f', '');
-    img.src = `character/25_upper/${num}_1.png`;
+    img.src = `character/25_upper/${num}_1.webp`;
     img.onerror = function() {
       if (this.dataset.fallback === '1') {
         this.style.opacity = '0';
         return;
       }
       this.dataset.fallback = '1';
-      this.src = `character/25_full/f_${num}_1.png`;
+      this.src = `character/25_full/f_${num}_1.webp`;
       this.onerror = function() { this.style.opacity = '0'; };
     };
     charLayer.appendChild(img);
@@ -1407,13 +1407,13 @@ function updateSpriteEmotion(charId, emotion, pose) {
   sprite.dataset.fallback = '0';
 
   if (pose === 'pose') {
-    sprite.src = `character/25_pose/p_${num}.png`;
+    sprite.src = `character/25_pose/p_${num}.webp`;
   } else if (pose === 'full') {
     const emoNum = EMOTION_MAP.full[emotion] || 1;
-    sprite.src = `character/25_full/f_${num}_${emoNum}.png`;
+    sprite.src = `character/25_full/f_${num}_${emoNum}.webp`;
   } else {
     const emoNum = EMOTION_MAP.upper[emotion] || 1;
-    sprite.src = `character/25_upper/${num}_${emoNum}.png`;
+    sprite.src = `character/25_upper/${num}_${emoNum}.webp`;
   }
 }
 
