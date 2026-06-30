@@ -167,11 +167,12 @@
     height: 100dvh;
   }
 
-  /* BACKGROUND — fill the entire physical screen incl. home-indicator area */
+  /* BACKGROUND — overshoot top & bottom so it ALWAYS covers the full screen
+     (incl. the home-indicator / safe-area strip). No exposed background. */
   #bgLayer {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100vh; height: 100lvh;
+    left: 0; right: 0;
+    top: -2px; bottom: -80px;
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
@@ -180,8 +181,8 @@
   }
   #bgOverlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100vh; height: 100lvh;
+    left: 0; right: 0;
+    top: -2px; bottom: -80px;
     background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.25) 100%);
     z-index: 1;
   }
@@ -597,7 +598,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v25</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v26</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
