@@ -2,7 +2,7 @@
   "name": "낙인의 검",
   "short_name": "낙인의 검",
   "start_url": "novel.html",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0f",
   "theme_color": "#0a0a0f",

@@ -174,19 +174,22 @@
      (incl. the home-indicator / safe-area strip). No exposed background. */
   #bgLayer {
     position: fixed;
-    left: 0; right: 0;
-    top: -2px; bottom: -80px;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;            /* large viewport = full physical screen on iOS */
+    min-height: 100dvh;
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
-    transition: background-image 0.8s ease;
     z-index: 0;
   }
   #bgOverlay {
     position: fixed;
-    left: 0; right: 0;
-    top: -2px; bottom: -80px;
-    background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.25) 100%);
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(to top, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 45%, rgba(0,0,0,0.2) 100%);
     z-index: 1;
   }
 
@@ -599,11 +602,9 @@
 <div id="gameScreen">
   <div id="bgLayer"></div>
   <div id="bgOverlay"></div>
-  <div id="sabProbe" style="position:fixed;bottom:0;left:0;width:1px;height:env(safe-area-inset-bottom);pointer-events:none"></div>
-  <div id="dbg" onclick="this.style.display='none'" style="position:fixed;top:54px;left:6px;z-index:9999;background:rgba(0,0,0,0.75);color:#3f6;font:11px/1.4 monospace;padding:5px 7px;white-space:pre;border-radius:6px"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v30</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v31</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
