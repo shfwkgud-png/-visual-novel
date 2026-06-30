@@ -591,11 +591,12 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v16</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v17</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
+      <button class="top-btn" onclick="refreshApp()" title="최신 버전으로 갱신">⟳</button>
     </div>
   </div>
 
@@ -982,6 +983,13 @@ function deleteSave() {
     if (save.provider) setProvider(save.provider);
   }
 })();
+
+// Force-fetch the latest version (works even in fullscreen PWA with no address bar).
+// Game state is in localStorage, so 이어하기 restores after reload.
+function refreshApp() {
+  const base = location.href.split('?')[0];
+  location.href = base + '?v=' + Date.now();
+}
 
 // ===== PROVIDER TOGGLE =====
 function setProvider(p) {
