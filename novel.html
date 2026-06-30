@@ -591,7 +591,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v20</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v21</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1705,21 +1705,17 @@ function setupInputHandlers() {
   document.addEventListener('touchend', (e) => {
     if (isInteractive(e.target)) return;
     const t = e.changedTouches[0];
-    const dx = t.clientX - touchStartX;
-    const dy = t.clientY - touchStartY;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      // Horizontal swipe → history navigation
-      if (dx > 0) historyBack(); else historyForward();
-    } else {
-      handleTap();
-    }
+    const dy = Math.abs(t.clientY - touchStartY);
+    const dxAbs = Math.abs(t.clientX - touchStartX);
+    if (dy > 60 || dxAbs > 80) return; // ignore scrolls/drags, only real taps
+    handleTap(t.clientX);
     lastHandledTime = Date.now();
   });
 
   document.addEventListener('click', (e) => {
     if (Date.now() - lastHandledTime < 500) return; // touch already handled this
     if (isInteractive(e.target)) return;
-    handleTap();
+    handleTap(e.clientX);
   });
 
   document.addEventListener('keydown', (e) => {
@@ -1763,13 +1759,13 @@ function navNext() {
   if (waitingForTap) { waitingForTap = false; showNextDialogue(); }
 }
 
-function handleTap() {
+// Left side of screen = back, right side = forward (no arrows/swipe)
+function handleTap(x) {
   if (document.getElementById('backlogPanel').classList.contains('visible')) return;
   clearTimeout(autoTimer);
-  if (historyMode) { exitHistory(); return; }
-  if (inputMode) return;
 
-  if (isShowing) {
+  // A tap anywhere first completes the currently-typing line
+  if (isShowing && !historyMode) {
     clearInterval(window._typeTimer);
     dialogueText.textContent = window._typeFull;
     document.getElementById('continueHint').style.display = 'block';
@@ -1778,6 +1774,15 @@ function handleTap() {
     return;
   }
 
+  const leftZone = (x != null) && (x < window.innerWidth * 0.38);
+
+  if (leftZone) {            // ← previous
+    historyBack();
+    return;
+  }
+  // → next
+  if (historyMode) { historyForward(); return; }
+  if (inputMode) return;
   if (waitingForTap) {
     waitingForTap = false;
     showNextDialogue();
