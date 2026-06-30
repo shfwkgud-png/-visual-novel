@@ -219,10 +219,10 @@
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 10;
-    padding: 80px 22px calc(40px + env(safe-area-inset-bottom));
+    padding: 70px 46px calc(96px + env(safe-area-inset-bottom));
     background: linear-gradient(to top,
-      rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.88) 32%,
-      rgba(0,0,0,0.5) 68%, transparent 100%);
+      rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 38%,
+      rgba(0,0,0,0.45) 72%, transparent 100%);
     transition: padding-bottom 0.2s ease;
   }
   #nameplate {
@@ -264,8 +264,8 @@
     position: relative;
   }
   #dialogueText {
-    font-size: 1rem;
-    line-height: 1.78;
+    font-size: 0.9rem;
+    line-height: 1.7;
     color: #f8f3ea;
     white-space: pre-wrap;
     letter-spacing: 0.01em;
@@ -289,24 +289,23 @@
   /* HISTORY NAV BUTTONS */
   .nav-btn {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 34px; height: 34px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: 28px; height: 28px;
     border-radius: 50%;
-    background: rgba(10,8,18,0.5);
+    background: rgba(10,8,18,0.4);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.14);
-    color: rgba(236,230,218,0.85);
-    font-size: 0.85rem;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(236,230,218,0.7);
+    font-size: 0.66rem;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     z-index: 12;
     transition: transform 0.12s, background 0.18s;
   }
-  .nav-btn:active { transform: translateY(-50%) scale(0.88); background: rgba(40,32,56,0.7); }
-  #navPrev { left: 4px; }
-  #navNext { right: 4px; }
+  .nav-btn:active { transform: scale(0.88); background: rgba(40,32,56,0.7); }
+  #navPrev { left: 10px; }
+  #navNext { right: 10px; }
 
   /* THINKING INDICATOR */
   .thinking-text {
@@ -592,7 +591,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v19</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v20</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -621,8 +620,6 @@
       <div id="dialogueText"></div>
       <div id="continueHint">▼ 탭하여 계속</div>
     </div>
-    <button id="navPrev" class="nav-btn" onclick="historyBack()">◀</button>
-    <button id="navNext" class="nav-btn" onclick="navNext()">▶</button>
   </div>
 
   <div id="inputBar">
@@ -1909,7 +1906,7 @@ function showChoices(choices) {
 // Lift dialogue text above the input bar so it stays readable
 function liftDialogueForInput() {
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
-  dialogueBox.style.paddingBottom = hasHistory ? '124px' : '92px';
+  dialogueBox.style.paddingBottom = hasHistory ? '150px' : '116px';
 }
 function resetDialogueLift() {
   dialogueBox.style.paddingBottom = '';
