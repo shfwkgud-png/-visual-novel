@@ -551,18 +551,17 @@
 
   /* MOBILE */
   @media (max-width: 600px) {
-    .char-sprite { height: 96%; max-width: 118vw; }
-    #dialogueText { font-size: 1.02rem; line-height: 1.78; }
-    #dialoguePanel { min-height: 84px; }
-    #speakerName { font-size: 0.96rem; }
-    #dialogueBox { padding: 60px 18px calc(18px + env(safe-area-inset-bottom)); }
+    .char-sprite { height: 76%; max-width: 90vw; }
+    #dialogueText { font-size: 0.84rem; line-height: 1.68; }
+    #dialoguePanel { min-height: 78px; }
+    #speakerName { font-size: 0.85rem; }
     .start-btn { width: min(280px, 80vw); }
     #continueBtn { width: min(280px, 80vw); }
   }
 
   @media (max-height: 600px) {
-    .char-sprite { height: 92%; }
-    #dialoguePanel { min-height: 70px; }
+    .char-sprite { height: 70%; }
+    #dialoguePanel { min-height: 64px; }
   }
 </style>
 </head>
@@ -593,7 +592,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v23</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v24</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
