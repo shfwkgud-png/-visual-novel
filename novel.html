@@ -599,9 +599,11 @@
 <div id="gameScreen">
   <div id="bgLayer"></div>
   <div id="bgOverlay"></div>
+  <div id="sabProbe" style="position:fixed;bottom:0;left:0;width:1px;height:env(safe-area-inset-bottom);pointer-events:none"></div>
+  <div id="dbg" onclick="this.style.display='none'" style="position:fixed;top:54px;left:6px;z-index:9999;background:rgba(0,0,0,0.75);color:#3f6;font:11px/1.4 monospace;padding:5px 7px;white-space:pre;border-radius:6px"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v29</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v30</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1735,6 +1737,8 @@ function setupInputHandlers() {
   });
 
   setupKeyboardHandling();
+  window.addEventListener('resize', updateDbg);
+  setTimeout(updateDbg, 150);
 }
 
 // Keep the background fixed and float the input bar above the on-screen keyboard
@@ -1745,12 +1749,32 @@ function setupKeyboardHandling() {
   const onChange = () => {
     const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
     inputBar.style.transform = kb > 1 ? `translateY(-${kb}px)` : '';
-    // also lift choices a touch when keyboard is huge (rare) — keep simple for now
+    updateDbg();
   };
   vv.addEventListener('resize', onChange);
   vv.addEventListener('scroll', onChange);
-  // Reset on blur
   userInput.addEventListener('blur', () => { inputBar.style.transform = ''; });
+}
+
+// ===== TEMP DEBUG READOUT =====
+function updateDbg() {
+  const el = document.getElementById('dbg');
+  if (!el) return;
+  const vv = window.visualViewport;
+  const sab = document.getElementById('sabProbe')?.offsetHeight ?? '?';
+  const dvhProbe = document.createElement('div');
+  dvhProbe.style.cssText = 'position:fixed;top:0;height:100dvh;width:0;visibility:hidden';
+  document.body.appendChild(dvhProbe);
+  const dvh = dvhProbe.offsetHeight;
+  dvhProbe.remove();
+  el.textContent =
+    `v30  (tap to hide)\n` +
+    `innerH ${window.innerHeight}\n` +
+    `dvh    ${dvh}\n` +
+    `vvH    ${vv ? Math.round(vv.height) : '-'}\n` +
+    `vvTop  ${vv ? Math.round(vv.offsetTop) : '-'}\n` +
+    `screenH ${screen.height}\n` +
+    `safeBot ${sab}  dpr ${window.devicePixelRatio}`;
 }
 
 // ===== AUTO-PLAY =====
