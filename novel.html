@@ -214,15 +214,15 @@
     z-index: 2;
   }
 
-  /* DIALOGUE — floating text over gradient scrim, no box */
+  /* DIALOGUE — floating text over a soft, transparent gradient (no box) */
   #dialogueBox {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 10;
-    padding: 70px 22px calc(20px + env(safe-area-inset-bottom));
+    padding: 80px 22px calc(86px + env(safe-area-inset-bottom));
     background: linear-gradient(to top,
-      rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.88) 30%,
-      rgba(0,0,0,0.6) 65%, transparent 100%);
+      rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 38%,
+      rgba(0,0,0,0.22) 72%, transparent 100%);
   }
   #nameplate {
     display: flex;
@@ -333,7 +333,7 @@
     z-index: 11;
     display: none;
     flex-direction: column;
-    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    padding: 10px 12px calc(18px + env(safe-area-inset-bottom));
     background: linear-gradient(180deg, transparent, var(--glass-strong) 22%);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -451,14 +451,14 @@
   .stat-val { color: var(--text); font-weight: 500; }
   .stat-val.gold-val { color: var(--gold); }
 
-  /* CHOICE BUTTONS — fine translucent rows (Frontia-style) */
+  /* CHOICE BUTTONS — transparent rows at top (Frontia-style) */
   .choice-btn {
     display: flex; align-items: center; gap: 9px;
-    background: rgba(16,12,22,0.58);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #e6e0d4;
+    background: rgba(12,9,18,0.34);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #f0eade;
     padding: 9px 13px;
     border-radius: 10px;
     cursor: pointer;
@@ -468,8 +468,9 @@
     text-align: left;
     width: 100%; max-width: 440px;
     transition: all 0.18s;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
   }
-  .choice-btn:active { transform: scale(0.985); background: rgba(40,32,56,0.72); }
+  .choice-btn:active { transform: scale(0.985); background: rgba(40,32,56,0.6); }
   .choice-btn:hover { border-color: rgba(201,168,76,0.55); }
   .choice-num {
     display: flex; align-items: center; justify-content: center;
@@ -591,7 +592,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v17</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v18</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1386,7 +1387,6 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   // Hide input while the AI is generating/outputting
   inputBar.style.display = 'none';
   inputMode = false;
-  dialogueBox.style.paddingBottom = '0';
 
   const charPrompt = activeCharIds.length > 0 ? getCharPrompt(activeCharIds) : '';
   // Inject custom protagonist name + features
@@ -1855,16 +1855,16 @@ function showChoices(choices) {
   clearTimeout(autoTimer);
   document.getElementById('continueHint').style.display = 'none';
   inputBar.style.display = 'flex';
-  dialogueBox.style.paddingBottom = '88px';
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
   document.getElementById('redoBar').style.display = hasHistory ? 'flex' : 'none';
 
   const choiceDiv = document.createElement('div');
   choiceDiv.id = 'choiceBox';
   choiceDiv.style.cssText = `
-    position:fixed; bottom:210px; left:0; right:0;
+    position:fixed; top:calc(50px + env(safe-area-inset-top)); left:0; right:0;
     display:flex; flex-direction:column; align-items:center;
-    gap:6px; z-index:20; padding:0 16px;
+    gap:6px; z-index:20; padding:0 14px;
+    max-height:60vh; overflow-y:auto;
   `;
 
   choices.forEach((choice, i) => {
@@ -1897,7 +1897,6 @@ function enterInputMode() {
   clearTimeout(autoTimer);
   document.getElementById('continueHint').style.display = 'none';
   inputBar.style.display = 'flex';
-  dialogueBox.style.paddingBottom = '88px';
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
   document.getElementById('redoBar').style.display = hasHistory ? 'flex' : 'none';
 }
@@ -1915,7 +1914,6 @@ async function sendMessage() {
   userInput.value = '';
   inputBar.style.display = 'none';
   inputMode = false;
-  dialogueBox.style.paddingBottom = '0';
 
   const cb = document.getElementById('choiceBox');
   if (cb) cb.remove();
@@ -2043,7 +2041,6 @@ async function regenerate() {
 
   inputBar.style.display = 'none';
   inputMode = false;
-  dialogueBox.style.paddingBottom = '0';
   const cb = document.getElementById('choiceBox');
   if (cb) cb.remove();
 
