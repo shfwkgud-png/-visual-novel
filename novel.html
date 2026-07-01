@@ -226,7 +226,7 @@
        sprites (레온 0.568) huge and wide ones (프레야 0.766) small. max-width is
        high so height wins for all aspects (only clamps near-square sprites).
        NOTE: 2-char sizes are fine — only this single-char base changed. */
-    height: 49%;
+    height: 62%;   /* ≈ 프레야's approved apparent size; uniform for all aspects */
     max-width: 108vw;
     object-fit: contain;
     object-position: bottom center;
@@ -634,9 +634,10 @@
   }
   .redo-btn:active { transform: scale(0.95); border-color: var(--gold); color: var(--text); }
 
-  /* MOBILE */
+  /* MOBILE — NOTE: never size .char-sprite here! These late rules silently
+     override the base/staging rules above (v55/v56 fixes were dead because a
+     height:100% here won). Sizing lives ONLY in the char staging section. */
   @media (max-width: 600px) {
-    .char-sprite { height: 100%; max-width: 112vw; }
     #dialogueText { font-size: 0.84rem; line-height: 1.68; }
     #dialoguePanel { min-height: 78px; }
     #speakerName { font-size: 0.85rem; }
@@ -645,7 +646,6 @@
   }
 
   @media (max-height: 600px) {
-    .char-sprite { height: 84%; }
     #dialoguePanel { min-height: 64px; }
   }
 </style>
@@ -698,7 +698,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v57</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v58</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
