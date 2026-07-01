@@ -222,12 +222,12 @@
   #charLayer { gap: 0; }
   .char-sprite {
     height: 88%;
-    max-width: 98vw;
+    max-width: 94vw;
     object-fit: contain;
     object-position: bottom center;
-    /* --ty raises the sprite up (single AND multi sit higher, not glued to bottom);
-       --tx slides the speaker toward center; --sc lets the speaker step forward. */
-    --ty: -4%;   /* single-char default lift (small) */
+    /* multi-char rules raise via --ty; SINGLE char stays --ty:0 so its bottom
+       (hip crop) sits at the screen edge and never shows a hard cut line. */
+    --ty: 0%;
     transform: translate(var(--tx, 0%), var(--ty, 0%)) scale(var(--sc, 1));
     transform-origin: bottom center;
     transition: filter 0.4s ease, opacity 0.5s ease, transform 0.35s ease;
@@ -279,16 +279,19 @@
     flex-direction: column;
     justify-content: flex-end;
     pointer-events: none;   /* taps fall through to the document tap handler */
+    /* Frontia-style scrim: character's lower body gradually darkens toward the
+       bottom (this layer is z3, ABOVE the character z2), so the dialogue text
+       always sits on a dark, easy-on-the-eyes backdrop. */
+    background: linear-gradient(to top,
+      rgba(6,6,12,0.88) 0%,
+      rgba(6,6,12,0.7) 13%,
+      rgba(6,6,12,0.4) 28%,
+      rgba(6,6,12,0.12) 44%,
+      transparent 58%);
   }
   #dialogueContent {
-    padding: 54px 30px calc(40px + env(safe-area-inset-bottom));
-    /* dark behind the text, fades to transparent upward */
-    background: linear-gradient(to top,
-      rgba(0,0,0,0.78) 0%,
-      rgba(0,0,0,0.72) 30%,
-      rgba(0,0,0,0.5) 60%,
-      rgba(0,0,0,0.18) 82%,
-      transparent 100%);
+    /* text lifted off the very bottom edge (not glued down) */
+    padding: 40px 30px calc(58px + env(safe-area-inset-bottom));
   }
   #nameplate {
     display: flex;
@@ -690,7 +693,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v52</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v53</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
