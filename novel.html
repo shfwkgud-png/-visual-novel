@@ -34,7 +34,7 @@
     --radius-sm: 10px;
     --glass: rgba(14, 11, 24, 0.72);
     --glass-strong: rgba(10, 8, 18, 0.9);
-    --vvh: 100dvh;   /* JS overrides with visualViewport.height */
+    --kb: 0px;   /* JS sets this to the on-screen keyboard height */
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -164,9 +164,8 @@
   #gameScreen {
     display: none;
     position: fixed;
-    top: 0; left: 0;
-    width: 100%;
-    height: var(--vvh);
+    top: 0; left: 0; right: 0;
+    bottom: var(--kb, 0);   /* 0 = real screen bottom (852) like #apiScreen; = keyboard height when open */
     overflow: hidden;
     z-index: 3;   /* above bg (0) / overlay (1) / character (2) */
   }
@@ -604,7 +603,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v37</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v38</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1756,15 +1755,17 @@ function setupInputHandlers() {
 // fixed & full behind; the UI (dialogue/input) is absolute inside this area,
 // so the keyboard just overlays — no scroll, no shift. (Frontia-style)
 function setupViewportHeight() {
+  const vv = window.visualViewport;
   const apply = () => {
-    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    document.documentElement.style.setProperty('--vvh', h + 'px');
+    // keyboard height = how much the visual viewport shrank from the layout viewport
+    const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+    document.documentElement.style.setProperty('--kb', kb + 'px');
     if (window.scrollY) window.scrollTo(0, 0);
   };
   apply();
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', apply);
-    window.visualViewport.addEventListener('scroll', apply);
+  if (vv) {
+    vv.addEventListener('resize', apply);
+    vv.addEventListener('scroll', apply);
   }
   window.addEventListener('resize', apply);
   window.addEventListener('orientationchange', () => setTimeout(apply, 100));
