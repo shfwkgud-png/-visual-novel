@@ -40,18 +40,16 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body { overflow: hidden; overscroll-behavior: none; }
-body {
+  body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Noto Sans KR', sans-serif;
-
-    /* v46 TEST - body fixed 제거 */
-    /* position: fixed; */
-    /* inset: 0; */
-
+    /* Lock the page exactly like #apiScreen so nothing can scroll */
+    position: fixed;
+    inset: 0;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-}
+  }
 
   /* API KEY SCREEN */
   #apiScreen {
@@ -194,69 +192,40 @@ body {
   }
 
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
-  /* v45 TEST */
-#charLayer {
+  #charLayer {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    top: 0; height: 100vh;   /* true full screen so feet reach the real bottom */
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: flex-end;
     justify-content: center;
     gap: 0;
     z-index: 2;
     pointer-events: none;
-    overflow: visible;
-}
-#charLayer { gap: 0; }
-/* v45 TEST */
-.char-sprite {
-    height: 95vh;
-    width: auto;
-    max-width: none;
-    object-fit: unset;
+  }
+  #charLayer { gap: 0; }
+  .char-sprite {
+    height: 96%;
+    max-width: 108vw;
+    object-fit: contain;
     object-position: bottom center;
     transition: filter 0.4s ease, opacity 0.5s ease;
     opacity: 0;
-    flex-shrink: 0;
-    min-width: auto;
-}
+    flex-shrink: 1;
+    min-width: 0;
+  }
   .char-sprite.visible { opacity: 1; }
   .char-sprite.speaking { filter: none; z-index: 3; }
   .char-sprite.silent { filter: brightness(0.45) saturate(0.7); z-index: 2; }
   /* Multiple characters: overlap so each stays LARGE (not crammed at the bottom),
      both still fit. flex-shrink:0 keeps size; negative margin overlaps them (#1). */
-/* v45 TEST */
-#charLayer[data-count="2"] { gap: 0; }
-
-#charLayer[data-count="2"] .char-sprite {
-    height: 95vh;
-    width: auto;
-    max-width: none;
-    flex-shrink: 0;
-    margin: 0 -18vw;
-}
-/* v45 TEST */
-#charLayer[data-count="3"] { gap: 0; }
-
-#charLayer[data-count="3"] .char-sprite {
-    height: 88vh;
-    width: auto;
-    max-width: none;
-    flex-shrink: 0;
-    margin: 0 -12vw;
-}
-/* v45 TEST */
-#charLayer[data-count="4"] { gap: 0; }
-
-#charLayer[data-count="4"] .char-sprite {
-    height: 80vh;
-    width: auto;
-    max-width: none;
-    flex-shrink: 0;
-    margin: 0 -8vw;
-}
+  #charLayer[data-count="2"] { gap: 0; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 82vw; height: 96%; flex-shrink: 0; margin: 0 -22vw; }
+  #charLayer[data-count="3"] { gap: 0; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 58vw; height: 90%; flex-shrink: 0; margin: 0 -15vw; }
+  #charLayer[data-count="4"] { gap: 0; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 46vw; height: 84%; flex-shrink: 0; margin: 0 -12vw; }
   /* Full-body sprites are taller — shrink so the top isn't cut (#5) */
   .char-sprite.fullbody { height: 90%; }
   #charLayer[data-count="2"] .char-sprite.fullbody { height: 86%; }
@@ -274,11 +243,16 @@ body {
     justify-content: flex-end;
     pointer-events: none;   /* taps fall through to the document tap handler */
   }
-/* v45 TEST */
-#dialogueContent {
-    padding: 24px 30px calc(8px + env(safe-area-inset-bottom));
-    background: none;
-}
+  #dialogueContent {
+    padding: 54px 30px calc(40px + env(safe-area-inset-bottom));
+    /* dark behind the text, fades to transparent upward */
+    background: linear-gradient(to top,
+      rgba(0,0,0,0.78) 0%,
+      rgba(0,0,0,0.72) 30%,
+      rgba(0,0,0,0.5) 60%,
+      rgba(0,0,0,0.18) 82%,
+      transparent 100%);
+  }
   #nameplate {
     display: flex;
     align-items: center;
@@ -616,11 +590,8 @@ body {
   .redo-btn:active { transform: scale(0.95); border-color: var(--gold); color: var(--text); }
 
   /* MOBILE */
-@media (max-width: 600px) {
-    /* .char-sprite {
-        height: 100%;
-        max-width: 112vw;
-    } */
+  @media (max-width: 600px) {
+    .char-sprite { height: 100%; max-width: 112vw; }
     #dialogueText { font-size: 0.84rem; line-height: 1.68; }
     #dialoguePanel { min-height: 78px; }
     #speakerName { font-size: 0.85rem; }
@@ -682,7 +653,7 @@ body {
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v44test</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v44</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1933,7 +1904,7 @@ function setupViewportHeight() {
   const apply = () => {
     // Size the UI layer to the currently VISIBLE area (shrinks when keyboard opens).
     // The background is height:100vh (full screen) and fills behind, so no strip.
-    const h = window.innerHeight;
+    const h = vv ? vv.height : window.innerHeight;
     document.documentElement.style.setProperty('--vvh', h + 'px');
     if (window.scrollY) window.scrollTo(0, 0);
   };
