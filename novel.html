@@ -698,7 +698,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v56</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v57</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1829,6 +1829,13 @@ function updateSpriteEmotion(charId, emotion, pose) {
 
   const num = charId.replace('f', '');
   sprite.dataset.fallback = '0';
+
+  // SINGLE-char scenes: force upper-body so everyone is the same size. Full/pose
+  // sprites have wildly different aspect ratios (e.g. 레온 f_113 = 0.397, a very
+  // tall full-body) and at .fullbody 90% they tower over upper-body characters.
+  if (charLayer.dataset.count === '1' && (pose === 'full' || pose === 'pose')) {
+    pose = 'upper';
+  }
 
   sprite.classList.toggle('fullbody', pose === 'full' || pose === 'pose');
   if (pose === 'pose') {
