@@ -34,7 +34,7 @@
     --radius-sm: 10px;
     --glass: rgba(14, 11, 24, 0.72);
     --glass-strong: rgba(10, 8, 18, 0.9);
-    --kb: 0px;   /* JS sets this to the on-screen keyboard height */
+    --vvh: 100dvh;   /* JS sets this to the visible area height (visualViewport) */
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -159,23 +159,25 @@
   }
   #deleteBtn:hover { color: var(--red); }
 
-  /* GAME SCREEN — full screen, exactly like #apiScreen (no strip).
-     Only the input bar shifts up for the keyboard; the screen itself stays put. */
+  /* GAME SCREEN — 100vh (852 = true full screen on iOS) minus the keyboard.
+     Keyboard closed: full screen (no strip). Keyboard open: shrinks to the
+     visible area so the input (absolute bottom:0) sits right above the keyboard. */
   #gameScreen {
     display: none;
     position: fixed;
-    inset: 0;
+    top: 0; left: 0;
+    width: 100%;
+    height: var(--vvh, 100dvh);   /* = visible area (shrinks above keyboard). bg (100vh) fills behind. */
     overflow: hidden;
     z-index: 3;   /* above bg (0) / overlay (1) / character (2) */
   }
 
-  /* BACKGROUND — fixed inset:0 only reaches the SMALL viewport on iOS (leaves a
-     black strip at the very bottom). Overshoot top & bottom to guarantee the
-     whole physical screen (incl. the home-indicator strip) is covered. */
+  /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
+     behind everything (incl. behind the keyboard). */
   #bgLayer {
     position: fixed;
-    left: 0; right: 0;
-    top: -12px; bottom: -90px;
+    top: 0; left: 0;
+    width: 100%; height: 100vh;
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
@@ -183,8 +185,8 @@
   }
   #bgOverlay {
     position: fixed;
-    left: 0; right: 0;
-    top: -12px; bottom: -90px;
+    top: 0; left: 0;
+    width: 100%; height: 100vh;
     background: linear-gradient(to top, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 45%, rgba(0,0,0,0.2) 100%);
     z-index: 1;
   }
@@ -192,7 +194,7 @@
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
   #charLayer {
     position: fixed;
-    top: 0; bottom: -60px;   /* overshoot so feet reach the true screen bottom */
+    top: 0; height: 100vh;   /* true full screen so feet reach the real bottom */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -336,12 +338,12 @@
     75% { content: '...'; }
   }
 
-  /* INPUT BAR */
+  /* INPUT BAR — sits at the bottom of #gameScreen, which already shrinks
+     above the keyboard, so it's always right above the keyboard. */
   #inputBar {
     position: absolute;
-    bottom: var(--kb, 0); left: 0; right: 0;   /* floats above the keyboard */
+    bottom: 0; left: 0; right: 0;
     z-index: 11;
-    transition: bottom 0.15s ease;
     display: none;
     flex-direction: column;
     padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
@@ -595,10 +597,6 @@
 </div>
 
 <div id="errbox" onclick="this.style.display='none'" style="position:fixed;top:70px;left:8px;right:8px;z-index:99999;background:rgba(150,20,20,0.96);color:#fff;font:11px/1.4 monospace;padding:9px 10px;border-radius:8px;display:none;white-space:pre-wrap;word-break:break-word"></div>
-<div id="vpdbg" onclick="this.style.display='none'" style="position:fixed;top:120px;left:8px;z-index:99999;background:rgba(0,0,0,0.9);color:#3f6;font:12px/1.5 monospace;padding:8px 10px;border-radius:6px;white-space:pre"></div>
-<!-- markers: red bar at fixed bottom:0, blue bar at dvh bottom -->
-<div style="position:fixed;bottom:0;left:0;right:0;height:5px;background:red;z-index:99998;pointer-events:none"></div>
-<div style="position:fixed;top:calc(100dvh - 5px);left:0;right:0;height:5px;background:#0af;z-index:99998;pointer-events:none"></div>
 
 <!-- BACKGROUND + CHARACTER: full-screen, OUTSIDE #gameScreen so they're never
      clipped/shrunk by the visible-area layout (always fills like #apiScreen) -->
@@ -610,7 +608,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v41</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v42</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -669,20 +667,6 @@ function showErr(label, detail) {
   } catch {}
 }
 window.onerror = function(msg, src, line, col) { showErr('JS ERROR', msg + '  @' + line + ':' + col); };
-function measureViewports() {
-  const probe = (u) => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:0;left:0;width:0;visibility:hidden;height:100'+u; document.body.appendChild(d); const h=d.offsetHeight; d.remove(); return h; };
-  const el = document.getElementById('vpdbg'); if (!el) return;
-  el.textContent =
-    'innerH  '+window.innerHeight+'\n'+
-    'screenH '+window.screen.height+'\n'+
-    '100vh   '+probe('vh')+'\n'+
-    '100svh  '+probe('svh')+'\n'+
-    '100lvh  '+probe('lvh')+'\n'+
-    '100dvh  '+probe('dvh')+'\n'+
-    'vvH     '+(window.visualViewport?Math.round(window.visualViewport.height):'-');
-}
-window.addEventListener('load', () => setTimeout(measureViewports, 300));
-window.addEventListener('resize', measureViewports);
 window.addEventListener('unhandledrejection', function(ev) {
   const r = ev.reason;
   showErr('PROMISE', (r && (r.message || r.toString())) || String(r));
@@ -1778,9 +1762,10 @@ function setupInputHandlers() {
 function setupViewportHeight() {
   const vv = window.visualViewport;
   const apply = () => {
-    // keyboard height = how much the visual viewport shrank from the layout viewport
-    const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-    document.documentElement.style.setProperty('--kb', kb + 'px');
+    // Size the UI layer to the currently VISIBLE area (shrinks when keyboard opens).
+    // The background is height:100vh (full screen) and fills behind, so no strip.
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', h + 'px');
     if (window.scrollY) window.scrollTo(0, 0);
   };
   apply();
