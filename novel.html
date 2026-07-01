@@ -222,7 +222,7 @@
   #charLayer { gap: 0; }
   .char-sprite {
     height: 88%;
-    max-width: 90vw;   /* v52 was 98vw; nudged down a touch for the single shot */
+    max-width: 80vw;   /* single shot: clearly smaller (98/90vw still looked big) */
     object-fit: contain;
     object-position: bottom center;
     /* --ty raises the sprite up (single small lift; multi more via their rules). */
@@ -282,17 +282,16 @@
        bottom (this layer is z3, ABOVE the character z2), so the dialogue text
        sits on a strong dark backdrop (easy on the eyes). */
     background: linear-gradient(to top,
-      rgba(4,4,9,0.96) 0%,
-      rgba(4,4,9,0.93) 18%,
-      rgba(4,4,9,0.75) 34%,
-      rgba(4,4,9,0.42) 50%,
-      rgba(4,4,9,0.14) 64%,
+      rgba(6,6,12,0.8) 0%,
+      rgba(6,6,12,0.7) 18%,
+      rgba(6,6,12,0.48) 34%,
+      rgba(6,6,12,0.24) 50%,
+      rgba(6,6,12,0.07) 64%,
       transparent 74%);
   }
   #dialogueContent {
-    /* text lifted well off the bottom (Frontia sits the text in the lower third,
-       not glued to the edge) */
-    padding: 40px 30px calc(96px + env(safe-area-inset-bottom));
+    /* text lifted well off the bottom (Frontia sits the text in the lower third) */
+    padding: 40px 30px calc(116px + env(safe-area-inset-bottom));
   }
   #nameplate {
     display: flex;
@@ -694,7 +693,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v54</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v55</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
