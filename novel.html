@@ -168,6 +168,7 @@
     width: 100%;
     height: var(--vvh);
     overflow: hidden;
+    z-index: 3;   /* above bg (0) / overlay (1) / character (2) */
   }
 
   /* BACKGROUND — inset:0 exactly like #apiScreen (which IS fullscreen).
@@ -591,13 +592,17 @@
   <button id="deleteBtn" onclick="deleteSave()">저장 데이터 삭제</button>
 </div>
 
-<!-- GAME SCREEN -->
+<!-- BACKGROUND + CHARACTER: full-screen, OUTSIDE #gameScreen so they're never
+     clipped/shrunk by the visible-area layout (always fills like #apiScreen) -->
+<div id="bgLayer"></div>
+<div id="bgOverlay"></div>
+<div id="charLayer"></div>
+
+<!-- GAME SCREEN (UI layer, sized to visible area) -->
 <div id="gameScreen">
-  <div id="bgLayer"></div>
-  <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v34</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v35</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -614,8 +619,6 @@
     <div class="stat-row"><span class="stat-label">위치</span><span class="stat-val" id="stLocation">항구도시 베른</span></div>
     <span class="stat-val" id="stName" style="display:none">카이든</span>
   </div>
-
-  <div id="charLayer"></div>
 
   <div id="dialogueBox">
     <div id="nameplate" class="narrator">
