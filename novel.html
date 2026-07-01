@@ -159,13 +159,12 @@
   }
   #deleteBtn:hover { color: var(--red); }
 
-  /* GAME SCREEN — sized to the VISIBLE area (shrinks above keyboard).
-     UI children are absolute inside this; bg/char are fixed & full behind. */
+  /* GAME SCREEN — full screen, exactly like #apiScreen (no strip).
+     Only the input bar shifts up for the keyboard; the screen itself stays put. */
   #gameScreen {
     display: none;
     position: fixed;
-    top: 0; left: 0; right: 0;
-    bottom: var(--kb, 0);   /* 0 = real screen bottom (852) like #apiScreen; = keyboard height when open */
+    inset: 0;
     overflow: hidden;
     z-index: 3;   /* above bg (0) / overlay (1) / character (2) */
   }
@@ -337,8 +336,9 @@
   /* INPUT BAR */
   #inputBar {
     position: absolute;
-    bottom: 0; left: 0; right: 0;
+    bottom: var(--kb, 0); left: 0; right: 0;   /* floats above the keyboard */
     z-index: 11;
+    transition: bottom 0.15s ease;
     display: none;
     flex-direction: column;
     padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
@@ -603,7 +603,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v38</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v39</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
