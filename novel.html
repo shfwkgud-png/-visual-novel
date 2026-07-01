@@ -221,8 +221,13 @@
   }
   #charLayer { gap: 0; }
   .char-sprite {
-    height: 88%;
-    max-width: 80vw;   /* single shot: clearly smaller (98/90vw still looked big) */
+    /* SINGLE char sized by HEIGHT (not width) so every character is the SAME
+       apparent size regardless of sprite aspect. Width-based sizing made narrow
+       sprites (레온 0.568) huge and wide ones (프레야 0.766) small. max-width is
+       high so height wins for all aspects (only clamps near-square sprites).
+       NOTE: 2-char sizes are fine — only this single-char base changed. */
+    height: 49%;
+    max-width: 108vw;
     object-fit: contain;
     object-position: bottom center;
     /* --ty raises the sprite up (single small lift; multi more via their rules). */
@@ -693,7 +698,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v55</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v56</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
