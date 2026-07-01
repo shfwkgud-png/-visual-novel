@@ -34,6 +34,7 @@
     --radius-sm: 10px;
     --glass: rgba(14, 11, 24, 0.72);
     --glass-strong: rgba(10, 8, 18, 0.9);
+    --vvh: 100dvh;   /* JS overrides with visualViewport.height */
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -158,11 +159,14 @@
   }
   #deleteBtn:hover { color: var(--red); }
 
-  /* GAME SCREEN — same fullscreen lock as #apiScreen */
+  /* GAME SCREEN — sized to the VISIBLE area (shrinks above keyboard).
+     UI children are absolute inside this; bg/char are fixed & full behind. */
   #gameScreen {
     display: none;
     position: fixed;
-    inset: 0;
+    top: 0; left: 0;
+    width: 100%;
+    height: var(--vvh);
     overflow: hidden;
   }
 
@@ -216,7 +220,7 @@
 
   /* DIALOGUE — floating text over a light scrim (bg shows through) */
   #dialogueBox {
-    position: fixed;
+    position: absolute;
     bottom: 0; left: 0; right: 0;
     z-index: 10;
     padding: 54px 30px calc(54px + env(safe-area-inset-bottom));
@@ -332,7 +336,7 @@
 
   /* INPUT BAR */
   #inputBar {
-    position: fixed;
+    position: absolute;
     bottom: 0; left: 0; right: 0;
     z-index: 11;
     display: none;
@@ -385,7 +389,7 @@
 
   /* TOP BAR */
   #topBar {
-    position: fixed;
+    position: absolute;
     top: 0; left: 0; right: 0;
     z-index: 20;
     display: flex;
@@ -424,7 +428,7 @@
 
   /* STATUS PANEL */
   #statusPanel {
-    position: fixed;
+    position: absolute;
     top: calc(48px + env(safe-area-inset-top)); right: 14px;
     z-index: 15;
     background: var(--glass-strong);
@@ -593,7 +597,7 @@
   <div id="bgOverlay"></div>
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v33</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v34</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1072,6 +1076,7 @@ function startGame(isContinue) {
 }
 
 async function beginStory() {
+  setBg('alley'); // default scene bg so the first screen is never empty
   const intro = {
     role: 'user',
     content: `게임 시작. 첫 장면을 보여줘. 항구도시 베른의 뒷골목, 새벽. 주인공 ${playerName}이(가) 부두 막일을 마치고 돌아오는 장면으로 시작해줘. 프레야를 처음 만나는 계기를 만들어줘.`
@@ -1727,28 +1732,25 @@ function setupInputHandlers() {
   });
 
   setupKeyboardHandling();
-  window.addEventListener('resize', updateDbg);
-  setTimeout(updateDbg, 150);
+  setupViewportHeight();
 }
 
-// Keep the background fixed and float ONLY the input bar above the keyboard
-// (instead of letting iOS push the whole page up).
-function setupKeyboardHandling() {
-  const vv = window.visualViewport;
-  if (!vv) return;
-  const onChange = () => {
-    // Undo any iOS auto-scroll so the locked page never shifts
-    if (window.scrollY !== 0) window.scrollTo(0, 0);
-    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-    inputBar.style.transform = kb > 1 ? `translateY(-${kb}px)` : '';
+// Size the UI layer to the VISIBLE area (above the keyboard). The bg stays
+// fixed & full behind; the UI (dialogue/input) is absolute inside this area,
+// so the keyboard just overlays — no scroll, no shift. (Frontia-style)
+function setupViewportHeight() {
+  const apply = () => {
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', h + 'px');
+    if (window.scrollY) window.scrollTo(0, 0);
   };
-  vv.addEventListener('resize', onChange);
-  vv.addEventListener('scroll', onChange);
-  userInput.addEventListener('focus', () => { setTimeout(onChange, 60); setTimeout(onChange, 300); });
-  userInput.addEventListener('blur', () => {
-    inputBar.style.transform = '';
-    setTimeout(() => window.scrollTo(0, 0), 50);
-  });
+  apply();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', apply);
+    window.visualViewport.addEventListener('scroll', apply);
+  }
+  window.addEventListener('resize', apply);
+  window.addEventListener('orientationchange', () => setTimeout(apply, 100));
 }
 
 // ===== TEMP DEBUG READOUT =====
@@ -1925,10 +1927,10 @@ function showChoices(choices) {
   const choiceDiv = document.createElement('div');
   choiceDiv.id = 'choiceBox';
   choiceDiv.style.cssText = `
-    position:fixed; top:calc(50px + env(safe-area-inset-top)); left:0; right:0;
+    position:absolute; top:calc(50px + env(safe-area-inset-top)); left:0; right:0;
     display:flex; flex-direction:column; align-items:center;
     gap:6px; z-index:20; padding:0 14px;
-    max-height:60vh; overflow-y:auto;
+    max-height:55%; overflow-y:auto;
   `;
 
   choices.forEach((choice, i) => {
@@ -1943,7 +1945,7 @@ function showChoices(choices) {
   });
 
   // No "직접 입력" button — the input box below is always available for free input
-  document.body.appendChild(choiceDiv);
+  document.getElementById('gameScreen').appendChild(choiceDiv);
 }
 
 // Lift dialogue text above the input bar so it stays readable
