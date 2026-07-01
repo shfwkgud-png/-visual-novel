@@ -592,6 +592,8 @@
   <button id="deleteBtn" onclick="deleteSave()">저장 데이터 삭제</button>
 </div>
 
+<div id="errbox" onclick="this.style.display='none'" style="position:fixed;top:70px;left:8px;right:8px;z-index:99999;background:rgba(150,20,20,0.96);color:#fff;font:11px/1.4 monospace;padding:9px 10px;border-radius:8px;display:none;white-space:pre-wrap;word-break:break-word"></div>
+
 <!-- BACKGROUND + CHARACTER: full-screen, OUTSIDE #gameScreen so they're never
      clipped/shrunk by the visible-area layout (always fills like #apiScreen) -->
 <div id="bgLayer"></div>
@@ -602,7 +604,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v35</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v36</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -653,6 +655,19 @@
 </div>
 
 <script>
+// ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
+function showErr(label, detail) {
+  try {
+    const e = document.getElementById('errbox');
+    if (e) { e.style.display = 'block'; e.textContent = label + ': ' + detail; }
+  } catch {}
+}
+window.onerror = function(msg, src, line, col) { showErr('JS ERROR', msg + '  @' + line + ':' + col); };
+window.addEventListener('unhandledrejection', function(ev) {
+  const r = ev.reason;
+  showErr('PROMISE', (r && (r.message || r.toString())) || String(r));
+});
+
 // ===== CONFIG =====
 let API_KEY = '';
 let gameHistory = [];
