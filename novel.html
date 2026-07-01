@@ -40,16 +40,18 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body { overflow: hidden; overscroll-behavior: none; }
-  body {
+body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Noto Sans KR', sans-serif;
-    /* Lock the page exactly like #apiScreen so nothing can scroll */
-    position: fixed;
-    inset: 0;
+
+    /* v46 TEST - body fixed 제거 */
+    /* position: fixed; */
+    /* inset: 0; */
+
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-  }
+}
 
   /* API KEY SCREEN */
   #apiScreen {
@@ -614,8 +616,11 @@
   .redo-btn:active { transform: scale(0.95); border-color: var(--gold); color: var(--text); }
 
   /* MOBILE */
-  @media (max-width: 600px) {
-    .char-sprite { height: 100%; max-width: 112vw; }
+@media (max-width: 600px) {
+    /* .char-sprite {
+        height: 100%;
+        max-width: 112vw;
+    } */
     #dialogueText { font-size: 0.84rem; line-height: 1.68; }
     #dialoguePanel { min-height: 78px; }
     #speakerName { font-size: 0.85rem; }
