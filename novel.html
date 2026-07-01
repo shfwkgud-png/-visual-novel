@@ -204,23 +204,30 @@
     z-index: 2;
     pointer-events: none;
   }
+  #charLayer { gap: 0; }
   .char-sprite {
-    height: 100%;
-    max-width: 112vw;
+    height: 96%;
+    max-width: 108vw;
     object-fit: contain;
     object-position: bottom center;
     transition: filter 0.4s ease, opacity 0.5s ease;
     opacity: 0;
+    flex-shrink: 1;
+    min-width: 0;
   }
   .char-sprite.visible { opacity: 1; }
-  .char-sprite.speaking {
-    filter: none;
-    z-index: 3;
-  }
-  .char-sprite.silent {
-    filter: brightness(0.45) saturate(0.7);
-    z-index: 2;
-  }
+  .char-sprite.speaking { filter: none; z-index: 3; }
+  .char-sprite.silent { filter: brightness(0.45) saturate(0.7); z-index: 2; }
+  /* Multiple characters: shrink so they fit side by side without cropping (#1) */
+  #charLayer[data-count="2"] { gap: 2vw; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 52vw; height: 88%; }
+  #charLayer[data-count="3"] { gap: 1vw; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 36vw; height: 80%; }
+  #charLayer[data-count="4"] { gap: 0.5vw; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 27vw; height: 74%; }
+  /* Full-body sprites are taller — pull down + shrink so the top isn't cut (#5) */
+  .char-sprite.fullbody { height: 88%; }
+  #charLayer[data-count="2"] .char-sprite.fullbody { height: 80%; }
 
   /* DIALOGUE — floating text over a light scrim (bg shows through) */
   #dialogueBox {
@@ -431,36 +438,51 @@
     color: #1a1208; border-color: var(--gold); font-weight: 700;
   }
 
-  /* STATUS PANEL */
+  /* STATUS PANEL — full-screen, 2 tabs (Met Characters / Current Situation) */
   #statusPanel {
-    position: absolute;
-    top: calc(48px + env(safe-area-inset-top)); right: 14px;
-    z-index: 15;
-    background: var(--glass-strong);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(201,168,76,0.3);
-    padding: 14px 16px;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    min-width: 168px;
+    position: fixed; inset: 0;
+    z-index: 50;
+    background: rgba(5,4,12,0.97);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: none;
-    border-radius: var(--radius);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-    animation: panelIn 0.22s ease;
+    flex-direction: column;
   }
-  @keyframes panelIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-  #statusPanel.visible { display: block; }
-  #statusPanel .panel-title {
-    color: var(--gold); font-family: 'Noto Serif KR', serif;
-    font-size: 0.82rem; letter-spacing: 0.1em;
-    padding-bottom: 8px; margin-bottom: 8px;
+  #statusPanel.visible { display: flex; }
+  #statusHeader {
+    display: flex; align-items: center; gap: 10px;
+    padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
     border-bottom: 1px solid rgba(201,168,76,0.2);
+    flex-shrink: 0;
   }
-  .stat-row { display: flex; justify-content: space-between; gap: 16px; margin: 7px 0; align-items: center; }
-  .stat-label { color: var(--text-dim); }
-  .stat-val { color: var(--text); font-weight: 500; }
-  .stat-val.gold-val { color: var(--gold); }
+  #statusTabs { display: flex; gap: 8px; flex: 1; }
+  .status-tab {
+    background: rgba(20,16,32,0.6); border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-dim); padding: 8px 16px; border-radius: 20px;
+    cursor: pointer; font-size: 0.82rem; font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.18s;
+  }
+  .status-tab.active { background: linear-gradient(135deg, var(--gold), #b8923a); color: #1a1208; border-color: var(--gold); font-weight: 700; }
+  #statusClose { background: var(--glass); border: 1px solid rgba(201,168,76,0.3); color: var(--text); padding: 7px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
+  #statusBody { flex: 1; overflow-y: auto; padding: 14px 16px calc(20px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+
+  .sit-block { margin-bottom: 18px; }
+  .sit-label { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 0.82rem; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .sit-val { color: #e6e0d4; font-size: 0.9rem; line-height: 1.6; background: rgba(255,255,255,0.04); padding: 10px 13px; border-radius: 10px; border-left: 2px solid rgba(201,168,76,0.35); }
+  .sit-tag { display: inline-block; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; margin: 3px 4px 3px 0; }
+  .sit-tag.injury { background: rgba(139,32,32,0.18); border-color: rgba(180,60,60,0.4); color: #e79; }
+
+  .char-card { display: flex; gap: 12px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .char-card.dead { opacity: 0.55; border-color: rgba(139,32,32,0.4); }
+  .char-card img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; object-position: top center; border: 1.5px solid rgba(201,168,76,0.5); flex-shrink: 0; background: var(--panel); }
+  .char-info { flex: 1; min-width: 0; }
+  .char-name { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
+  .char-role { color: var(--text-dim); font-size: 0.72rem; margin-bottom: 6px; }
+  .char-rel { color: #d8d2c6; font-size: 0.82rem; line-height: 1.45; margin-bottom: 6px; }
+  .char-meta { font-size: 0.74rem; color: var(--text-dim); }
+  .intimacy-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 5px; }
+  .intimacy-fill { height: 100%; background: linear-gradient(90deg, #b8923a, var(--gold)); border-radius: 3px; }
+  .dead-badge { color: #e66; font-size: 0.72rem; font-weight: 700; }
 
   /* CHOICE BUTTONS — transparent rows at top (Frontia-style) */
   .choice-btn {
@@ -608,7 +630,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v42</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v43</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -618,12 +640,21 @@
   </div>
 
   <div id="statusPanel">
-    <div class="panel-title" id="stPanelName">⚜ 카이든</div>
-    <div class="stat-row"><span class="stat-label">신분</span><span class="stat-val" id="stStatus">신원불명</span></div>
-    <div class="stat-row"><span class="stat-label">평판</span><span class="stat-val" id="stRep">0</span></div>
-    <div class="stat-row"><span class="stat-label">골드</span><span class="stat-val gold-val" id="stGold">3G</span></div>
-    <div class="stat-row"><span class="stat-label">위치</span><span class="stat-val" id="stLocation">항구도시 베른</span></div>
-    <span class="stat-val" id="stName" style="display:none">카이든</span>
+    <div id="statusHeader">
+      <div id="statusTabs">
+        <button class="status-tab active" id="tabChars" onclick="switchStatusTab('chars')">만난 캐릭터</button>
+        <button class="status-tab" id="tabSituation" onclick="switchStatusTab('situation')">현재 상황</button>
+      </div>
+      <button id="statusClose" onclick="toggleStatus()">닫기</button>
+    </div>
+    <div id="statusBody"></div>
+    <!-- hidden legacy els for updateStatusUI compatibility -->
+    <span id="stName" style="display:none">카이든</span>
+    <span id="stStatus" style="display:none"></span>
+    <span id="stRep" style="display:none"></span>
+    <span id="stGold" style="display:none"></span>
+    <span id="stLocation" style="display:none"></span>
+    <span id="stPanelName" style="display:none"></span>
   </div>
 
   <div id="dialogueBox">
@@ -694,8 +725,11 @@ let gameState = {
   rep: 0,
   gold: 3,
   location: '항구도시 베른',
+  time: '1일차 새벽',
   day: 1,
-  flags: {}
+  flags: {},
+  metChars: {},   // { f106: { name, role, relationship, intimacy, condition, note } }
+  player: { abilities: [], injuries: ['오른손목 죄인 낙인'], note: '' }
 };
 
 const THINKING_MSGS = [
@@ -764,6 +798,12 @@ const WORLD_PROMPT = `당신은 다크 판타지 비주얼 노벨 "낙인의 검
 - 매 응답 시 반드시 JSON 형식으로만 응답할 것 (마크다운 코드블록 없이 순수 JSON)
 - 응답 언어: 한국어
 
+## 플레이어 입력 처리 규칙 (엄수):
+- **플레이어의 입력(행동/대사)은 이미 일어난 것으로 간주한다.** 플레이어의 말·행동을 당신이 다시 서술하거나 각색·확장하지 말 것. 그 직후 상황부터 이어서 응답할 것
+  - 예: 플레이어가 "(검을 들며) 칼을 뽑아라"라고 입력하면 → 그 대사/행동은 화면에 이미 표시되므로, 당신은 "그가 검을 뽑았다 덤벼라!"처럼 그걸 다시 쓰지 말고, **상대의 반응·결과부터** 서술할 것
+  - 오타가 명백하면 의미는 유지하되 내부적으로만 보정해서 이해할 것
+- **주인공 대사를 함부로 지어내지 말 것.** 플레이어가 말하지 않은 주인공의 대사를 당신이 창작하는 것은 최소화. 꼭 필요한 짧은 반응(신음·감탄) 외에는 주인공 대사를 새로 만들지 말 것. 주인공의 말은 플레이어가 정한다
+
 ## 분량·구성 규칙 (반드시 지킬 것):
 - 한 응답은 몰입감 있고 풍부하게: narration 1~2개(각 2~4문장) + 캐릭터 대사 2~4개가 이상적인 분량. 너무 짧고 빈약하게 끝내지 말 것
 - 장면을 오감으로 생생하게 묘사하되, 끊기지 않고 자연스럽게 이어지는 흐름을 만들 것
@@ -790,10 +830,27 @@ const WORLD_PROMPT = `당신은 다크 판타지 비주얼 노벨 "낙인의 검
     "gold": 숫자 변화량 (없으면 0),
     "location": "새 위치 (변화 없으면 null)",
     "status": "새 신분 (변화 없으면 null)",
+    "time": "현재 시간대 (예: '3일차 새벽', 변화 없으면 null)",
+    "chars": {
+      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)" }
+    },
+    "player": {
+      "abilities": ["새로 밝혀지거나 습득한 능력 (예: 중력 제어(초급))"],
+      "injuries": ["신체/정신 이슈 (예: 오른손목 낙인, 왼쪽 눈 실명)"],
+      "note": "현재 처한 상황 요약"
+    },
     "flags": {}
   },
   "choices": ["선택지1", "선택지2"]
 }
+
+## 상태 추적 규칙 (매우 중요 — 할루시네이션 방지):
+- **캐릭터 관계·상태는 절대 임의로 뒤집지 말 것.** 이미 "A와 B는 아는 사이"라고 정해졌으면 그 관계를 유지. 갑자기 처음 보는 사이처럼 굴게 하지 말 것. 아래 [현재 상태] 정보를 반드시 참고해 일관성 유지
+- 장면에서 캐릭터 관계/친밀도/신체상태가 변하면 chars에 해당 char_id로 반영 (변화 있을 때만)
+- **사망한 캐릭터는 condition에 "사망" 기록하고, 이후 절대 재등장/생존시키지 말 것**
+- 신체 손상(팔 절단, 실명 등)·정신 이상이 생기면 chars(NPC) 또는 player.injuries(주인공)에 기록하고 이후 이야기에 반영 (잘린 팔은 계속 없는 상태)
+- 주인공의 숨겨진 능력·설정이 드러나거나 능력을 습득하면 player.abilities에 기록
+- 변화가 없는 필드는 넣지 말 것 (토큰 절약)
 
 ## 배경 그룹 (background 필드에 아래 키만 사용):
 도시: alley(골목), coastal_port(항구/부두), coastal_market(시장), coastal_tavern(술집), coastal_workshop(공방), bakery(빵집), fairground(축제장), barracks(막사)
@@ -808,6 +865,12 @@ const WORLD_PROMPT = `당신은 다크 판타지 비주얼 노벨 "낙인의 검
 upper: normal=1, smile=2, angry=3, sad=4, pain=5, worry=6
 full: normal=1, reaction=2, weapon=3
 pose: 전투씬 전용
+
+## pose(구도) 선택 규칙:
+- **기본은 항상 "upper"(상반신).** 거의 모든 대사는 upper를 쓸 것
+- "full"(전신)은 **전신을 보여줄 특별한 이유가 있을 때만** (첫 등장 소개, 전투 자세, 의상/전신 강조 등). 그냥 대화엔 절대 full 쓰지 말 것
+- "pose"는 본격 전투 장면에서만
+- 성적/노출 장면이라고 무조건 full을 쓰지 말 것. 맥락 없이 full 남발 금지
 
 ## 스토리 원칙:
 - 주인공은 고난과 굴욕을 자주 겪음. 활협전 스타일
@@ -834,6 +897,29 @@ function getCharPrompt(charIds) {
     if (c) prompt += `- ${id} | ${c.name} | ${c.role} | ${c.personality}\n`;
   });
   return prompt;
+}
+
+// Compact state injected each turn so the AI keeps relationships/status consistent
+function buildStatePrompt() {
+  let s = '\n\n## 현재 게임 상태 (일관성 유지 필수):\n';
+  s += `주인공: ${gameState.name} | 신분 ${gameState.status} | 평판 ${gameState.rep} | 골드 ${gameState.gold} | 위치 ${gameState.location} | ${gameState.time || ''}\n`;
+  if (gameState.player) {
+    if (gameState.player.abilities?.length) s += `주인공 능력: ${gameState.player.abilities.join(', ')}\n`;
+    if (gameState.player.injuries?.length) s += `주인공 신체/이상: ${gameState.player.injuries.join(', ')}\n`;
+    if (gameState.player.note) s += `주인공 상황: ${gameState.player.note}\n`;
+  }
+  const met = gameState.metChars || {};
+  const ids = Object.keys(met);
+  if (ids.length) {
+    s += '이미 만난 캐릭터 (관계·상태 절대 뒤집지 말 것):\n';
+    ids.forEach(id => {
+      const m = met[id];
+      const dead = m.condition && m.condition.includes('사망');
+      s += `- ${m.name || id}${dead ? ' [사망—재등장 금지]' : ''}: 관계 ${m.relationship || '-'}, 친밀도 ${m.intimacy ?? '-'}, 상태 ${m.condition || '멀쩡함'}${m.note ? ', ' + m.note : ''}\n`;
+    });
+  }
+  if (gameState.flags && Object.keys(gameState.flags).length) s += `플래그: ${JSON.stringify(gameState.flags)}\n`;
+  return s;
 }
 
 // ===== BACKGROUND GROUPS =====
@@ -1422,7 +1508,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   const worldPrompt = WORLD_PROMPT.split('카이든').join(playerName);
   const playerBlock = `\n\n## 주인공 설정 (플레이어 지정 — 최우선 반영):\n- 이름: ${playerName}\n- 주인공은 얼굴 스프라이트가 없음. 주인공 대사는 speaker를 "${playerName}", char_id를 null로 할 것`
     + (playerDesc.trim() ? `\n- 추가 특징(반드시 반영): ${playerDesc.trim()}` : '');
-  const systemContent = worldPrompt + playerBlock + charPrompt + '\n\n현재 게임 상태:\n' + JSON.stringify(gameState);
+  const systemContent = worldPrompt + playerBlock + charPrompt + buildStatePrompt();
   const messages = buildMessages();
 
   try {
@@ -1555,11 +1641,50 @@ function processResponse(data, activeCharIds) {
     if (s.gold) gameState.gold += s.gold;
     if (s.location) gameState.location = s.location;
     if (s.status) gameState.status = s.status;
+    if (s.time) gameState.time = s.time;
     if (s.flags) Object.assign(gameState.flags, s.flags);
+    // Merge character relationship/status updates
+    if (s.chars && typeof s.chars === 'object') {
+      for (const id in s.chars) {
+        const u = s.chars[id];
+        const base = CHARACTERS[id] || {};
+        const cur = gameState.metChars[id] || { name: base.name || id, role: base.role || '' };
+        gameState.metChars[id] = {
+          ...cur,
+          name: cur.name || base.name || id,
+          role: cur.role || base.role || '',
+          relationship: u.relationship ?? cur.relationship,
+          intimacy: (typeof u.intimacy === 'number') ? u.intimacy : cur.intimacy,
+          condition: u.condition ?? cur.condition,
+          note: u.note ?? cur.note
+        };
+      }
+    }
+    // Merge protagonist status
+    if (s.player && typeof s.player === 'object') {
+      const p = gameState.player;
+      const addUniq = (arr, items) => { (items || []).forEach(x => { if (x && !arr.includes(x)) arr.push(x); }); };
+      if (Array.isArray(s.player.abilities)) addUniq(p.abilities, s.player.abilities);
+      if (Array.isArray(s.player.injuries)) addUniq(p.injuries, s.player.injuries);
+      if (s.player.note) p.note = s.player.note;
+    }
     updateStatusUI();
   }
+  // Auto-register any speaking NPC as "met" even without explicit state_update
+  (data.dialogue || []).forEach(d => {
+    if (d.char_id && CHARACTERS[d.char_id] && !gameState.metChars[d.char_id]) {
+      const b = CHARACTERS[d.char_id];
+      gameState.metChars[d.char_id] = { name: b.name, role: b.role, relationship: '만남', intimacy: 10, condition: '멀쩡함', note: '' };
+    }
+  });
 
   dialogueQueue = [];
+
+  // Show the player's own input verbatim as the FIRST line of the turn (#6)
+  if (!replaying && window._pendingPlayerLine) {
+    dialogueQueue.push({ speaker: playerName, char_id: null, emotion: 'normal', text: window._pendingPlayerLine, pose: 'upper', isPlayerLine: true });
+    window._pendingPlayerLine = null;
+  }
 
   if (data.narration && data.narration.trim()) {
     splitNarration(data.narration).forEach(chunk => {
@@ -1595,6 +1720,7 @@ let currentPose = 'upper';
 function resetSprites() {
   charLayer.innerHTML = '';
   shownSprites = [];
+  charLayer.dataset.count = '0';
 }
 
 // Create + reveal a character's sprite the moment they first appear
@@ -1613,6 +1739,7 @@ function ensureSprite(charId) {
     this.onerror = function() { this.style.opacity = '0'; };
   };
   charLayer.appendChild(img);
+  charLayer.dataset.count = String(Math.min(4, shownSprites.length));
   setTimeout(() => img.classList.add('visible'), 30);
 }
 
@@ -1646,6 +1773,7 @@ function updateSpriteEmotion(charId, emotion, pose) {
   const num = charId.replace('f', '');
   sprite.dataset.fallback = '0';
 
+  sprite.classList.toggle('fullbody', pose === 'full' || pose === 'pose');
   if (pose === 'pose') {
     sprite.src = `character/25_pose/p_${num}.webp`;
   } else if (pose === 'full') {
@@ -2015,6 +2143,7 @@ async function sendMessage() {
 async function handlePlayerInput(text) {
   dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null });
   gameHistory.push({ role: 'user', content: text });
+  window._pendingPlayerLine = text;  // shown verbatim as the first line of the next response
   autoSave();
 
   const recentHistory = gameHistory.slice(-6);
@@ -2077,17 +2206,60 @@ function setBgFile(file) {
 }
 
 // ===== STATUS UI =====
+let statusTab = 'chars';
 function updateStatusUI() {
-  document.getElementById('stName').textContent = gameState.name;
-  document.getElementById('stPanelName').textContent = '⚜ ' + (gameState.name || playerName);
-  document.getElementById('stStatus').textContent = gameState.status;
-  document.getElementById('stRep').textContent = gameState.rep;
-  document.getElementById('stGold').textContent = gameState.gold + 'G';
-  document.getElementById('stLocation').textContent = gameState.location;
+  // legacy hidden fields (kept for save compatibility); re-render if panel open
+  if (statusPanel.classList.contains('visible')) renderStatusPanel();
 }
 
 function toggleStatus() {
   statusPanel.classList.toggle('visible');
+  if (statusPanel.classList.contains('visible')) renderStatusPanel();
+}
+
+function switchStatusTab(t) {
+  statusTab = t;
+  document.getElementById('tabChars').classList.toggle('active', t === 'chars');
+  document.getElementById('tabSituation').classList.toggle('active', t === 'situation');
+  renderStatusPanel();
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+function renderStatusPanel() {
+  const body = document.getElementById('statusBody');
+  if (statusTab === 'situation') {
+    const p = gameState.player || { abilities: [], injuries: [] };
+    let h = '';
+    h += `<div class="sit-block"><div class="sit-label">기본 정보</div><div class="sit-val">${esc(gameState.name)} · ${esc(gameState.status)} · 평판 ${gameState.rep} · <span style="color:var(--gold)">${gameState.gold}G</span></div></div>`;
+    h += `<div class="sit-block"><div class="sit-label">시간 · 장소</div><div class="sit-val">${esc(gameState.time || '-')} · ${esc(gameState.location)}</div></div>`;
+    h += `<div class="sit-block"><div class="sit-label">능력</div><div>${(p.abilities && p.abilities.length) ? p.abilities.map(a => `<span class="sit-tag">${esc(a)}</span>`).join('') : '<span class="char-meta">아직 없음</span>'}</div></div>`;
+    h += `<div class="sit-block"><div class="sit-label">신체 · 상태</div><div>${(p.injuries && p.injuries.length) ? p.injuries.map(a => `<span class="sit-tag injury">${esc(a)}</span>`).join('') : '<span class="char-meta">멀쩡함</span>'}</div></div>`;
+    if (p.note) h += `<div class="sit-block"><div class="sit-label">현재 상황</div><div class="sit-val">${esc(p.note)}</div></div>`;
+    body.innerHTML = h;
+    return;
+  }
+  // chars tab
+  const met = gameState.metChars || {};
+  const ids = Object.keys(met);
+  if (!ids.length) { body.innerHTML = '<div class="char-meta" style="text-align:center;padding:40px 0">아직 만난 인물이 없습니다.</div>'; return; }
+  body.innerHTML = ids.map(id => {
+    const m = met[id];
+    const num = id.replace('f', '');
+    const dead = m.condition && m.condition.includes('사망');
+    const intim = Math.max(0, Math.min(100, m.intimacy ?? 0));
+    return `<div class="char-card ${dead ? 'dead' : ''}">
+      <img src="character/25_upper/${num}_1.webp" onerror="this.style.visibility='hidden'" alt="">
+      <div class="char-info">
+        <div class="char-name">${esc(m.name || id)} ${dead ? '<span class="dead-badge">✝ 사망</span>' : ''}</div>
+        <div class="char-role">${esc(m.role || '')}</div>
+        <div class="char-rel">${esc(m.relationship || '-')}</div>
+        ${m.note ? `<div class="char-meta">📌 ${esc(m.note)}</div>` : ''}
+        ${m.condition && !dead ? `<div class="char-meta">상태: ${esc(m.condition)}</div>` : ''}
+        ${!dead ? `<div class="char-meta">친밀도 ${intim}<div class="intimacy-bar"><div class="intimacy-fill" style="width:${intim}%"></div></div></div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function showDialogue(dialogues) {
