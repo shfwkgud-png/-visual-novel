@@ -40,6 +40,11 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body { overflow: hidden; overscroll-behavior: none; }
+  /* DIAGNOSTIC (v46): distinct dark-purple so we can identify what paints the
+     bottom strip. If the strip turns purple -> it's the root canvas (fixable in
+     CSS). If it stays flat #0a0a0f black -> it's iOS theme-color chrome (needs
+     manifest change + re-add to home screen). */
+  html { background: #2a0a3a; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -174,13 +179,11 @@
 
   /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
      behind everything (incl. behind the keyboard). */
-  /* Decorative full-bleed layers. iOS home-screen PWA clamps fixed 100vh to the
-     SMALL viewport (793), leaving a 59px black strip at the bottom. Since these
-     are purely behind everything, we OVERSHOOT past the bottom (bottom:-200px):
-     device-independent, guarantees full coverage on any phone. */
   #bgLayer {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: -200px;
+    top: 0; left: 0; width: 100%;
+    height: 100vh;    /* fallback */
+    height: 100lvh;   /* iOS large viewport = 852 (not clamped 793) */
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
@@ -188,7 +191,9 @@
   }
   #bgOverlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: -200px;
+    top: 0; left: 0; width: 100%;
+    height: 100vh;    /* fallback */
+    height: 100lvh;   /* iOS large viewport = 852 */
     background: linear-gradient(to top, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 45%, rgba(0,0,0,0.2) 100%);
     z-index: 1;
   }
@@ -228,14 +233,14 @@
      height drives the size (big). Negative margin overlaps the transparent side
      padding so both fit without cropping the actual characters. */
   #charLayer[data-count="2"] { gap: 0; }
-  #charLayer[data-count="2"] .char-sprite { max-width: 124vw; height: 86%; flex-shrink: 0; margin: 0 -28vw; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 100vw; height: 70%; flex-shrink: 0; margin: 0 -20vw; }
   #charLayer[data-count="3"] { gap: 0; }
-  #charLayer[data-count="3"] .char-sprite { max-width: 108vw; height: 76%; flex-shrink: 0; margin: 0 -24vw; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 88vw; height: 62%; flex-shrink: 0; margin: 0 -16vw; }
   #charLayer[data-count="4"] { gap: 0; }
-  #charLayer[data-count="4"] .char-sprite { max-width: 96vw;  height: 68%; flex-shrink: 0; margin: 0 -20vw; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 78vw;  height: 56%; flex-shrink: 0; margin: 0 -13vw; }
   /* Full-body sprites are taller — shrink so the top isn't cut (#5) */
   .char-sprite.fullbody { height: 90%; }
-  #charLayer[data-count="2"] .char-sprite.fullbody { height: 86%; }
+  #charLayer[data-count="2"] .char-sprite.fullbody { height: 66%; }
 
   /* DIALOGUE — OUTSIDE #gameScreen, full-height (100vh = true bottom 852) so it
      always reaches the real bottom (no black strip) AND does NOT rise with the
@@ -661,7 +666,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v45</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v46</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
