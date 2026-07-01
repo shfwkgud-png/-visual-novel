@@ -178,7 +178,9 @@
     /* pinned to the visual viewport: with --vvh height this tracks it exactly,
        so the input (absolute bottom) rides smoothly right above the keyboard */
     transform: translateY(var(--vvoff));
-    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
+    /* height animates so the input glides up in sync with the keyboard rising
+       (the focusin pre-shrink sets --vvh before the keyboard shows) */
+    transition: height 0.25s ease-out;
   }
 
   /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
@@ -393,27 +395,58 @@
   #navPrev { left: 10px; }
   #navNext { right: 10px; }
 
-  /* GENERATION PILL — player's line in a centered dark chip while the AI writes */
+  /* GENERATION PILL — player's line in a centered chip while the AI writes
+     (Frontia look: soft frosted dark chip, clean type, gentle breathing dots) */
   #genPill {
     display: none;
     position: fixed;
-    top: 42%; left: 50%;
+    top: 40%; left: 50%;
     transform: translate(-50%, -50%);
     z-index: 5;
-    max-width: 78vw;
-    padding: 10px 18px;
-    background: rgba(10,8,18,0.72);
-    border: 1px solid rgba(255,255,255,0.08);
+    max-width: 76vw;
+    padding: 13px 22px 11px;
+    background: rgba(12,11,20,0.58);
+    border: 0.5px solid rgba(255,255,255,0.13);
     border-radius: 14px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #e6dfd2;
-    font-size: 0.85rem;
-    line-height: 1.55;
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+    color: #f2ecdf;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    letter-spacing: 0.015em;
     text-align: center;
     pointer-events: none;
+    animation: pillIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
   }
-  #genPill .gen-text { word-break: break-word; }
+  @keyframes pillIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92) translateY(8px); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1) translateY(0); }
+  }
+  #genPill .gen-text {
+    display: block;
+    word-break: break-word;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+  #genPill .gen-dots {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+  }
+  #genPill .gen-dots i {
+    width: 4.5px; height: 4.5px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.25;
+    animation: dotBreathe 1.3s ease-in-out infinite;
+  }
+  #genPill .gen-dots i:nth-child(2) { animation-delay: 0.18s; }
+  #genPill .gen-dots i:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes dotBreathe {
+    0%, 100% { opacity: 0.22; transform: translateY(0); }
+    45%      { opacity: 1;    transform: translateY(-3px); }
+  }
 
   /* THINKING INDICATOR */
   .thinking-text {
@@ -741,13 +774,13 @@
 </div>
 
 <!-- GENERATION PILL — shows the player's typed line while the AI writes (Frontia) -->
-<div id="genPill"><span class="gen-text"></span><span class="thinking-dots"></span></div>
+<div id="genPill"><span class="gen-text"></span><span class="gen-dots"><i></i><i></i><i></i></span></div>
 
 <!-- GAME SCREEN (UI layer, sized to visible area) -->
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v60</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v61</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1307,7 +1340,10 @@ function showThinking() {
   // Frontia-style: show the player's own line in a centered pill with animated
   // dots (no atmospheric filler text).
   const pill = document.getElementById('genPill');
-  pill.querySelector('.gen-text').textContent = window._genText || '';
+  const gt = pill.querySelector('.gen-text');
+  gt.textContent = window._genText || '';
+  gt.style.display = window._genText ? 'block' : 'none';
+  pill.querySelector('.gen-dots').style.marginTop = window._genText ? '8px' : '2px';
   pill.style.display = 'block';
   setNameplate('···', null);
   dialogueText.innerHTML = '';
@@ -2025,10 +2061,12 @@ function setupViewportHeight() {
     // Size the UI layer to the currently VISIBLE area (shrinks when keyboard opens).
     const h = vv ? vv.height : window.innerHeight;
     document.documentElement.style.setProperty('--vvh', h + 'px');
-    // iOS pans the visual viewport up when the keyboard opens (scroll-into-view),
-    // visually dragging every fixed layer (bg/char/scrim) up with it. Counter-
-    // translate by offsetTop so the WORLD stays pinned; only #gameScreen's input
-    // (bottom of the shrunken --vvh area) rides above the keyboard. (Frontia)
+    // Learn the real keyboard height so the NEXT focus can pre-shrink BEFORE
+    // iOS shows the keyboard (prevents the scroll-into-view pan = the flick).
+    const kb = window.innerHeight - h;
+    if (kb > 120) { try { localStorage.setItem('nakin_kb', String(kb)); } catch {} }
+    // Safety net for any residual pan (post-hoc, inherently 1 frame late —
+    // the REAL flick fix is the focusin pre-shrink below).
     document.documentElement.style.setProperty('--vvoff', (vv ? vv.offsetTop : 0) + 'px');
     if (window.scrollY) window.scrollTo(0, 0);
   };
@@ -2039,6 +2077,19 @@ function setupViewportHeight() {
   }
   window.addEventListener('resize', apply);
   window.addEventListener('orientationchange', () => setTimeout(apply, 100));
+
+  // PRE-SHRINK on focus: lift the input above the FUTURE keyboard before iOS
+  // computes its pan. When the keyboard appears, the input is already visible
+  // above it -> iOS has nothing to scroll into view -> no pan, no flick.
+  // (Very first open ever still measures the height once.)
+  userInput.addEventListener('focusin', () => {
+    let kb = 336;
+    try { kb = parseInt(localStorage.getItem('nakin_kb')) || 336; } catch {}
+    document.documentElement.style.setProperty('--vvh', (window.innerHeight - kb) + 'px');
+  });
+  userInput.addEventListener('focusout', () => {
+    setTimeout(apply, 60);   // keyboard closing — restore real height
+  });
 }
 
 // ===== TEMP DEBUG READOUT =====
