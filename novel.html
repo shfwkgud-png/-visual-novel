@@ -178,7 +178,7 @@
     /* pinned to the visual viewport: with --vvh height this tracks it exactly,
        so the input (absolute bottom) rides smoothly right above the keyboard */
     transform: translateY(var(--vvoff));
-    transition: transform 0.25s ease-out;
+    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
   }
 
   /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
@@ -193,7 +193,7 @@
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
     z-index: 0;
     transform: translateY(var(--vvoff));
-    transition: transform 0.25s ease-out;
+    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
   }
   #bgOverlay {
     position: fixed;
@@ -210,7 +210,7 @@
       rgba(0,0,0,0.2) 100%);
     z-index: 1;
     transform: translateY(var(--vvoff));
-    transition: transform 0.25s ease-out;
+    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
   }
 
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
@@ -221,7 +221,7 @@
     height: 100lvh;   /* iOS large viewport = 852: feet reach the REAL bottom (not clamped 793) */
     left: 50%;
     transform: translate(-50%, var(--vvoff));
-    transition: transform 0.25s ease-out;
+    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -295,7 +295,7 @@
     pointer-events: none;   /* taps fall through to the document tap handler */
     /* pinned against iOS keyboard pan — scrim/dialogue must NOT ride up */
     transform: translateY(var(--vvoff));
-    transition: transform 0.25s ease-out;
+    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
     /* Frontia-style scrim: character's lower body clearly darkens toward the
        bottom (this layer is z3, ABOVE the character z2), so the dialogue text
        sits on a strong dark backdrop (easy on the eyes). */
@@ -392,6 +392,28 @@
   .nav-btn:active { transform: scale(0.88); background: rgba(40,32,56,0.7); }
   #navPrev { left: 10px; }
   #navNext { right: 10px; }
+
+  /* GENERATION PILL — player's line in a centered dark chip while the AI writes */
+  #genPill {
+    display: none;
+    position: fixed;
+    top: 42%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    max-width: 78vw;
+    padding: 10px 18px;
+    background: rgba(10,8,18,0.72);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #e6dfd2;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    text-align: center;
+    pointer-events: none;
+  }
+  #genPill .gen-text { word-break: break-word; }
 
   /* THINKING INDICATOR */
   .thinking-text {
@@ -718,11 +740,14 @@
   </div>
 </div>
 
+<!-- GENERATION PILL — shows the player's typed line while the AI writes (Frontia) -->
+<div id="genPill"><span class="gen-text"></span><span class="thinking-dots"></span></div>
+
 <!-- GAME SCREEN (UI layer, sized to visible area) -->
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v59</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v60</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1279,13 +1304,18 @@ async function beginStory() {
 
 // ===== THINKING INDICATOR =====
 function showThinking() {
-  const msg = THINKING_MSGS[Math.floor(Math.random() * THINKING_MSGS.length)];
+  // Frontia-style: show the player's own line in a centered pill with animated
+  // dots (no atmospheric filler text).
+  const pill = document.getElementById('genPill');
+  pill.querySelector('.gen-text').textContent = window._genText || '';
+  pill.style.display = 'block';
   setNameplate('···', null);
-  dialogueText.innerHTML = `<span class="thinking-text">${msg}<span class="thinking-dots"></span></span>`;
+  dialogueText.innerHTML = '';
   document.getElementById('continueHint').style.display = 'none';
 }
 
 function hideThinking() {
+  document.getElementById('genPill').style.display = 'none';
   dialogueText.innerHTML = '';
 }
 
@@ -1712,7 +1742,8 @@ function splitNarration(text) {
 // ===== PROCESS RESPONSE =====
 function processResponse(data, activeCharIds) {
   hideThinking();
-  historyMode = false;
+  // NOTE: do NOT force historyMode=false here — if the player is browsing
+  // history when the response lands, we defer playing it (see end of fn).
 
   if (data.background) {
     lastBg = data.background;
@@ -1790,6 +1821,16 @@ function processResponse(data, activeCharIds) {
 
   window._pendingChoices = data.choices || null;
   window._activeCharIds = activeCharIds;
+
+  if (historyMode) {
+    // Player is reading old lines — hold the new turn; exitHistory plays it.
+    window._pendingDialogues = dialogueQueue.slice();
+    dialogueQueue = [];
+    const hint = document.getElementById('continueHint');
+    hint.textContent = '▶ 이야기 도착 — 오른쪽을 탭해 계속';
+    hint.style.display = 'block';
+    return;
+  }
 
   // Sprites now appear lazily — only when a character actually speaks
   resetSprites();
@@ -2141,12 +2182,24 @@ function renderHistoryEntry() {
   setNameplate(entry.isPlayer ? (entry.speaker || playerName) : entry.speaker, entry.char_id);
   dialogueText.textContent = entry.text;
   const hint = document.getElementById('continueHint');
-  hint.textContent = `◀ 기록 ${historyPos + 1}/${dialogueLog.length} ▶`;
+  hint.textContent = window._pendingDialogues
+    ? `◀ 기록 ${historyPos + 1}/${dialogueLog.length} ▶ (이야기 도착!)`
+    : `◀ 기록 ${historyPos + 1}/${dialogueLog.length} ▶`;
   hint.style.display = 'block';
 }
 
 function exitHistory() {
   historyMode = false;
+  // A response arrived while browsing history — play it now instead of
+  // restoring the stale pre-generation screen.
+  if (window._pendingDialogues) {
+    const pd = window._pendingDialogues;
+    window._pendingDialogues = null;
+    window._present = null;
+    resetSprites();
+    showDialogue(pd);
+    return;
+  }
   const p = window._present || {};
   if (p.bgFile) setBgFile(p.bgFile);
   if (p.sprites) rebuildSprites(p.sprites, p.charId, p.emotion, p.pose);
@@ -2239,6 +2292,7 @@ async function handlePlayerInput(text) {
   dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null });
   gameHistory.push({ role: 'user', content: text });
   window._pendingPlayerLine = text;  // shown verbatim as the first line of the next response
+  window._genText = text;            // shown in the generation pill while the AI writes
   autoSave();
 
   const recentHistory = gameHistory.slice(-6);
@@ -2358,6 +2412,9 @@ function renderStatusPanel() {
 }
 
 function showDialogue(dialogues) {
+  // If the player is browsing history while this arrives, don't stomp the
+  // history view — hold it and play when they return to the present.
+  if (historyMode) { window._pendingDialogues = dialogues; return; }
   dialogueQueue = dialogues;
   showNextDialogue();
 }
