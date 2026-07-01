@@ -169,11 +169,13 @@
     z-index: 3;   /* above bg (0) / overlay (1) / character (2) */
   }
 
-  /* BACKGROUND — inset:0 exactly like #apiScreen (which IS fullscreen).
-     This is what covers the full physical screen on iOS. */
+  /* BACKGROUND — fixed inset:0 only reaches the SMALL viewport on iOS (leaves a
+     black strip at the very bottom). Overshoot top & bottom to guarantee the
+     whole physical screen (incl. the home-indicator strip) is covered. */
   #bgLayer {
     position: fixed;
-    inset: 0;
+    left: 0; right: 0;
+    top: -12px; bottom: -90px;
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
@@ -181,7 +183,8 @@
   }
   #bgOverlay {
     position: fixed;
-    inset: 0;
+    left: 0; right: 0;
+    top: -12px; bottom: -90px;
     background: linear-gradient(to top, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 45%, rgba(0,0,0,0.2) 100%);
     z-index: 1;
   }
@@ -189,7 +192,7 @@
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
   #charLayer {
     position: fixed;
-    top: 0; bottom: 0;
+    top: 0; bottom: -60px;   /* overshoot so feet reach the true screen bottom */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -603,7 +606,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v39</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v40</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
