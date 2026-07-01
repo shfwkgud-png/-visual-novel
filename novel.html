@@ -595,6 +595,10 @@
 </div>
 
 <div id="errbox" onclick="this.style.display='none'" style="position:fixed;top:70px;left:8px;right:8px;z-index:99999;background:rgba(150,20,20,0.96);color:#fff;font:11px/1.4 monospace;padding:9px 10px;border-radius:8px;display:none;white-space:pre-wrap;word-break:break-word"></div>
+<div id="vpdbg" onclick="this.style.display='none'" style="position:fixed;top:120px;left:8px;z-index:99999;background:rgba(0,0,0,0.9);color:#3f6;font:12px/1.5 monospace;padding:8px 10px;border-radius:6px;white-space:pre"></div>
+<!-- markers: red bar at fixed bottom:0, blue bar at dvh bottom -->
+<div style="position:fixed;bottom:0;left:0;right:0;height:5px;background:red;z-index:99998;pointer-events:none"></div>
+<div style="position:fixed;top:calc(100dvh - 5px);left:0;right:0;height:5px;background:#0af;z-index:99998;pointer-events:none"></div>
 
 <!-- BACKGROUND + CHARACTER: full-screen, OUTSIDE #gameScreen so they're never
      clipped/shrunk by the visible-area layout (always fills like #apiScreen) -->
@@ -606,7 +610,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v40</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v41</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -665,6 +669,20 @@ function showErr(label, detail) {
   } catch {}
 }
 window.onerror = function(msg, src, line, col) { showErr('JS ERROR', msg + '  @' + line + ':' + col); };
+function measureViewports() {
+  const probe = (u) => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:0;left:0;width:0;visibility:hidden;height:100'+u; document.body.appendChild(d); const h=d.offsetHeight; d.remove(); return h; };
+  const el = document.getElementById('vpdbg'); if (!el) return;
+  el.textContent =
+    'innerH  '+window.innerHeight+'\n'+
+    'screenH '+window.screen.height+'\n'+
+    '100vh   '+probe('vh')+'\n'+
+    '100svh  '+probe('svh')+'\n'+
+    '100lvh  '+probe('lvh')+'\n'+
+    '100dvh  '+probe('dvh')+'\n'+
+    'vvH     '+(window.visualViewport?Math.round(window.visualViewport.height):'-');
+}
+window.addEventListener('load', () => setTimeout(measureViewports, 300));
+window.addEventListener('resize', measureViewports);
 window.addEventListener('unhandledrejection', function(ev) {
   const r = ev.reason;
   showErr('PROMISE', (r && (r.message || r.toString())) || String(r));
