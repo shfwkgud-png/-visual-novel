@@ -221,13 +221,13 @@
   }
   #charLayer { gap: 0; }
   .char-sprite {
-    height: 96%;
-    max-width: 108vw;
+    height: 88%;
+    max-width: 98vw;
     object-fit: contain;
     object-position: bottom center;
     /* --ty raises the sprite up (single AND multi sit higher, not glued to bottom);
        --tx slides the speaker toward center; --sc lets the speaker step forward. */
-    --ty: -7%;   /* single-char default lift */
+    --ty: -4%;   /* single-char default lift (small) */
     transform: translate(var(--tx, 0%), var(--ty, 0%)) scale(var(--sc, 1));
     transform-origin: bottom center;
     transition: filter 0.4s ease, opacity 0.5s ease, transform 0.35s ease;
@@ -249,7 +249,7 @@
   /* v48-style side-by-side spacing (less overlap), but raised up via --ty (v49). */
   /* smaller + far less overlap so the two stand APART (not stuck), raised higher. */
   #charLayer[data-count="2"] { gap: 0; }
-  #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: 58%; flex-shrink: 0; margin: 0 -4vw; --ty: -18%; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: 58%; flex-shrink: 0; margin: 0 -12vw; --ty: -18%; }
   #charLayer[data-count="3"] { gap: 0; }
   #charLayer[data-count="3"] .char-sprite { max-width: 74vw; height: 52%; flex-shrink: 0; margin: 0 -6vw; --ty: -15%; }
   #charLayer[data-count="4"] { gap: 0; }
@@ -257,9 +257,9 @@
   /* When one of TWO speaks: slide toward center + zoom in (steps up front), the
      silent one stays at its side, dimmed. Zoom is scoped to multi-char only, so a
      lone (tall) sprite never crops. (Extra/narrator = all neutral = no slide/zoom.) */
-  #charLayer[data-count="2"] .char-sprite.speaking { --sc: 1.08; }
-  #charLayer[data-count="2"] .char-sprite.speaking:first-child { --tx: 15%; }
-  #charLayer[data-count="2"] .char-sprite.speaking:last-child  { --tx: -15%; }
+  #charLayer[data-count="2"] .char-sprite.speaking { --sc: 1.14; }
+  #charLayer[data-count="2"] .char-sprite.speaking:first-child { --tx: 28%; }
+  #charLayer[data-count="2"] .char-sprite.speaking:last-child  { --tx: -28%; }
   #charLayer[data-count="3"] .char-sprite.speaking,
   #charLayer[data-count="4"] .char-sprite.speaking { --sc: 1.08; }
   /* Full-body sprites are taller — shrink so the top isn't cut (#5) */
@@ -690,7 +690,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v51</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v52</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
