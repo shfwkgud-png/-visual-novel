@@ -169,7 +169,7 @@
     width: 100%;
     height: var(--vvh, 100dvh);   /* = visible area (shrinks above keyboard). bg (100vh) fills behind. */
     overflow: hidden;
-    z-index: 3;   /* above bg (0) / overlay (1) / character (2) */
+    z-index: 4;   /* above bg(0) / overlay(1) / char(2) / dialogue(3): topBar+input stay on top */
   }
 
   /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
@@ -218,32 +218,40 @@
   .char-sprite.visible { opacity: 1; }
   .char-sprite.speaking { filter: none; z-index: 3; }
   .char-sprite.silent { filter: brightness(0.45) saturate(0.7); z-index: 2; }
-  /* Multiple characters: shrink so they fit side by side without cropping (#1) */
-  #charLayer[data-count="2"] { gap: 2vw; }
-  #charLayer[data-count="2"] .char-sprite { max-width: 52vw; height: 88%; }
-  #charLayer[data-count="3"] { gap: 1vw; }
-  #charLayer[data-count="3"] .char-sprite { max-width: 36vw; height: 80%; }
-  #charLayer[data-count="4"] { gap: 0.5vw; }
-  #charLayer[data-count="4"] .char-sprite { max-width: 27vw; height: 74%; }
-  /* Full-body sprites are taller — pull down + shrink so the top isn't cut (#5) */
-  .char-sprite.fullbody { height: 88%; }
-  #charLayer[data-count="2"] .char-sprite.fullbody { height: 80%; }
+  /* Multiple characters: overlap so each stays LARGE (not crammed at the bottom),
+     both still fit. flex-shrink:0 keeps size; negative margin overlaps them (#1). */
+  #charLayer[data-count="2"] { gap: 0; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 82vw; height: 96%; flex-shrink: 0; margin: 0 -22vw; }
+  #charLayer[data-count="3"] { gap: 0; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 58vw; height: 90%; flex-shrink: 0; margin: 0 -15vw; }
+  #charLayer[data-count="4"] { gap: 0; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 46vw; height: 84%; flex-shrink: 0; margin: 0 -12vw; }
+  /* Full-body sprites are taller — shrink so the top isn't cut (#5) */
+  .char-sprite.fullbody { height: 90%; }
+  #charLayer[data-count="2"] .char-sprite.fullbody { height: 86%; }
 
-  /* DIALOGUE — floating text over a light scrim (bg shows through) */
+  /* DIALOGUE — OUTSIDE #gameScreen, full-height (100vh = true bottom 852) so it
+     always reaches the real bottom (no black strip) AND does NOT rise with the
+     keyboard (it's not in the shrinking #gameScreen). Content anchored to bottom. */
   #dialogueBox {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    z-index: 10;
-    padding: 54px 30px calc(54px + env(safe-area-inset-bottom));
-    /* dark behind the text, but fades back near the very bottom so the
-       background shows through there (no black strip) */
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 100vh;
+    z-index: 3;   /* above char(2), below gameScreen(4) so topBar/input sit on top */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    pointer-events: none;   /* taps fall through to the document tap handler */
+  }
+  #dialogueContent {
+    padding: 54px 30px calc(40px + env(safe-area-inset-bottom));
+    /* dark behind the text, fades to transparent upward */
     background: linear-gradient(to top,
-      rgba(0,0,0,0.28) 0%,
-      rgba(0,0,0,0.72) 16%,
-      rgba(0,0,0,0.62) 42%,
-      rgba(0,0,0,0.22) 70%,
+      rgba(0,0,0,0.78) 0%,
+      rgba(0,0,0,0.72) 30%,
+      rgba(0,0,0,0.5) 60%,
+      rgba(0,0,0,0.18) 82%,
       transparent 100%);
-    transition: padding-bottom 0.2s ease;
   }
   #nameplate {
     display: flex;
@@ -626,11 +634,26 @@
 <div id="bgOverlay"></div>
 <div id="charLayer"></div>
 
+<!-- DIALOGUE: full-height fixed layer OUTSIDE #gameScreen so it reaches the true
+     bottom (no strip) and never rises with the keyboard -->
+<div id="dialogueBox">
+  <div id="dialogueContent">
+    <div id="nameplate" class="narrator">
+      <img id="speakerAvatar" alt="">
+      <span id="speakerName">나레이터</span>
+    </div>
+    <div id="dialoguePanel">
+      <div id="dialogueText"></div>
+      <div id="continueHint">▼ 탭하여 계속</div>
+    </div>
+  </div>
+</div>
+
 <!-- GAME SCREEN (UI layer, sized to visible area) -->
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v43</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v44</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -655,17 +678,6 @@
     <span id="stGold" style="display:none"></span>
     <span id="stLocation" style="display:none"></span>
     <span id="stPanelName" style="display:none"></span>
-  </div>
-
-  <div id="dialogueBox">
-    <div id="nameplate" class="narrator">
-      <img id="speakerAvatar" alt="">
-      <span id="speakerName">나레이터</span>
-    </div>
-    <div id="dialoguePanel">
-      <div id="dialogueText"></div>
-      <div id="continueHint">▼ 탭하여 계속</div>
-    </div>
   </div>
 
   <div id="inputBar">
