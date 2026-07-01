@@ -174,10 +174,13 @@
 
   /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
      behind everything (incl. behind the keyboard). */
+  /* Decorative full-bleed layers. iOS home-screen PWA clamps fixed 100vh to the
+     SMALL viewport (793), leaving a 59px black strip at the bottom. Since these
+     are purely behind everything, we OVERSHOOT past the bottom (bottom:-200px):
+     device-independent, guarantees full coverage on any phone. */
   #bgLayer {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100vh;
+    top: 0; left: 0; right: 0; bottom: -200px;
     background-size: cover;
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
@@ -185,8 +188,7 @@
   }
   #bgOverlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100vh;
+    top: 0; left: 0; right: 0; bottom: -200px;
     background: linear-gradient(to top, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.04) 45%, rgba(0,0,0,0.2) 100%);
     z-index: 1;
   }
@@ -194,7 +196,9 @@
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
   #charLayer {
     position: fixed;
-    top: 0; height: 100vh;   /* true full screen so feet reach the real bottom */
+    top: 0;
+    height: 100vh;    /* fallback */
+    height: 100lvh;   /* iOS large viewport = 852: feet reach the REAL bottom (not clamped 793) */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -220,12 +224,15 @@
   .char-sprite.silent { filter: brightness(0.45) saturate(0.7); z-index: 2; }
   /* Multiple characters: overlap so each stays LARGE (not crammed at the bottom),
      both still fit. flex-shrink:0 keeps size; negative margin overlaps them (#1). */
+  /* max-width is set HIGH (near/above natural width) so it never clamps height —
+     height drives the size (big). Negative margin overlaps the transparent side
+     padding so both fit without cropping the actual characters. */
   #charLayer[data-count="2"] { gap: 0; }
-  #charLayer[data-count="2"] .char-sprite { max-width: 82vw; height: 96%; flex-shrink: 0; margin: 0 -22vw; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 124vw; height: 86%; flex-shrink: 0; margin: 0 -28vw; }
   #charLayer[data-count="3"] { gap: 0; }
-  #charLayer[data-count="3"] .char-sprite { max-width: 58vw; height: 90%; flex-shrink: 0; margin: 0 -15vw; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 108vw; height: 76%; flex-shrink: 0; margin: 0 -24vw; }
   #charLayer[data-count="4"] { gap: 0; }
-  #charLayer[data-count="4"] .char-sprite { max-width: 46vw; height: 84%; flex-shrink: 0; margin: 0 -12vw; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 96vw;  height: 68%; flex-shrink: 0; margin: 0 -20vw; }
   /* Full-body sprites are taller — shrink so the top isn't cut (#5) */
   .char-sprite.fullbody { height: 90%; }
   #charLayer[data-count="2"] .char-sprite.fullbody { height: 86%; }
@@ -236,7 +243,8 @@
   #dialogueBox {
     position: fixed;
     top: 0; left: 0; right: 0;
-    height: 100vh;
+    height: 100vh;    /* fallback */
+    height: 100lvh;   /* iOS large viewport = 852: dialogue sits at the REAL bottom */
     z-index: 3;   /* above char(2), below gameScreen(4) so topBar/input sit on top */
     display: flex;
     flex-direction: column;
@@ -653,7 +661,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v44</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v45</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
