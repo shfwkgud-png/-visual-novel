@@ -225,8 +225,9 @@
     max-width: 108vw;
     object-fit: contain;
     object-position: bottom center;
-    /* --ty raises the sprite up (multi-char sits mid-frame, not glued to bottom);
-       --sc lets the speaker step forward. Origin bottom so scale grows from feet. */
+    /* --ty raises the sprite up (single AND multi sit higher, not glued to bottom);
+       --tx slides the speaker toward center; --sc lets the speaker step forward. */
+    --ty: -7%;   /* single-char default lift */
     transform: translate(var(--tx, 0%), var(--ty, 0%)) scale(var(--sc, 1));
     transform-origin: bottom center;
     transition: filter 0.4s ease, opacity 0.5s ease, transform 0.35s ease;
@@ -239,27 +240,31 @@
      Others recede (dim + slightly smaller). Speaker also slides toward center
      via the nth-child rules below. */
   .char-sprite.speaking { filter: none; z-index: 3; --sc: 1; }
-  .char-sprite.silent { filter: brightness(0.42) saturate(0.7); z-index: 2; --sc: 0.97; }
+  .char-sprite.silent { filter: brightness(0.28) saturate(0.6); z-index: 2; --sc: 0.94; }
   /* Multiple characters: overlap so each stays LARGE (not crammed at the bottom),
      both still fit. flex-shrink:0 keeps size; negative margin overlaps them (#1). */
   /* max-width is set HIGH (near/above natural width) so it never clamps height —
      height drives the size (big). Negative margin overlaps the transparent side
      padding so both fit without cropping the actual characters. */
   /* v48-style side-by-side spacing (less overlap), but raised up via --ty (v49). */
+  /* smaller + far less overlap so the two stand APART (not stuck), raised higher. */
   #charLayer[data-count="2"] { gap: 0; }
-  #charLayer[data-count="2"] .char-sprite { max-width: 92vw; height: 64%; flex-shrink: 0; margin: 0 -18vw; --ty: -13%; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: 58%; flex-shrink: 0; margin: 0 -4vw; --ty: -18%; }
   #charLayer[data-count="3"] { gap: 0; }
-  #charLayer[data-count="3"] .char-sprite { max-width: 80vw; height: 57%; flex-shrink: 0; margin: 0 -15vw; --ty: -11%; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 74vw; height: 52%; flex-shrink: 0; margin: 0 -6vw; --ty: -15%; }
   #charLayer[data-count="4"] { gap: 0; }
-  #charLayer[data-count="4"] .char-sprite { max-width: 72vw;  height: 51%; flex-shrink: 0; margin: 0 -12vw; --ty: -9%; }
-  /* When one of TWO speaks, the speaker slides toward center (steps up front);
-     the silent one stays at its side, dimmed. (Extra/narrator speaking = all
-     neutral = plain side-by-side, no slide.) */
-  #charLayer[data-count="2"] .char-sprite.speaking:first-child { --tx: 17%; }
-  #charLayer[data-count="2"] .char-sprite.speaking:last-child  { --tx: -17%; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 66vw;  height: 47%; flex-shrink: 0; margin: 0 -6vw; --ty: -12%; }
+  /* When one of TWO speaks: slide toward center + zoom in (steps up front), the
+     silent one stays at its side, dimmed. Zoom is scoped to multi-char only, so a
+     lone (tall) sprite never crops. (Extra/narrator = all neutral = no slide/zoom.) */
+  #charLayer[data-count="2"] .char-sprite.speaking { --sc: 1.08; }
+  #charLayer[data-count="2"] .char-sprite.speaking:first-child { --tx: 15%; }
+  #charLayer[data-count="2"] .char-sprite.speaking:last-child  { --tx: -15%; }
+  #charLayer[data-count="3"] .char-sprite.speaking,
+  #charLayer[data-count="4"] .char-sprite.speaking { --sc: 1.08; }
   /* Full-body sprites are taller — shrink so the top isn't cut (#5) */
   .char-sprite.fullbody { height: 90%; }
-  #charLayer[data-count="2"] .char-sprite.fullbody { height: 60%; }
+  #charLayer[data-count="2"] .char-sprite.fullbody { height: 52%; }
 
   /* DIALOGUE — OUTSIDE #gameScreen, full-height (100vh = true bottom 852) so it
      always reaches the real bottom (no black strip) AND does NOT rise with the
@@ -685,7 +690,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v50</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v51</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
