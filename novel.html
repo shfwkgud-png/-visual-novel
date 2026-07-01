@@ -1933,7 +1933,7 @@ function setupViewportHeight() {
   const apply = () => {
     // Size the UI layer to the currently VISIBLE area (shrinks when keyboard opens).
     // The background is height:100vh (full screen) and fills behind, so no strip.
-    const h = vv ? vv.height : window.innerHeight;
+    const h = window.innerHeight;
     document.documentElement.style.setProperty('--vvh', h + 'px');
     if (window.scrollY) window.scrollTo(0, 0);
   };
