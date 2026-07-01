@@ -18,6 +18,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap');
 
   :root {
+    --vvoff: 0px;  /* visualViewport.offsetTop — JS-set; pins fixed layers when iOS pans for the keyboard */
     --bg: #0a0a0f;
     --panel: #0f0f1a;
     --border: #2a2040;
@@ -174,6 +175,10 @@
     height: var(--vvh, 100dvh);   /* = visible area (shrinks above keyboard). bg (100vh) fills behind. */
     overflow: hidden;
     z-index: 4;   /* above bg(0) / overlay(1) / char(2) / dialogue(3): topBar+input stay on top */
+    /* pinned to the visual viewport: with --vvh height this tracks it exactly,
+       so the input (absolute bottom) rides smoothly right above the keyboard */
+    transform: translateY(var(--vvoff));
+    transition: transform 0.25s ease-out;
   }
 
   /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
@@ -187,6 +192,8 @@
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
     z-index: 0;
+    transform: translateY(var(--vvoff));
+    transition: transform 0.25s ease-out;
   }
   #bgOverlay {
     position: fixed;
@@ -202,6 +209,8 @@
       rgba(0,0,0,0.04) 45%,
       rgba(0,0,0,0.2) 100%);
     z-index: 1;
+    transform: translateY(var(--vvoff));
+    transition: transform 0.25s ease-out;
   }
 
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
@@ -211,7 +220,8 @@
     height: 100vh;    /* fallback */
     height: 100lvh;   /* iOS large viewport = 852: feet reach the REAL bottom (not clamped 793) */
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, var(--vvoff));
+    transition: transform 0.25s ease-out;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -283,6 +293,9 @@
     flex-direction: column;
     justify-content: flex-end;
     pointer-events: none;   /* taps fall through to the document tap handler */
+    /* pinned against iOS keyboard pan — scrim/dialogue must NOT ride up */
+    transform: translateY(var(--vvoff));
+    transition: transform 0.25s ease-out;
     /* Frontia-style scrim: character's lower body clearly darkens toward the
        bottom (this layer is z3, ABOVE the character z2), so the dialogue text
        sits on a strong dark backdrop (easy on the eyes). */
@@ -427,9 +440,20 @@
     font-size: 0.85rem;
     font-family: 'Noto Sans KR', sans-serif;
     outline: none;
-    resize: none;
-    height: 39px;
+    /* contenteditable div: min-height instead of fixed height, grows a bit */
+    min-height: 39px;
+    max-height: 96px;
+    overflow-y: auto;
+    line-height: 21px;
+    -webkit-user-select: text;
+    user-select: text;
     transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  /* placeholder for contenteditable */
+  #userInput:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-dim);
+    pointer-events: none;
   }
   #userInput:focus {
     border-color: var(--gold);
@@ -698,7 +722,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v58</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v59</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -731,7 +755,10 @@
       <button class="redo-btn" onclick="undoInput()">↩ 되돌리기</button>
     </div>
     <div id="inputRow">
-      <textarea id="userInput" placeholder="(주위를 둘러본다) 또는 대사 입력" onkeydown="handleKey(event)"></textarea>
+      <!-- contenteditable (not textarea): iOS attaches its form-assistant bar
+           (⌄⌄✓) to real form fields only — this way it never appears (Frontia). -->
+      <div id="userInput" contenteditable="plaintext-only" enterkeyhint="send"
+           data-placeholder="(주위를 둘러본다) 또는 대사 입력" onkeydown="handleKey(event)"></div>
       <button id="sendBtn" onclick="sendMessage()">➤</button>
     </div>
   </div>
@@ -1955,9 +1982,13 @@ function setupViewportHeight() {
   const vv = window.visualViewport;
   const apply = () => {
     // Size the UI layer to the currently VISIBLE area (shrinks when keyboard opens).
-    // The background is height:100vh (full screen) and fills behind, so no strip.
     const h = vv ? vv.height : window.innerHeight;
     document.documentElement.style.setProperty('--vvh', h + 'px');
+    // iOS pans the visual viewport up when the keyboard opens (scroll-into-view),
+    // visually dragging every fixed layer (bg/char/scrim) up with it. Counter-
+    // translate by offsetTop so the WORLD stays pinned; only #gameScreen's input
+    // (bottom of the shrunken --vvh area) rides above the keyboard. (Frontia)
+    document.documentElement.style.setProperty('--vvoff', (vv ? vv.offsetTop : 0) + 'px');
     if (window.scrollY) window.scrollTo(0, 0);
   };
   apply();
@@ -2192,9 +2223,9 @@ function handleKey(e) {
 }
 
 async function sendMessage() {
-  const text = userInput.value.trim();
+  const text = (userInput.innerText || '').trim();
   if (!text || sendBtn.disabled) return;
-  userInput.value = '';
+  userInput.textContent = '';
   inputBar.style.display = 'none';
   inputMode = false;
 
@@ -2392,7 +2423,7 @@ async function undoInput() {
   if (lastPlayerIdx !== -1) dialogueLog.splice(lastPlayerIdx);
 
   autoSave();
-  userInput.value = lastUserText;
+  userInput.textContent = lastUserText;
   enterInputMode();
   userInput.focus();
 }
