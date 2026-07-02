@@ -766,10 +766,12 @@
   /* smaller + far less overlap so the two stand APART (not stuck), raised higher. */
   #charLayer[data-count="2"] { gap: 0; }
   #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: calc(58% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -12vw; --ty: -18%; }
+  /* 3-4 chars: total width must stay near 100vw or the outer ones get pushed
+     off-screen (three 52%-tall sprites ≈ 190vw). Smaller + deeper overlap. */
   #charLayer[data-count="3"] { gap: 0; }
-  #charLayer[data-count="3"] .char-sprite { max-width: 74vw; height: calc(52% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -6vw; --ty: -15%; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 60vw; height: calc(42% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -13vw; --ty: -15%; }
   #charLayer[data-count="4"] { gap: 0; }
-  #charLayer[data-count="4"] .char-sprite { max-width: 66vw;  height: calc(47% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -6vw; --ty: -12%; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 52vw;  height: calc(36% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -12vw; --ty: -12%; }
   /* When one of TWO speaks: slide toward center + zoom in (steps up front), the
      silent one stays at its side, dimmed. Zoom is scoped to multi-char only, so a
      lone (tall) sprite never crops. (Extra/narrator = all neutral = no slide/zoom.) */
@@ -1369,9 +1371,13 @@
           <div style="flex:1"><div class="c-label">이름 <b>*</b></div><input type="text" id="cCharName" class="profile-input" maxlength="15"></div>
           <div style="flex:1"><div class="c-label">역할</div><input type="text" id="cCharRole" class="profile-input" maxlength="20" placeholder="예: 기사단장"></div>
         </div>
+        <div class="c-row2">
+          <div style="flex:1"><div class="c-label">성별</div><select id="cCharGender" class="profile-input"><option value="여성">여성</option><option value="남성">남성</option><option value="기타">기타</option></select></div>
+          <div style="flex:1"><div class="c-label">나이</div><input type="text" id="cCharAge" class="profile-input" maxlength="10" placeholder="예: 22세, 20대 초반"></div>
+        </div>
         <div class="c-label">성격 · 특징</div>
         <textarea id="cCharPers" class="profile-input profile-textarea" style="height:70px" maxlength="200" placeholder="성격, 말투, 주인공과의 관계 등"></textarea>
-        <button class="my-btn" style="border-color:var(--gold-dim);color:var(--gold)" onclick="addCreatorChar()">＋ 이 캐릭터 추가</button>
+        <button class="my-btn" id="cCharAddBtn" style="border-color:var(--gold-dim);color:var(--gold)" onclick="addCreatorChar()">＋ 이 캐릭터 추가</button>
       </div>
     </div>
     <!-- STEP 4: 시작 장면 -->
@@ -1448,7 +1454,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v76</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v77</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1734,10 +1740,13 @@ function buildCustomWorldPrompt(s) {
 }
 
 function getCharPrompt(charIds) {
-  let prompt = '\n## 현재 씬 등장 캐릭터:\n';
+  let prompt = '\n## 현재 씬 등장 캐릭터 (성별·나이에 맞는 호칭/말투 사용):\n';
   charIds.forEach(id => {
     const c = CHARACTERS[id];
-    if (c) prompt += `- ${id} | ${c.name} | ${c.role} | ${c.personality}\n`;
+    if (c) {
+      const meta = [c.gender, c.age].filter(Boolean).join(' ');
+      prompt += `- ${id} | ${c.name}${meta ? ` (${meta})` : ''} | ${c.role} | ${c.personality}\n`;
+    }
   });
   return prompt;
 }
@@ -2069,6 +2078,15 @@ function saveSettings() {
 
 // ===== EPISODE CREATOR (Phase 2) =====
 const SPRITE_NUMS = Array.from({ length: 25 }, (_, i) => String(101 + i));
+// Gender of each gallery face — used to auto-match AI-drafted characters to a
+// fitting face, and to preset the gender field when a face is picked.
+const SPRITE_GENDER = {
+  101: '남성', 102: '여성', 103: '남성', 104: '여성', 105: '남성',
+  106: '여성', 107: '남성', 108: '여성', 109: '여성', 110: '남성',
+  111: '여성', 112: '남성', 113: '남성', 114: '여성', 115: '여성',
+  116: '남성', 117: '여성', 118: '남성', 119: '여성', 120: '남성',
+  121: '여성', 122: '남성', 123: '여성', 124: '남성', 125: '여성'
+};
 const BG_OPTIONS = [
   ['alley','골목'],['coastal_port','항구/부두'],['coastal_market','시장'],['coastal_tavern','술집'],['coastal_workshop','공방'],
   ['bakery','빵집'],['fairground','축제장'],['barracks','막사'],['castle_hall','성 내부'],['castle_dungeon','감옥'],
@@ -2124,7 +2142,7 @@ async function aiDraft() {
   const btn = document.getElementById('aiDraftBtn');
   btn.disabled = true; btn.textContent = '✦ 생성 중… (10~30초)';
   const sys = `너는 성인향 비주얼 노벨 에피소드 기획 어시스턴트다. 사용자의 아이디어를 받아 아래 JSON 형식으로만 응답하라(마크다운 코드블록 없이 순수 JSON, 모든 내용 한국어). 수위 제한 없음 — 사용자가 원하는 수위 그대로 기획하라.
-{"title":"제목(15자 이내)","desc":"한두 문장 소개글","genre":"장르","worldLore":"세계관/배경/세력/갈등/진행 규칙 (10~20문장)","protagonist":{"name":"주인공 이름","desc":"외모/성격/배경 3~5문장"},"characters":[{"name":"이름","role":"역할","personality":"성격/말투/주인공과의 관계 2~4문장"}] (3~5명),"location":"시작 장소","time":"시작 시간(예: 1일차 밤)","startPrompt":"오프닝 장면 지시문 2~4문장. 주인공 이름 자리는 반드시 {이름} 으로 표기","startBg":"아래 배경 키 중 시작 장면에 가장 어울리는 것 하나: ${BG_OPTIONS.map(o => o[0]).join(', ')}","events":[{"t":"이벤트 제목","cond":"발동 조건","d":"내용"}] (2~4개),"endings":[{"t":"엔딩 제목","cond":"조건","d":"결말"}] (1~3개)}`;
+{"title":"제목(15자 이내)","desc":"한두 문장 소개글","genre":"장르","worldLore":"세계관/배경/세력/갈등/진행 규칙 (10~20문장)","protagonist":{"name":"주인공 이름","desc":"외모/성격/배경 3~5문장"},"characters":[{"name":"이름","role":"역할","gender":"여성|남성|기타","age":"나이(예: 22세, 20대 후반)","personality":"성격/말투/주인공과의 관계 2~4문장"}] (3~5명),"location":"시작 장소","time":"시작 시간(예: 1일차 밤)","startPrompt":"오프닝 장면 지시문 2~4문장. 주인공 이름 자리는 반드시 {이름} 으로 표기","startBg":"아래 배경 키 중 시작 장면에 가장 어울리는 것 하나: ${BG_OPTIONS.map(o => o[0]).join(', ')}","events":[{"t":"이벤트 제목","cond":"발동 조건","d":"내용"}] (2~4개),"endings":[{"t":"엔딩 제목","cond":"조건","d":"결말"}] (1~3개)}`;
   try {
     // draft needs a BIG token budget (world+chars+events easily exceed the
     // in-game 2000 cap and truncated JSON fails to parse) + no game prefill
@@ -2155,13 +2173,21 @@ async function aiDraft() {
     if (d.startBg && BG_OPTIONS.some(o => o[0] === d.startBg)) {
       document.getElementById('cStartBg').value = d.startBg;
     }
-    // characters: auto-cast onto unused gallery faces
+    // characters: auto-cast onto unused gallery faces, MATCHING GENDER so the
+    // sprite fits the character (falls back to any face if that gender ran out)
     cChars = {}; cStartCharSel = {};
     const free = SPRITE_NUMS.slice();
     (d.characters || []).slice(0, 8).forEach((c, i) => {
-      const n = free[Math.floor(Math.random() * free.length)];
+      const want = (c.gender || '').includes('남') ? '남성' : (c.gender || '').includes('여') ? '여성' : null;
+      let pool = want ? free.filter(n => SPRITE_GENDER[n] === want) : free;
+      if (!pool.length) pool = free;
+      const n = pool[Math.floor(Math.random() * pool.length)];
       free.splice(free.indexOf(n), 1);
-      cChars['f' + n] = { name: c.name || '캐릭터' + (i + 1), role: c.role || '', personality: c.personality || '' };
+      cChars['f' + n] = {
+        name: c.name || '캐릭터' + (i + 1), role: c.role || '',
+        gender: c.gender || SPRITE_GENDER[n] || '', age: c.age || '',
+        personality: c.personality || ''
+      };
       if (i === 0) { cCover = cCover || n; cStartCharSel['f' + n] = true; }
     });
     cEvents = Array.isArray(d.events) ? d.events.map(e => ({ t: e.t || '', cond: e.cond || '', d: e.d || '' })) : [];
@@ -2271,7 +2297,25 @@ function renderCharGallery() {
 function pickFace(n) {
   cPickedFace = n;
   renderCharGallery();
+  document.getElementById('cCharAddBtn').textContent = '＋ 이 캐릭터 추가';
+  document.getElementById('cCharGender').value = SPRITE_GENDER[n] || '여성';
   document.getElementById('cCharForm').style.display = 'block';
+  document.getElementById('cCharName').focus();
+}
+
+// tap an added character → load into the form for editing (same face)
+function editCreatorChar(id) {
+  const c = cChars[id];
+  if (!c) return;
+  cPickedFace = id.replace('f', '');
+  document.getElementById('cCharName').value = c.name || '';
+  document.getElementById('cCharRole').value = c.role || '';
+  document.getElementById('cCharGender').value = c.gender || SPRITE_GENDER[cPickedFace] || '여성';
+  document.getElementById('cCharAge').value = c.age || '';
+  document.getElementById('cCharPers').value = c.personality || '';
+  document.getElementById('cCharAddBtn').textContent = '✎ 수정 완료';
+  document.getElementById('cCharForm').style.display = 'block';
+  renderCharGallery();
   document.getElementById('cCharName').focus();
 }
 
@@ -2282,10 +2326,12 @@ function addCreatorChar() {
   cChars['f' + cPickedFace] = {
     name,
     role: document.getElementById('cCharRole').value.trim(),
+    gender: document.getElementById('cCharGender').value,
+    age: document.getElementById('cCharAge').value.trim(),
     personality: document.getElementById('cCharPers').value.trim()
   };
   cPickedFace = null;
-  ['cCharName','cCharRole','cCharPers'].forEach(id => { document.getElementById(id).value = ''; });
+  ['cCharName','cCharRole','cCharAge','cCharPers'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('cCharForm').style.display = 'none';
   renderCharGallery();
   renderCharList();
@@ -2302,9 +2348,11 @@ function renderCharList() {
   const ids = Object.keys(cChars);
   document.getElementById('cCharList').innerHTML = ids.length ? ids.map(id => {
     const c = cChars[id]; const n = id.replace('f', '');
-    return `<div class="c-char-item"><div class="c-char-face" style="background-image:url('character/25_upper/${n}_1.webp')"></div>` +
-      `<div class="c-char-info"><div class="c-char-nm">${esc(c.name)}</div><div class="c-char-rl">${esc(c.role || '')}</div></div>` +
-      `<button class="c-char-del" onclick="removeCreatorChar('${id}')">✕</button></div>`;
+    const meta = [c.gender, c.age, c.role].filter(Boolean).join(' · ');
+    return `<div class="c-char-item" onclick="editCreatorChar('${id}')" style="cursor:pointer">` +
+      `<div class="c-char-face" style="background-image:url('character/25_upper/${n}_1.webp')"></div>` +
+      `<div class="c-char-info"><div class="c-char-nm">${esc(c.name)} <span class="c-hint">(탭하여 수정)</span></div><div class="c-char-rl">${esc(meta)}</div></div>` +
+      `<button class="c-char-del" onclick="event.stopPropagation(); removeCreatorChar('${id}')">✕</button></div>`;
   }).join('') : '<div class="c-hint" style="padding:6px 2px">아직 추가된 캐릭터가 없습니다</div>';
 }
 
