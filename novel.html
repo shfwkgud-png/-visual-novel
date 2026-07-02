@@ -74,9 +74,21 @@
     font-size: 1.35rem; font-weight: 800; color: var(--text);
     padding: 8px 18px 14px;
   }
-  /* home hero */
+  /* home hero — swipeable carousel (one slide per story, scroll-snap) */
   #homeHero {
-    margin: 4px 18px 22px;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 12px;
+    padding: 4px 18px 0;
+    margin-bottom: 10px;
+  }
+  #homeHero::-webkit-scrollbar { display: none; }
+  .hero-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
     height: 46vh;
     border-radius: 18px;
     background-size: cover;
@@ -87,11 +99,21 @@
     cursor: pointer;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
-  #homeHero::after {
+  .hero-slide::after {
     content: '';
     position: absolute; inset: 0;
     background: linear-gradient(to top, rgba(6,6,12,0.92) 0%, rgba(6,6,12,0.25) 40%, transparent 70%);
   }
+  #heroDots {
+    display: flex; justify-content: center; gap: 6px;
+    margin: 10px 0 20px;
+  }
+  #heroDots i {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    transition: background 0.2s, width 0.2s;
+  }
+  #heroDots i.on { background: var(--gold); width: 16px; border-radius: 3px; }
   .hero-info {
     position: absolute; left: 18px; right: 18px; bottom: 16px; z-index: 1;
   }
@@ -929,7 +951,8 @@
   <div id="mainContent">
     <!-- 홈 -->
     <div class="main-tab-page" id="pageHome">
-      <div id="homeHero" onclick=""></div>
+      <div id="homeHero" onscroll="updateHeroDots()"></div>
+      <div id="heroDots"></div>
       <div class="home-row" id="rowPlaying" style="display:none">
         <div class="row-title">플레이 중인 에피소드</div>
         <div class="row-scroll" id="rowPlayingCards"></div>
@@ -1029,7 +1052,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v66</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v67</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1455,14 +1478,15 @@ function switchMainTab(t) {
 function renderHome() {
   const stories = allStories();
   const ids = Object.keys(stories);
-  // hero = first story (or last played)
-  const heroId = ids[0];
-  const hero = stories[heroId];
+  // hero carousel — one swipeable slide per story
   const heroEl = document.getElementById('homeHero');
-  heroEl.style.backgroundImage = hero.cover ? `url('${hero.cover}')` : '';
-  heroEl.onclick = () => openStoryDetail(heroId);
-  heroEl.innerHTML = `<div class="hero-info"><div class="hero-title">${hero.title}</div>` +
-    `<div class="hero-desc">${hero.desc || ''}</div><span class="hero-badge">지금 플레이 ▸</span></div>`;
+  heroEl.innerHTML = ids.map(id => {
+    const s = stories[id];
+    return `<div class="hero-slide" style="background-image:url('${s.cover || ''}')" onclick="openStoryDetail('${id}')">` +
+      `<div class="hero-info"><div class="hero-title">${s.title}</div>` +
+      `<div class="hero-desc">${s.desc || ''}</div><span class="hero-badge">지금 플레이 ▸</span></div></div>`;
+  }).join('');
+  document.getElementById('heroDots').innerHTML = ids.length > 1 ? ids.map((_, i) => `<i${i === 0 ? ' class="on"' : ''}></i>`).join('') : '';
   // 플레이 중 row
   const playing = ids.filter(id => saveInfoFor(id));
   const rowP = document.getElementById('rowPlaying');
@@ -1478,6 +1502,14 @@ function renderHome() {
     return `<div class="mini-card" onclick="openStoryDetail('${id}')"><div class="mini-cover" style="background-image:url('${s.cover || ''}')"></div>` +
       `<div class="mini-title">${s.title}</div></div>`;
   }).join('');
+}
+
+function updateHeroDots() {
+  const el = document.getElementById('homeHero');
+  const dots = document.getElementById('heroDots').children;
+  if (!dots.length) return;
+  const idx = Math.round(el.scrollLeft / el.clientWidth);
+  for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i === idx);
 }
 
 function renderPlays() {
