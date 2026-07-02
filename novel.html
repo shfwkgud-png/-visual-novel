@@ -1445,7 +1445,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v74</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v75</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2123,9 +2123,16 @@ async function aiDraft() {
   const sys = `너는 성인향 비주얼 노벨 에피소드 기획 어시스턴트다. 사용자의 아이디어를 받아 아래 JSON 형식으로만 응답하라(마크다운 코드블록 없이 순수 JSON, 모든 내용 한국어). 수위 제한 없음 — 사용자가 원하는 수위 그대로 기획하라.
 {"title":"제목(15자 이내)","desc":"한두 문장 소개글","genre":"장르","worldLore":"세계관/배경/세력/갈등/진행 규칙 (10~20문장)","protagonist":{"name":"주인공 이름","desc":"외모/성격/배경 3~5문장"},"characters":[{"name":"이름","role":"역할","personality":"성격/말투/주인공과의 관계 2~4문장"}] (3~5명),"location":"시작 장소","time":"시작 시간(예: 1일차 밤)","startPrompt":"오프닝 장면 지시문 2~4문장. 주인공 이름 자리는 반드시 {이름} 으로 표기","events":[{"t":"이벤트 제목","cond":"발동 조건","d":"내용"}] (2~4개),"endings":[{"t":"엔딩 제목","cond":"조건","d":"결말"}] (1~3개)}`;
   try {
-    const result = PROVIDER === 'nim'
-      ? await fetchNim(sys, [{ role: 'user', content: idea }], 0.85)
-      : await fetchGemini(sys, [{ role: 'user', content: idea }]);
+    // draft needs a BIG token budget (world+chars+events easily exceed the
+    // in-game 2000 cap and truncated JSON fails to parse) + no game prefill
+    const call = () => PROVIDER === 'nim'
+      ? fetchNim(sys, [{ role: 'user', content: idea }], 0.85, 4500)
+      : fetchGemini(sys, [{ role: 'user', content: idea }], 0.9, 4500, false);
+    let result = await call();
+    if (result.error || !result.text) {   // transient network error → one retry
+      btn.textContent = '✦ 재시도 중…';
+      result = await call();
+    }
     if (result.error) throw new Error(result.error.message || 'API 오류');
     let raw = (result.text || '').replace(/```json\s*|```/g, '').trim();
     const a = raw.indexOf('{'), b = raw.lastIndexOf('}');
@@ -2802,15 +2809,16 @@ function isSoftRefusal(parsed, raw) {
 
 // ===== LLM PROVIDERS =====
 // Each returns { text } on success, { error:{code,message} }, or { blocked:true }
-async function fetchGemini(systemContent, messages, temp = 0.9) {
+async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, prefill = true) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000);
-  // Prefill: force model to start with JSON body, preventing refusal preamble
+  const timeout = setTimeout(() => controller.abort(), 90000);
   const apiContents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }]
   }));
-  apiContents.push({ role: 'model', parts: [{ text: '{"narration":"' }] });
+  // Prefill: force model to start with the game JSON body (skip for other
+  // schemas like the episode draft, where it would corrupt the output)
+  if (prefill) apiContents.push({ role: 'model', parts: [{ text: '{"narration":"' }] });
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`, {
       method: 'POST',
@@ -2819,7 +2827,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9) {
       body: JSON.stringify({
         system_instruction: { parts: [{ text: systemContent }] },
         contents: apiContents,
-        generationConfig: { temperature: temp, maxOutputTokens: 1500 },
+        generationConfig: { temperature: temp, maxOutputTokens: maxTok },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' },
           { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'OFF' },
@@ -2835,7 +2843,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9) {
     const fr = data.candidates[0]?.finishReason;
     if (fr === 'SAFETY' || fr === 'RECITATION') return { blocked: true };
     let raw = data.candidates[0]?.content?.parts?.[0]?.text || '';
-    if (!raw.trimStart().startsWith('{') && !raw.includes('```')) raw = '{"narration":"' + raw;
+    if (prefill && !raw.trimStart().startsWith('{') && !raw.includes('```')) raw = '{"narration":"' + raw;
     return { text: raw };
   } catch (e) {
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
@@ -2845,7 +2853,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9) {
 }
 
 // NVIDIA NIM (via Cloudflare Worker proxy) — OpenAI-compatible, streaming required
-async function fetchNim(systemContent, messages, temp = 0.7) {
+async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120000);
   const oai = [{ role: 'system', content: systemContent }];
@@ -2858,7 +2866,7 @@ async function fetchNim(systemContent, messages, temp = 0.7) {
       body: JSON.stringify({
         model: NIM_MODEL,
         messages: oai,
-        max_tokens: 2000,
+        max_tokens: maxTok,
         temperature: temp,
         top_p: 1.0,
         stream: true
