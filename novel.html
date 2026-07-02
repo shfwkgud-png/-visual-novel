@@ -56,97 +56,273 @@
   }
 
   /* STORY SELECT SCREEN */
-  #storyScreen {
+  /* ===== MAIN SHELL (Frontia-style) ===== */
+  #mainScreen {
     position: fixed; inset: 0;
     background: var(--bg);
     display: none;
     flex-direction: column;
-    align-items: center;
-    gap: 18px;
     z-index: 1001;
+  }
+  #mainContent {
+    flex: 1;
     overflow-y: auto;
-    padding: calc(24px + env(safe-area-inset-top)) 20px calc(30px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+    padding: calc(16px + env(safe-area-inset-top)) 0 calc(84px + env(safe-area-inset-bottom));
   }
-  #storyScreenTitle {
-    font-family: 'Noto Serif KR', serif;
-    color: var(--gold);
-    font-size: 1.3rem;
-    letter-spacing: 0.25em;
-    margin-top: 8vh;
+  .page-title {
+    font-size: 1.35rem; font-weight: 800; color: var(--text);
+    padding: 8px 18px 14px;
   }
-  #storyList {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    width: min(420px, 100%);
-  }
-  .story-card {
-    display: flex;
-    gap: 14px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px;
-    cursor: pointer;
-    transition: border-color 0.2s, transform 0.12s;
-  }
-  .story-card:active { transform: scale(0.98); border-color: var(--gold); }
-  .story-cover {
-    width: 72px; height: 96px;
-    flex-shrink: 0;
-    border-radius: var(--radius-sm);
+  /* home hero */
+  #homeHero {
+    margin: 4px 18px 22px;
+    height: 46vh;
+    border-radius: 18px;
     background-size: cover;
     background-position: top center;
     background-color: #14101f;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  #homeHero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(6,6,12,0.92) 0%, rgba(6,6,12,0.25) 40%, transparent 70%);
+  }
+  .hero-info {
+    position: absolute; left: 18px; right: 18px; bottom: 16px; z-index: 1;
+  }
+  .hero-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.5rem; font-weight: 800; color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+  }
+  .hero-desc {
+    font-size: 0.78rem; color: rgba(235,228,215,0.85);
+    margin-top: 6px; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .hero-badge {
+    display: inline-block; margin-top: 10px;
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    color: #1a1208; font-size: 0.75rem; font-weight: 700;
+    padding: 7px 18px; border-radius: 18px;
+  }
+  /* horizontal rows */
+  .home-row { margin-bottom: 24px; }
+  .row-title {
+    font-size: 0.95rem; font-weight: 700; color: var(--text);
+    padding: 0 18px 10px;
+  }
+  .row-scroll {
+    display: flex; gap: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 18px;
+    scrollbar-width: none;
+  }
+  .row-scroll::-webkit-scrollbar { display: none; }
+  .mini-card { flex-shrink: 0; width: 104px; cursor: pointer; }
+  .mini-cover {
+    width: 104px; height: 140px;
+    border-radius: 10px;
+    background-size: cover; background-position: top center;
+    background-color: #14101f;
     border: 1px solid rgba(255,255,255,0.06);
   }
-  .story-meta { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .story-title {
-    font-family: 'Noto Serif KR', serif;
-    color: var(--text);
-    font-size: 1.02rem;
-    font-weight: 700;
+  .mini-title {
+    font-size: 0.72rem; color: var(--text);
+    margin-top: 6px;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .story-badge {
-    display: inline-block;
-    font-size: 0.62rem;
-    color: var(--gold);
-    border: 1px solid var(--gold-dim);
-    border-radius: 8px;
-    padding: 1px 7px;
-    vertical-align: 2px;
-    margin-left: 4px;
-    font-family: 'Noto Sans KR', sans-serif;
-    font-weight: 400;
-  }
-  .story-desc { font-size: 0.78rem; color: var(--text-dim); line-height: 1.55; }
-  #storyBackBtn {
-    position: absolute;
-    top: calc(14px + env(safe-area-inset-top)); left: 16px;
-    background: none; border: none;
-    color: var(--text-dim);
-    font-size: 0.85rem;
+  .mini-sub { font-size: 0.64rem; color: var(--text-dim); margin-top: 2px; }
+  /* 내 플레이 list */
+  #playsList { display: flex; flex-direction: column; }
+  .play-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px;
     cursor: pointer;
-    padding: 6px 10px;
   }
-  #storyBackBtn:hover { color: var(--gold); }
+  .play-item:active { background: rgba(255,255,255,0.04); }
+  .play-cover {
+    width: 56px; height: 74px; flex-shrink: 0;
+    border-radius: 8px;
+    background-size: cover; background-position: top center;
+    background-color: #14101f;
+  }
+  .play-info { flex: 1; min-width: 0; }
+  .play-title { font-size: 0.92rem; font-weight: 700; color: var(--text); }
+  .play-sub { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+  .play-sub b { color: #6fa8ff; font-weight: 400; }
+  .play-go {
+    flex-shrink: 0;
+    background: none; border: none; color: var(--text);
+    font-size: 0.72rem; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .play-go .tri { font-size: 1.1rem; }
+  .empty-note { text-align: center; color: var(--text-dim); font-size: 0.8rem; padding: 48px 0; }
+  /* MY */
+  .my-section { padding: 6px 18px 18px; }
+  .my-label { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px; }
+  .my-btn {
+    width: 100%;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); border-radius: 12px;
+    padding: 13px; font-size: 0.88rem; cursor: pointer;
+    margin-top: 8px;
+  }
+  .my-btn:active { border-color: var(--gold); }
+  /* bottom tab bar */
+  #tabBar {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    display: flex;
+    background: rgba(10,9,16,0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding: 8px 0 calc(14px + env(safe-area-inset-bottom));
+  }
+  .tab-btn {
+    flex: 1;
+    background: none; border: none;
+    color: var(--text-dim); font-size: 0.66rem;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    cursor: pointer;
+  }
+  .tab-btn .tab-ico { font-size: 1.15rem; line-height: 1; }
+  .tab-btn.active { color: #fff; }
 
-  /* API KEY SCREEN */
-  #apiScreen {
+  /* ===== STORY DETAIL ===== */
+  #storyDetail {
     position: fixed; inset: 0;
     background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 1000;
+    display: none;
     flex-direction: column;
-    gap: 16px;
+    z-index: 1002;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .detail-back {
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top)); left: 12px;
+    z-index: 3;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(10,8,18,0.55);
+    backdrop-filter: blur(8px);
+    border: none; color: #fff;
+    font-size: 1.3rem; cursor: pointer;
+  }
+  #detailCover {
+    height: 52vh;
+    background-size: cover; background-position: top center;
+    background-color: #14101f;
+    position: relative;
+    flex-shrink: 0;
+  }
+  #detailCover::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, var(--bg) 0%, transparent 42%);
+  }
+  #detailBody { padding: 0 20px calc(110px + env(safe-area-inset-bottom)); margin-top: -24px; position: relative; }
+  #detailTitle {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.5rem; font-weight: 800; color: #fff;
+  }
+  #detailTags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .d-tag {
+    font-size: 0.68rem; color: var(--text-dim);
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 3px 9px;
+  }
+  #detailDesc { font-size: 0.85rem; color: rgba(230,223,210,0.9); line-height: 1.7; margin-top: 14px; }
+  .detail-label { font-size: 0.85rem; font-weight: 700; color: var(--text); margin: 22px 0 12px; }
+  #detailChars {
+    display: flex; gap: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 6px;
+  }
+  #detailChars::-webkit-scrollbar { display: none; }
+  .d-char { flex-shrink: 0; width: 64px; text-align: center; cursor: default; }
+  .d-char-img {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background-size: 190%; background-position: top center;
+    background-color: #14101f;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .d-char-name { font-size: 0.66rem; color: var(--text-dim); margin-top: 5px; }
+  #detailActions {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    display: flex; gap: 10px;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+    z-index: 3;
+  }
+  #detailNewBtn {
+    flex: 1;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); border-radius: 13px;
+    padding: 15px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  }
+  #detailContinueBtn {
+    flex: 2;
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    border: none; color: #1a1208; border-radius: 13px;
+    padding: 15px; font-size: 0.95rem; font-weight: 800; cursor: pointer;
+  }
+  #detailContinueBtn:disabled { opacity: 0.35; cursor: default; }
+
+  /* ===== AI SETTINGS MODAL ===== */
+  #apiScreen {
+    position: fixed; inset: 0;
+    background: rgba(4,4,8,0.7);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 1500;
+  }
+  #apiModal {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 22px;
+    width: min(400px, 92vw);
   }
   #apiScreen h1 {
     font-family: 'Noto Serif KR', serif;
     color: var(--gold);
-    font-size: 2rem;
-    letter-spacing: 0.2em;
+    font-size: 1.2rem;
+    letter-spacing: 0.15em;
   }
   #apiScreen p { color: var(--text-dim); font-size: 0.85rem; }
+  #settingsCloseBtn {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 0.8rem; cursor: pointer; padding: 4px 10px;
+  }
+
+  /* in-game protagonist profile inputs (status panel 주인공 tab) */
+  .profile-input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-family: 'Noto Sans KR', sans-serif;
+    outline: none;
+  }
+  .profile-input:focus { border-color: var(--gold); }
+  .profile-textarea { height: 110px; resize: none; line-height: 1.6; }
   #providerRow { display: flex; gap: 8px; }
   .prov-btn {
     background: rgba(20,16,32,0.7); border: 1px solid rgba(201,168,76,0.3);
@@ -177,34 +353,6 @@
     text-align: center;
   }
   #apiKeyInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
-  #newGameFields { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-  #playerNameInput {
-    background: var(--panel);
-    border: 1px solid rgba(201,168,76,0.3);
-    color: var(--text);
-    padding: 12px 18px;
-    border-radius: 24px;
-    width: min(360px, 85vw);
-    font-size: 0.9rem;
-    outline: none;
-    text-align: center;
-    font-family: 'Noto Sans KR', sans-serif;
-  }
-  #playerDescInput {
-    background: var(--panel);
-    border: 1px solid rgba(201,168,76,0.3);
-    color: var(--text);
-    padding: 12px 18px;
-    border-radius: 16px;
-    width: min(360px, 85vw);
-    height: 72px;
-    font-size: 0.85rem;
-    outline: none;
-    resize: none;
-    font-family: 'Noto Sans KR', sans-serif;
-    line-height: 1.5;
-  }
-  #playerNameInput:focus, #playerDescInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
   .start-btn {
     background: linear-gradient(135deg, var(--gold), #b8923a);
     color: #1a1208;
@@ -220,25 +368,6 @@
   }
   .start-btn:active { transform: scale(0.96); }
   .start-btn:hover { background: linear-gradient(135deg, #e0be6a, var(--gold)); }
-  #continueBtn {
-    background: var(--glass);
-    border: 1px solid var(--gold-dim);
-    color: var(--gold);
-    padding: 11px 30px;
-    border-radius: 24px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    display: none;
-  }
-  #continueBtn:hover { border-color: var(--gold); background: rgba(201,168,76,0.1); }
-  #deleteBtn {
-    background: none; border: none;
-    color: var(--text-dim); cursor: pointer;
-    font-size: 0.75rem; padding: 4px 8px;
-    display: none;
-  }
-  #deleteBtn:hover { color: var(--red); }
-
   /* GAME SCREEN — 100vh (852 = true full screen on iOS) minus the keyboard.
      Keyboard closed: full screen (no strip). Keyboard open: shrinks to the
      visible area so the input (absolute bottom:0) sits right above the keyboard. */
@@ -786,7 +915,6 @@
     #dialoguePanel { min-height: 78px; }
     #speakerName { font-size: 0.85rem; }
     .start-btn { width: min(280px, 80vw); }
-    #continueBtn { width: min(280px, 80vw); }
   }
 
   @media (max-height: 600px) {
@@ -796,30 +924,79 @@
 </head>
 <body>
 
-<!-- API KEY SCREEN -->
-<!-- STORY SELECT — pick which story pack to play -->
-<div id="storyScreen">
-  <h1 id="storyScreenTitle">이야기 선택</h1>
-  <div id="storyList"></div>
+<!-- ===== MAIN SHELL (Frontia-style): home / my-plays / MY + bottom tab bar ===== -->
+<div id="mainScreen">
+  <div id="mainContent">
+    <!-- 홈 -->
+    <div class="main-tab-page" id="pageHome">
+      <div id="homeHero" onclick=""></div>
+      <div class="home-row" id="rowPlaying" style="display:none">
+        <div class="row-title">플레이 중인 에피소드</div>
+        <div class="row-scroll" id="rowPlayingCards"></div>
+      </div>
+      <div class="home-row">
+        <div class="row-title">모든 이야기</div>
+        <div class="row-scroll" id="rowAllCards"></div>
+      </div>
+    </div>
+    <!-- 내 플레이 -->
+    <div class="main-tab-page" id="pagePlays" style="display:none">
+      <div class="page-title">내 플레이</div>
+      <div id="playsList"></div>
+    </div>
+    <!-- MY -->
+    <div class="main-tab-page" id="pageMy" style="display:none">
+      <div class="page-title">MY</div>
+      <div class="my-section">
+        <div class="my-label">제작한 에피소드</div>
+        <div id="myStories"></div>
+        <button class="my-btn" onclick="alert('에피소드 제작기는 다음 업데이트에서 추가됩니다')">＋ 에피소드 만들기</button>
+      </div>
+      <div class="my-section">
+        <div class="my-label">설정</div>
+        <button class="my-btn" onclick="openSettings()">⚙ AI 연결 설정</button>
+      </div>
+    </div>
+  </div>
+  <!-- bottom tab bar -->
+  <div id="tabBar">
+    <button class="tab-btn active" id="tabHome" onclick="switchMainTab('home')"><span class="tab-ico">⌂</span>홈</button>
+    <button class="tab-btn" id="tabPlays" onclick="switchMainTab('plays')"><span class="tab-ico">▶</span>내 플레이</button>
+    <button class="tab-btn" id="tabMy" onclick="switchMainTab('my')"><span class="tab-ico">◉</span>MY</button>
+  </div>
 </div>
 
+<!-- ===== STORY DETAIL (개요 + 새로하기/이어하기) ===== -->
+<div id="storyDetail">
+  <button class="detail-back" onclick="closeStoryDetail()">‹</button>
+  <div id="detailCover"></div>
+  <div id="detailBody">
+    <div id="detailTitle"></div>
+    <div id="detailTags"></div>
+    <div id="detailDesc"></div>
+    <div class="detail-label" id="detailCharsLabel">등장 캐릭터</div>
+    <div id="detailChars"></div>
+  </div>
+  <div id="detailActions">
+    <button id="detailNewBtn" onclick="startStoryNew()">새로하기</button>
+    <button id="detailContinueBtn" onclick="startStoryContinue()">이어하기</button>
+  </div>
+</div>
+
+<!-- ===== AI SETTINGS MODAL (was apiScreen) ===== -->
 <div id="apiScreen">
-  <button id="storyBackBtn" onclick="backToStories()">‹ 이야기 선택</button>
-  <h1>낙인의 검</h1>
-  <div id="providerRow">
-    <button type="button" class="prov-btn active" id="provGemini" onclick="setProvider('gemini')">Gemini</button>
-    <button type="button" class="prov-btn" id="provNim" onclick="setProvider('nim')">Mistral 675B</button>
+  <div id="apiModal">
+    <h1>AI 연결 설정</h1>
+    <div id="providerRow">
+      <button type="button" class="prov-btn active" id="provGemini" onclick="setProvider('gemini')">Gemini</button>
+      <button type="button" class="prov-btn" id="provNim" onclick="setProvider('nim')">Mistral 675B</button>
+    </div>
+    <p id="provHint">Gemini API 키를 입력하세요</p>
+    <input type="password" id="apiKeyInput" placeholder="AIza...">
+    <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
+    <button class="start-btn" onclick="saveSettings()">저장</button>
+    <button id="settingsCloseBtn" onclick="closeSettings()">닫기</button>
   </div>
-  <p id="provHint">Gemini API 키를 입력하세요</p>
-  <input type="password" id="apiKeyInput" placeholder="AIza...">
-  <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
-  <div id="newGameFields">
-    <input type="text" id="playerNameInput" placeholder="주인공 이름 (필수)" value="카이든" maxlength="20">
-    <textarea id="playerDescInput" placeholder="주인공 특징 (선택) — 외모·성격·과거 등 자유롭게. 비워두면 기본 설정 사용"></textarea>
-  </div>
-  <button class="start-btn" id="apiStartBtn" onclick="startGame(false)">새 게임</button>
-  <button id="continueBtn" onclick="startGame(true)">이어하기</button>
-  <button id="deleteBtn" onclick="deleteSave()">저장 데이터 삭제</button>
 </div>
 
 <div id="errbox" onclick="this.style.display='none'" style="position:fixed;top:70px;left:8px;right:8px;z-index:99999;background:rgba(150,20,20,0.96);color:#fff;font:11px/1.4 monospace;padding:9px 10px;border-radius:8px;display:none;white-space:pre-wrap;word-break:break-word"></div>
@@ -852,12 +1029,13 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v65</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v66</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
       <button class="top-btn" onclick="refreshApp()" title="최신 버전으로 갱신">⟳</button>
+      <button class="top-btn" onclick="exitToMain()" title="홈으로">⌂</button>
     </div>
   </div>
 
@@ -866,6 +1044,7 @@
       <div id="statusTabs">
         <button class="status-tab active" id="tabChars" onclick="switchStatusTab('chars')">만난 캐릭터</button>
         <button class="status-tab" id="tabSituation" onclick="switchStatusTab('situation')">현재 상황</button>
+        <button class="status-tab" id="tabProfile" onclick="switchStatusTab('profile')">주인공</button>
       </div>
       <button id="statusClose" onclick="toggleStatus()">닫기</button>
     </div>
@@ -1229,53 +1408,175 @@ let WORLD_PROMPT = NAKIN_WORLD_PROMPT;
 // nakin keeps its legacy save key so existing progress survives the update
 function saveKeyFor(id) { return id === 'nakin' ? 'nakin_save' : 'vn_save_' + id; }
 
-function selectStory(id) {
+function setActiveStory(id) {
   const s = allStories()[id];
-  if (!s) return;
+  if (!s) return false;
   STORY = s;
   CHARACTERS = s.characters;
   WORLD_PROMPT = s.worldPrompt;
-  document.querySelector('#apiScreen h1').textContent = s.title;
   const tt = document.getElementById('titleText');
   if (tt && tt.childNodes[0]) tt.childNodes[0].nodeValue = s.title + ' ';
-  const nameInput = document.getElementById('playerNameInput');
-  if (nameInput) nameInput.value = (s.protagonist && s.protagonist.name) || '주인공';
-  document.getElementById('storyScreen').style.display = 'none';
-  document.getElementById('apiScreen').style.display = 'flex';
-  refreshSaveButtons();
+  return true;
 }
 
-function backToStories() {
-  document.getElementById('apiScreen').style.display = 'none';
-  renderStoryScreen();
+function saveInfoFor(id) {
+  try {
+    const raw = localStorage.getItem(saveKeyFor(id));
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s.gameHistory || !s.gameHistory.length) return null;
+    return s;
+  } catch { return null; }
 }
 
-function refreshSaveButtons() {
-  const save = loadSave();
-  const has = !!(save && save.gameHistory && save.gameHistory.length > 0);
-  document.getElementById('continueBtn').style.display = has ? 'block' : 'none';
-  document.getElementById('deleteBtn').style.display = has ? 'block' : 'none';
+function timeAgo(ts) {
+  if (!ts) return '';
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 1) return '방금 전';
+  if (m < 60) return m + '분 전';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + '시간 전';
+  return Math.floor(h / 24) + '일 전';
 }
 
-function renderStoryScreen() {
-  const sc = document.getElementById('storyScreen');
-  const list = document.getElementById('storyList');
+// ===== MAIN SHELL =====
+function switchMainTab(t) {
+  document.getElementById('pageHome').style.display = t === 'home' ? 'block' : 'none';
+  document.getElementById('pagePlays').style.display = t === 'plays' ? 'block' : 'none';
+  document.getElementById('pageMy').style.display = t === 'my' ? 'block' : 'none';
+  document.getElementById('tabHome').classList.toggle('active', t === 'home');
+  document.getElementById('tabPlays').classList.toggle('active', t === 'plays');
+  document.getElementById('tabMy').classList.toggle('active', t === 'my');
+  if (t === 'home') renderHome();
+  if (t === 'plays') renderPlays();
+  if (t === 'my') renderMy();
+}
+
+function renderHome() {
   const stories = allStories();
-  list.innerHTML = '';
-  for (const id in stories) {
+  const ids = Object.keys(stories);
+  // hero = first story (or last played)
+  const heroId = ids[0];
+  const hero = stories[heroId];
+  const heroEl = document.getElementById('homeHero');
+  heroEl.style.backgroundImage = hero.cover ? `url('${hero.cover}')` : '';
+  heroEl.onclick = () => openStoryDetail(heroId);
+  heroEl.innerHTML = `<div class="hero-info"><div class="hero-title">${hero.title}</div>` +
+    `<div class="hero-desc">${hero.desc || ''}</div><span class="hero-badge">지금 플레이 ▸</span></div>`;
+  // 플레이 중 row
+  const playing = ids.filter(id => saveInfoFor(id));
+  const rowP = document.getElementById('rowPlaying');
+  rowP.style.display = playing.length ? 'block' : 'none';
+  document.getElementById('rowPlayingCards').innerHTML = playing.map(id => {
+    const s = stories[id]; const sv = saveInfoFor(id);
+    return `<div class="mini-card" onclick="openStoryDetail('${id}')"><div class="mini-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+      `<div class="mini-title">${s.title}</div><div class="mini-sub">${timeAgo(sv.savedAt)}</div></div>`;
+  }).join('');
+  // all stories row
+  document.getElementById('rowAllCards').innerHTML = ids.map(id => {
     const s = stories[id];
-    let has = false;
-    try { const raw = localStorage.getItem(saveKeyFor(id)); has = !!(raw && JSON.parse(raw).gameHistory?.length); } catch {}
-    const card = document.createElement('div');
-    card.className = 'story-card';
-    card.onclick = () => selectStory(id);
-    card.innerHTML =
-      `<div class="story-cover"${s.cover ? ` style="background-image:url('${s.cover}')"` : ''}></div>` +
-      `<div class="story-meta"><div class="story-title">${s.title}${has ? ' <span class="story-badge">이어하기</span>' : ''}</div>` +
-      `<div class="story-desc">${s.desc || ''}</div></div>`;
-    list.appendChild(card);
+    return `<div class="mini-card" onclick="openStoryDetail('${id}')"><div class="mini-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+      `<div class="mini-title">${s.title}</div></div>`;
+  }).join('');
+}
+
+function renderPlays() {
+  const stories = allStories();
+  const items = Object.keys(stories).filter(id => saveInfoFor(id));
+  const list = document.getElementById('playsList');
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-note">진행 중인 이야기가 없습니다.<br>홈에서 이야기를 시작해보세요.</div>';
+    return;
   }
-  sc.style.display = 'flex';
+  list.innerHTML = items.map(id => {
+    const s = stories[id]; const sv = saveInfoFor(id);
+    return `<div class="play-item" onclick="openStoryDetail('${id}')">` +
+      `<div class="play-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+      `<div class="play-info"><div class="play-title">${s.title}</div>` +
+      `<div class="play-sub"><b>진행 중</b> · ${sv.playerName || ''} · ${timeAgo(sv.savedAt)}</div></div>` +
+      `<button class="play-go" onclick="event.stopPropagation(); quickContinue('${id}')"><span class="tri">▶</span>이어하기</button></div>`;
+  }).join('');
+}
+
+function renderMy() {
+  const local = getLocalStories();
+  const ids = Object.keys(local);
+  document.getElementById('myStories').innerHTML = ids.length
+    ? ids.map(id => `<div class="play-item" onclick="openStoryDetail('${id}')"><div class="play-cover" style="background-image:url('${local[id].cover || ''}')"></div><div class="play-info"><div class="play-title">${local[id].title}</div></div></div>`).join('')
+    : '<div class="empty-note" style="padding:20px 0">아직 제작한 에피소드가 없어요</div>';
+}
+
+// ===== STORY DETAIL =====
+let detailStoryId = null;
+function openStoryDetail(id) {
+  const s = allStories()[id];
+  if (!s) return;
+  detailStoryId = id;
+  document.getElementById('detailCover').style.backgroundImage = s.cover ? `url('${s.cover}')` : '';
+  document.getElementById('detailTitle').textContent = s.title;
+  const chars = s.characters || {};
+  const charIds = Object.keys(chars);
+  document.getElementById('detailTags').innerHTML =
+    `<span class="d-tag">다크 판타지</span><span class="d-tag">등장인물 ${charIds.length}</span>` +
+    (saveInfoFor(id) ? `<span class="d-tag" style="color:#6fa8ff">진행 중</span>` : '');
+  document.getElementById('detailDesc').textContent = s.desc || '';
+  document.getElementById('detailChars').innerHTML = charIds.slice(0, 12).map(cid => {
+    const num = cid.replace('f', '');
+    return `<div class="d-char"><div class="d-char-img" style="background-image:url('character/25_upper/${num}_1.webp')"></div>` +
+      `<div class="d-char-name">${chars[cid].name}</div></div>`;
+  }).join('');
+  const sv = saveInfoFor(id);
+  const cbtn = document.getElementById('detailContinueBtn');
+  cbtn.disabled = !sv;
+  cbtn.textContent = sv ? '이어하기' : '저장된 플레이 없음';
+  document.getElementById('storyDetail').style.display = 'flex';
+}
+
+function closeStoryDetail() {
+  document.getElementById('storyDetail').style.display = 'none';
+  detailStoryId = null;
+}
+
+function needsAiSetup() {
+  return PROVIDER === 'gemini' ? !document.getElementById('apiKeyInput').value.trim() : false;
+}
+
+function startStoryNew() {
+  if (!detailStoryId) return;
+  if (saveInfoFor(detailStoryId) && !confirm('진행 중인 플레이가 있습니다. 처음부터 시작하면 덮어씌워집니다. 계속할까요?')) return;
+  if (needsAiSetup()) { openSettings(); return; }
+  setActiveStory(detailStoryId);
+  document.getElementById('storyDetail').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'none';
+  startGame(false);
+}
+
+function startStoryContinue() {
+  if (!detailStoryId || !saveInfoFor(detailStoryId)) return;
+  if (needsAiSetup()) { openSettings(); return; }
+  setActiveStory(detailStoryId);
+  document.getElementById('storyDetail').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'none';
+  startGame(true);
+}
+
+function quickContinue(id) {
+  detailStoryId = id;
+  startStoryContinue();
+}
+
+// ===== AI SETTINGS MODAL =====
+function openSettings() {
+  document.getElementById('apiScreen').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('apiScreen').style.display = 'none';
+}
+function saveSettings() {
+  if (PROVIDER === 'gemini') API_KEY = document.getElementById('apiKeyInput').value.trim();
+  else NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
+  try { localStorage.setItem('vn_cfg', JSON.stringify({ provider: PROVIDER, nimUrl: NIM_URL, apiKey: API_KEY })); } catch {}
+  closeSettings();
 }
 
 // ===== EMOTION TO FILE NUMBER =====
@@ -1380,8 +1681,6 @@ function loadSave() {
 
 function deleteSave() {
   localStorage.removeItem(saveKeyFor(STORY.id));
-  document.getElementById('continueBtn').style.display = 'none';
-  document.getElementById('deleteBtn').style.display = 'none';
 }
 
 // Boot: restore shared provider config, then show the story select screen
@@ -1395,8 +1694,8 @@ function deleteSave() {
       if (cfg.provider) setProvider(cfg.provider);
     }
   } catch {}
-  document.getElementById('apiScreen').style.display = 'none';
-  renderStoryScreen();
+  document.getElementById('mainScreen').style.display = 'flex';
+  renderHome();
 })();
 
 // Force-fetch the latest version (works even in fullscreen PWA with no address bar).
@@ -1432,13 +1731,10 @@ function startGame(isContinue) {
   }
 
   if (!isContinue) {
-    const nameVal = document.getElementById('playerNameInput').value.trim();
-    if (!nameVal) {
-      document.getElementById('playerNameInput').focus();
-      return;
-    }
-    playerName = nameVal;
-    playerDesc = document.getElementById('playerDescInput').value.trim();
+    // Protagonist defaults come from the story pack — editable anytime
+    // in-game via the 주인공 tab of the status panel (Frontia-style).
+    playerName = (STORY.protagonist && STORY.protagonist.name) || '주인공';
+    playerDesc = (STORY.protagonist && STORY.protagonist.desc) || '';
     // Fresh state from the ACTIVE story pack (also resets leftovers when
     // switching stories without a page reload)
     const ini = STORY.initialState || {};
@@ -1453,7 +1749,6 @@ function startGame(isContinue) {
     dialogueLog = []; lastBg = null;
   }
 
-  document.getElementById('apiScreen').style.display = 'none';
   document.getElementById('gameScreen').style.display = 'flex';
   setupInputHandlers();
 
@@ -2207,6 +2502,10 @@ function isInteractive(el) {
 }
 
 function setupInputHandlers() {
+  // Once only — startGame is called again after exiting to the main shell,
+  // and stacked document listeners would double-fire every tap.
+  if (window._handlersSetup) return;
+  window._handlersSetup = true;
   document.addEventListener('touchstart', (e) => {
     const t = e.touches[0];
     touchStartX = t.clientX; touchStartY = t.clientY;
@@ -2336,6 +2635,8 @@ function navNext() {
 
 // Left side of screen = back, right side = forward (no arrows/swipe)
 function handleTap(x) {
+  // Ignore game taps while the main shell / detail / settings are shown
+  if (document.getElementById('gameScreen').style.display === 'none') return;
   if (document.getElementById('backlogPanel').classList.contains('visible')) return;
   clearTimeout(autoTimer);
 
@@ -2608,13 +2909,51 @@ function switchStatusTab(t) {
   statusTab = t;
   document.getElementById('tabChars').classList.toggle('active', t === 'chars');
   document.getElementById('tabSituation').classList.toggle('active', t === 'situation');
+  document.getElementById('tabProfile').classList.toggle('active', t === 'profile');
   renderStatusPanel();
+}
+
+// Exit the game back to the main shell (progress is auto-saved every turn)
+function exitToMain() {
+  if (gameHistory.length) autoSave();
+  statusPanel.classList.remove('visible');
+  document.getElementById('backlogPanel').classList.remove('visible');
+  document.getElementById('genPill').style.display = 'none';
+  resetSprites();
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'flex';
+  switchMainTab('home');
+}
+
+// Save the in-game protagonist profile (name/traits editable anytime, Frontia-style)
+function saveProfile() {
+  const nameEl = document.getElementById('profileName');
+  const descEl = document.getElementById('profileDesc');
+  const newName = (nameEl.value || '').trim();
+  if (!newName) { nameEl.focus(); return; }
+  playerName = newName;
+  playerDesc = (descEl.value || '').trim();
+  gameState.name = playerName;
+  autoSave();
+  const btn = document.getElementById('profileSaveBtn');
+  btn.textContent = '저장됨 ✓';
+  setTimeout(() => { btn.textContent = '프로필 저장'; }, 1500);
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
 
 function renderStatusPanel() {
   const body = document.getElementById('statusBody');
+  if (statusTab === 'profile') {
+    body.innerHTML =
+      `<div class="sit-block"><div class="sit-label">이름</div>` +
+      `<input type="text" id="profileName" class="profile-input" maxlength="20" value="${esc(playerName)}"></div>` +
+      `<div class="sit-block"><div class="sit-label">특징</div>` +
+      `<textarea id="profileDesc" class="profile-input profile-textarea" maxlength="200" placeholder="외모·성격·과거 등 자유롭게 (다음 턴부터 반영)">${esc(playerDesc)}</textarea></div>` +
+      `<button id="profileSaveBtn" class="start-btn" style="width:100%;margin-top:6px" onclick="saveProfile()">프로필 저장</button>` +
+      `<div class="char-meta" style="text-align:center;margin-top:12px">변경 내용은 다음 응답부터 이야기에 반영됩니다</div>`;
+    return;
+  }
   if (statusTab === 'situation') {
     const p = gameState.player || { abilities: [], injuries: [] };
     let h = '';
