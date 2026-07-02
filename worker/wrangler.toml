@@ -1,0 +1,9 @@
+name = "pandora-sync"
+main = "sync.js"
+compatibility_date = "2026-06-01"
+
+# KV: story packs + play saves backup/sync
+# (namespace id filled in after `wrangler kv namespace create PANDORA_KV`)
+[[kv_namespaces]]
+binding = "PANDORA_KV"
+id = "43b018628433424b9ba41c01347c7330"

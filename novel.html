@@ -510,6 +510,15 @@
     background: none; border: none; color: var(--text-dim);
     font-size: 0.8rem; cursor: pointer; padding: 4px 10px;
   }
+  #syncSection {
+    width: 100%;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #syncSection > p { font-size: 0.85rem; color: var(--text); }
+  #syncBtnRow { display: flex; gap: 8px; }
+  #syncBtnRow .my-btn { margin-top: 0; flex: 1; }
 
   /* ===== EPISODE CREATOR ===== */
   #creatorScreen {
@@ -1419,6 +1428,15 @@
     <p id="provHint">Gemini API 키를 입력하세요</p>
     <input type="password" id="apiKeyInput" placeholder="AIza...">
     <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
+    <div id="syncSection">
+      <p>☁ 백업 · 기기 동기화 <span class="c-hint">같은 암호를 쓰는 기기끼리 공유</span></p>
+      <input type="password" id="syncTokenInput" class="profile-input" placeholder="동기화 암호 (4자 이상, 직접 정하세요)">
+      <div id="syncBtnRow">
+        <button class="my-btn" onclick="backupAll(true)">↑ 지금 백업</button>
+        <button class="my-btn" onclick="restoreAll()">↓ 복원</button>
+      </div>
+      <div id="syncStatus" class="c-hint" style="text-align:center"></div>
+    </div>
     <button class="start-btn" onclick="saveSettings()">저장</button>
     <button id="settingsCloseBtn" onclick="closeSettings()">닫기</button>
   </div>
@@ -1454,7 +1472,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v78</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v79</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2073,7 +2091,105 @@ function saveSettings() {
   if (PROVIDER === 'gemini') API_KEY = document.getElementById('apiKeyInput').value.trim();
   else NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
   try { localStorage.setItem('vn_cfg', JSON.stringify({ provider: PROVIDER, nimUrl: NIM_URL, apiKey: API_KEY })); } catch {}
+  const t = document.getElementById('syncTokenInput').value.trim();
+  try { if (t) localStorage.setItem('vn_sync_token', t); } catch {}
   closeSettings();
+}
+
+// ===== CLOUD BACKUP / DEVICE SYNC (Cloudflare KV via pandora-sync worker) =====
+const SYNC_URL = 'https://pandora-sync.pasokong99.workers.dev';
+
+function syncToken() {
+  try { return localStorage.getItem('vn_sync_token') || ''; } catch { return ''; }
+}
+
+function syncStatus(msg) {
+  const el = document.getElementById('syncStatus');
+  if (el) el.textContent = msg;
+}
+
+async function syncPut(key, value) {
+  const t = syncToken();
+  if (!t) return false;
+  const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Sync-Token': t },
+    body: typeof value === 'string' ? value : JSON.stringify(value)
+  });
+  return res.ok;
+}
+
+async function syncGet(key) {
+  const t = syncToken();
+  if (!t) return null;
+  const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
+    headers: { 'X-Sync-Token': t }
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// Backup everything: created stories + every play save + settings
+async function backupAll(manual) {
+  const t = document.getElementById('syncTokenInput')?.value.trim() || syncToken();
+  if (!t || t.length < 4) { syncStatus('동기화 암호를 먼저 입력하세요 (4자 이상)'); return; }
+  try { localStorage.setItem('vn_sync_token', t); } catch {}
+  if (manual) syncStatus('백업 중…');
+  try {
+    let n = 0;
+    await syncPut('stories', getLocalStories()); n++;
+    for (const id of Object.keys(allStories())) {
+      const raw = localStorage.getItem(saveKeyFor(id));
+      if (raw) { await syncPut('save:' + id, raw); n++; }
+    }
+    await syncPut('cfg', localStorage.getItem('vn_cfg') || '{}'); n++;
+    const when = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    try { localStorage.setItem('vn_last_backup', String(Date.now())); } catch {}
+    syncStatus(`✓ 백업 완료 (${n}개 항목, ${when})`);
+  } catch (e) {
+    syncStatus('백업 실패: ' + (e.message || '네트워크 오류'));
+  }
+}
+
+// Restore from cloud onto this device (asks before overwriting local data)
+async function restoreAll() {
+  const t = document.getElementById('syncTokenInput')?.value.trim() || syncToken();
+  if (!t || t.length < 4) { syncStatus('동기화 암호를 먼저 입력하세요 (4자 이상)'); return; }
+  try { localStorage.setItem('vn_sync_token', t); } catch {}
+  if (!confirm('클라우드 백업을 이 기기로 가져옵니다. 이 기기의 스토리/플레이가 백업본으로 대체됩니다. 계속할까요?')) return;
+  syncStatus('복원 중…');
+  try {
+    let n = 0;
+    const stories = await syncGet('stories');
+    if (stories) { localStorage.setItem('vn_local_stories', JSON.stringify(stories)); n++; }
+    for (const id of Object.keys(allStories())) {
+      const save = await syncGet('save:' + id);
+      if (save) { localStorage.setItem(saveKeyFor(id), JSON.stringify(save)); n++; }
+    }
+    const cfg = await syncGet('cfg');
+    if (cfg) {
+      localStorage.setItem('vn_cfg', typeof cfg === 'string' ? cfg : JSON.stringify(cfg));
+      if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
+      if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
+      if (cfg.provider) setProvider(cfg.provider);
+      n++;
+    }
+    syncStatus(`✓ 복원 완료 (${n}개 항목)`);
+    renderHome();
+  } catch (e) {
+    syncStatus('복원 실패: ' + (e.message || '네트워크 오류'));
+  }
+}
+
+// Auto-backup: piggybacks on autoSave, debounced so bursts of turns coalesce
+let _syncTimer = null;
+function scheduleAutoBackup() {
+  if (!syncToken()) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    syncPut('save:' + STORY.id, localStorage.getItem(saveKeyFor(STORY.id)) || '{}').catch(() => {});
+    syncPut('stories', getLocalStories()).catch(() => {});
+  }, 5000);
 }
 
 // ===== EPISODE CREATOR (Phase 2) =====
@@ -2405,6 +2521,7 @@ function publishStory() {
   const local = getLocalStories();
   local[id] = story;
   localStorage.setItem('vn_local_stories', JSON.stringify(local));
+  try { scheduleAutoBackup(); } catch {}
   closeCreator();
   switchMainTab('my');
 }
@@ -2508,6 +2625,8 @@ function autoSave() {
   localStorage.setItem(saveKeyFor(STORY.id), JSON.stringify(save));
   // provider config is shared across stories
   try { localStorage.setItem('vn_cfg', JSON.stringify({ provider: PROVIDER, nimUrl: NIM_URL, apiKey: API_KEY })); } catch {}
+  // cloud backup (debounced; no-op until a sync passphrase is set)
+  try { scheduleAutoBackup(); } catch {}
 }
 
 function loadSave() {
@@ -2532,6 +2651,8 @@ function deleteSave() {
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
       if (cfg.provider) setProvider(cfg.provider);
     }
+    const st = localStorage.getItem('vn_sync_token');
+    if (st) document.getElementById('syncTokenInput').value = st;
   } catch {}
   // PANDORA intro shows first; 접속하기 fades it out into the main shell
   document.getElementById('mainScreen').style.display = 'flex';
