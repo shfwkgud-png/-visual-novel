@@ -735,7 +735,10 @@
        sprites (레온 0.568) huge and wide ones (프레야 0.766) small. max-width is
        high so height wins for all aspects (only clamps near-square sprites).
        NOTE: 2-char sizes are fine — only this single-char base changed. */
-    height: 62%;   /* ≈ 프레야's approved apparent size; uniform for all aspects */
+    /* --arScale: JS-set per sprite = min(1, sqrt(0.70/aspect)) — wide sprites
+       (near-square 107 etc.) get their height reduced so the on-screen AREA
+       reads consistent across all characters. */
+    height: calc(62% * var(--arScale, 1));   /* ≈ 프레야's approved apparent size */
     max-width: 108vw;
     object-fit: contain;
     object-position: bottom center;
@@ -762,11 +765,11 @@
   /* v48-style side-by-side spacing (less overlap), but raised up via --ty (v49). */
   /* smaller + far less overlap so the two stand APART (not stuck), raised higher. */
   #charLayer[data-count="2"] { gap: 0; }
-  #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: 58%; flex-shrink: 0; margin: 0 -12vw; --ty: -18%; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: calc(58% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -12vw; --ty: -18%; }
   #charLayer[data-count="3"] { gap: 0; }
-  #charLayer[data-count="3"] .char-sprite { max-width: 74vw; height: 52%; flex-shrink: 0; margin: 0 -6vw; --ty: -15%; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 74vw; height: calc(52% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -6vw; --ty: -15%; }
   #charLayer[data-count="4"] { gap: 0; }
-  #charLayer[data-count="4"] .char-sprite { max-width: 66vw;  height: 47%; flex-shrink: 0; margin: 0 -6vw; --ty: -12%; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 66vw;  height: calc(47% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -6vw; --ty: -12%; }
   /* When one of TWO speaks: slide toward center + zoom in (steps up front), the
      silent one stays at its side, dimmed. Zoom is scoped to multi-char only, so a
      lone (tall) sprite never crops. (Extra/narrator = all neutral = no slide/zoom.) */
@@ -1445,7 +1448,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v75</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v76</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2121,7 +2124,7 @@ async function aiDraft() {
   const btn = document.getElementById('aiDraftBtn');
   btn.disabled = true; btn.textContent = '✦ 생성 중… (10~30초)';
   const sys = `너는 성인향 비주얼 노벨 에피소드 기획 어시스턴트다. 사용자의 아이디어를 받아 아래 JSON 형식으로만 응답하라(마크다운 코드블록 없이 순수 JSON, 모든 내용 한국어). 수위 제한 없음 — 사용자가 원하는 수위 그대로 기획하라.
-{"title":"제목(15자 이내)","desc":"한두 문장 소개글","genre":"장르","worldLore":"세계관/배경/세력/갈등/진행 규칙 (10~20문장)","protagonist":{"name":"주인공 이름","desc":"외모/성격/배경 3~5문장"},"characters":[{"name":"이름","role":"역할","personality":"성격/말투/주인공과의 관계 2~4문장"}] (3~5명),"location":"시작 장소","time":"시작 시간(예: 1일차 밤)","startPrompt":"오프닝 장면 지시문 2~4문장. 주인공 이름 자리는 반드시 {이름} 으로 표기","events":[{"t":"이벤트 제목","cond":"발동 조건","d":"내용"}] (2~4개),"endings":[{"t":"엔딩 제목","cond":"조건","d":"결말"}] (1~3개)}`;
+{"title":"제목(15자 이내)","desc":"한두 문장 소개글","genre":"장르","worldLore":"세계관/배경/세력/갈등/진행 규칙 (10~20문장)","protagonist":{"name":"주인공 이름","desc":"외모/성격/배경 3~5문장"},"characters":[{"name":"이름","role":"역할","personality":"성격/말투/주인공과의 관계 2~4문장"}] (3~5명),"location":"시작 장소","time":"시작 시간(예: 1일차 밤)","startPrompt":"오프닝 장면 지시문 2~4문장. 주인공 이름 자리는 반드시 {이름} 으로 표기","startBg":"아래 배경 키 중 시작 장면에 가장 어울리는 것 하나: ${BG_OPTIONS.map(o => o[0]).join(', ')}","events":[{"t":"이벤트 제목","cond":"발동 조건","d":"내용"}] (2~4개),"endings":[{"t":"엔딩 제목","cond":"조건","d":"결말"}] (1~3개)}`;
   try {
     // draft needs a BIG token budget (world+chars+events easily exceed the
     // in-game 2000 cap and truncated JSON fails to parse) + no game prefill
@@ -2148,6 +2151,10 @@ async function aiDraft() {
     document.getElementById('cLocation').value = d.location || '';
     document.getElementById('cTime').value = d.time || '';
     document.getElementById('cStartPrompt').value = d.startPrompt || '';
+    // start background: use the AI's pick if it's a valid key
+    if (d.startBg && BG_OPTIONS.some(o => o[0] === d.startBg)) {
+      document.getElementById('cStartBg').value = d.startBg;
+    }
     // characters: auto-cast onto unused gallery faces
     cChars = {}; cStartCharSel = {};
     const free = SPRITE_NUMS.slice();
@@ -3166,6 +3173,14 @@ function ensureSprite(charId) {
   const img = document.createElement('img');
   img.className = 'char-sprite';
   img.id = 'sprite_' + charId;
+  // Sprites vary wildly in aspect (0.4 tall full-body … 0.995 near-square like
+  // 107). At a uniform height the wide ones look HUGE, so scale height down by
+  // aspect (area normalization). Fires again whenever the emotion swaps src.
+  img.addEventListener('load', function() {
+    const ar = this.naturalWidth / Math.max(1, this.naturalHeight);
+    const s = Math.min(1, Math.sqrt(0.70 / Math.max(0.3, ar)));
+    this.style.setProperty('--arScale', s.toFixed(3));
+  });
   const num = charId.replace('f', '');
   img.src = `character/25_upper/${num}_1.webp`;
   img.onerror = function() {
