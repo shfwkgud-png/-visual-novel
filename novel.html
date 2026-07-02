@@ -386,33 +386,31 @@
   #navPrev { left: 10px; }
   #navNext { right: 10px; }
 
-  /* GENERATION PILL — player's line in a centered chip while the AI writes
-     (Frontia look: soft frosted dark chip, clean type, gentle breathing dots) */
+  /* GENERATION BAND — player's line in a thin FULL-WIDTH strip while the AI
+     writes: no chip/box, just hairlines above & below (Frontia). */
   #genPill {
     display: none;
     position: fixed;
-    top: 40%; left: 50%;
-    transform: translate(-50%, -50%);
+    top: 40%; left: 0; right: 0;
+    transform: translateY(-50%);
     z-index: 5;
-    max-width: 76vw;
-    padding: 13px 22px 11px;
-    background: rgba(12,11,20,0.58);
-    border: 0.5px solid rgba(255,255,255,0.13);
-    border-radius: 14px;
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+    padding: 11px 28px 9px;
+    background: rgba(8,8,14,0.45);
+    border-top: 1px solid rgba(255,255,255,0.16);
+    border-bottom: 1px solid rgba(255,255,255,0.16);
+    backdrop-filter: blur(12px) saturate(130%);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
     color: #f2ecdf;
     font-size: 0.88rem;
-    line-height: 1.6;
+    line-height: 1.55;
     letter-spacing: 0.015em;
     text-align: center;
     pointer-events: none;
     animation: pillIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
   }
   @keyframes pillIn {
-    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92) translateY(8px); }
-    to   { opacity: 1; transform: translate(-50%, -50%) scale(1) translateY(0); }
+    from { opacity: 0; transform: translateY(calc(-50% + 8px)); }
+    to   { opacity: 1; transform: translateY(-50%); }
   }
   #genPill .gen-text {
     display: block;
@@ -423,7 +421,7 @@
     display: flex;
     justify-content: center;
     gap: 5px;
-    margin-top: 8px;
+    margin-top: 7px;
   }
   #genPill .gen-dots i {
     width: 4.5px; height: 4.5px;
@@ -771,7 +769,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v63</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v64</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
