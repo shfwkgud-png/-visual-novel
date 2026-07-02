@@ -1,16 +1,16 @@
 {
-  "name": "낙인의 검",
-  "short_name": "낙인의 검",
+  "name": "PANDORA",
+  "short_name": "PANDORA",
   "start_url": "novel.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0a0f",
+  "background_color": "#000000",
   "theme_color": "#0a0a0f",
   "icons": [
     {
-      "src": "character/25_upper/106_1.webp",
+      "src": "icon.png",
       "sizes": "512x512",
-      "type": "image/webp",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
