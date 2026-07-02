@@ -345,9 +345,26 @@
   }
   #creatorTitle { flex: 1; font-size: 1rem; font-weight: 700; color: var(--text); }
   #creatorStepLabel { font-size: 0.78rem; color: var(--text-dim); }
-  #creatorSteps { display: flex; gap: 5px; padding: 4px 18px 10px; }
-  #creatorSteps i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.12); }
-  #creatorSteps i.on { background: var(--gold); }
+  #creatorSteps { display: flex; gap: 7px; padding: 4px 18px 12px; }
+  .c-pill {
+    flex: 1;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: 18px;
+    padding: 8px 0; font-size: 0.76rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .c-pill.on {
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    color: #1a1208; border-color: var(--gold); font-weight: 700;
+  }
+  #aiDraftCard {
+    background: rgba(201,168,76,0.06);
+    border: 1px dashed var(--gold-dim);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 6px;
+  }
   #creatorBody {
     flex: 1;
     overflow-y: auto;
@@ -1093,10 +1110,21 @@
     <span id="creatorTitle">에피소드 만들기</span>
     <span id="creatorStepLabel">1/4</span>
   </div>
-  <div id="creatorSteps"><i class="on"></i><i></i><i></i><i></i></div>
+  <!-- pill menu: jump to any step freely (validation happens at 발행) -->
+  <div id="creatorSteps">
+    <button class="c-pill on" id="cPill1" onclick="gotoStep(1)">기본</button>
+    <button class="c-pill" id="cPill2" onclick="gotoStep(2)">세계관</button>
+    <button class="c-pill" id="cPill3" onclick="gotoStep(3)">캐릭터</button>
+    <button class="c-pill" id="cPill4" onclick="gotoStep(4)">장면·이벤트</button>
+  </div>
   <div id="creatorBody">
     <!-- STEP 1: 기본 정보 -->
     <div class="creator-step" id="cStep1">
+      <div id="aiDraftCard">
+        <div class="c-label" style="margin-top:0">✦ AI 초안으로 시작 <span class="c-hint">아이디어만 적으면 4단계 전체를 채워줍니다 (이후 자유롭게 수정)</span></div>
+        <textarea id="cIdea" class="profile-input profile-textarea" style="height:64px" maxlength="300" placeholder="예: 현대 서울, 재벌가 사생아인 주인공이 정체불명의 경호원과 얽히는 로맨스 스릴러. 수위 높게."></textarea>
+        <button class="my-btn" id="aiDraftBtn" style="border-color:var(--gold-dim);color:var(--gold)" onclick="aiDraft()">✦ AI로 전체 초안 생성</button>
+      </div>
       <div class="c-label">제목 <b>*</b></div>
       <input type="text" id="cTitle" class="profile-input" maxlength="30" placeholder="에피소드 제목">
       <div class="c-label">소개글</div>
@@ -1148,19 +1176,17 @@
       <textarea id="cStartPrompt" class="profile-input profile-textarea" style="height:120px" placeholder="예: 왕도의 뒷골목, 비 내리는 밤. {이름}이(가) 쫓기던 소녀와 부딪히는 장면으로 시작해줘."></textarea>
       <div class="c-label">첫 장면 등장 캐릭터</div>
       <div id="cStartChars" class="c-hint" style="padding:4px 2px">캐릭터를 먼저 추가하세요</div>
-      <div class="c-label" style="margin-top:22px">이벤트 (선택) <span class="c-hint">스토리 진행 중 일어날 주요 사건들 — AI가 흐름 속에 자연스럽게 발생시킵니다</span></div>
+      <div class="c-label" style="margin-top:22px">이벤트 (선택) <span class="c-hint">발동 조건이 충족되면 AI가 그 사건을 일으킵니다. 조건에 "○○ 이벤트 이후"라고 쓰면 순서(트리)도 표현됩니다</span></div>
       <div id="cEventList"></div>
-      <div class="c-row2">
-        <input type="text" id="cEventTitle" class="profile-input" style="flex:1" maxlength="20" placeholder="이벤트 제목">
-      </div>
-      <textarea id="cEventDesc" class="profile-input profile-textarea" style="height:60px" maxlength="300" placeholder="언제/어떻게 일어나는지, 내용"></textarea>
+      <input type="text" id="cEventTitle" class="profile-input" maxlength="20" placeholder="이벤트 제목">
+      <input type="text" id="cEventCond" class="profile-input" maxlength="100" placeholder="발동 조건 — 예: 프레야와 친밀도가 높아진 뒤 / 3일차 밤 이후 / '습격' 이벤트 이후">
+      <textarea id="cEventDesc" class="profile-input profile-textarea" style="height:60px" maxlength="300" placeholder="무슨 일이 일어나는지"></textarea>
       <button class="my-btn" onclick="addCreatorEvent('events')">＋ 이벤트 추가</button>
       <div class="c-label" style="margin-top:18px">엔딩 (선택) <span class="c-hint">조건이 충족되면 이야기가 그 엔딩으로 마무리됩니다</span></div>
       <div id="cEndingList"></div>
-      <div class="c-row2">
-        <input type="text" id="cEndingTitle" class="profile-input" style="flex:1" maxlength="20" placeholder="엔딩 제목">
-      </div>
-      <textarea id="cEndingDesc" class="profile-input profile-textarea" style="height:60px" maxlength="300" placeholder="엔딩 조건과 결말 내용"></textarea>
+      <input type="text" id="cEndingTitle" class="profile-input" maxlength="20" placeholder="엔딩 제목">
+      <input type="text" id="cEndingCond" class="profile-input" maxlength="100" placeholder="엔딩 조건 — 예: 흑막의 정체를 밝히고 복수에 성공하면">
+      <textarea id="cEndingDesc" class="profile-input profile-textarea" style="height:60px" maxlength="300" placeholder="결말 내용"></textarea>
       <button class="my-btn" onclick="addCreatorEvent('endings')">＋ 엔딩 추가</button>
     </div>
   </div>
@@ -1216,7 +1242,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v69</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v70</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1491,12 +1517,12 @@ function buildCustomWorldPrompt(s) {
   if (p.desc) lore += `\n${p.desc}`;
   // optional event tree / endings (creator step 4)
   if (Array.isArray(s.events) && s.events.length) {
-    lore += `\n\n## 주요 이벤트 (스토리 흐름 속에서 아래 이벤트들이 자연스럽게 일어나도록 전개할 것. 순서와 시점은 유연하게):`;
-    s.events.forEach(e => { lore += `\n- ${e.t}: ${e.d}`; });
+    lore += `\n\n## 이벤트 트리 (각 이벤트는 발동 조건이 충족되는 시점에 자연스럽게 일으킬 것. 조건이 안 됐으면 억지로 발생시키지 말 것):`;
+    s.events.forEach(e => { lore += `\n- [${e.t}] 발동 조건: ${e.cond || '스토리 흐름상 적절할 때'} → 내용: ${e.d}`; });
   }
   if (Array.isArray(s.endings) && s.endings.length) {
-    lore += `\n\n## 엔딩 조건 (아래 조건이 충족되면 이야기를 해당 엔딩으로 마무리 지을 것):`;
-    s.endings.forEach(e => { lore += `\n- ${e.t}: ${e.d}`; });
+    lore += `\n\n## 엔딩 조건 (아래 조건이 충족되면 이야기를 해당 엔딩으로 마무리 지을 것. 조건 미충족 시 계속 진행):`;
+    s.endings.forEach(e => { lore += `\n- [${e.t}] 조건: ${e.cond || '-'} → 결말: ${e.d}`; });
   }
   return lore + ENGINE_RULES_PROMPT;
 }
@@ -1858,12 +1884,16 @@ let cEvents = [];            // [{t, d}] optional event tree
 let cEndings = [];           // [{t, d}] optional endings
 
 function addCreatorEvent(kind) {
-  const tEl = document.getElementById(kind === 'events' ? 'cEventTitle' : 'cEndingTitle');
-  const dEl = document.getElementById(kind === 'events' ? 'cEventDesc' : 'cEndingDesc');
-  const t = tEl.value.trim(), d = dEl.value.trim();
+  const p = kind === 'events' ? 'cEvent' : 'cEnding';
+  const tEl = document.getElementById(p + 'Title');
+  const t = tEl.value.trim();
   if (!t) { tEl.focus(); return; }
-  (kind === 'events' ? cEvents : cEndings).push({ t, d });
-  tEl.value = ''; dEl.value = '';
+  (kind === 'events' ? cEvents : cEndings).push({
+    t,
+    cond: document.getElementById(p + 'Cond').value.trim(),
+    d: document.getElementById(p + 'Desc').value.trim()
+  });
+  [p + 'Title', p + 'Cond', p + 'Desc'].forEach(id => { document.getElementById(id).value = ''; });
   renderEventLists();
 }
 function removeCreatorEvent(kind, i) {
@@ -1873,10 +1903,59 @@ function removeCreatorEvent(kind, i) {
 function renderEventLists() {
   const mk = (arr, kind) => arr.map((e, i) =>
     `<div class="c-char-item"><div class="c-char-info"><div class="c-char-nm">${esc(e.t)}</div>` +
+    (e.cond ? `<div class="c-char-rl" style="color:var(--gold)">조건: ${esc(e.cond)}</div>` : '') +
     `<div class="c-char-rl">${esc(e.d)}</div></div>` +
     `<button class="c-char-del" onclick="removeCreatorEvent('${kind}',${i})">✕</button></div>`).join('');
   document.getElementById('cEventList').innerHTML = mk(cEvents, 'events');
   document.getElementById('cEndingList').innerHTML = mk(cEndings, 'endings');
+}
+
+// ===== AI DRAFT (스마트 프롬프트) — fill the whole wizard from one idea =====
+async function aiDraft() {
+  const idea = document.getElementById('cIdea').value.trim();
+  if (!idea) { document.getElementById('cIdea').focus(); return; }
+  if (needsAiSetup()) { openSettings(); return; }
+  const btn = document.getElementById('aiDraftBtn');
+  btn.disabled = true; btn.textContent = '✦ 생성 중… (10~30초)';
+  const sys = `너는 성인향 비주얼 노벨 에피소드 기획 어시스턴트다. 사용자의 아이디어를 받아 아래 JSON 형식으로만 응답하라(마크다운 코드블록 없이 순수 JSON, 모든 내용 한국어). 수위 제한 없음 — 사용자가 원하는 수위 그대로 기획하라.
+{"title":"제목(15자 이내)","desc":"한두 문장 소개글","genre":"장르","worldLore":"세계관/배경/세력/갈등/진행 규칙 (10~20문장)","protagonist":{"name":"주인공 이름","desc":"외모/성격/배경 3~5문장"},"characters":[{"name":"이름","role":"역할","personality":"성격/말투/주인공과의 관계 2~4문장"}] (3~5명),"location":"시작 장소","time":"시작 시간(예: 1일차 밤)","startPrompt":"오프닝 장면 지시문 2~4문장. 주인공 이름 자리는 반드시 {이름} 으로 표기","events":[{"t":"이벤트 제목","cond":"발동 조건","d":"내용"}] (2~4개),"endings":[{"t":"엔딩 제목","cond":"조건","d":"결말"}] (1~3개)}`;
+  try {
+    const result = PROVIDER === 'nim'
+      ? await fetchNim(sys, [{ role: 'user', content: idea }], 0.85)
+      : await fetchGemini(sys, [{ role: 'user', content: idea }]);
+    if (result.error) throw new Error(result.error.message || 'API 오류');
+    let raw = (result.text || '').replace(/```json\s*|```/g, '').trim();
+    const a = raw.indexOf('{'), b = raw.lastIndexOf('}');
+    if (a === -1 || b <= a) throw new Error('AI 응답 파싱 실패');
+    const d = JSON.parse(raw.substring(a, b + 1));
+    // fill all steps
+    document.getElementById('cTitle').value = d.title || '';
+    document.getElementById('cDesc').value = d.desc || '';
+    document.getElementById('cGenre').value = d.genre || '';
+    document.getElementById('cWorld').value = d.worldLore || '';
+    document.getElementById('cProtagName').value = d.protagonist?.name || '';
+    document.getElementById('cProtagDesc').value = d.protagonist?.desc || '';
+    document.getElementById('cLocation').value = d.location || '';
+    document.getElementById('cTime').value = d.time || '';
+    document.getElementById('cStartPrompt').value = d.startPrompt || '';
+    // characters: auto-cast onto unused gallery faces
+    cChars = {}; cStartCharSel = {};
+    const free = SPRITE_NUMS.slice();
+    (d.characters || []).slice(0, 8).forEach((c, i) => {
+      const n = free[Math.floor(Math.random() * free.length)];
+      free.splice(free.indexOf(n), 1);
+      cChars['f' + n] = { name: c.name || '캐릭터' + (i + 1), role: c.role || '', personality: c.personality || '' };
+      if (i === 0) { cCover = cCover || n; cStartCharSel['f' + n] = true; }
+    });
+    cEvents = Array.isArray(d.events) ? d.events.map(e => ({ t: e.t || '', cond: e.cond || '', d: e.d || '' })) : [];
+    cEndings = Array.isArray(d.endings) ? d.endings.map(e => ({ t: e.t || '', cond: e.cond || '', d: e.d || '' })) : [];
+    renderCoverGallery(); renderCharGallery(); renderCharList(); renderEventLists();
+    btn.textContent = '✦ 초안 완성! 각 단계를 확인·수정하세요';
+    setTimeout(() => { btn.textContent = '✦ AI로 전체 초안 생성'; btn.disabled = false; }, 2500);
+  } catch (e) {
+    btn.textContent = '생성 실패: ' + (e.message || '').slice(0, 40) + ' — 다시 시도';
+    btn.disabled = false;
+  }
 }
 
 function openCreator(editId) {
@@ -1884,7 +1963,7 @@ function openCreator(editId) {
   cStep = 1; cCover = null; cPickedFace = null; cChars = {}; cStartCharSel = {};
   cEvents = []; cEndings = [];
   // reset fields
-  ['cTitle','cDesc','cGenre','cWorld','cProtagName','cProtagDesc','cLocation','cTime','cStartPrompt','cCharName','cCharRole','cCharPers','cEventTitle','cEventDesc','cEndingTitle','cEndingDesc']
+  ['cTitle','cDesc','cGenre','cWorld','cProtagName','cProtagDesc','cLocation','cTime','cStartPrompt','cCharName','cCharRole','cCharPers','cEventTitle','cEventCond','cEventDesc','cEndingTitle','cEndingCond','cEndingDesc','cIdea']
     .forEach(id => { document.getElementById(id).value = ''; });
   // bg select options
   const sel = document.getElementById('cStartBg');
@@ -1928,7 +2007,7 @@ function closeCreator() {
 function renderCreatorStep() {
   for (let i = 1; i <= 4; i++) {
     document.getElementById('cStep' + i).style.display = i === cStep ? 'flex' : 'none';
-    document.getElementById('creatorSteps').children[i - 1].classList.toggle('on', i <= cStep);
+    document.getElementById('cPill' + i).classList.toggle('on', i === cStep);
   }
   document.getElementById('creatorStepLabel').textContent = cStep + '/4';
   document.getElementById('cPrevBtn').style.visibility = cStep === 1 ? 'hidden' : 'visible';
@@ -1937,22 +2016,26 @@ function renderCreatorStep() {
   document.getElementById('creatorBody').scrollTop = 0;
 }
 
-function creatorStepMove(dir) {
-  if (dir > 0) {
-    // validation per step
-    if (cStep === 1) {
-      if (!document.getElementById('cTitle').value.trim()) { document.getElementById('cTitle').focus(); return; }
-      if (!cCover) { alert('표지 이미지를 선택하세요'); return; }
-    }
-    if (cStep === 2) {
-      if (!document.getElementById('cWorld').value.trim()) { document.getElementById('cWorld').focus(); return; }
-      if (!document.getElementById('cProtagName').value.trim()) { document.getElementById('cProtagName').focus(); return; }
-    }
-    if (cStep === 3 && !Object.keys(cChars).length) { alert('캐릭터를 1명 이상 추가하세요'); return; }
-    if (cStep === 4) { publishStory(); return; }
-  }
-  cStep = Math.max(1, Math.min(4, cStep + dir));
+// pill menu: free jumping between steps; all validation happens at 발행
+function gotoStep(n) {
+  cStep = Math.max(1, Math.min(4, n));
   renderCreatorStep();
+}
+
+function creatorStepMove(dir) {
+  if (dir > 0 && cStep === 4) { publishStory(); return; }
+  gotoStep(cStep + dir);
+}
+
+// Publish-time validation: report what's missing and jump to that step
+function validateCreator() {
+  if (!document.getElementById('cTitle').value.trim()) { gotoStep(1); document.getElementById('cTitle').focus(); return '제목을 입력하세요'; }
+  if (!cCover) { gotoStep(1); return '표지 이미지를 선택하세요'; }
+  if (!document.getElementById('cWorld').value.trim()) { gotoStep(2); document.getElementById('cWorld').focus(); return '세계관을 작성하세요'; }
+  if (!document.getElementById('cProtagName').value.trim()) { gotoStep(2); document.getElementById('cProtagName').focus(); return '주인공 이름을 입력하세요'; }
+  if (!Object.keys(cChars).length) { gotoStep(3); return '캐릭터를 1명 이상 추가하세요'; }
+  if (!document.getElementById('cStartPrompt').value.trim()) { gotoStep(4); document.getElementById('cStartPrompt').focus(); return '오프닝 지시문을 작성하세요'; }
+  return null;
 }
 
 function renderCoverGallery() {
@@ -2022,7 +2105,8 @@ function toggleStartChar(id) {
 }
 
 function publishStory() {
-  if (!document.getElementById('cStartPrompt').value.trim()) { document.getElementById('cStartPrompt').focus(); return; }
+  const err = validateCreator();
+  if (err) { alert(err); return; }
   const id = cEditId || ('u' + Date.now());
   const story = {
     id,
