@@ -15,7 +15,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>낙인의 검 - 비주얼 노벨</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500&family=Cinzel:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap');
 
   :root {
     --bg: #0a0a0f;
@@ -56,6 +56,185 @@
   }
 
   /* STORY SELECT SCREEN */
+  /* ===== PANDORA INTRO (landing before home) ===== */
+  #introScreen {
+    position: fixed; inset: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    overflow: hidden;
+    font-family: 'Plus Jakarta Sans', 'Noto Serif KR', serif;
+    transition: opacity 0.8s cubic-bezier(0.7, 0, 0.3, 1), transform 0.8s cubic-bezier(0.7, 0, 0.3, 1), background-color 0.8s ease;
+  }
+  #introScreen.fade-out-screen {
+    opacity: 0;
+    transform: scale(1.05);
+    pointer-events: none;
+    background-color: #0a0a0f;
+  }
+  .bg-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.08) 40%, rgba(0,0,0,0) 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+    animation: pulseGlow 8s ease-in-out infinite alternate;
+  }
+  .bg-ambient {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(rgba(219, 39, 119, 0.03) 1px, transparent 0);
+    background-size: 24px 24px;
+    opacity: 0.6;
+    z-index: 1;
+  }
+  .intro-container {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .artifact-wrapper {
+    position: relative;
+    width: 160px; height: 160px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+  .box-cube {
+    width: 64px; height: 64px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-25deg) rotateY(45deg);
+    animation: floatCube 4s ease-in-out infinite alternate;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .artifact-wrapper:hover .box-cube {
+    transform: rotateX(20deg) rotateY(225deg) scale(1.1);
+  }
+  .cube-face {
+    position: absolute;
+    width: 64px; height: 64px;
+    border: 1.5px solid rgba(168, 85, 247, 0.6);
+    background: linear-gradient(135deg, rgba(15, 12, 30, 0.8), rgba(30, 20, 50, 0.9));
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+  }
+  .face-front  { transform: translateZ(32px); }
+  .face-back   { transform: rotateY(180deg) translateZ(32px); }
+  .face-left   { transform: rotateY(-90deg) translateZ(32px); border-color: rgba(219, 39, 119, 0.5); }
+  .face-right  { transform: rotateY(90deg) translateZ(32px); border-color: rgba(99, 102, 241, 0.5); }
+  .face-top    { transform: rotateX(90deg) translateZ(32px); background: rgba(25, 15, 45, 0.9); }
+  .face-bottom { transform: rotateX(-90deg) translateZ(32px); }
+  .cube-core {
+    position: absolute;
+    width: 24px; height: 24px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 35px 15px rgba(168, 85, 247, 0.8),
+                0 0 60px 25px rgba(219, 39, 119, 0.5);
+    animation: corePulse 2s ease-in-out infinite alternate;
+  }
+  .orbit-ring {
+    position: absolute;
+    width: 140px; height: 140px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    animation: rotateOrbit 20s linear infinite;
+  }
+  .brand-title {
+    font-family: 'Cinzel', serif;
+    font-size: 38pt;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-indent: 0.28em;
+    background: linear-gradient(180deg, #ffffff 0%, #c0b3df 60%, #8b74c7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 20px rgba(139, 92, 246, 0.25);
+    margin-bottom: 12px;
+    opacity: 0;
+    transform: translateY(15px);
+    animation: fadeInUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards 0.3s;
+  }
+  .brand-subtitle {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11pt;
+    font-weight: 300;
+    letter-spacing: 0.45em;
+    text-indent: 0.45em;
+    color: rgba(186, 175, 212, 0.75);
+    margin-bottom: 50px;
+    opacity: 0;
+    transform: translateY(15px);
+    animation: fadeInUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards 0.6s;
+  }
+  .enter-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 16px 48px;
+    font-size: 11pt;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    color: #ffffff;
+    border-radius: 40px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity: 0;
+    transform: translateY(15px);
+    animation: fadeInUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards 0.9s;
+  }
+  .enter-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: all 0.6s ease;
+  }
+  .enter-btn:hover {
+    border-color: rgba(168, 85, 247, 0.8);
+    box-shadow: 0 0 25px rgba(139, 92, 246, 0.4);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    transform: translateY(-2px);
+  }
+  .enter-btn:hover::before { left: 100%; }
+  .enter-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+  }
+  @keyframes floatCube {
+    0% { transform: rotateX(-25deg) rotateY(45deg) translateY(0px); }
+    100% { transform: rotateX(-15deg) rotateY(70deg) translateY(-12px); }
+  }
+  @keyframes corePulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    100% { transform: scale(1.1); opacity: 1; }
+  }
+  @keyframes rotateOrbit {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes pulseGlow {
+    0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.95); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  }
+  @keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   /* ===== MAIN SHELL (Frontia-style) ===== */
   #mainScreen {
     position: fixed; inset: 0;
@@ -1043,6 +1222,29 @@
 </head>
 <body>
 
+<!-- ===== PANDORA INTRO (landing screen) ===== -->
+<div id="introScreen">
+  <div class="bg-glow"></div>
+  <div class="bg-ambient"></div>
+  <div class="intro-container">
+    <div class="artifact-wrapper" onclick="enterApp()">
+      <div class="orbit-ring"></div>
+      <div class="cube-core"></div>
+      <div class="box-cube">
+        <div class="cube-face face-front"></div>
+        <div class="cube-face face-back"></div>
+        <div class="cube-face face-left"></div>
+        <div class="cube-face face-right"></div>
+        <div class="cube-face face-top"></div>
+        <div class="cube-face face-bottom"></div>
+      </div>
+    </div>
+    <h1 class="brand-title">PANDORA</h1>
+    <p class="brand-subtitle">열지 말았어야 할 상자</p>
+    <button class="enter-btn" onclick="enterApp()">접속하기</button>
+  </div>
+</div>
+
 <!-- ===== MAIN SHELL (Frontia-style): home / my-plays / MY + bottom tab bar ===== -->
 <div id="mainScreen">
   <div id="mainContent">
@@ -1242,7 +1444,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v70</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v71</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2268,9 +2470,17 @@ function deleteSave() {
       if (cfg.provider) setProvider(cfg.provider);
     }
   } catch {}
+  // PANDORA intro shows first; 접속하기 fades it out into the main shell
   document.getElementById('mainScreen').style.display = 'flex';
   renderHome();
 })();
+
+// Intro → main shell (no page reload: fade the intro overlay away)
+function enterApp() {
+  const intro = document.getElementById('introScreen');
+  intro.classList.add('fade-out-screen');
+  setTimeout(() => { intro.style.display = 'none'; }, 800);
+}
 
 // Force-fetch the latest version (works even in fullscreen PWA with no address bar).
 // Game state is in localStorage, so 이어하기 restores after reload.
