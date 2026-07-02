@@ -1148,6 +1148,20 @@
       <textarea id="cStartPrompt" class="profile-input profile-textarea" style="height:120px" placeholder="예: 왕도의 뒷골목, 비 내리는 밤. {이름}이(가) 쫓기던 소녀와 부딪히는 장면으로 시작해줘."></textarea>
       <div class="c-label">첫 장면 등장 캐릭터</div>
       <div id="cStartChars" class="c-hint" style="padding:4px 2px">캐릭터를 먼저 추가하세요</div>
+      <div class="c-label" style="margin-top:22px">이벤트 (선택) <span class="c-hint">스토리 진행 중 일어날 주요 사건들 — AI가 흐름 속에 자연스럽게 발생시킵니다</span></div>
+      <div id="cEventList"></div>
+      <div class="c-row2">
+        <input type="text" id="cEventTitle" class="profile-input" style="flex:1" maxlength="20" placeholder="이벤트 제목">
+      </div>
+      <textarea id="cEventDesc" class="profile-input profile-textarea" style="height:60px" maxlength="300" placeholder="언제/어떻게 일어나는지, 내용"></textarea>
+      <button class="my-btn" onclick="addCreatorEvent('events')">＋ 이벤트 추가</button>
+      <div class="c-label" style="margin-top:18px">엔딩 (선택) <span class="c-hint">조건이 충족되면 이야기가 그 엔딩으로 마무리됩니다</span></div>
+      <div id="cEndingList"></div>
+      <div class="c-row2">
+        <input type="text" id="cEndingTitle" class="profile-input" style="flex:1" maxlength="20" placeholder="엔딩 제목">
+      </div>
+      <textarea id="cEndingDesc" class="profile-input profile-textarea" style="height:60px" maxlength="300" placeholder="엔딩 조건과 결말 내용"></textarea>
+      <button class="my-btn" onclick="addCreatorEvent('endings')">＋ 엔딩 추가</button>
     </div>
   </div>
   <div id="creatorNav">
@@ -1202,7 +1216,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v68</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v69</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1469,9 +1483,21 @@ const NAKIN_WORLD_PROMPT = NAKIN_LORE + ENGINE_RULES_PROMPT;
 // Build the full world prompt for a user-created story (lore + engine rules)
 function buildCustomWorldPrompt(s) {
   const p = s.protagonist || {};
-  let lore = `당신은 비주얼 노벨 "${s.title}"의 게임 마스터입니다.\n\n## 세계관\n${s.worldLore || ''}`;
+  const raw = (s.worldLore || '').trim();
+  // don't double a heading if the lore already provides its own (e.g. edited 낙인의 검)
+  let lore = `당신은 비주얼 노벨 "${s.title}"의 게임 마스터입니다.\n\n`
+    + (raw.startsWith('#') ? raw : `## 세계관\n${raw}`);
   lore += `\n\n**주인공: ${p.name || '주인공'}**`;
   if (p.desc) lore += `\n${p.desc}`;
+  // optional event tree / endings (creator step 4)
+  if (Array.isArray(s.events) && s.events.length) {
+    lore += `\n\n## 주요 이벤트 (스토리 흐름 속에서 아래 이벤트들이 자연스럽게 일어나도록 전개할 것. 순서와 시점은 유연하게):`;
+    s.events.forEach(e => { lore += `\n- ${e.t}: ${e.d}`; });
+  }
+  if (Array.isArray(s.endings) && s.endings.length) {
+    lore += `\n\n## 엔딩 조건 (아래 조건이 충족되면 이야기를 해당 엔딩으로 마무리 지을 것):`;
+    s.endings.forEach(e => { lore += `\n- ${e.t}: ${e.d}`; });
+  }
   return lore + ENGINE_RULES_PROMPT;
 }
 
@@ -1575,11 +1601,16 @@ const BUILTIN_STORIES = {
     desc: '몰락한 백작가의 외아들, 죄인의 낙인을 찬 채 항구도시의 밑바닥에서 복수를 꿈꾼다. 다크 판타지.',
     cover: 'character/25_upper/106_1.webp',
     worldPrompt: NAKIN_WORLD_PROMPT,
+    // editable copies for the creator: editing a built-in saves an OVERRIDE
+    // into vn_local_stories under the same id, which takes precedence.
+    worldLore: NAKIN_LORE.split('\n').slice(1).join('\n').trim(),
+    genre: '다크 판타지',
     characters: NAKIN_CHARACTERS,
     protagonist: { name: '카이든', desc: '' },
     initialState: { status: '신원불명', rep: 0, gold: 3, location: '항구도시 베른', time: '1일차 새벽', injuries: ['오른손목 죄인 낙인'] },
     startBg: 'alley',
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 항구도시 베른의 뒷골목, 새벽. 주인공 ${n}이(가) 부두 막일을 마치고 돌아오는 장면으로 시작해줘. 프레야를 처음 만나는 계기를 만들어줘.`,
+    startPromptText: '항구도시 베른의 뒷골목, 새벽. 주인공 {이름}이(가) 부두 막일을 마치고 돌아오는 장면으로 시작해줘. 프레야를 처음 만나는 계기를 만들어줘.',
     startChars: ['f106']
   }
 };
@@ -1587,6 +1618,7 @@ const BUILTIN_STORIES = {
 function getLocalStories() {
   try { return JSON.parse(localStorage.getItem('vn_local_stories') || '{}'); } catch { return {}; }
 }
+// Local stories OVERRIDE built-ins with the same id (edited 낙인의 검 etc.)
 function allStories() { return { ...BUILTIN_STORIES, ...getLocalStories() }; }
 
 // Active story data. Kept under the old global names so the rest of the
@@ -1700,15 +1732,33 @@ function renderPlays() {
 
 function renderMy() {
   const local = getLocalStories();
-  const ids = Object.keys(local);
-  document.getElementById('myStories').innerHTML = ids.length
-    ? ids.map(id => `<div class="play-item" onclick="openStoryDetail('${id}')">` +
-        `<div class="play-cover" style="background-image:url('${local[id].cover || ''}')"></div>` +
-        `<div class="play-info"><div class="play-title">${esc(local[id].title)}</div>` +
-        `<div class="play-sub">${esc(local[id].genre || '내 에피소드')}</div></div>` +
-        `<button class="play-go" onclick="event.stopPropagation(); openCreator('${id}')"><span class="tri">✎</span>편집</button>` +
-        `<button class="play-go" onclick="event.stopPropagation(); deleteLocalStory('${id}')"><span class="tri">✕</span>삭제</button></div>`).join('')
-    : '<div class="empty-note" style="padding:20px 0">아직 제작한 에피소드가 없어요</div>';
+  const all = allStories();
+  // every story appears here: built-ins are editable too (edit = local override)
+  const rows = Object.keys(all).map(id => {
+    const s = all[id];
+    const isBuiltin = !!BUILTIN_STORIES[id];
+    const overridden = isBuiltin && !!local[id];
+    const sub = isBuiltin ? `기본 제공${overridden ? ' · 수정됨' : ''}` : (s.genre || '내 에피소드');
+    const delBtn = isBuiltin
+      ? (overridden ? `<button class="play-go" onclick="event.stopPropagation(); revertStory('${id}')"><span class="tri">↺</span>되돌리기</button>` : '')
+      : `<button class="play-go" onclick="event.stopPropagation(); deleteLocalStory('${id}')"><span class="tri">✕</span>삭제</button>`;
+    return `<div class="play-item" onclick="openStoryDetail('${id}')">` +
+      `<div class="play-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+      `<div class="play-info"><div class="play-title">${esc(s.title)}</div>` +
+      `<div class="play-sub">${esc(sub)}</div></div>` +
+      `<button class="play-go" onclick="event.stopPropagation(); openCreator('${id}')"><span class="tri">✎</span>편집</button>` +
+      delBtn + `</div>`;
+  });
+  document.getElementById('myStories').innerHTML = rows.join('');
+}
+
+// Remove a built-in's local override (revert to the original pack). Keeps saves.
+function revertStory(id) {
+  if (!confirm('수정 내용을 버리고 기본 설정으로 되돌릴까요? (플레이 기록은 유지됩니다)')) return;
+  const local = getLocalStories();
+  delete local[id];
+  localStorage.setItem('vn_local_stories', JSON.stringify(local));
+  renderMy(); renderHome();
 }
 
 // ===== STORY DETAIL =====
@@ -1804,18 +1854,44 @@ let cCover = null;           // selected cover sprite num
 let cPickedFace = null;      // face selected for the char being added
 let cChars = {};             // { fNNN: {name, role, personality} }
 let cStartCharSel = {};      // { fNNN: true }
+let cEvents = [];            // [{t, d}] optional event tree
+let cEndings = [];           // [{t, d}] optional endings
+
+function addCreatorEvent(kind) {
+  const tEl = document.getElementById(kind === 'events' ? 'cEventTitle' : 'cEndingTitle');
+  const dEl = document.getElementById(kind === 'events' ? 'cEventDesc' : 'cEndingDesc');
+  const t = tEl.value.trim(), d = dEl.value.trim();
+  if (!t) { tEl.focus(); return; }
+  (kind === 'events' ? cEvents : cEndings).push({ t, d });
+  tEl.value = ''; dEl.value = '';
+  renderEventLists();
+}
+function removeCreatorEvent(kind, i) {
+  (kind === 'events' ? cEvents : cEndings).splice(i, 1);
+  renderEventLists();
+}
+function renderEventLists() {
+  const mk = (arr, kind) => arr.map((e, i) =>
+    `<div class="c-char-item"><div class="c-char-info"><div class="c-char-nm">${esc(e.t)}</div>` +
+    `<div class="c-char-rl">${esc(e.d)}</div></div>` +
+    `<button class="c-char-del" onclick="removeCreatorEvent('${kind}',${i})">✕</button></div>`).join('');
+  document.getElementById('cEventList').innerHTML = mk(cEvents, 'events');
+  document.getElementById('cEndingList').innerHTML = mk(cEndings, 'endings');
+}
 
 function openCreator(editId) {
   cEditId = editId || null;
   cStep = 1; cCover = null; cPickedFace = null; cChars = {}; cStartCharSel = {};
+  cEvents = []; cEndings = [];
   // reset fields
-  ['cTitle','cDesc','cGenre','cWorld','cProtagName','cProtagDesc','cLocation','cTime','cStartPrompt','cCharName','cCharRole','cCharPers']
+  ['cTitle','cDesc','cGenre','cWorld','cProtagName','cProtagDesc','cLocation','cTime','cStartPrompt','cCharName','cCharRole','cCharPers','cEventTitle','cEventDesc','cEndingTitle','cEndingDesc']
     .forEach(id => { document.getElementById(id).value = ''; });
   // bg select options
   const sel = document.getElementById('cStartBg');
   sel.innerHTML = BG_OPTIONS.map(([k, l]) => `<option value="${k}">${l} (${k})</option>`).join('');
   if (editId) {
-    const s = getLocalStories()[editId];
+    // local story or built-in (editing a built-in creates a local override)
+    const s = allStories()[editId];
     if (s) {
       document.getElementById('cTitle').value = s.title || '';
       document.getElementById('cDesc').value = s.desc || '';
@@ -1825,12 +1901,18 @@ function openCreator(editId) {
       document.getElementById('cProtagDesc').value = s.protagonist?.desc || '';
       document.getElementById('cLocation').value = s.initialState?.location || '';
       document.getElementById('cTime').value = s.initialState?.time || '';
-      document.getElementById('cStartPrompt').value = s.startPrompt || '';
+      document.getElementById('cStartPrompt').value =
+        (typeof s.startPrompt === 'string' ? s.startPrompt : s.startPromptText) || '';
       cCover = (s.cover || '').match(/(\d+)_1\.webp/)?.[1] || null;
       cChars = JSON.parse(JSON.stringify(s.characters || {}));
       (s.startChars || []).forEach(id => { cStartCharSel[id] = true; });
+      cEvents = JSON.parse(JSON.stringify(s.events || []));
+      cEndings = JSON.parse(JSON.stringify(s.endings || []));
+      const bgSel = document.getElementById('cStartBg');
+      if (s.startBg) bgSel.value = s.startBg;
     }
   }
+  renderEventLists();
   document.getElementById('creatorTitle').textContent = editId ? '에피소드 편집' : '에피소드 만들기';
   renderCreatorStep();
   renderCoverGallery();
@@ -1954,15 +2036,21 @@ function publishStory() {
       name: document.getElementById('cProtagName').value.trim(),
       desc: document.getElementById('cProtagDesc').value.trim()
     },
-    initialState: {
-      status: '', rep: 0, gold: 0,
-      location: document.getElementById('cLocation').value.trim(),
-      time: document.getElementById('cTime').value.trim(),
-      injuries: []
-    },
+    // preserve non-form initial-state fields when editing (e.g. nakin's 낙인/골드)
+    initialState: (() => {
+      const prev = (cEditId && allStories()[cEditId] && allStories()[cEditId].initialState) || {};
+      return {
+        status: prev.status || '', rep: prev.rep || 0, gold: prev.gold || 0,
+        location: document.getElementById('cLocation').value.trim() || prev.location || '',
+        time: document.getElementById('cTime').value.trim() || prev.time || '',
+        injuries: (prev.injuries || []).slice()
+      };
+    })(),
     startBg: document.getElementById('cStartBg').value,
     startPrompt: document.getElementById('cStartPrompt').value.trim(),
     startChars: Object.keys(cStartCharSel),
+    events: cEvents,
+    endings: cEndings,
     createdAt: Date.now()
   };
   const local = getLocalStories();
