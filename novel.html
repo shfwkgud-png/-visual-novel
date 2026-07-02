@@ -1454,7 +1454,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v77</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v78</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1644,7 +1644,7 @@ const ENGINE_RULES_PROMPT = `
   "dialogue": [
     {
       "speaker": "캐릭터 이름 또는 '나레이터'",
-      "char_id": "f101 등 캐릭터 ID (나레이터면 null)",
+      "char_id": "등장 캐릭터 목록에 있는 ID만 사용 (f106 등). 나레이터·엑스트라·단역(마법사 A, 경비병 등 이미지 없는 인물)은 반드시 null",
       "emotion": "normal|smile|angry|sad|pain|worry",
       "text": "대사 내용",
       "pose": "upper|full|pose (기본은 upper)"
@@ -3217,29 +3217,64 @@ function resetSprites() {
 // Create + reveal a character's sprite the moment they first appear
 function ensureSprite(charId) {
   if (!charId || shownSprites.includes(charId)) return;
+  // Extras / unregistered ids (마법사 A etc.) have NO sprite — never create a
+  // layout slot for them, or the scene spaces itself as if they were present.
+  if (!CHARACTERS[charId]) return;
   shownSprites.push(charId);
   const img = document.createElement('img');
   img.className = 'char-sprite';
   img.id = 'sprite_' + charId;
-  // Sprites vary wildly in aspect (0.4 tall full-body … 0.995 near-square like
-  // 107). At a uniform height the wide ones look HUGE, so scale height down by
-  // aspect (area normalization). Fires again whenever the emotion swaps src.
+  img.style.visibility = 'hidden';   // no broken-image "?" flash while loading
+  // AREA normalization — a general rule that works for ANY image, including
+  // future uploads: measure the VISIBLE (non-transparent) region and scale so
+  // every character reads the same on-screen size as the reference (프레야,
+  // visible aspect 0.766). Wide sprites shrink, narrow ones GROW (the old
+  // shrink-only rule left narrow faces looking small). Full-body/pose framings
+  // are exempt (intentionally different shot). Re-fires on emotion src swaps.
   img.addEventListener('load', function() {
+    this.style.visibility = 'visible';
+    if (/25_full|25_pose/.test(this.src)) { this.style.setProperty('--arScale', 1); return; }
     const ar = this.naturalWidth / Math.max(1, this.naturalHeight);
-    const s = Math.min(1, Math.sqrt(0.70 / Math.max(0.3, ar)));
+    let visArea = ar;   // fallback: whole file box is visible
+    try {
+      // alpha bounding box → visible fraction (handles padded uploaded images)
+      const c = document.createElement('canvas');
+      c.width = 48; c.height = 48;
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(this, 0, 0, 48, 48);
+      const px = ctx.getImageData(0, 0, 48, 48).data;
+      let x0 = 48, y0 = 48, x1 = -1, y1 = -1;
+      for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) {
+        if (px[(y * 48 + x) * 4 + 3] > 16) {
+          if (x < x0) x0 = x; if (x > x1) x1 = x;
+          if (y < y0) y0 = y; if (y > y1) y1 = y;
+        }
+      }
+      if (x1 >= x0 && y1 >= y0) visArea = ar * ((x1 - x0 + 1) / 48) * ((y1 - y0 + 1) / 48);
+    } catch (e) { /* cross-origin canvas → aspect-only fallback */ }
+    const s = Math.min(1.2, Math.max(0.8, Math.sqrt(0.766 / Math.max(0.2, visArea))));
     this.style.setProperty('--arScale', s.toFixed(3));
   });
   const num = charId.replace('f', '');
   img.src = `character/25_upper/${num}_1.webp`;
   img.onerror = function() {
-    if (this.dataset.fallback === '1') { this.style.opacity = '0'; return; }
+    if (this.dataset.fallback === '1') { removeBrokenSprite(charId, this); return; }
     this.dataset.fallback = '1';
     this.src = `character/25_full/f_${num}_1.webp`;
-    this.onerror = function() { this.style.opacity = '0'; };
+    this.onerror = function() { removeBrokenSprite(charId, this); };
   };
   charLayer.appendChild(img);
   charLayer.dataset.count = String(Math.min(4, shownSprites.length));
   setTimeout(() => img.classList.add('visible'), 30);
+}
+
+// A sprite whose image fails to load must not keep a layout slot — it would
+// space the scene like an invisible extra character.
+function removeBrokenSprite(charId, img) {
+  img.remove();
+  const i = shownSprites.indexOf(charId);
+  if (i !== -1) shownSprites.splice(i, 1);
+  charLayer.dataset.count = String(Math.min(4, shownSprites.length));
 }
 
 // Apply speaker highlight (bright speaker, dim others)
