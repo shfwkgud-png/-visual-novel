@@ -18,7 +18,6 @@
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap');
 
   :root {
-    --vvoff: 0px;  /* visualViewport.offsetTop — JS-set; pins fixed layers when iOS pans for the keyboard */
     --bg: #0a0a0f;
     --panel: #0f0f1a;
     --border: #2a2040;
@@ -177,7 +176,6 @@
     z-index: 4;   /* above bg(0) / overlay(1) / char(2) / dialogue(3): topBar+input stay on top */
     /* pinned to the visual viewport: with --vvh height this tracks it exactly,
        so the input (absolute bottom) rides smoothly right above the keyboard */
-    transform: translateY(var(--vvoff));
     /* height animates so the input glides up in sync with the keyboard rising
        (the focusin pre-shrink sets --vvh before the keyboard shows) */
     transition: height 0.25s ease-out;
@@ -194,8 +192,6 @@
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
     z-index: 0;
-    transform: translateY(var(--vvoff));
-    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
   }
   #bgOverlay {
     position: fixed;
@@ -211,8 +207,6 @@
       rgba(0,0,0,0.04) 45%,
       rgba(0,0,0,0.2) 100%);
     z-index: 1;
-    transform: translateY(var(--vvoff));
-    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
   }
 
   /* CHARACTER DISPLAY — large, fills frame (Frontia-style) */
@@ -222,8 +216,7 @@
     height: 100vh;    /* fallback */
     height: 100lvh;   /* iOS large viewport = 852: feet reach the REAL bottom (not clamped 793) */
     left: 50%;
-    transform: translate(-50%, var(--vvoff));
-    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
+    transform: translateX(-50%);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -296,8 +289,6 @@
     justify-content: flex-end;
     pointer-events: none;   /* taps fall through to the document tap handler */
     /* pinned against iOS keyboard pan — scrim/dialogue must NOT ride up */
-    transform: translateY(var(--vvoff));
-    /* NO transition: iOS pans instantly; the counter-translate must track instantly too */
     /* Frontia-style scrim: character's lower body clearly darkens toward the
        bottom (this layer is z3, ABOVE the character z2), so the dialogue text
        sits on a strong dark backdrop (easy on the eyes). */
@@ -780,7 +771,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v61</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v62</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2058,16 +2049,18 @@ function setupInputHandlers() {
 function setupViewportHeight() {
   const vv = window.visualViewport;
   const apply = () => {
-    // Size the UI layer to the currently VISIBLE area (shrinks when keyboard opens).
     const h = vv ? vv.height : window.innerHeight;
-    document.documentElement.style.setProperty('--vvh', h + 'px');
+    const kb = window.innerHeight - h;
     // Learn the real keyboard height so the NEXT focus can pre-shrink BEFORE
     // iOS shows the keyboard (prevents the scroll-into-view pan = the flick).
-    const kb = window.innerHeight - h;
     if (kb > 120) { try { localStorage.setItem('nakin_kb', String(kb)); } catch {} }
-    // Safety net for any residual pan (post-hoc, inherently 1 frame late —
-    // the REAL flick fix is the focusin pre-shrink below).
-    document.documentElement.style.setProperty('--vvoff', (vv ? vv.offsetTop : 0) + 'px');
+    // While the input is focused, ignore mid-animation viewport values — the
+    // focusin pre-shrink already set the final height. Only accept the fully-
+    // open keyboard value (corrects the estimate) or the keyboard-closed value.
+    const focused = document.activeElement === userInput;
+    if (!focused || kb > 120) {
+      document.documentElement.style.setProperty('--vvh', h + 'px');
+    }
     if (window.scrollY) window.scrollTo(0, 0);
   };
   apply();
