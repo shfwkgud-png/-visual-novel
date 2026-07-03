@@ -1641,7 +1641,24 @@
     <input type="password" id="apiKeyInput" placeholder="AIza...">
     <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
     <div id="syncSection">
-      <p>☁ 백업 · 기기 동기화 <span class="c-hint">같은 암호를 쓰는 기기끼리 공유</span></p>
+      <p>👤 계정 <span class="c-hint" id="acctHint">로그인하면 백업·동기화·업로드가 계정에 귀속됩니다</span></p>
+      <div id="acctForms">
+        <input type="text" id="acctUser" class="profile-input" placeholder="아이디 (영문 소문자/숫자 3~20)" autocapitalize="none">
+        <input type="password" id="acctPw" class="profile-input" placeholder="비밀번호 (6자 이상)">
+        <div id="syncBtnRow">
+          <button class="my-btn" onclick="doLogin()">로그인</button>
+          <button class="my-btn" onclick="doRegister()">회원가입</button>
+        </div>
+      </div>
+      <div id="acctLogged" style="display:none">
+        <div id="syncBtnRow">
+          <button class="my-btn" id="acctName" disabled style="opacity:1;color:var(--gold)"></button>
+          <button class="my-btn" onclick="doLogout()">로그아웃</button>
+        </div>
+        <button class="my-btn" id="migrateBtn" style="display:none" onclick="migrateLegacy()">🔁 동기화 암호 데이터 → 계정으로 이전</button>
+      </div>
+      <div id="acctMsg" class="c-hint" style="text-align:center"></div>
+      <p style="margin-top:10px">☁ 백업 · 기기 동기화 <span class="c-hint">계정 없이 쓰려면 암호만 입력</span></p>
       <input type="password" id="syncTokenInput" class="profile-input" placeholder="동기화 암호 (4자 이상, 직접 정하세요)">
       <div id="syncBtnRow">
         <button class="my-btn" onclick="backupAll(true)">↑ 지금 백업</button>
@@ -1719,7 +1736,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v91</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v92</span></span>
     <div class="top-btns">
       <button class="top-btn" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드">♪</button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2365,6 +2382,7 @@ function quickContinue(id) {
 // ===== AI SETTINGS MODAL =====
 function openSettings() {
   document.getElementById('apiScreen').style.display = 'flex';
+  updateAcctUI();
 }
 function closeSettings() {
   document.getElementById('apiScreen').style.display = 'none';
@@ -2385,37 +2403,120 @@ function syncToken() {
   try { return localStorage.getItem('vn_sync_token') || ''; } catch { return ''; }
 }
 
+// ===== ACCOUNTS =====
+function authToken() { try { return localStorage.getItem('vn_auth') || ''; } catch { return ''; } }
+function authUser()  { try { return localStorage.getItem('vn_auth_user') || ''; } catch { return ''; } }
+// account token first; legacy passphrase as fallback
+function authHeaders() {
+  const t = authToken();
+  if (t) return { 'X-Auth': t };
+  const s = syncToken();
+  return s ? { 'X-Sync-Token': s } : {};
+}
+function hasSyncAuth() { return !!(authToken() || syncToken()); }
+
+function acctMsg(m) { const el = document.getElementById('acctMsg'); if (el) el.textContent = m; }
+
+function updateAcctUI() {
+  const logged = !!authToken();
+  document.getElementById('acctForms').style.display = logged ? 'none' : 'flex';
+  document.getElementById('acctForms').style.flexDirection = 'column';
+  document.getElementById('acctForms').style.gap = '8px';
+  document.getElementById('acctLogged').style.display = logged ? 'block' : 'none';
+  if (logged) {
+    document.getElementById('acctName').textContent = '👤 ' + authUser();
+    document.getElementById('migrateBtn').style.display = syncToken() ? 'block' : 'none';
+  }
+}
+
+async function authCall(path) {
+  const u = document.getElementById('acctUser').value.trim().toLowerCase();
+  const pw = document.getElementById('acctPw').value;
+  if (!u || !pw) { acctMsg('아이디와 비밀번호를 입력하세요'); return; }
+  acctMsg('처리 중…');
+  try {
+    const res = await fetch(SYNC_URL + path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ u, p: pw })
+    });
+    const d = await res.json();
+    if (!res.ok) { acctMsg(d.error || '실패'); return; }
+    localStorage.setItem('vn_auth', d.token);
+    localStorage.setItem('vn_auth_user', d.user);
+    localStorage.setItem('vn_auth_admin', d.admin ? '1' : '0');
+    document.getElementById('acctPw').value = '';
+    acctMsg(d.admin ? '✓ 관리자로 로그인됨' : '✓ 로그인됨');
+    updateAcctUI();
+  } catch (e) { acctMsg('네트워크 오류'); }
+}
+function doLogin() { authCall('/auth/login'); }
+function doRegister() {
+  if (!confirm('이 아이디로 가입할까요? 첫 가입 계정이 관리자가 됩니다.')) return;
+  authCall('/auth/register');
+}
+function doLogout() {
+  localStorage.removeItem('vn_auth');
+  localStorage.removeItem('vn_auth_user');
+  localStorage.removeItem('vn_auth_admin');
+  acctMsg('로그아웃됨');
+  updateAcctUI();
+}
+
+// copy legacy passphrase-namespace data into the logged-in account
+async function migrateLegacy() {
+  const legacy = syncToken();
+  const t = authToken();
+  if (!legacy || !t) return;
+  if (!confirm('동기화 암호로 저장된 백업 데이터를 이 계정으로 복사합니다. 진행할까요?')) return;
+  acctMsg('이전 중…');
+  try {
+    const listRes = await fetch(SYNC_URL + '/sync/list', { headers: { 'X-Sync-Token': legacy } });
+    const { keys } = await listRes.json();
+    let n = 0;
+    for (const k of keys) {
+      const v = await fetch(SYNC_URL + '/sync?key=' + encodeURIComponent(k), { headers: { 'X-Sync-Token': legacy } });
+      if (!v.ok) continue;
+      const body = await v.text();
+      await fetch(SYNC_URL + '/sync?key=' + encodeURIComponent(k), {
+        method: 'PUT', headers: { 'X-Auth': t, 'Content-Type': 'application/json' }, body
+      });
+      n++;
+    }
+    acctMsg(`✓ ${n}개 항목 이전 완료 (이미지 URL은 그대로 유효)`);
+  } catch (e) { acctMsg('이전 실패: ' + (e.message || '')); }
+}
+
 function syncStatus(msg) {
   const el = document.getElementById('syncStatus');
   if (el) el.textContent = msg;
 }
 
 async function syncPut(key, value) {
-  const t = syncToken();
-  if (!t) return false;
+  const h = authHeaders();
+  if (!Object.keys(h).length) return false;
   const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Sync-Token': t },
+    headers: { 'Content-Type': 'application/json', ...h },
     body: typeof value === 'string' ? value : JSON.stringify(value)
   });
   return res.ok;
 }
 
 async function syncGet(key) {
-  const t = syncToken();
-  if (!t) return null;
-  const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
-    headers: { 'X-Sync-Token': t }
-  });
+  const h = authHeaders();
+  if (!Object.keys(h).length) return null;
+  const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, { headers: h });
   if (!res.ok) return null;
   return res.json();
 }
 
 // Backup everything: created stories + every play save + settings
 async function backupAll(manual) {
-  const t = document.getElementById('syncTokenInput')?.value.trim() || syncToken();
-  if (!t || t.length < 4) { syncStatus('동기화 암호를 먼저 입력하세요 (4자 이상)'); return; }
-  try { localStorage.setItem('vn_sync_token', t); } catch {}
+  if (!authToken()) {
+    const t = document.getElementById('syncTokenInput')?.value.trim() || syncToken();
+    if (!t || t.length < 4) { syncStatus('로그인하거나 동기화 암호를 입력하세요'); return; }
+    try { localStorage.setItem('vn_sync_token', t); } catch {}
+  }
   if (manual) syncStatus('백업 중…');
   try {
     let n = 0;
@@ -2436,9 +2537,11 @@ async function backupAll(manual) {
 
 // Restore from cloud onto this device (asks before overwriting local data)
 async function restoreAll() {
-  const t = document.getElementById('syncTokenInput')?.value.trim() || syncToken();
-  if (!t || t.length < 4) { syncStatus('동기화 암호를 먼저 입력하세요 (4자 이상)'); return; }
-  try { localStorage.setItem('vn_sync_token', t); } catch {}
+  if (!authToken()) {
+    const t = document.getElementById('syncTokenInput')?.value.trim() || syncToken();
+    if (!t || t.length < 4) { syncStatus('로그인하거나 동기화 암호를 입력하세요'); return; }
+    try { localStorage.setItem('vn_sync_token', t); } catch {}
+  }
   if (!confirm('클라우드 백업을 이 기기로 가져옵니다. 이 기기의 스토리/플레이가 백업본으로 대체됩니다. 계속할까요?')) return;
   syncStatus('복원 중…');
   try {
@@ -2469,7 +2572,7 @@ async function restoreAll() {
 // Auto-backup: piggybacks on autoSave, debounced so bursts of turns coalesce
 let _syncTimer = null;
 function scheduleAutoBackup() {
-  if (!syncToken()) return;
+  if (!hasSyncAuth()) return;
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(() => {
     syncPut('save:' + STORY.id, localStorage.getItem(saveKeyFor(STORY.id)) || '{}').catch(() => {});
@@ -2557,11 +2660,11 @@ function canvasToBlob(canvas, type, q) {
 }
 
 async function uploadBlob(name, blob, ct) {
-  const t = syncToken();
-  if (!t) throw new Error('설정에서 동기화 암호를 먼저 저장하세요');
+  const h = authHeaders();
+  if (!Object.keys(h).length) throw new Error('설정에서 로그인하거나 동기화 암호를 저장하세요');
   const res = await fetch(`${SYNC_URL}/img?name=${encodeURIComponent(name)}`, {
     method: 'PUT',
-    headers: { 'Content-Type': ct, 'X-Sync-Token': t },
+    headers: { 'Content-Type': ct, ...h },
     body: blob
   });
   if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');

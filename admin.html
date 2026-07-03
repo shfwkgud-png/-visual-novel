@@ -50,14 +50,17 @@
 <header>
   <h1>PANDORA 관리자</h1>
   <div id="tokenBox">
-    <input id="token" type="password" placeholder="동기화 암호">
-    <button class="gold" onclick="connect()">연결</button>
+    <input id="aUser" placeholder="아이디" style="background:var(--panel);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:9px;width:130px">
+    <input id="token" type="password" placeholder="비밀번호 (또는 동기화 암호)">
+    <button class="gold" onclick="connect()">로그인</button>
+    <span id="whoami" style="color:var(--dim);font-size:0.8rem;align-self:center"></span>
   </div>
 </header>
 <nav>
   <button id="tabImgs" class="on" onclick="showTab('imgs')">이미지</button>
   <button id="tabData" onclick="showTab('data')">데이터 (스토리·세이브)</button>
   <button id="tabInfo" onclick="showTab('info')">현황</button>
+  <button id="tabUsers" onclick="showTab('users')" style="display:none">사용자 (관리자)</button>
 </nav>
 <main>
   <div id="pageImgs">
@@ -79,6 +82,10 @@
       <textarea id="viewerTa" spellcheck="false"></textarea>
     </div>
   </div>
+  <div id="pageUsers" style="display:none">
+    <p class="hint">가입된 사용자 목록 — 첫 가입 계정이 관리자입니다.</p>
+    <div id="userList"></div>
+  </div>
   <div id="pageInfo" style="display:none">
     <div id="stats"></div>
     <p class="hint" style="margin-top:18px">
@@ -90,29 +97,60 @@
 <div id="msg"></div>
 <script>
 const API = 'https://pandora-sync.pasokong99.workers.dev';
-let TOKEN = localStorage.getItem('vn_admin_token') || '';
-if (TOKEN) document.getElementById('token').value = TOKEN;
+let TOKEN = localStorage.getItem('vn_admin_token') || '';   // legacy passphrase
+let AUTH = localStorage.getItem('vn_admin_auth') || '';     // account token
+let IS_ADMIN = false;
 
 function toast(t) {
   const m = document.getElementById('msg');
   m.textContent = t; m.style.display = 'block';
   setTimeout(() => m.style.display = 'none', 2200);
 }
-function hdr() { return { 'X-Sync-Token': TOKEN }; }
+function hdr() { return AUTH ? { 'X-Auth': AUTH } : { 'X-Sync-Token': TOKEN }; }
 
-function connect() {
-  TOKEN = document.getElementById('token').value.trim();
-  if (TOKEN.length < 4) { toast('암호는 4자 이상'); return; }
-  localStorage.setItem('vn_admin_token', TOKEN);
+async function connect() {
+  const u = document.getElementById('aUser').value.trim().toLowerCase();
+  const pw = document.getElementById('token').value.trim();
+  if (u) {
+    // account login
+    const res = await fetch(API + '/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ u, p: pw })
+    });
+    const d = await res.json();
+    if (!res.ok) { toast(d.error || '로그인 실패'); return; }
+    AUTH = d.token; IS_ADMIN = !!d.admin;
+    localStorage.setItem('vn_admin_auth', AUTH);
+    document.getElementById('whoami').textContent = '👤 ' + d.user + (d.admin ? ' (관리자)' : '');
+  } else {
+    // legacy passphrase
+    if (pw.length < 4) { toast('아이디+비밀번호 또는 동기화 암호 입력'); return; }
+    AUTH = ''; localStorage.removeItem('vn_admin_auth');
+    TOKEN = pw; IS_ADMIN = false;
+    localStorage.setItem('vn_admin_token', TOKEN);
+    document.getElementById('whoami').textContent = '(암호 모드)';
+  }
+  document.getElementById('tabUsers').style.display = IS_ADMIN ? 'block' : 'none';
   loadImgs(); loadKeys(); loadStats();
+  if (IS_ADMIN) loadUsers();
   toast('연결됨');
 }
 
 function showTab(t) {
-  ['Imgs','Data','Info'].forEach(x => {
+  ['Imgs','Data','Info','Users'].forEach(x => {
     document.getElementById('page' + x).style.display = x.toLowerCase() === t ? 'block' : 'none';
     document.getElementById('tab' + x).classList.toggle('on', x.toLowerCase() === t);
   });
+}
+
+async function loadUsers() {
+  const res = await fetch(API + '/admin/users', { headers: hdr() });
+  if (!res.ok) return;
+  const { users, admin } = await res.json();
+  document.getElementById('userList').innerHTML = users.map(u =>
+    `<div class="keyRow"><div class="k">👤 ${u.user}${u.user === admin ? ' <b style="color:var(--gold)">★ 관리자</b>' : ''}</div>` +
+    `<div class="sz">데이터 ${u.keys}개 · 이미지 ${u.imgs}개 · 가입 ${new Date(u.created).toLocaleDateString('ko-KR')}</div></div>`
+  ).join('') || '<p class="hint">가입자가 없습니다</p>';
 }
 
 // ---- images ----
@@ -193,7 +231,22 @@ async function loadStats() {
     `<div class="stat"><b>${keys}</b><span>백업 데이터 키</span></div>`;
 }
 
-if (TOKEN) connect();
+(async () => {
+  if (AUTH) {
+    const res = await fetch(API + '/auth/me', { headers: { 'X-Auth': AUTH } });
+    if (res.ok) {
+      const d = await res.json();
+      IS_ADMIN = !!d.admin;
+      document.getElementById('whoami').textContent = '👤 ' + d.user + (d.admin ? ' (관리자)' : '');
+      document.getElementById('tabUsers').style.display = IS_ADMIN ? 'block' : 'none';
+      loadImgs(); loadKeys(); loadStats();
+      if (IS_ADMIN) loadUsers();
+      return;
+    }
+    AUTH = ''; localStorage.removeItem('vn_admin_auth');
+  }
+  if (TOKEN) { document.getElementById('token').value = TOKEN; connect(); }
+})();
 </script>
 </body>
 </html>
