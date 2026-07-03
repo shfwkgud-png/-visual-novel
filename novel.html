@@ -1483,8 +1483,9 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v81</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v82</span></span>
     <div class="top-btns">
+      <button class="top-btn" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드">♪</button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
@@ -1680,6 +1681,7 @@ const ENGINE_RULES_PROMPT = `
     }
   ],
   "background": "배경 그룹명 (아래 목록에서 선택, 장면 변화 없으면 null)",
+  "mood": "장면의 분위기 음악 키: calm|tension|battle|romance|sad|mystery|none 중 하나 (분위기 변화가 있을 때만, 없으면 null)",
   "state_update": {
     "rep": 숫자 변화량 (없으면 0),
     "gold": 숫자 변화량 (없으면 0),
@@ -2975,6 +2977,7 @@ function startGame(isContinue) {
 
 async function beginStory() {
   if (STORY.startBg) setBg(STORY.startBg); // default scene bg so the first screen is never empty
+  Ambient.setMood('calm');
   const intro = {
     role: 'user',
     content: typeof STORY.startPrompt === 'function'
@@ -3063,6 +3066,150 @@ function buildMessages() {
 
   return messages;
 }
+
+// ===== AMBIENT SOUND ENGINE =====
+// Procedural mood music via WebAudio — zero assets, fully offline, free.
+// The scene AI picks a mood key each turn ("mood" field); we synthesize a
+// matching pad: detuned chord oscillators + sub root + filtered noise +
+// slow LFO movement, crossfaded between moods.
+const Ambient = (() => {
+  let ctx = null, master = null, current = null, curKey = null;
+  let enabled = (localStorage.getItem('vn_bgm') ?? '1') === '1';
+
+  // root(Hz), chord intervals(semitones), filter cutoff, noise level, LFO rate
+  const MOODS = {
+    calm:    { root: 110.0, chord: [0, 7, 12, 16], cut: 900,  noise: 0.00, lfo: 0.05, vol: 0.05 },
+    romance: { root: 130.8, chord: [0, 4, 9, 14],  cut: 1200, noise: 0.00, lfo: 0.07, vol: 0.05 },
+    sad:     { root: 98.0,  chord: [0, 3, 10, 15], cut: 700,  noise: 0.00, lfo: 0.04, vol: 0.055 },
+    mystery: { root: 87.3,  chord: [0, 1, 7, 13],  cut: 650,  noise: 0.015, lfo: 0.09, vol: 0.05 },
+    tension: { root: 73.4,  chord: [0, 6, 12, 13], cut: 500,  noise: 0.03, lfo: 0.13, vol: 0.055 },
+    battle:  { root: 82.4,  chord: [0, 5, 7, 12],  cut: 800,  noise: 0.045, lfo: 0.35, vol: 0.06 }
+  };
+
+  function ensureCtx() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 1;
+      master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    return true;
+  }
+
+  function buildMood(key) {
+    const m = MOODS[key];
+    const g = ctx.createGain();          // mood bus (crossfade handle)
+    g.gain.value = 0;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.value = m.cut;
+    filt.Q.value = 0.6;
+    filt.connect(g); g.connect(master);
+    const nodes = [g, filt];
+
+    // slow filter sweep for movement
+    const lfo = ctx.createOscillator();
+    const lfoG = ctx.createGain();
+    lfo.frequency.value = m.lfo;
+    lfoG.gain.value = m.cut * 0.35;
+    lfo.connect(lfoG); lfoG.connect(filt.frequency);
+    lfo.start(); nodes.push(lfo, lfoG);
+
+    // chord pad: two detuned oscillators per note
+    m.chord.forEach((semi, i) => {
+      const f = m.root * Math.pow(2, semi / 12);
+      [[-4, 'triangle'], [3, 'sine']].forEach(([det, type]) => {
+        const o = ctx.createOscillator();
+        o.type = type;
+        o.frequency.value = f;
+        o.detune.value = det;
+        const og = ctx.createGain();
+        og.gain.value = 0.16 / (1 + i * 0.35);
+        // per-note breathing
+        const bl = ctx.createOscillator(); const blg = ctx.createGain();
+        bl.frequency.value = 0.03 + i * 0.017;
+        blg.gain.value = og.gain.value * 0.5;
+        bl.connect(blg); blg.connect(og.gain); bl.start();
+        o.connect(og); og.connect(filt);
+        o.start();
+        nodes.push(o, og, bl, blg);
+      });
+    });
+    // sub root for weight
+    const sub = ctx.createOscillator();
+    sub.type = 'sine'; sub.frequency.value = m.root / 2;
+    const subG = ctx.createGain(); subG.gain.value = 0.22;
+    sub.connect(subG); subG.connect(filt); sub.start();
+    nodes.push(sub, subG);
+
+    // filtered noise bed (tension/battle)
+    if (m.noise > 0) {
+      const len = ctx.sampleRate * 2;
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) {   // brown-ish noise
+        last = (last + (Math.random() * 2 - 1) * 0.02) * 0.98;
+        d[i] = last * 3;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf; src.loop = true;
+      const ng = ctx.createGain(); ng.gain.value = m.noise;
+      src.connect(ng); ng.connect(filt); src.start();
+      nodes.push(src, ng);
+    }
+    return { g, nodes, vol: m.vol };
+  }
+
+  function killMood(mood, after) {
+    if (!mood) return;
+    try {
+      mood.g.gain.linearRampToValueAtTime(0, ctx.currentTime + 2.2);
+      setTimeout(() => mood.nodes.forEach(n => { try { n.stop ? n.stop() : 0; n.disconnect(); } catch {} }), 2600);
+    } catch {}
+  }
+
+  function setMood(key) {
+    if (!key || key === curKey) return;
+    if (key === 'none') { stop(); return; }
+    if (!MOODS[key]) return;
+    curKey = key;
+    if (!enabled) return;
+    if (!ensureCtx()) return;
+    killMood(current);
+    current = buildMood(key);
+    current.g.gain.linearRampToValueAtTime(current.vol, ctx.currentTime + 3.0);
+  }
+
+  function stop() {
+    killMood(current);
+    current = null; curKey = null;
+  }
+
+  function toggle() {
+    enabled = !enabled;
+    localStorage.setItem('vn_bgm', enabled ? '1' : '0');
+    updateBtn();
+    if (!enabled) { const k = curKey; stop(); curKey = k; }
+    else if (curKey) { const k = curKey; curKey = null; setMood(k); }
+  }
+
+  function updateBtn() {
+    const b = document.getElementById('bgmBtn');
+    if (b) b.style.opacity = enabled ? '1' : '0.4';
+  }
+
+  // iOS requires a user gesture before audio — retry pending mood on first touch
+  document.addEventListener('touchend', () => {
+    if (enabled && curKey && !current) { const k = curKey; curKey = null; setMood(k); }
+  }, { passive: true });
+
+  setTimeout(updateBtn, 0);
+  return { setMood, stop, toggle };
+})();
 
 // Small utility LLM call (director/summary-grade side passes)
 async function llmSmall(sysText, userText, maxTok = 900, temp = 0.4) {
@@ -3533,6 +3680,7 @@ function processResponse(data, activeCharIds) {
     lastBg = data.background;
     setBg(data.background);
   }
+  if (data.mood) Ambient.setMood(data.mood);
 
   if (data.state_update) {
     const s = data.state_update;
@@ -4250,6 +4398,7 @@ function switchStatusTab(t) {
 
 // Exit the game back to the main shell (progress is auto-saved every turn)
 function exitToMain() {
+  Ambient.stop();
   if (gameHistory.length) autoSave();
   statusPanel.classList.remove('visible');
   document.getElementById('backlogPanel').classList.remove('visible');
