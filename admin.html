@@ -44,6 +44,28 @@
   .stat span { font-size:0.75rem; color:var(--dim); }
   #msg { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--gold); color:#1a1208;
     padding:10px 22px; border-radius:20px; font-size:0.85rem; font-weight:700; display:none; }
+  /* prompt generator */
+  .gen-wrap { max-width:880px; }
+  .gen-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:6px; }
+  .fld { display:flex; flex-direction:column; gap:4px; margin-bottom:2px; }
+  .fld label { font-size:0.72rem; color:var(--dim); letter-spacing:0.04em; }
+  .fld input, .fld select, .fld textarea { background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:8px 11px; border-radius:8px; font-size:0.85rem; }
+  .fld input:focus, .fld textarea:focus, .fld select:focus { outline:none; border-color:var(--gold); }
+  .sec-title { color:var(--gold); font-size:0.82rem; letter-spacing:0.12em; margin:22px 0 10px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+  .chipbox { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  .chip { font-size:0.74rem; padding:6px 11px; border-radius:16px; background:var(--panel); border:1px solid var(--border);
+    color:var(--dim); cursor:pointer; user-select:none; }
+  .chip.on { background:var(--gold); color:#1a1208; border-color:var(--gold); font-weight:700; }
+  .out-card { background:var(--panel); border:1px solid var(--border); border-radius:11px; padding:10px 12px; margin-bottom:9px; }
+  .out-card .oh { display:flex; align-items:center; gap:9px; margin-bottom:6px; }
+  .out-card .oh b { font-size:0.8rem; color:var(--gold); }
+  .out-card .oh button { font-size:0.68rem; padding:5px 12px; border-radius:7px; margin-left:auto; }
+  .out-card textarea { width:100%; height:78px; background:#0d0b16; border:1px solid var(--border); color:#cfe3cf;
+    border-radius:8px; padding:9px 11px; font:11px/1.5 Consolas,monospace; resize:vertical; }
+  .settings-note { background:rgba(201,168,76,0.08); border:1px solid var(--border); border-radius:10px;
+    padding:11px 14px; font-size:0.76rem; color:var(--text); line-height:1.7; margin-bottom:4px; }
+  .settings-note b { color:var(--gold); }
 </style>
 </head>
 <body>
@@ -60,6 +82,7 @@
 <nav>
   <button id="tabImgs" class="on" onclick="showTab('imgs')">이미지</button>
   <button id="tabData" onclick="showTab('data')">데이터 (스토리·세이브)</button>
+  <button id="tabGen" onclick="showTab('gen')">SD 프롬프트</button>
   <button id="tabInfo" onclick="showTab('info')">현황</button>
   <button id="tabUsers" onclick="showTab('users')" style="display:none">사용자 (관리자)</button>
 </nav>
@@ -89,6 +112,73 @@
     <div id="inviteList"></div>
     <p class="hint" style="margin-top:20px">가입된 사용자</p>
     <div id="userList"></div>
+  </div>
+  <div id="pageGen" style="display:none">
+    <div class="gen-wrap">
+      <p class="hint">캐릭터 외모를 한 번 입력하면 <b style="color:var(--gold)">동일인물</b>의 표정 6종이 자동 생성됩니다. NSFW는 아래 빌더에서 노출·포즈·상황을 골라 조합하세요. 모델: <b style="color:var(--gold)">WAI-illustrious (Illustrious 계열)</b>.</p>
+
+      <div class="settings-note">
+        <b>SD Forge 설정</b> — 샘플러 <b>Euler a</b> · Steps <b>28~30</b> · CFG <b>5~6</b> · 해상도 <b>832×1216</b>(세로)/<b>1216×832</b>(가로) ·
+        일관성 위해 <b>Seed 고정</b>(아래 값 복사해서 Forge에 입력)
+      </div>
+
+      <div class="sec-title">① 캐릭터 시트 (한 번만 — 모든 이미지에서 고정)</div>
+      <div class="gen-grid">
+        <div class="fld"><label>고유 이름 토큰 (영문, 예: freya)</label><input id="gName" placeholder="freya" oninput="regen()"></div>
+        <div class="fld"><label>인원/성별</label><select id="gCount" onchange="regen()"><option value="1girl">1girl (여성)</option><option value="1boy">1boy (남성)</option></select></div>
+        <div class="fld"><label>머리 (색 + 스타일 + 길이)</label><input id="gHair" placeholder="long blonde hair, single braid" oninput="regen()"></div>
+        <div class="fld"><label>눈</label><input id="gEyes" placeholder="amber eyes" oninput="regen()"></div>
+        <div class="fld"><label>피부 / 체형</label><input id="gBody" placeholder="pale skin, slender athletic body" oninput="regen()"></div>
+        <div class="fld"><label>가슴 크기 (여성)</label><select id="gBust" onchange="regen()"><option value="">— 지정 안 함 —</option><option>flat chest</option><option>small breasts</option><option selected>medium breasts</option><option>large breasts</option><option>huge breasts</option></select></div>
+        <div class="fld"><label>고유 특징 (흉터·문신·귀·뿔 등)</label><input id="gFeat" placeholder="scar on left cheek, pointy ears" oninput="regen()"></div>
+        <div class="fld"><label>기본 의상 (SFW 초상용)</label><input id="gOutfit" placeholder="fur-trimmed coat, leather armor" oninput="regen()"></div>
+      </div>
+      <div class="gen-grid">
+        <div class="fld"><label>Seed (고정값 — 비우면 랜덤/-1)</label><input id="gSeed" placeholder="예: 1234567890" oninput="regen()"></div>
+        <div class="fld"><label>화풍 보조 (선택)</label><input id="gStyle" placeholder="예: soft lighting, detailed" oninput="regen()"></div>
+      </div>
+      <div style="margin:6px 0 2px"><button class="gold" onclick="regen()">↻ 프롬프트 생성 / 갱신</button>
+        <button onclick="loadSheet()">불러오기</button>
+        <button onclick="saveSheet()">이 캐릭터 저장</button>
+        <select id="gSaved" onchange="pickSaved()" style="background:var(--panel);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:9px"><option value="">— 저장된 캐릭터 —</option></select>
+      </div>
+
+      <div class="sec-title">② 표정 세트 (SFW · 자동 6종)</div>
+      <div id="exprOut"></div>
+
+      <div class="sec-title">③ NSFW 빌더 — 노출·포즈·상황 골라서 조합</div>
+      <div class="fld" style="margin-bottom:8px"><label>노출도 (복장 상태)</label>
+        <select id="nExp" onchange="regenNsfw()">
+          <option value="">— 옷 입은 상태(위 기본 의상 유지) —</option>
+          <option value="cleavage, unbuttoned shirt">가슴 노출 (풀어헤침)</option>
+          <option value="bra, panties, underwear">속옷</option>
+          <option value="lingerie, garter belt">란제리</option>
+          <option value="topless, bottomless covered">상의 탈의</option>
+          <option value="bottomless, no panties">하의 탈의</option>
+          <option value="torn clothes, clothes aside">옷 찢김 / 젖힘</option>
+          <option value="completely nude, barefoot">완전 나체</option>
+        </select>
+      </div>
+      <div class="fld" style="margin-bottom:4px"><label>포즈 / 체위 (여러 개 선택 가능)</label></div>
+      <div class="chipbox" id="poseChips"></div>
+      <div class="fld" style="margin:8px 0 4px"><label>상황 / 앵글 / 행위 (여러 개 선택 가능)</label></div>
+      <div class="chipbox" id="sitChips"></div>
+      <div class="fld" style="margin:8px 0 6px"><label>표정</label>
+        <select id="nExpr" onchange="regenNsfw()">
+          <option value="neutral expression">무표정</option>
+          <option value="seductive smile, half-lidded eyes, blush">유혹적 미소</option>
+          <option value="embarrassed, heavy blush, teary eyes">부끄러움</option>
+          <option value="in pain, clenched teeth, tears">고통</option>
+          <option value="pleasure, moaning, open mouth, blush, sweat" selected>쾌락</option>
+          <option value="ahegao, rolling eyes, tongue out, drooling, heavy blush, sweat">아헤가오</option>
+        </select>
+      </div>
+      <div id="nsfwOut"></div>
+
+      <div class="sec-title">공통 네거티브 프롬프트</div>
+      <div class="out-card"><div class="oh"><b>Negative</b><button onclick="copyEl('negTa')">복사</button></div>
+        <textarea id="negTa" readonly></textarea></div>
+    </div>
   </div>
   <div id="pageInfo" style="display:none">
     <div id="stats"></div>
@@ -175,10 +265,143 @@ async function onGoogle(resp) {
 }
 
 function showTab(t) {
-  ['Imgs','Data','Info','Users'].forEach(x => {
+  ['Imgs','Data','Gen','Info','Users'].forEach(x => {
     document.getElementById('page' + x).style.display = x.toLowerCase() === t ? 'block' : 'none';
     document.getElementById('tab' + x).classList.toggle('on', x.toLowerCase() === t);
   });
+  if (t === 'gen') genInit();
+}
+
+// ===== SD 프롬프트 생성기 (WAI-illustrious) =====
+const G_QUALITY = 'masterpiece, best quality, amazing quality, newest, absurdres, highres';
+const G_NEG = '(worst quality, low quality:1.4), lowres, bad anatomy, bad hands, missing fingers, extra digits, ' +
+  'fused fingers, extra arms, malformed limbs, extra limbs, text, watermark, signature, username, logo, ' +
+  'jpeg artifacts, monochrome, sketch, censored, mosaic censoring';
+const G_EXPR = [
+  ['무표정', 'neutral expression, closed mouth'],
+  ['웃음',   'smile, happy, open mouth, light blush'],
+  ['슬픔',   'sad, teary eyes, frown, looking away'],
+  ['분노',   'angry, furrowed brow, gritted teeth, glaring'],
+  ['고통',   'in pain, clenched teeth, tears, sweat'],
+  ['쾌락/아헤가오', 'ahegao, rolling eyes, tongue out, drooling, heavy blush, sweat']
+];
+const G_POSES = ['standing','sitting','on back','on stomach','on side','kneeling','all fours','bent over',
+  'spread legs','legs up','cowgirl position','doggystyle','reverse cowgirl','squatting','arms up','arms behind back'];
+const G_SITS = ['pov','from above','from below','from behind','from side','close-up','full body','looking at viewer',
+  'sex','vaginal','oral','fellatio','handjob','paizuri','cum','cum on body','after sex','restrained','tied up',
+  'nipples','pussy','indoors','bedroom','outdoors','night','sweat','saliva'];
+let genPoses = new Set(), genSits = new Set();
+let genInited = false;
+function genInit() {
+  document.getElementById('negTa').value = G_NEG;
+  if (!genInited) {
+    genInited = true;
+    document.getElementById('poseChips').innerHTML = G_POSES.map(p =>
+      `<span class="chip" data-p="${p}" onclick="togChip(this,'p')">${p}</span>`).join('');
+    document.getElementById('sitChips').innerHTML = G_SITS.map(s =>
+      `<span class="chip" data-s="${s}" onclick="togChip(this,'s')">${s}</span>`).join('');
+    refreshSavedList();
+  }
+  regen();
+}
+function togChip(el, kind) {
+  el.classList.toggle('on');
+  const set = kind === 'p' ? genPoses : genSits;
+  const v = el.getAttribute(kind === 'p' ? 'data-p' : 'data-s');
+  el.classList.contains('on') ? set.add(v) : set.delete(v);
+  regenNsfw();
+}
+function sheetBlock() {
+  const name = document.getElementById('gName').value.trim();
+  const count = document.getElementById('gCount').value;
+  const parts = [count, 'solo'];
+  if (name) parts.push(name);
+  ['gHair','gEyes','gBody'].forEach(id => { const v = document.getElementById(id).value.trim(); if (v) parts.push(v); });
+  const bust = document.getElementById('gBust').value; if (bust && count === '1girl') parts.push(bust);
+  const feat = document.getElementById('gFeat').value.trim(); if (feat) parts.push(feat);
+  return parts.join(', ');
+}
+function seedLine() {
+  const s = document.getElementById('gSeed').value.trim();
+  return s ? ('  ▸ Seed: ' + s + ' (Forge에 그대로 입력)') : '  ▸ Seed: -1 (첫 마음에 드는 결과의 Seed를 복사해 여기 고정하세요)';
+}
+function card(title, prompt) {
+  const id = 'oc' + Math.random().toString(36).slice(2, 8);
+  return `<div class="out-card"><div class="oh"><b>${title}</b><button onclick="copyEl('${id}')">복사</button></div>` +
+    `<textarea id="${id}" readonly>${prompt}</textarea></div>`;
+}
+function regen() {
+  const style = document.getElementById('gStyle').value.trim();
+  const outfit = document.getElementById('gOutfit').value.trim();
+  const sheet = sheetBlock();
+  const tail = (style ? ', ' + style : '');
+  const seedHint = document.getElementById('gSeed').value.trim();
+  let html = G_EXPR.map(([ko, tag]) => {
+    const p = `${G_QUALITY}, ${sheet}${outfit ? ', ' + outfit : ''}, ` +
+      `upper body, portrait, looking at viewer, simple background, ${tag}${tail}`;
+    return card('표정 · ' + ko, p);
+  }).join('');
+  if (seedHint) html = `<p class="hint" style="margin-top:-4px">Seed <b style="color:var(--gold)">${seedHint}</b> 고정 — 6종 모두 같은 Seed로 뽑으면 동일 얼굴 유지</p>` + html;
+  document.getElementById('exprOut').innerHTML = html;
+  regenNsfw();
+}
+function regenNsfw() {
+  const sheet = sheetBlock();
+  const style = document.getElementById('gStyle').value.trim();
+  const outfit = document.getElementById('gOutfit').value.trim();
+  const exp = document.getElementById('nExp').value;
+  const expr = document.getElementById('nExpr').value;
+  const clothes = exp || outfit;
+  const poses = [...genPoses].join(', ');
+  const sits = [...genSits].join(', ');
+  const p = [G_QUALITY, sheet, clothes, poses, sits, expr, style].filter(Boolean).join(', ');
+  const seed = document.getElementById('gSeed').value.trim();
+  const seedNote = seed ? `<p class="hint" style="margin-top:-4px">Seed <b style="color:var(--gold)">${seed}</b> 고정 — 표정 세트와 같은 얼굴로 상황만 바뀝니다</p>` : '';
+  document.getElementById('nsfwOut').innerHTML = seedNote + card('NSFW · 조합 결과', p);
+}
+function copyEl(id) {
+  const el = document.getElementById(id);
+  el.select();
+  navigator.clipboard.writeText(el.value).then(() => toast('복사됨')).catch(() => { document.execCommand('copy'); toast('복사됨'); });
+}
+// 저장/불러오기 (로컬 + 클라우드 sync)
+function collectSheet() {
+  return { name:gv('gName'), count:gv('gCount'), hair:gv('gHair'), eyes:gv('gEyes'),
+    body:gv('gBody'), bust:gv('gBust'), feat:gv('gFeat'), outfit:gv('gOutfit'),
+    seed:gv('gSeed'), style:gv('gStyle') };
+}
+function gv(id){ return document.getElementById(id).value; }
+function applySheet(o) {
+  const m = { gName:'name', gCount:'count', gHair:'hair', gEyes:'eyes', gBody:'body',
+    gBust:'bust', gFeat:'feat', gOutfit:'outfit', gSeed:'seed', gStyle:'style' };
+  Object.entries(m).forEach(([id,k]) => { if (o[k] != null) document.getElementById(id).value = o[k]; });
+  regen();
+}
+function savedChars() { try { return JSON.parse(localStorage.getItem('vn_sd_chars') || '{}'); } catch { return {}; } }
+function saveSheet() {
+  const o = collectSheet();
+  if (!o.name.trim()) { toast('고유 이름 토큰을 먼저 입력'); return; }
+  const all = savedChars(); all[o.name.trim()] = o;
+  localStorage.setItem('vn_sd_chars', JSON.stringify(all));
+  // 클라우드에도 백업 (다른 기기/관리자 공유)
+  fetch(API + '/sync?key=' + encodeURIComponent('sd_chars'), { method:'PUT', headers:{ ...hdr(), 'Content-Type':'application/json' }, body: JSON.stringify(all) }).catch(()=>{});
+  refreshSavedList(); toast('저장됨: ' + o.name.trim());
+}
+async function loadSheet() {
+  try {
+    const res = await fetch(API + '/sync?key=sd_chars', { headers: hdr() });
+    if (res.ok) { const cloud = await res.json(); localStorage.setItem('vn_sd_chars', JSON.stringify(cloud)); toast('클라우드에서 불러옴'); }
+  } catch {}
+  refreshSavedList();
+}
+function refreshSavedList() {
+  const all = savedChars();
+  document.getElementById('gSaved').innerHTML = '<option value="">— 저장된 캐릭터 —</option>' +
+    Object.keys(all).map(n => `<option value="${n}">${n}</option>`).join('');
+}
+function pickSaved() {
+  const n = document.getElementById('gSaved').value; if (!n) return;
+  const all = savedChars(); if (all[n]) applySheet(all[n]);
 }
 
 async function makeInvite() {
