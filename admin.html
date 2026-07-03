@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PANDORA 관리자</title>
+<style>
+  :root { --bg:#0a0a0f; --panel:#12101c; --border:#2a2040; --gold:#c9a84c; --text:#e8e0d0; --dim:#8a8070; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Noto Sans KR',system-ui,sans-serif; min-height:100vh; }
+  header { display:flex; align-items:center; gap:14px; padding:18px 24px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  h1 { font-size:1.1rem; letter-spacing:0.2em; color:var(--gold); }
+  #tokenBox { display:flex; gap:8px; margin-left:auto; }
+  input, button, textarea { font-family:inherit; }
+  #token { background:var(--panel); border:1px solid var(--border); color:var(--text); padding:9px 14px; border-radius:9px; width:220px; }
+  button { background:var(--panel); border:1px solid var(--border); color:var(--text); padding:9px 16px; border-radius:9px; cursor:pointer; }
+  button:hover { border-color:var(--gold); }
+  button.gold { background:var(--gold); color:#1a1208; border:none; font-weight:700; }
+  button.danger { color:#e06a6a; border-color:rgba(224,106,106,0.4); }
+  nav { display:flex; gap:8px; padding:14px 24px 0; }
+  nav button.on { border-color:var(--gold); color:var(--gold); }
+  main { padding:20px 24px 60px; }
+  .hint { color:var(--dim); font-size:0.8rem; margin:8px 0 16px; }
+  /* images */
+  #imgGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .imgCard { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .imgCard .th { height:150px; background-size:contain; background-repeat:no-repeat; background-position:center;
+    background-color:#000; background-image:repeating-conic-gradient(rgba(255,255,255,0.05) 0% 25%, transparent 0% 50%); }
+  .imgCard .th > div { width:100%; height:100%; background-size:contain; background-repeat:no-repeat; background-position:center; }
+  .imgCard .nm { font-size:0.68rem; color:var(--dim); padding:7px 9px 3px; word-break:break-all; }
+  .imgCard .row { display:flex; gap:5px; padding:6px 8px 9px; }
+  .imgCard .row button { flex:1; font-size:0.7rem; padding:6px 4px; border-radius:7px; }
+  /* data */
+  .keyRow { display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--border);
+    border-radius:10px; padding:11px 14px; margin-bottom:8px; }
+  .keyRow .k { flex:1; font-size:0.85rem; }
+  .keyRow .sz { color:var(--dim); font-size:0.72rem; }
+  #viewer { display:none; margin-top:14px; }
+  #viewerTa { width:100%; height:420px; background:#0d0b16; border:1px solid var(--border); color:#cfe3cf;
+    border-radius:10px; padding:14px; font:12px/1.6 Consolas,monospace; white-space:pre; }
+  #stats { display:flex; gap:14px; flex-wrap:wrap; }
+  .stat { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px 22px; }
+  .stat b { display:block; font-size:1.5rem; color:var(--gold); }
+  .stat span { font-size:0.75rem; color:var(--dim); }
+  #msg { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--gold); color:#1a1208;
+    padding:10px 22px; border-radius:20px; font-size:0.85rem; font-weight:700; display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PANDORA 관리자</h1>
+  <div id="tokenBox">
+    <input id="token" type="password" placeholder="동기화 암호">
+    <button class="gold" onclick="connect()">연결</button>
+  </div>
+</header>
+<nav>
+  <button id="tabImgs" class="on" onclick="showTab('imgs')">이미지</button>
+  <button id="tabData" onclick="showTab('data')">데이터 (스토리·세이브)</button>
+  <button id="tabInfo" onclick="showTab('info')">현황</button>
+</nav>
+<main>
+  <div id="pageImgs">
+    <p class="hint">업로드한 모든 이미지 (캐릭터·표정·배경·표지). 여기서 지워도 앱의 스토리 정의에 이미 연결된 URL은 깨질 수 있으니 주의.</p>
+    <div style="margin-bottom:14px"><button onclick="uploadNew()">＋ 새 이미지 업로드</button>
+    <input type="file" id="fileIn" accept="image/*" style="display:none" onchange="doUpload(this)"></div>
+    <div id="imgGrid"></div>
+  </div>
+  <div id="pageData" style="display:none">
+    <p class="hint">클라우드에 백업된 데이터. 키를 클릭하면 내용을 보고 수정·다운로드할 수 있습니다.</p>
+    <div id="keyList"></div>
+    <div id="viewer">
+      <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center">
+        <b id="viewerKey" style="font-size:0.9rem"></b>
+        <button onclick="saveViewer()" class="gold">저장</button>
+        <button onclick="downloadViewer()">다운로드</button>
+        <button onclick="document.getElementById('viewer').style.display='none'">닫기</button>
+      </div>
+      <textarea id="viewerTa" spellcheck="false"></textarea>
+    </div>
+  </div>
+  <div id="pageInfo" style="display:none">
+    <div id="stats"></div>
+    <p class="hint" style="margin-top:18px">
+      저장소: Cloudflare KV (무료 1GB) · worker: pandora-sync.pasokong99.workers.dev<br>
+      앱: <a href="novel.html" style="color:var(--gold)">novel.html</a> · 같은 동기화 암호를 쓰는 모든 기기가 이 데이터를 공유합니다.
+    </p>
+  </div>
+</main>
+<div id="msg"></div>
+<script>
+const API = 'https://pandora-sync.pasokong99.workers.dev';
+let TOKEN = localStorage.getItem('vn_admin_token') || '';
+if (TOKEN) document.getElementById('token').value = TOKEN;
+
+function toast(t) {
+  const m = document.getElementById('msg');
+  m.textContent = t; m.style.display = 'block';
+  setTimeout(() => m.style.display = 'none', 2200);
+}
+function hdr() { return { 'X-Sync-Token': TOKEN }; }
+
+function connect() {
+  TOKEN = document.getElementById('token').value.trim();
+  if (TOKEN.length < 4) { toast('암호는 4자 이상'); return; }
+  localStorage.setItem('vn_admin_token', TOKEN);
+  loadImgs(); loadKeys(); loadStats();
+  toast('연결됨');
+}
+
+function showTab(t) {
+  ['Imgs','Data','Info'].forEach(x => {
+    document.getElementById('page' + x).style.display = x.toLowerCase() === t ? 'block' : 'none';
+    document.getElementById('tab' + x).classList.toggle('on', x.toLowerCase() === t);
+  });
+}
+
+// ---- images ----
+async function loadImgs() {
+  const res = await fetch(API + '/img-list', { headers: hdr() });
+  if (!res.ok) { toast('이미지 목록 실패'); return; }
+  const { items } = await res.json();
+  document.getElementById('imgGrid').innerHTML = items.map(it =>
+    `<div class="imgCard"><div class="th"><div style="background-image:url('${it.url}')"></div></div>` +
+    `<div class="nm">${it.name}</div><div class="row">` +
+    `<button onclick="navigator.clipboard.writeText('${it.url}').then(()=>toast('URL 복사됨'))">URL</button>` +
+    `<button onclick="window.open('${it.url}')">보기</button>` +
+    `<button class="danger" onclick="delImg('${it.name}')">삭제</button></div></div>`
+  ).join('') || '<p class="hint">업로드된 이미지가 없습니다</p>';
+}
+async function delImg(name) {
+  if (!confirm(name + ' 삭제?')) return;
+  await fetch(API + '/img?name=' + encodeURIComponent(name), { method: 'DELETE', headers: hdr() });
+  toast('삭제됨'); loadImgs();
+}
+function uploadNew() { document.getElementById('fileIn').click(); }
+async function doUpload(inp) {
+  const f = inp.files[0]; inp.value = '';
+  if (!f) return;
+  const name = 'adm' + Date.now().toString(36) + '.' + (f.type.includes('png') ? 'png' : 'jpg');
+  const res = await fetch(API + '/img?name=' + name, { method: 'PUT', headers: { ...hdr(), 'Content-Type': f.type }, body: f });
+  toast(res.ok ? '업로드 완료' : '업로드 실패');
+  loadImgs();
+}
+
+// ---- data ----
+async function loadKeys() {
+  const res = await fetch(API + '/sync/list', { headers: hdr() });
+  if (!res.ok) return;
+  const { keys } = await res.json();
+  document.getElementById('keyList').innerHTML = keys.map(k =>
+    `<div class="keyRow"><div class="k">${k}</div>` +
+    `<button onclick="viewKey('${k}')">보기/수정</button>` +
+    `<button class="danger" onclick="delKey('${k}')">삭제</button></div>`
+  ).join('') || '<p class="hint">데이터가 없습니다</p>';
+}
+let curKey = null;
+async function viewKey(k) {
+  const res = await fetch(API + '/sync?key=' + encodeURIComponent(k), { headers: hdr() });
+  const txt = await res.text();
+  curKey = k;
+  document.getElementById('viewerKey').textContent = k;
+  try { document.getElementById('viewerTa').value = JSON.stringify(JSON.parse(txt), null, 2); }
+  catch { document.getElementById('viewerTa').value = txt; }
+  document.getElementById('viewer').style.display = 'block';
+}
+async function saveViewer() {
+  if (!curKey) return;
+  let body = document.getElementById('viewerTa').value;
+  try { body = JSON.stringify(JSON.parse(body)); } catch { toast('JSON 문법 오류'); return; }
+  const res = await fetch(API + '/sync?key=' + encodeURIComponent(curKey), { method: 'PUT', headers: { ...hdr(), 'Content-Type': 'application/json' }, body });
+  toast(res.ok ? '저장됨 (기기에서 ↓복원하면 반영)' : '저장 실패');
+}
+function downloadViewer() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([document.getElementById('viewerTa').value], { type: 'application/json' }));
+  a.download = 'pandora_' + (curKey || 'data').replace(/[^a-z0-9]/gi, '_') + '.json';
+  a.click();
+}
+async function delKey(k) {
+  if (!confirm(k + ' 삭제? 복구할 수 없습니다.')) return;
+  await fetch(API + '/sync?key=' + encodeURIComponent(k), { method: 'DELETE', headers: hdr() });
+  toast('삭제됨'); loadKeys();
+}
+
+// ---- stats ----
+async function loadStats() {
+  let imgs = 0, keys = 0;
+  try { imgs = (await (await fetch(API + '/img-list', { headers: hdr() })).json()).items.length; } catch {}
+  try { keys = (await (await fetch(API + '/sync/list', { headers: hdr() })).json()).keys.length; } catch {}
+  document.getElementById('stats').innerHTML =
+    `<div class="stat"><b>${imgs}</b><span>업로드 이미지</span></div>` +
+    `<div class="stat"><b>${keys}</b><span>백업 데이터 키</span></div>`;
+}
+
+if (TOKEN) connect();
+</script>
+</body>
+</html>

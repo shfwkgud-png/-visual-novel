@@ -11,7 +11,7 @@
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,PUT,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token',
 };
 
@@ -45,6 +45,30 @@ export default {
         });
       }
       return new Response('bad path', { status: 400, headers: CORS });
+    }
+    // list this token's images (admin)
+    if (url.pathname === '/img-list') {
+      const token = req.headers.get('X-Sync-Token') || '';
+      if (token.length < 4) return new Response(JSON.stringify({ error: 'token' }),
+        { status: 401, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const ns = await tokenHash(token);
+      const list = await env.PANDORA_KV.list({ prefix: 'img:' + ns + ':', limit: 1000 });
+      const items = list.keys.map(k => ({
+        name: k.name.slice(('img:' + ns + ':').length),
+        url: url.origin + '/img/' + ns + '/' + k.name.slice(('img:' + ns + ':').length)
+      }));
+      return new Response(JSON.stringify({ items }),
+        { headers: { ...CORS, 'Content-Type': 'application/json' } });
+    }
+    if (url.pathname === '/img' && req.method === 'DELETE') {
+      const token = req.headers.get('X-Sync-Token') || '';
+      if (token.length < 4) return new Response(JSON.stringify({ error: 'token' }),
+        { status: 401, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const ns = await tokenHash(token);
+      const name = (url.searchParams.get('name') || '').replace(/[^a-zA-Z0-9_.-]/g, '');
+      await env.PANDORA_KV.delete('img:' + ns + ':' + name);
+      return new Response(JSON.stringify({ ok: true }),
+        { headers: { ...CORS, 'Content-Type': 'application/json' } });
     }
     if (url.pathname === '/img' && req.method === 'PUT') {
       const token = req.headers.get('X-Sync-Token') || '';
@@ -95,6 +119,12 @@ export default {
           { status: 404, headers: { ...CORS, 'Content-Type': 'application/json' } });
       }
       return new Response(val, { headers: { ...CORS, 'Content-Type': 'application/json' } });
+    }
+
+    if (req.method === 'DELETE') {
+      await env.PANDORA_KV.delete(kvKey);
+      return new Response(JSON.stringify({ ok: true }),
+        { headers: { ...CORS, 'Content-Type': 'application/json' } });
     }
 
     if (req.method === 'PUT') {
