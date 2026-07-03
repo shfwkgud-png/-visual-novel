@@ -41,6 +41,40 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body { overflow: hidden; overscroll-behavior: none; }
+
+  /* PHONE FRAME — on mobile the wrapper is invisible (display:contents), so
+     every fixed layer resolves to the viewport exactly as before (preserves all
+     the iOS fullscreen/keyboard fixes). On desktop the wrapper becomes a fixed,
+     transformed 420px column: the transform makes it the containing block for
+     ALL fixed descendants, confining the whole app to a centered phone frame.
+     A container-query context lets char rules use cqw so vw-based sizing scales
+     to the frame, not the wide window. */
+  #appFrame { display: contents; }
+
+  @media (min-width: 600px) and (pointer: fine) {
+    html { background: #050508; }
+    body { background: #050508; position: static; inset: auto; }
+    #appFrame {
+      display: block;
+      position: fixed;
+      top: 0; bottom: 0; left: 50%;
+      width: 420px;
+      height: 100vh;
+      transform: translateX(-50%);
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: 0 0 0 1px #1a1a2a, 0 24px 90px rgba(0,0,0,0.85);
+      container-type: inline-size;
+    }
+    /* char sizing switches vw → cqw (frame-relative) so multi-char spacing and
+       widths look identical to mobile inside the 420px column */
+    #appFrame .char-sprite { max-width: 108cqw; }
+    #appFrame #charLayer[data-count="2"] .char-sprite { max-width: 84cqw; margin: 0 -12cqw; }
+    #appFrame #charLayer[data-count="3"] .char-sprite { max-width: 60cqw; margin: 0 -13cqw; }
+    #appFrame #charLayer[data-count="4"] .char-sprite { max-width: 52cqw; margin: 0 -12cqw; }
+    /* generation band + viewer sized to frame */
+    #appFrame #genPill { max-width: 90cqw; }
+  }
   /* v46 diagnostic proved the bottom strip is NOT the root canvas (html purple
      did not show) -> it's iOS chrome painting the safe area with the app config
      color. Reverted html to match the bg's top tone. */
@@ -1435,6 +1469,7 @@
 </style>
 </head>
 <body>
+<div id="appFrame">
 
 <!-- ===== PANDORA INTRO (landing screen) ===== -->
 <div id="introScreen">
@@ -1493,6 +1528,7 @@
         <div class="my-label">설정</div>
         <button class="my-btn" onclick="openSettings()">⚙ AI 연결 설정</button>
       </div>
+      <div class="my-section" id="myAdmin" style="display:none"></div>
     </div>
   </div>
   <!-- bottom tab bar -->
@@ -1712,7 +1748,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v95</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v96</span></span>
     <div class="top-btns">
       <button class="top-btn" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드">♪</button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -1766,6 +1802,8 @@
     <div id="backlogBody"></div>
   </div>
 </div>
+
+</div><!-- /#appFrame -->
 
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
@@ -2264,6 +2302,7 @@ function renderPlays() {
 
 function renderMy() {
   renderMyProfile();
+  renderMyAdmin();
   const local = getLocalStories();
   const all = allStories();
   // every story appears here: built-ins are editable too (edit = local override)
@@ -2458,6 +2497,50 @@ function renderMyProfile() {
       `<div id="syncStatus" class="c-hint" style="text-align:center"></div>` +
       `<div id="acctMsg" class="c-hint" style="text-align:center"></div>`;
   }
+}
+
+// ----- in-app admin panel (MY tab, admin account only) -----
+async function renderMyAdmin() {
+  const sec = document.getElementById('myAdmin');
+  if (!sec) return;
+  if (!authToken() || !isAdminUser()) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  sec.innerHTML = `<div class="my-label">★ 관리자</div>` +
+    `<button class="my-btn" onclick="adminNewInvite()">＋ 초대코드 발급</button>` +
+    `<div id="adminInvites"></div>` +
+    `<div class="my-label" style="margin-top:16px">가입자 현황</div><div id="adminUsers" class="c-hint">불러오는 중…</div>`;
+  try {
+    const [ur, ir] = await Promise.all([
+      fetch(SYNC_URL + '/admin/users', { headers: authHeaders() }),
+      fetch(SYNC_URL + '/admin/invites', { headers: authHeaders() })
+    ]);
+    if (ur.ok) {
+      const { users, admin } = await ur.json();
+      document.getElementById('adminUsers').innerHTML = users.map(u =>
+        `<div class="play-item" style="padding:9px 2px;cursor:default"><div class="play-info">` +
+        `<div class="play-title" style="font-size:0.85rem">👤 ${esc(u.user)}${u.user === admin ? ' <span class="story-badge">★</span>' : ''}</div>` +
+        `<div class="play-sub">데이터 ${u.keys} · 이미지 ${u.imgs} · 가입 ${new Date(u.created).toLocaleDateString('ko-KR')}</div>` +
+        `</div></div>`).join('') || '아직 가입자가 없습니다';
+    }
+    if (ir.ok) {
+      const { invites } = await ir.json();
+      document.getElementById('adminInvites').innerHTML = invites.map(i =>
+        `<div class="play-item" style="padding:8px 2px;cursor:default">` +
+        `<div class="play-info"><div class="play-title" style="font-family:monospace;letter-spacing:0.15em;font-size:0.85rem">${i.code}</div></div>` +
+        `<button class="play-go" onclick="navigator.clipboard.writeText('${i.code}')"><span class="tri">⧉</span>복사</button>` +
+        `<button class="play-go" onclick="adminDelInvite('${i.code}')"><span class="tri">✕</span>삭제</button></div>`).join('');
+    }
+  } catch {}
+}
+async function adminNewInvite() {
+  const res = await fetch(SYNC_URL + '/admin/invites', { method: 'POST', headers: authHeaders() });
+  const d = await res.json();
+  if (res.ok) { try { await navigator.clipboard.writeText(d.code); } catch {} }
+  renderMyAdmin();
+}
+async function adminDelInvite(code) {
+  await fetch(SYNC_URL + '/admin/invites?code=' + code, { method: 'DELETE', headers: authHeaders() });
+  renderMyAdmin();
 }
 
 // login gate for play/creation
