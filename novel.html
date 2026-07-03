@@ -1786,7 +1786,8 @@ const ENGINE_RULES_PROMPT = `
       "char_id": "등장 캐릭터 목록에 있는 ID만 사용 (f106 등). 나레이터·엑스트라·단역(마법사 A, 경비병 등 이미지 없는 인물)은 반드시 null",
       "emotion": "normal|smile|angry|sad|pain|worry",
       "text": "대사 내용",
-      "pose": "upper|full|pose (기본은 upper)"
+      "pose": "upper|full|pose (기본은 upper)",
+      "sfx": "이 대사/사건 순간의 효과음 (그 순간에만): explosion|sword|gun|punch|thunder|magic|door|crash|scream|null. 남발 금지 — 실제 타격·폭발·발포 등 물리적 사건에만"
     }
   ],
   "background": "배경 그룹명 (아래 목록에서 선택, 장면 변화 없으면 null)",
@@ -2188,7 +2189,8 @@ function openStoryDetail(id) {
     (endingsFor(id).length ? `<span class="d-tag" style="color:var(--gold)">엔딩 ${endingsFor(id).length}개 달성</span>` : '');
   document.getElementById('detailDesc').textContent = s.desc || '';
   document.getElementById('detailChars').innerHTML = charIds.slice(0, 12).map(cid => {
-    return `<div class="d-char"><div class="d-char-img" style="background-image:url('${charImgSrc(cid, chars)}')"></div>` +
+    const srcEsc = charImgSrc(cid, chars).replace(/'/g, '');
+    return `<div class="d-char" onclick="ivView('${srcEsc}')" style="cursor:pointer"><div class="d-char-img" style="background-image:url('${srcEsc}')"></div>` +
       `<div class="d-char-name">${chars[cid].name}</div></div>`;
   }).join('');
   document.getElementById('timeflowChk').checked = timeflowOn(id);
@@ -2679,35 +2681,48 @@ function validateCreator() {
   return null;
 }
 
-// ===== IMAGE VIEWER (enlarge / use / delete uploaded images) =====
-let _ivId = null, _ivMode = null;
-function openImgViewer(id, mode) {
-  const up = getUploads().faces[id];
-  if (!up) return;
-  _ivId = id; _ivMode = mode;
-  document.getElementById('imgViewerImg').src = up.url;
-  const used = !!cChars[id];
+// ===== IMAGE VIEWER — works on ANY image (builtin, upload, assigned) =====
+function showIv(o) {   // {src, useLabel?, onUse?, onDel?}
+  document.getElementById('imgViewerImg').src = o.src;
   const useBtn = document.getElementById('ivUseBtn');
-  useBtn.style.display = (mode === 'face' && used) ? 'none' : 'block';
-  useBtn.onclick = () => {
-    if (_ivMode === 'cover') pickCover(up.url);
-    else pickFace(_ivId);
-    closeImgViewer();
-  };
-  document.getElementById('ivDelBtn').onclick = () => {
-    if (!confirm('이 업로드 이미지를 삭제할까요? (이미 캐릭터로 배정된 곳에는 영향 없음)')) return;
-    const u = getUploads();
-    delete u.faces[_ivId];
-    saveUploads(u);
-    renderCoverGallery(); renderCharGallery();
-    closeImgViewer();
-  };
+  const delBtn = document.getElementById('ivDelBtn');
+  useBtn.style.display = o.onUse ? 'block' : 'none';
+  useBtn.textContent = o.useLabel || '이 이미지 사용';
+  useBtn.onclick = () => { o.onUse(); closeImgViewer(); };
+  delBtn.style.display = o.onDel ? 'block' : 'none';
+  delBtn.onclick = () => { o.onDel(); };
   document.getElementById('imgViewer').style.display = 'flex';
 }
 function closeImgViewer() {
   document.getElementById('imgViewer').style.display = 'none';
-  _ivId = null;
 }
+function delUpload(id) {
+  if (!confirm('이 업로드 이미지를 삭제할까요? (이미 캐릭터로 배정된 곳에는 영향 없음)')) return;
+  const u = getUploads();
+  delete u.faces[id];
+  saveUploads(u);
+  renderCoverGallery(); renderCharGallery();
+  closeImgViewer();
+}
+let _ivTilesCover = [], _ivTilesFace = [];
+function ivOpenCover(i) {
+  const t = _ivTilesCover[i];
+  showIv({
+    src: t.url, useLabel: '표지로 사용',
+    onUse: () => pickCover(t.url),
+    onDel: t.id.startsWith('f') ? null : () => delUpload(t.id)
+  });
+}
+function ivOpenFace(i) {
+  const t = _ivTilesFace[i];
+  const used = !!cChars[t.id];
+  showIv({
+    src: t.url, useLabel: '이 얼굴로 캐릭터 만들기',
+    onUse: used ? null : () => pickFace(t.id),
+    onDel: t.id.startsWith('f') ? null : () => delUpload(t.id)
+  });
+}
+function ivView(src) { showIv({ src }); }   // view-only
 
 // Start-background select: built-in groups + this story's uploaded backgrounds
 function refreshBgSelect(keep) {
@@ -2749,11 +2764,10 @@ function allFaceTiles() {
 
 function renderCoverGallery() {
   const upTile = `<div class="c-face c-up" onclick="uploadForCover()">＋<span>업로드</span></div>`;
-  document.getElementById('cCoverGallery').innerHTML = upTile + allFaceTiles().map(t => {
-    const isUp = !t.id.startsWith('f');
-    const act = isUp ? `openImgViewer('${t.id}','cover')` : `pickCover('${t.url.replace(/'/g, '')}')`;
-    return `<div class="c-face${cCoverUrl === t.url ? ' sel' : ''}" style="background-image:url('${t.url}')" onclick="${act}"></div>`;
-  }).join('');
+  _ivTilesCover = allFaceTiles();
+  document.getElementById('cCoverGallery').innerHTML = upTile + _ivTilesCover.map((t, i) =>
+    `<div class="c-face${cCoverUrl === t.url ? ' sel' : ''}" style="background-image:url('${t.url}')" onclick="ivOpenCover(${i})"></div>`
+  ).join('');
 }
 function pickCover(url) { cCoverUrl = url; renderCoverGallery(); }
 function uploadForCover() {
@@ -2765,11 +2779,10 @@ function uploadForCover() {
 
 function renderCharGallery() {
   const upTile = `<div class="c-face c-up" onclick="uploadForFace()">＋<span>업로드</span></div>`;
-  document.getElementById('cCharGallery').innerHTML = upTile + allFaceTiles().map(t => {
+  _ivTilesFace = allFaceTiles();
+  document.getElementById('cCharGallery').innerHTML = upTile + _ivTilesFace.map((t, i) => {
     const used = cChars[t.id];
-    const isUp = !t.id.startsWith('f');
-    const act = isUp ? `openImgViewer('${t.id}','face')` : (used ? '' : `pickFace('${t.id}')`);
-    return `<div class="c-face${cPickedFace === t.id ? ' sel' : ''}" style="background-image:url('${t.url}');${used ? 'opacity:0.3' : ''}" onclick="${act}"></div>`;
+    return `<div class="c-face${cPickedFace === t.id ? ' sel' : ''}" style="background-image:url('${t.url}');${used ? 'opacity:0.45' : ''}" onclick="ivOpenFace(${i})"></div>`;
   }).join('');
 }
 function uploadForFace() {
@@ -2839,8 +2852,9 @@ function renderCharList() {
   document.getElementById('cCharList').innerHTML = ids.length ? ids.map(id => {
     const c = cChars[id];
     const meta = [c.gender, c.age, c.role].filter(Boolean).join(' · ');
+    const srcEsc = charImgSrc(id, cChars).replace(/'/g, '');
     return `<div class="c-char-item" onclick="editCreatorChar('${id}')" style="cursor:pointer">` +
-      `<div class="c-char-face" style="background-image:url('${charImgSrc(id, cChars)}')"></div>` +
+      `<div class="c-char-face" onclick="event.stopPropagation(); ivView('${srcEsc}')" style="background-image:url('${srcEsc}')"></div>` +
       `<div class="c-char-info"><div class="c-char-nm">${esc(c.name)} <span class="c-hint">(탭하여 수정)</span></div><div class="c-char-rl">${esc(meta)}</div></div>` +
       `<button class="c-char-del" onclick="event.stopPropagation(); removeCreatorChar('${id}')">✕</button></div>`;
   }).join('') : '<div class="c-hint" style="padding:6px 2px">아직 추가된 캐릭터가 없습니다</div>';
@@ -3402,14 +3416,72 @@ const SFX = (() => {
     o.connect(g); g.connect(c.destination);
     o.start(t0); o.stop(t0 + dur + 0.05);
   }
+  // filtered noise burst — the backbone of most action sounds
+  function noise(dur, vol, fStart, fEnd, type = 'lowpass', when = 0, q = 0.8) {
+    const c = ac(); if (!c) return;
+    const t0 = c.currentTime + when;
+    const len = Math.ceil(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = type; f.Q.value = q;
+    f.frequency.setValueAtTime(fStart, t0);
+    f.frequency.exponentialRampToValueAtTime(Math.max(40, fEnd), t0 + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t0); src.stop(t0 + dur + 0.05);
+  }
   function play(kind) {
     if (!on()) return;
     try {
-      if (kind === 'tick')   tone(1350, 0.045, 0.028, 'sine');
+      // --- UI ---
+      if (kind === 'tick')   tone(1350, 0.045, 0.022, 'sine');
       else if (kind === 'send')   { tone(520, 0.09, 0.05, 'sine', 0, 320); }
       else if (kind === 'choice') { tone(880, 0.06, 0.045, 'triangle'); tone(1320, 0.07, 0.03, 'sine', 0.05); }
       else if (kind === 'ending') { [523, 659, 784, 1047].forEach((f, i) => tone(f, 1.4, 0.05, 'sine', i * 0.18)); }
-      else if (kind === 'open')   tone(700, 0.06, 0.035, 'triangle');
+      // --- SCENE ACTIONS (AI-triggered per dialogue line) ---
+      else if (kind === 'explosion') {
+        tone(70, 0.5, 0.22, 'sine', 0, -40);            // sub thump
+        noise(0.9, 0.30, 2200, 90, 'lowpass');          // blast tail
+      }
+      else if (kind === 'sword') {
+        noise(0.10, 0.22, 5200, 2600, 'bandpass', 0, 6); // metallic scrape
+        tone(2350, 0.16, 0.09, 'square', 0, -900);       // ring
+        tone(3520, 0.24, 0.05, 'sine', 0.01, -1200);
+      }
+      else if (kind === 'gun') {
+        noise(0.07, 0.34, 4000, 900, 'lowpass');         // crack
+        tone(120, 0.16, 0.14, 'sine', 0, -60);           // body
+        noise(0.4, 0.05, 900, 200, 'lowpass', 0.06);     // echo tail
+      }
+      else if (kind === 'punch') {
+        tone(160, 0.13, 0.22, 'sine', 0, -95);
+        noise(0.05, 0.14, 1400, 500, 'lowpass');
+      }
+      else if (kind === 'thunder') {
+        noise(2.2, 0.16, 500, 60, 'lowpass');
+        tone(55, 1.6, 0.10, 'sine', 0.1, -20);
+      }
+      else if (kind === 'magic') {
+        tone(660, 0.5, 0.05, 'sine', 0, 900);            // rising gliss
+        tone(990, 0.55, 0.04, 'triangle', 0.08, 1200);
+        noise(0.6, 0.03, 3000, 8000, 'highpass', 0.05);  // sparkle
+      }
+      else if (kind === 'door') {
+        tone(95, 0.09, 0.16, 'sine', 0, -25);
+        tone(95, 0.09, 0.16, 'sine', 0.22, -25);
+      }
+      else if (kind === 'crash') {
+        noise(0.5, 0.24, 3000, 300, 'lowpass');
+        tone(220, 0.2, 0.08, 'square', 0, -140);
+      }
+      else if (kind === 'scream') {
+        noise(0.5, 0.07, 1200, 2600, 'bandpass', 0, 3);
+        tone(880, 0.4, 0.04, 'sawtooth', 0, 260);
+      }
     } catch {}
   }
   return { play };
@@ -4132,6 +4204,7 @@ function showNextDialogue() {
 
   const d = dialogueQueue.shift();
   SFX.play('tick');
+  if (d.sfx) SFX.play(d.sfx);
   isShowing = true;
   waitingForTap = false;
 
