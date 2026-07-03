@@ -601,6 +601,24 @@
     background: rgba(201,168,76,0.05);
   }
   .c-face.c-up span { font-size: 0.58rem; letter-spacing: 0.05em; }
+  .c-emo {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    background-size: cover; background-position: top center;
+    background-color: #14101f;
+    border: 1px dashed var(--border);
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .c-emo.has { border-style: solid; border-color: var(--gold-dim); }
+  .c-emo i {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    font-style: normal;
+    font-size: 0.52rem; text-align: center;
+    background: rgba(0,0,0,0.6); color: var(--text-dim);
+    padding: 2px 0;
+  }
   .c-char-item {
     display: flex; align-items: center; gap: 10px;
     background: var(--panel); border: 1px solid var(--border);
@@ -1534,6 +1552,10 @@
         </div>
         <div class="c-label">성격 · 특징</div>
         <textarea id="cCharPers" class="profile-input profile-textarea" style="height:70px" maxlength="200" placeholder="성격, 말투, 주인공과의 관계 등"></textarea>
+        <div id="cEmoSection" style="display:none">
+          <div class="c-label">표정 이미지 (선택) <span class="c-hint">감정별로 다른 이미지를 올리면 대사 감정에 따라 바뀝니다. 비워두면 기본 1장 사용</span></div>
+          <div class="c-gallery" id="cEmoGrid" style="grid-template-columns:repeat(6,1fr)"></div>
+        </div>
         <button class="my-btn" id="cCharAddBtn" style="border-color:var(--gold-dim);color:var(--gold)" onclick="addCreatorChar()">＋ 이 캐릭터 추가</button>
       </div>
     </div>
@@ -2853,12 +2875,48 @@ function uploadForFace() {
     } catch (e) { alert(e.message || '업로드 실패'); }
   });
 }
+const EMO_SLOTS = [['normal','기본'],['smile','미소'],['angry','분노'],['sad','슬픔'],['pain','고통'],['worry','불안']];
+
+function renderEmoGrid() {
+  const sec = document.getElementById('cEmoSection');
+  const up = cPickedFace && getUploads().faces[cPickedFace];
+  if (!up) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const emo = up.emo || {};
+  document.getElementById('cEmoGrid').innerHTML = EMO_SLOTS.map(([k, label]) => {
+    const url = k === 'normal' ? up.url : emo[k];
+    return `<div class="c-emo${url ? ' has' : ''}" style="${url ? `background-image:url('${url}')` : ''}" onclick="uploadEmoSlot('${k}')">${url ? '' : '＋'}<i>${label}</i></div>`;
+  }).join('');
+}
+
+function uploadEmoSlot(slot) {
+  const fid = cPickedFace;
+  if (!fid) return;
+  pickImageFile(async f => {
+    try {
+      const doRemove = confirm('배경 제거를 시도할까요? (단색 배경용, 투명 PNG면 취소)');
+      const canvas = await fileToCanvas(f, 1400);
+      if (doRemove) floodRemoveBg(canvas);
+      const blob = await canvasToBlob(canvas, 'image/png');
+      const url = await uploadBlob(fid + '_' + slot + '_' + Date.now().toString(36) + '.png', blob, 'image/png');
+      const u = getUploads();
+      const face = u.faces[fid];
+      if (!face) return;
+      if (slot === 'normal') face.url = url;
+      else { face.emo = face.emo || {}; face.emo[slot] = url; }
+      saveUploads(u);
+      renderEmoGrid(); renderCoverGallery(); renderCharGallery();
+    } catch (e) { alert(e.message || '업로드 실패'); }
+  });
+}
+
 function pickFace(fid) {
   cPickedFace = fid;
   renderCharGallery();
   document.getElementById('cCharAddBtn').textContent = '＋ 이 캐릭터 추가';
   document.getElementById('cCharGender').value = SPRITE_GENDER[String(fid).replace('f', '')] || '여성';
   document.getElementById('cCharForm').style.display = 'block';
+  renderEmoGrid();
   document.getElementById('cCharName').focus();
 }
 
@@ -2875,6 +2933,7 @@ function editCreatorChar(id) {
   document.getElementById('cCharAddBtn').textContent = '✎ 수정 완료';
   document.getElementById('cCharForm').style.display = 'block';
   renderCharGallery();
+  renderEmoGrid();
   document.getElementById('cCharName').focus();
 }
 
@@ -2890,7 +2949,10 @@ function addCreatorChar() {
     personality: document.getElementById('cCharPers').value.trim()
   };
   const up = getUploads().faces[cPickedFace];
-  if (up) entry.img = up.url;   // uploaded face → engine renders this URL
+  if (up) {
+    entry.img = up.url;   // uploaded face → engine renders this URL
+    if (up.emo && Object.keys(up.emo).length) entry.emoImgs = { ...up.emo };
+  }
   cChars[cPickedFace] = entry;
   cPickedFace = null;
   ['cCharName','cCharRole','cCharAge','cCharPers'].forEach(id => { document.getElementById(id).value = ''; });
@@ -4363,9 +4425,12 @@ function updateSpriteEmotion(charId, emotion, pose) {
   const sprite = document.getElementById('sprite_' + charId);
   if (!sprite) return;
 
-  // uploaded characters have a single image — no emotion/pose variants
+  // uploaded characters: swap between uploaded expression images (if any)
   if (CHARACTERS[charId] && CHARACTERS[charId].img) {
+    const c = CHARACTERS[charId];
     sprite.classList.remove('fullbody');
+    const url = (c.emoImgs && c.emoImgs[normalizeEmotion(emotion)]) || c.img;
+    if (!sprite.src.endsWith(url)) sprite.src = url;
     return;
   }
 
