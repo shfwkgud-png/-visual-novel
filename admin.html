@@ -53,6 +53,7 @@
     <input id="aUser" placeholder="아이디" style="background:var(--panel);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:9px;width:130px">
     <input id="token" type="password" placeholder="비밀번호 (또는 동기화 암호)">
     <button class="gold" onclick="connect()">로그인</button>
+    <span id="gsiBtn"></span>
     <span id="whoami" style="color:var(--dim);font-size:0.8rem;align-self:center"></span>
   </div>
 </header>
@@ -100,6 +101,7 @@
 <div id="msg"></div>
 <script>
 const API = 'https://pandora-sync.pasokong99.workers.dev';
+const GOOGLE_CLIENT_ID = '888890730020-j136s19u4euq7sp0et4vb418b0mqar80.apps.googleusercontent.com';
 let TOKEN = localStorage.getItem('vn_admin_token') || '';   // legacy passphrase
 let AUTH = localStorage.getItem('vn_admin_auth') || '';     // account token
 let IS_ADMIN = false;
@@ -133,10 +135,43 @@ async function connect() {
     localStorage.setItem('vn_admin_token', TOKEN);
     document.getElementById('whoami').textContent = '(암호 모드)';
   }
+  applyLogin();
+}
+
+function applyLogin() {
   document.getElementById('tabUsers').style.display = IS_ADMIN ? 'block' : 'none';
   loadImgs(); loadKeys(); loadStats();
   if (IS_ADMIN) { loadUsers(); loadInvites(); }
   toast('연결됨');
+}
+
+// ----- Google Sign-In -----
+function initGoogle() {
+  if (!GOOGLE_CLIENT_ID) return;
+  const render = () => {
+    try {
+      google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogle });
+      google.accounts.id.renderButton(document.getElementById('gsiBtn'),
+        { theme: 'filled_black', size: 'large', text: 'signin_with', locale: 'ko' });
+    } catch {}
+  };
+  if (window.google && google.accounts) { render(); return; }
+  const sc = document.createElement('script');
+  sc.src = 'https://accounts.google.com/gsi/client';
+  sc.onload = render;
+  document.head.appendChild(sc);
+}
+async function onGoogle(resp) {
+  const res = await fetch(API + '/auth/google', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential: resp.credential })
+  });
+  const d = await res.json();
+  if (!res.ok) { toast(d.error || '구글 로그인 실패'); return; }
+  AUTH = d.token; IS_ADMIN = !!d.admin;
+  localStorage.setItem('vn_admin_auth', AUTH);
+  document.getElementById('whoami').textContent = '👤 ' + (d.display || d.user) + (d.admin ? ' (관리자)' : '');
+  applyLogin();
 }
 
 function showTab(t) {
@@ -258,6 +293,7 @@ async function loadStats() {
 }
 
 (async () => {
+  initGoogle();
   if (AUTH) {
     const res = await fetch(API + '/auth/me', { headers: { 'X-Auth': AUTH } });
     if (res.ok) {
