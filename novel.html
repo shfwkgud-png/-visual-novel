@@ -726,6 +726,63 @@
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
     z-index: 0;
   }
+  /* crossfade partner for #bgLayer (background switches fade, not cut) */
+  #bgLayerB {
+    position: fixed;
+    top: 0; left: 0; width: 100%;
+    height: 100vh;
+    height: 100lvh;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+  }
+  #fxFlash {
+    position: fixed; inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 45;
+  }
+  #fxFlash.on { animation: fxFlashA 0.28s ease-out; }
+  @keyframes fxFlashA { 0% { opacity: 0.55; } 100% { opacity: 0; } }
+  @keyframes fxShakeA {
+    0%, 100% { transform: translate(0, 0); }
+    15% { transform: translate(-9px, 5px); }
+    30% { transform: translate(8px, -6px); }
+    45% { transform: translate(-7px, -4px); }
+    60% { transform: translate(6px, 5px); }
+    75% { transform: translate(-4px, 2px); }
+    90% { transform: translate(2px, -2px); }
+  }
+  @keyframes fxShakeB {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-4px, 2px); }
+    50% { transform: translate(4px, -3px); }
+    75% { transform: translate(-2px, 1px); }
+  }
+  @keyframes fxShakeChar {
+    0%, 100% { transform: translateX(-50%); }
+    15% { transform: translate(calc(-50% - 9px), 5px); }
+    30% { transform: translate(calc(-50% + 8px), -6px); }
+    45% { transform: translate(calc(-50% - 7px), -4px); }
+    60% { transform: translate(calc(-50% + 6px), 5px); }
+    80% { transform: translate(calc(-50% - 3px), 2px); }
+  }
+  @keyframes fxShakeCharB {
+    0%, 100% { transform: translateX(-50%); }
+    25% { transform: translate(calc(-50% - 4px), 2px); }
+    50% { transform: translate(calc(-50% + 4px), -3px); }
+    75% { transform: translate(calc(-50% - 2px), 1px); }
+  }
+  body.fx-shake #bgLayer, body.fx-shake #bgLayerB, body.fx-shake #bgOverlay,
+  body.fx-shake #dialogueBox, body.fx-shake #gameScreen { animation: fxShakeA 0.45s ease-out; }
+  body.fx-shake #charLayer { animation: fxShakeChar 0.45s ease-out; }
+  body.fx-shake-light #bgLayer, body.fx-shake-light #bgLayerB, body.fx-shake-light #bgOverlay,
+  body.fx-shake-light #dialogueBox, body.fx-shake-light #gameScreen { animation: fxShakeB 0.3s ease-out; }
+  body.fx-shake-light #charLayer { animation: fxShakeCharB 0.3s ease-out; }
+
   #bgOverlay {
     position: fixed;
     top: 0; left: 0; width: 100%;
@@ -1567,8 +1624,10 @@
 <!-- BACKGROUND + CHARACTER: full-screen, OUTSIDE #gameScreen so they're never
      clipped/shrunk by the visible-area layout (always fills like #apiScreen) -->
 <div id="bgLayer"></div>
+<div id="bgLayerB"></div>
 <div id="bgOverlay"></div>
 <div id="charLayer"></div>
+<div id="fxFlash"></div>
 
 <!-- DIALOGUE: full-height fixed layer OUTSIDE #gameScreen so it reaches the true
      bottom (no strip) and never rises with the keyboard -->
@@ -3390,6 +3449,36 @@ const Ambient = (() => {
   return { setMood, stop, toggle };
 })();
 
+// ===== SCREEN FX — shake & flash, paired with scene SFX for impact =====
+const FX = (() => {
+  let t1 = null, t2 = null;
+  function shake(strong) {
+    const cls = strong ? 'fx-shake' : 'fx-shake-light';
+    document.body.classList.remove('fx-shake', 'fx-shake-light');
+    void document.body.offsetWidth;   // restart animation
+    document.body.classList.add(cls);
+    clearTimeout(t1);
+    t1 = setTimeout(() => document.body.classList.remove('fx-shake', 'fx-shake-light'), 520);
+  }
+  function flash() {
+    const el = document.getElementById('fxFlash');
+    el.classList.remove('on');
+    void el.offsetWidth;
+    el.classList.add('on');
+    clearTimeout(t2);
+    t2 = setTimeout(() => el.classList.remove('on'), 320);
+  }
+  // what each scene sound looks like on screen
+  function forSfx(kind) {
+    if (kind === 'explosion') { flash(); shake(true); }
+    else if (kind === 'crash' || kind === 'punch') shake(true);
+    else if (kind === 'gun') { flash(); shake(false); }
+    else if (kind === 'sword' || kind === 'monster') shake(false);
+    else if (kind === 'thunder') flash();
+  }
+  return { shake, flash, forSfx };
+})();
+
 // ===== SFX — tiny synthesized UI sounds (share the ♪ toggle with Ambient) =====
 const SFX = (() => {
   let ctx = null;
@@ -4204,7 +4293,7 @@ function showNextDialogue() {
 
   const d = dialogueQueue.shift();
   SFX.play('tick');
-  if (d.sfx) SFX.play(d.sfx);
+  if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); }
   isShowing = true;
   waitingForTap = false;
 
@@ -4643,26 +4732,48 @@ function detectActiveChars(history) {
 
 // ===== BACKGROUND =====
 let currentBgFile = null;
-function setBg(name) {
-  // story-specific uploaded backgrounds first (key → URL)
-  if (STORY.customBgs && STORY.customBgs[name]) {
-    currentBgFile = name;
-    bgLayer.style.backgroundImage = `url('${STORY.customBgs[name].url}')`;
+function bgUrlFor(key) {
+  if (STORY.customBgs && STORY.customBgs[key]) return STORY.customBgs[key].url;
+  return `background/${key}.webp`;
+}
+// Crossfade to a new background: paint the B layer, fade it in over the old
+// image, then commit it to the base layer (no hard cuts).
+let _bgFading = false;
+function crossfadeBg(url) {
+  const b = document.getElementById('bgLayerB');
+  if (!b || _bgFading) {   // fallback / re-entrancy: hard set
+    bgLayer.style.backgroundImage = `url('${url}')`;
+    if (b) { b.style.transition = 'none'; b.style.opacity = 0; void b.offsetWidth; b.style.transition = ''; }
     return;
   }
-  const resolved = pickBg(name);
-  currentBgFile = resolved;
-  bgLayer.style.backgroundImage = `url('background/${resolved}.webp')`;
+  _bgFading = true;
+  const img = new Image();
+  img.onload = () => {
+    b.style.backgroundImage = `url('${url}')`;
+    b.style.opacity = 1;
+    setTimeout(() => {
+      bgLayer.style.backgroundImage = `url('${url}')`;
+      b.style.transition = 'none';
+      b.style.opacity = 0;
+      void b.offsetWidth;
+      b.style.transition = '';
+      _bgFading = false;
+    }, 750);
+  };
+  img.onerror = () => { bgLayer.style.backgroundImage = `url('${url}')`; _bgFading = false; };
+  img.src = url;
+}
+function setBg(name) {
+  const key = (STORY.customBgs && STORY.customBgs[name]) ? name : pickBg(name);
+  if (key === currentBgFile) return;
+  currentBgFile = key;
+  crossfadeBg(bgUrlFor(key));
 }
 // Restore an exact background file (for history scrubbing)
 function setBgFile(file) {
   if (!file || file === currentBgFile) return;
   currentBgFile = file;
-  if (STORY.customBgs && STORY.customBgs[file]) {
-    bgLayer.style.backgroundImage = `url('${STORY.customBgs[file].url}')`;
-    return;
-  }
-  bgLayer.style.backgroundImage = `url('background/${file}.webp')`;
+  crossfadeBg(bgUrlFor(file));
 }
 
 // ===== STATUS UI =====
