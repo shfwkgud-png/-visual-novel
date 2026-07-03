@@ -25,6 +25,44 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
     const url = new URL(req.url);
+
+    // ---- IMAGE STORE (KV-backed, free tier) ----
+    // GET /img/<ns>/<id>  — public (possessing the URL grants access; ns is a
+    //                       token hash, unguessable). Served with long cache.
+    // PUT /img?name=<id>  — token required; body = raw image bytes (≤ 8MB).
+    if (url.pathname.startsWith('/img/')) {
+      const parts = url.pathname.split('/');       // ['', 'img', ns, id]
+      if (parts.length >= 4) {
+        const { value, metadata } = await env.PANDORA_KV.getWithMetadata(
+          'img:' + parts[2] + ':' + parts.slice(3).join('/'), 'arrayBuffer');
+        if (value === null) return new Response('not found', { status: 404, headers: CORS });
+        return new Response(value, {
+          headers: {
+            ...CORS,
+            'Content-Type': (metadata && metadata.ct) || 'image/png',
+            'Cache-Control': 'public, max-age=31536000, immutable'
+          }
+        });
+      }
+      return new Response('bad path', { status: 400, headers: CORS });
+    }
+    if (url.pathname === '/img' && req.method === 'PUT') {
+      const token = req.headers.get('X-Sync-Token') || '';
+      if (token.length < 4) return new Response(JSON.stringify({ error: 'token' }),
+        { status: 401, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const ns = await tokenHash(token);
+      const name = (url.searchParams.get('name') || '').replace(/[^a-zA-Z0-9_.-]/g, '');
+      if (!name) return new Response(JSON.stringify({ error: 'name' }),
+        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const buf = await req.arrayBuffer();
+      if (buf.byteLength > 8_000_000) return new Response(JSON.stringify({ error: 'too large' }),
+        { status: 413, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const ct = req.headers.get('Content-Type') || 'image/png';
+      await env.PANDORA_KV.put('img:' + ns + ':' + name, buf, { metadata: { ct } });
+      return new Response(JSON.stringify({ ok: true, url: url.origin + '/img/' + ns + '/' + name }),
+        { headers: { ...CORS, 'Content-Type': 'application/json' } });
+    }
+
     if (!url.pathname.startsWith('/sync')) {
       return new Response('pandora-sync ok', { headers: CORS });
     }

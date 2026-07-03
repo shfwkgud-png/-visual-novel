@@ -581,6 +581,15 @@
     cursor: pointer;
   }
   .c-face.sel { border-color: var(--gold); }
+  .c-face.c-up {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+    border: 1px dashed var(--gold-dim);
+    color: var(--gold);
+    font-size: 1.1rem;
+    background: rgba(201,168,76,0.05);
+  }
+  .c-face.c-up span { font-size: 0.58rem; letter-spacing: 0.05em; }
   .c-char-item {
     display: flex; align-items: center; gap: 10px;
     background: var(--panel); border: 1px solid var(--border);
@@ -1393,6 +1402,7 @@
     <div class="creator-step" id="cStep4" style="display:none">
       <div class="c-label">시작 배경 <b>*</b></div>
       <select id="cStartBg" class="profile-input"></select>
+      <button class="my-btn" onclick="uploadForBg()">📷 배경 이미지 업로드 (이 스토리 전용)</button>
       <div class="c-label">오프닝 지시문 <b>*</b> <span class="c-hint">첫 장면을 어떻게 시작할지 AI에게 지시 ({이름} = 주인공 이름)</span></div>
       <textarea id="cStartPrompt" class="profile-input profile-textarea" style="height:120px" placeholder="예: 왕도의 뒷골목, 비 내리는 밤. {이름}이(가) 쫓기던 소녀와 부딪히는 장면으로 시작해줘."></textarea>
       <div class="c-label">첫 장면 등장 캐릭터</div>
@@ -1415,6 +1425,7 @@
     <button id="cPrevBtn" onclick="creatorStepMove(-1)" style="visibility:hidden">이전</button>
     <button id="cNextBtn" onclick="creatorStepMove(1)">다음</button>
   </div>
+  <input type="file" id="cFileInput" accept="image/*" style="display:none" onchange="handlePickedFile(this)">
 </div>
 
 <!-- ===== AI SETTINGS MODAL (was apiScreen) ===== -->
@@ -1472,7 +1483,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v80</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v81</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1753,6 +1764,10 @@ function buildCustomWorldPrompt(s) {
   if (Array.isArray(s.endings) && s.endings.length) {
     lore += `\n\n## 엔딩 조건 (아래 조건이 충족되면 이야기를 해당 엔딩으로 마무리 지을 것. 조건 미충족 시 계속 진행):`;
     s.endings.forEach(e => { lore += `\n- [${e.t}] 조건: ${e.cond || '-'} → 결말: ${e.d}`; });
+  }
+  if (s.customBgs && Object.keys(s.customBgs).length) {
+    lore += `\n\n## 이 스토리 전용 배경 (background 필드에 아래 키도 사용 가능 — 어울리는 장면에서 우선 사용):`;
+    for (const k in s.customBgs) lore += `\n- ${k}: ${s.customBgs[k].label || ''}`;
   }
   return lore + ENGINE_RULES_PROMPT;
 }
@@ -2053,8 +2068,7 @@ function openStoryDetail(id) {
     (saveInfoFor(id) ? `<span class="d-tag" style="color:#6fa8ff">진행 중</span>` : '');
   document.getElementById('detailDesc').textContent = s.desc || '';
   document.getElementById('detailChars').innerHTML = charIds.slice(0, 12).map(cid => {
-    const num = cid.replace('f', '');
-    return `<div class="d-char"><div class="d-char-img" style="background-image:url('character/25_upper/${num}_1.webp')"></div>` +
+    return `<div class="d-char"><div class="d-char-img" style="background-image:url('${charImgSrc(cid, chars)}')"></div>` +
       `<div class="d-char-name">${chars[cid].name}</div></div>`;
   }).join('');
   const sv = saveInfoFor(id);
@@ -2155,6 +2169,7 @@ async function backupAll(manual) {
   try {
     let n = 0;
     await syncPut('stories', getLocalStories()); n++;
+    await syncPut('uploads', getUploads()); n++;
     for (const id of Object.keys(allStories())) {
       const raw = localStorage.getItem(saveKeyFor(id));
       if (raw) { await syncPut('save:' + id, raw); n++; }
@@ -2179,6 +2194,8 @@ async function restoreAll() {
     let n = 0;
     const stories = await syncGet('stories');
     if (stories) { localStorage.setItem('vn_local_stories', JSON.stringify(stories)); n++; }
+    const uploads = await syncGet('uploads');
+    if (uploads) { localStorage.setItem('vn_uploads', JSON.stringify(uploads)); n++; }
     for (const id of Object.keys(allStories())) {
       const save = await syncGet('save:' + id);
       if (save) { localStorage.setItem(saveKeyFor(id), JSON.stringify(save)); n++; }
@@ -2206,7 +2223,133 @@ function scheduleAutoBackup() {
   _syncTimer = setTimeout(() => {
     syncPut('save:' + STORY.id, localStorage.getItem(saveKeyFor(STORY.id)) || '{}').catch(() => {});
     syncPut('stories', getLocalStories()).catch(() => {});
+    syncPut('uploads', getUploads()).catch(() => {});
   }, 5000);
+}
+
+// ===== IMAGE UPLOADS (KV-backed store on the sync worker) =====
+function getUploads() {
+  try { return JSON.parse(localStorage.getItem('vn_uploads') || '{"faces":{},"bgs":{}}'); }
+  catch { return { faces: {}, bgs: {} }; }
+}
+function saveUploads(u) {
+  localStorage.setItem('vn_uploads', JSON.stringify(u));
+  try { scheduleAutoBackup(); } catch {}
+}
+
+// image src for any character id: custom img url > uploaded face > sprite file
+function charImgSrc(id, defs) {
+  const c = (defs || CHARACTERS || {})[id];
+  if (c && c.img) return c.img;
+  const up = getUploads().faces[id];
+  if (up) return up.url;
+  return `character/25_upper/${String(id).replace('f', '')}_1.webp`;
+}
+
+// Load a File into a canvas, downscaled to maxH
+function fileToCanvas(file, maxH) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const u = URL.createObjectURL(file);
+    img.onload = () => {
+      const sc = Math.min(1, maxH / img.naturalHeight);
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * sc);
+      c.height = Math.round(img.naturalHeight * sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u);
+      resolve(c);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('이미지를 읽을 수 없습니다')); };
+    img.src = u;
+  });
+}
+
+// Simple background removal for SOLID-color backgrounds: flood-fill from the
+// four corners, erasing pixels within tolerance of the corner color.
+function floodRemoveBg(canvas, tol = 30) {
+  const w = canvas.width, h = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const im = ctx.getImageData(0, 0, w, h);
+  const d = im.data;
+  const seen = new Uint8Array(w * h);
+  const stack = [];
+  const seed = (x, y) => {
+    const i = (y * w + x);
+    if (!seen[i]) { stack.push(i); seen[i] = 1; }
+  };
+  seed(0, 0); seed(w - 1, 0); seed(0, h - 1); seed(w - 1, h - 1);
+  const ref = [];
+  [[0,0],[w-1,0],[0,h-1],[w-1,h-1]].forEach(([x,y]) => {
+    const o = (y * w + x) * 4; ref.push([d[o], d[o+1], d[o+2]]);
+  });
+  const isBg = (o) => ref.some(([r,g,b]) =>
+    Math.abs(d[o]-r) + Math.abs(d[o+1]-g) + Math.abs(d[o+2]-b) < tol * 3);
+  let erased = 0;
+  while (stack.length) {
+    const i = stack.pop();
+    const o = i * 4;
+    if (!isBg(o)) continue;
+    d[o + 3] = 0; erased++;
+    const x = i % w, y = (i / w) | 0;
+    if (x > 0 && !seen[i-1]) { seen[i-1] = 1; stack.push(i-1); }
+    if (x < w-1 && !seen[i+1]) { seen[i+1] = 1; stack.push(i+1); }
+    if (y > 0 && !seen[i-w]) { seen[i-w] = 1; stack.push(i-w); }
+    if (y < h-1 && !seen[i+w]) { seen[i+w] = 1; stack.push(i+w); }
+  }
+  ctx.putImageData(im, 0, 0);
+  return erased / (w * h);   // fraction removed (sanity signal)
+}
+
+function canvasToBlob(canvas, type, q) {
+  return new Promise(res => canvas.toBlob(res, type, q));
+}
+
+async function uploadBlob(name, blob, ct) {
+  const t = syncToken();
+  if (!t) throw new Error('설정에서 동기화 암호를 먼저 저장하세요');
+  const res = await fetch(`${SYNC_URL}/img?name=${encodeURIComponent(name)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': ct, 'X-Sync-Token': t },
+    body: blob
+  });
+  if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
+  return (await res.json()).url;
+}
+
+// Full pipeline: pick file → (optional bg removal) → compress → KV upload
+let _filePickCb = null;
+function pickImageFile(cb) {
+  _filePickCb = cb;
+  document.getElementById('cFileInput').click();
+}
+async function handlePickedFile(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  const cb = _filePickCb; _filePickCb = null;
+  if (file && cb) await cb(file);
+}
+
+async function uploadCharacterImage(file) {
+  const doRemove = confirm('배경 제거를 시도할까요?\n(단색 배경 이미지에 적합. 이미 투명 PNG면 "취소")');
+  const canvas = await fileToCanvas(file, 1400);
+  if (doRemove) floodRemoveBg(canvas);
+  const blob = await canvasToBlob(canvas, 'image/png');
+  const id = 'u' + Date.now().toString(36);
+  const url = await uploadBlob(id + '.png', blob, 'image/png');
+  const u = getUploads();
+  u.faces[id] = { url };
+  saveUploads(u);
+  return { id, url };
+}
+
+async function uploadBackgroundImage(file) {
+  const canvas = await fileToCanvas(file, 1600);
+  let blob = await canvasToBlob(canvas, 'image/jpeg', 0.82);
+  if (!blob) blob = await canvasToBlob(canvas, 'image/png');
+  const key = 'cbg' + Date.now().toString(36);
+  const url = await uploadBlob(key + '.jpg', blob, 'image/jpeg');
+  return { key, url };
 }
 
 // ===== EPISODE CREATOR (Phase 2) =====
@@ -2233,12 +2376,13 @@ const BG_OPTIONS = [
 
 let cStep = 1;
 let cEditId = null;          // editing an existing local story
-let cCover = null;           // selected cover sprite num
-let cPickedFace = null;      // face selected for the char being added
-let cChars = {};             // { fNNN: {name, role, personality} }
-let cStartCharSel = {};      // { fNNN: true }
-let cEvents = [];            // [{t, d}] optional event tree
-let cEndings = [];           // [{t, d}] optional endings
+let cCoverUrl = null;        // selected cover image URL
+let cPickedFace = null;      // face id selected for the char being added
+let cChars = {};             // { <faceId>: {name, role, gender, age, personality, img?} }
+let cStartCharSel = {};      // { <faceId>: true }
+let cEvents = [];            // [{t, cond, d}] optional event tree
+let cEndings = [];           // [{t, cond, d}] optional endings
+let cCustomBgs = {};         // { key: {label, url} } story-scoped uploaded backgrounds
 
 function addCreatorEvent(kind) {
   const p = kind === 'events' ? 'cEvent' : 'cEnding';
@@ -2321,7 +2465,7 @@ async function aiDraft() {
         gender: c.gender || SPRITE_GENDER[n] || '', age: c.age || '',
         personality: c.personality || ''
       };
-      if (i === 0) { cCover = cCover || n; cStartCharSel['f' + n] = true; }
+      if (i === 0) { cCoverUrl = cCoverUrl || `character/25_upper/${n}_1.webp`; cStartCharSel['f' + n] = true; }
     });
     cEvents = Array.isArray(d.events) ? d.events.map(e => ({ t: e.t || '', cond: e.cond || '', d: e.d || '' })) : [];
     cEndings = Array.isArray(d.endings) ? d.endings.map(e => ({ t: e.t || '', cond: e.cond || '', d: e.d || '' })) : [];
@@ -2336,14 +2480,13 @@ async function aiDraft() {
 
 function openCreator(editId) {
   cEditId = editId || null;
-  cStep = 1; cCover = null; cPickedFace = null; cChars = {}; cStartCharSel = {};
+  cStep = 1; cCoverUrl = null; cPickedFace = null; cChars = {}; cStartCharSel = {};
+  cCustomBgs = {};
   cEvents = []; cEndings = [];
   // reset fields
   ['cTitle','cDesc','cGenre','cWorld','cProtagName','cProtagDesc','cLocation','cTime','cStartPrompt','cCharName','cCharRole','cCharPers','cEventTitle','cEventCond','cEventDesc','cEndingTitle','cEndingCond','cEndingDesc','cIdea']
     .forEach(id => { document.getElementById(id).value = ''; });
-  // bg select options
-  const sel = document.getElementById('cStartBg');
-  sel.innerHTML = BG_OPTIONS.map(([k, l]) => `<option value="${k}">${l} (${k})</option>`).join('');
+  refreshBgSelect();
   if (editId) {
     // local story or built-in (editing a built-in creates a local override)
     const s = allStories()[editId];
@@ -2358,13 +2501,14 @@ function openCreator(editId) {
       document.getElementById('cTime').value = s.initialState?.time || '';
       document.getElementById('cStartPrompt').value =
         (typeof s.startPrompt === 'string' ? s.startPrompt : s.startPromptText) || '';
-      cCover = (s.cover || '').match(/(\d+)_1\.webp/)?.[1] || null;
+      cCoverUrl = s.cover || null;
+      cCustomBgs = JSON.parse(JSON.stringify(s.customBgs || {}));
       cChars = JSON.parse(JSON.stringify(s.characters || {}));
       (s.startChars || []).forEach(id => { cStartCharSel[id] = true; });
       cEvents = JSON.parse(JSON.stringify(s.events || []));
       cEndings = JSON.parse(JSON.stringify(s.endings || []));
-      const bgSel = document.getElementById('cStartBg');
-      if (s.startBg) bgSel.value = s.startBg;
+      refreshBgSelect();   // include this story's uploaded backgrounds
+      if (s.startBg) document.getElementById('cStartBg').value = s.startBg;
     }
   }
   renderEventLists();
@@ -2406,7 +2550,7 @@ function creatorStepMove(dir) {
 // Publish-time validation: report what's missing and jump to that step
 function validateCreator() {
   if (!document.getElementById('cTitle').value.trim()) { gotoStep(1); document.getElementById('cTitle').focus(); return '제목을 입력하세요'; }
-  if (!cCover) { gotoStep(1); return '표지 이미지를 선택하세요'; }
+  if (!cCoverUrl) { gotoStep(1); return '표지 이미지를 선택하세요'; }
   if (!document.getElementById('cWorld').value.trim()) { gotoStep(2); document.getElementById('cWorld').focus(); return '세계관을 작성하세요'; }
   if (!document.getElementById('cProtagName').value.trim()) { gotoStep(2); document.getElementById('cProtagName').focus(); return '주인공 이름을 입력하세요'; }
   if (!Object.keys(cChars).length) { gotoStep(3); return '캐릭터를 1명 이상 추가하세요'; }
@@ -2414,24 +2558,71 @@ function validateCreator() {
   return null;
 }
 
+// Start-background select: built-in groups + this story's uploaded backgrounds
+function refreshBgSelect(keep) {
+  const sel = document.getElementById('cStartBg');
+  const cur = keep || sel.value;
+  let html = Object.keys(cCustomBgs).map(k =>
+    `<option value="${k}">📷 ${cCustomBgs[k].label || k} (업로드)</option>`).join('');
+  html += BG_OPTIONS.map(([k, l]) => `<option value="${k}">${l} (${k})</option>`).join('');
+  sel.innerHTML = html;
+  if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function uploadForBg() {
+  pickImageFile(async f => {
+    try {
+      const label = prompt('이 배경의 이름 (AI가 장면 선택에 사용) — 예: 네온 거리, 지하 벙커') || '업로드 배경';
+      const { key, url } = await uploadBackgroundImage(f);
+      cCustomBgs[key] = { label: label.trim(), url };
+      refreshBgSelect(key);
+    } catch (e) { alert(e.message || '업로드 실패'); }
+  });
+}
+
+// All selectable faces: 25 built-in sprites + user uploads (shared library)
+function allFaceTiles() {
+  const tiles = SPRITE_NUMS.map(n => ({ id: 'f' + n, url: `character/25_upper/${n}_1.webp` }));
+  const up = getUploads().faces;
+  for (const id in up) tiles.push({ id, url: up[id].url });
+  return tiles;
+}
+
 function renderCoverGallery() {
-  document.getElementById('cCoverGallery').innerHTML = SPRITE_NUMS.map(n =>
-    `<div class="c-face${cCover === n ? ' sel' : ''}" style="background-image:url('character/25_upper/${n}_1.webp')" onclick="pickCover('${n}')"></div>`
+  const upTile = `<div class="c-face c-up" onclick="uploadForCover()">＋<span>업로드</span></div>`;
+  document.getElementById('cCoverGallery').innerHTML = upTile + allFaceTiles().map(t =>
+    `<div class="c-face${cCoverUrl === t.url ? ' sel' : ''}" style="background-image:url('${t.url}')" onclick="pickCover('${t.url.replace(/'/g, '')}')"></div>`
   ).join('');
 }
-function pickCover(n) { cCover = n; renderCoverGallery(); }
+function pickCover(url) { cCoverUrl = url; renderCoverGallery(); }
+function uploadForCover() {
+  pickImageFile(async f => {
+    try { const { url } = await uploadCharacterImage(f); pickCover(url); }
+    catch (e) { alert(e.message || '업로드 실패'); }
+  });
+}
 
 function renderCharGallery() {
-  document.getElementById('cCharGallery').innerHTML = SPRITE_NUMS.map(n => {
-    const used = cChars['f' + n];
-    return `<div class="c-face${cPickedFace === n ? ' sel' : ''}" style="background-image:url('character/25_upper/${n}_1.webp');${used ? 'opacity:0.3' : ''}" onclick="${used ? '' : `pickFace('${n}')`}"></div>`;
+  const upTile = `<div class="c-face c-up" onclick="uploadForFace()">＋<span>업로드</span></div>`;
+  document.getElementById('cCharGallery').innerHTML = upTile + allFaceTiles().map(t => {
+    const used = cChars[t.id];
+    return `<div class="c-face${cPickedFace === t.id ? ' sel' : ''}" style="background-image:url('${t.url}');${used ? 'opacity:0.3' : ''}" onclick="${used ? '' : `pickFace('${t.id}')`}"></div>`;
   }).join('');
 }
-function pickFace(n) {
-  cPickedFace = n;
+function uploadForFace() {
+  pickImageFile(async f => {
+    try {
+      const { id } = await uploadCharacterImage(f);
+      renderCoverGallery();
+      pickFace(id);
+    } catch (e) { alert(e.message || '업로드 실패'); }
+  });
+}
+function pickFace(fid) {
+  cPickedFace = fid;
   renderCharGallery();
   document.getElementById('cCharAddBtn').textContent = '＋ 이 캐릭터 추가';
-  document.getElementById('cCharGender').value = SPRITE_GENDER[n] || '여성';
+  document.getElementById('cCharGender').value = SPRITE_GENDER[String(fid).replace('f', '')] || '여성';
   document.getElementById('cCharForm').style.display = 'block';
   document.getElementById('cCharName').focus();
 }
@@ -2440,10 +2631,10 @@ function pickFace(n) {
 function editCreatorChar(id) {
   const c = cChars[id];
   if (!c) return;
-  cPickedFace = id.replace('f', '');
+  cPickedFace = id;
   document.getElementById('cCharName').value = c.name || '';
   document.getElementById('cCharRole').value = c.role || '';
-  document.getElementById('cCharGender').value = c.gender || SPRITE_GENDER[cPickedFace] || '여성';
+  document.getElementById('cCharGender').value = c.gender || SPRITE_GENDER[String(id).replace('f', '')] || '여성';
   document.getElementById('cCharAge').value = c.age || '';
   document.getElementById('cCharPers').value = c.personality || '';
   document.getElementById('cCharAddBtn').textContent = '✎ 수정 완료';
@@ -2456,13 +2647,16 @@ function addCreatorChar() {
   if (!cPickedFace) return;
   const name = document.getElementById('cCharName').value.trim();
   if (!name) { document.getElementById('cCharName').focus(); return; }
-  cChars['f' + cPickedFace] = {
+  const entry = {
     name,
     role: document.getElementById('cCharRole').value.trim(),
     gender: document.getElementById('cCharGender').value,
     age: document.getElementById('cCharAge').value.trim(),
     personality: document.getElementById('cCharPers').value.trim()
   };
+  const up = getUploads().faces[cPickedFace];
+  if (up) entry.img = up.url;   // uploaded face → engine renders this URL
+  cChars[cPickedFace] = entry;
   cPickedFace = null;
   ['cCharName','cCharRole','cCharAge','cCharPers'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('cCharForm').style.display = 'none';
@@ -2480,10 +2674,10 @@ function removeCreatorChar(id) {
 function renderCharList() {
   const ids = Object.keys(cChars);
   document.getElementById('cCharList').innerHTML = ids.length ? ids.map(id => {
-    const c = cChars[id]; const n = id.replace('f', '');
+    const c = cChars[id];
     const meta = [c.gender, c.age, c.role].filter(Boolean).join(' · ');
     return `<div class="c-char-item" onclick="editCreatorChar('${id}')" style="cursor:pointer">` +
-      `<div class="c-char-face" style="background-image:url('character/25_upper/${n}_1.webp')"></div>` +
+      `<div class="c-char-face" style="background-image:url('${charImgSrc(id, cChars)}')"></div>` +
       `<div class="c-char-info"><div class="c-char-nm">${esc(c.name)} <span class="c-hint">(탭하여 수정)</span></div><div class="c-char-rl">${esc(meta)}</div></div>` +
       `<button class="c-char-del" onclick="event.stopPropagation(); removeCreatorChar('${id}')">✕</button></div>`;
   }).join('') : '<div class="c-hint" style="padding:6px 2px">아직 추가된 캐릭터가 없습니다</div>';
@@ -2511,7 +2705,8 @@ function publishStory() {
     title: document.getElementById('cTitle').value.trim(),
     desc: document.getElementById('cDesc').value.trim(),
     genre: document.getElementById('cGenre').value.trim(),
-    cover: `character/25_upper/${cCover}_1.webp`,
+    cover: cCoverUrl,
+    customBgs: cCustomBgs,
     worldLore: document.getElementById('cWorld').value.trim(),
     characters: cChars,
     protagonist: {
@@ -3478,14 +3673,22 @@ function ensureSprite(charId) {
     const s = Math.min(1.2, Math.max(0.8, Math.sqrt(0.766 / Math.max(0.2, visArea))));
     this.style.setProperty('--arScale', s.toFixed(3));
   });
-  const num = charId.replace('f', '');
-  img.src = `character/25_upper/${num}_1.webp`;
-  img.onerror = function() {
-    if (this.dataset.fallback === '1') { removeBrokenSprite(charId, this); return; }
-    this.dataset.fallback = '1';
-    this.src = `character/25_full/f_${num}_1.webp`;
-    this.onerror = function() { removeBrokenSprite(charId, this); };
-  };
+  const custom = CHARACTERS[charId].img;
+  if (custom) {
+    // uploaded character image: single art for all emotions
+    img.crossOrigin = 'anonymous';   // allow the canvas area-normalization read
+    img.src = custom;
+    img.onerror = function() { removeBrokenSprite(charId, this); };
+  } else {
+    const num = charId.replace('f', '');
+    img.src = `character/25_upper/${num}_1.webp`;
+    img.onerror = function() {
+      if (this.dataset.fallback === '1') { removeBrokenSprite(charId, this); return; }
+      this.dataset.fallback = '1';
+      this.src = `character/25_full/f_${num}_1.webp`;
+      this.onerror = function() { removeBrokenSprite(charId, this); };
+    };
+  }
   charLayer.appendChild(img);
   charLayer.dataset.count = String(Math.min(4, shownSprites.length));
   setTimeout(() => img.classList.add('visible'), 30);
@@ -3526,6 +3729,12 @@ function rebuildSprites(charIds, speakingId, emotion, pose) {
 function updateSpriteEmotion(charId, emotion, pose) {
   const sprite = document.getElementById('sprite_' + charId);
   if (!sprite) return;
+
+  // uploaded characters have a single image — no emotion/pose variants
+  if (CHARACTERS[charId] && CHARACTERS[charId].img) {
+    sprite.classList.remove('fullbody');
+    return;
+  }
 
   const num = charId.replace('f', '');
   sprite.dataset.fallback = '0';
@@ -3998,6 +4207,12 @@ function detectActiveChars(history) {
 // ===== BACKGROUND =====
 let currentBgFile = null;
 function setBg(name) {
+  // story-specific uploaded backgrounds first (key → URL)
+  if (STORY.customBgs && STORY.customBgs[name]) {
+    currentBgFile = name;
+    bgLayer.style.backgroundImage = `url('${STORY.customBgs[name].url}')`;
+    return;
+  }
   const resolved = pickBg(name);
   currentBgFile = resolved;
   bgLayer.style.backgroundImage = `url('background/${resolved}.webp')`;
@@ -4006,6 +4221,10 @@ function setBg(name) {
 function setBgFile(file) {
   if (!file || file === currentBgFile) return;
   currentBgFile = file;
+  if (STORY.customBgs && STORY.customBgs[file]) {
+    bgLayer.style.backgroundImage = `url('${STORY.customBgs[file].url}')`;
+    return;
+  }
   bgLayer.style.backgroundImage = `url('background/${file}.webp')`;
 }
 
@@ -4092,11 +4311,10 @@ function renderStatusPanel() {
   if (!ids.length) { body.innerHTML = '<div class="char-meta" style="text-align:center;padding:40px 0">아직 만난 인물이 없습니다.</div>'; return; }
   body.innerHTML = ids.map(id => {
     const m = met[id];
-    const num = id.replace('f', '');
     const dead = m.condition && m.condition.includes('사망');
     const intim = Math.max(0, Math.min(100, m.intimacy ?? 0));
     return `<div class="char-card ${dead ? 'dead' : ''}">
-      <img src="character/25_upper/${num}_1.webp" onerror="this.style.visibility='hidden'" alt="">
+      <img src="${charImgSrc(id)}" onerror="this.style.visibility='hidden'" alt="">
       <div class="char-info">
         <div class="char-name">${esc(m.name || id)} ${dead ? '<span class="dead-badge">✝ 사망</span>' : ''}</div>
         <div class="char-role">${esc(m.role || '')}</div>
