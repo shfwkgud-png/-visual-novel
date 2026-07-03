@@ -85,6 +85,12 @@ export default {
       if (!/^[a-z0-9_-]{3,20}$/.test(u)) return json({ error: '아이디는 영문 소문자/숫자 3~20자' }, 400);
       if (p.length < 6) return json({ error: '비밀번호는 6자 이상' }, 400);
       if (await env.PANDORA_KV.get('user:' + u)) return json({ error: '이미 존재하는 아이디' }, 409);
+      // id/pw signup is invite-only (Google signup needs no invite — Google
+      // already verified the email). Admin issues codes in the admin console.
+      const invite = String(b.invite || '').trim().toUpperCase();
+      if (!invite) return json({ error: '초대코드가 필요합니다' }, 403);
+      if (!(await env.PANDORA_KV.get('invite:' + invite))) return json({ error: '유효하지 않은 초대코드' }, 403);
+      await env.PANDORA_KV.delete('invite:' + invite);   // single-use
       const salt = crypto.randomUUID();
       const hash = await pbkdf2Hash(p, salt);
       await env.PANDORA_KV.put('user:' + u, JSON.stringify({ salt, hash, created: Date.now() }));
@@ -133,6 +139,31 @@ export default {
       const who = await resolveNs(req, env);
       if (!who || !who.user) return json({ error: 'no auth' }, 401);
       return json({ user: who.user, admin: who.admin });
+    }
+    // admin: invite codes
+    if (url.pathname === '/admin/invites') {
+      const who = await resolveNs(req, env);
+      if (!who || !who.admin) return json({ error: 'admin only' }, 403);
+      if (req.method === 'POST') {
+        const code = [...crypto.getRandomValues(new Uint8Array(4))]
+          .map(b2 => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b2 % 32]).join('') +
+          [...crypto.getRandomValues(new Uint8Array(4))]
+          .map(b2 => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b2 % 32]).join('');
+        await env.PANDORA_KV.put('invite:' + code, JSON.stringify({ created: Date.now(), by: who.user }));
+        return json({ ok: true, code });
+      }
+      if (req.method === 'DELETE') {
+        const code = String(url.searchParams.get('code') || '').toUpperCase();
+        await env.PANDORA_KV.delete('invite:' + code);
+        return json({ ok: true });
+      }
+      const list = await env.PANDORA_KV.list({ prefix: 'invite:', limit: 200 });
+      const invites = [];
+      for (const k of list.keys) {
+        const rec = JSON.parse((await env.PANDORA_KV.get(k.name)) || '{}');
+        invites.push({ code: k.name.slice(7), created: rec.created || 0 });
+      }
+      return json({ invites });
     }
     // admin: user list
     if (url.pathname === '/admin/users') {

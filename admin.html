@@ -83,7 +83,10 @@
     </div>
   </div>
   <div id="pageUsers" style="display:none">
-    <p class="hint">가입된 사용자 목록 — 첫 가입 계정이 관리자입니다.</p>
+    <p class="hint">아이디/비밀번호 회원가입은 초대코드가 있어야 가능합니다 (1회용). 구글 로그인은 초대코드 없이 가입됩니다.</p>
+    <div style="margin-bottom:14px"><button class="gold" onclick="makeInvite()">＋ 초대코드 발급</button></div>
+    <div id="inviteList"></div>
+    <p class="hint" style="margin-top:20px">가입된 사용자</p>
     <div id="userList"></div>
   </div>
   <div id="pageInfo" style="display:none">
@@ -132,7 +135,7 @@ async function connect() {
   }
   document.getElementById('tabUsers').style.display = IS_ADMIN ? 'block' : 'none';
   loadImgs(); loadKeys(); loadStats();
-  if (IS_ADMIN) loadUsers();
+  if (IS_ADMIN) { loadUsers(); loadInvites(); }
   toast('연결됨');
 }
 
@@ -141,6 +144,29 @@ function showTab(t) {
     document.getElementById('page' + x).style.display = x.toLowerCase() === t ? 'block' : 'none';
     document.getElementById('tab' + x).classList.toggle('on', x.toLowerCase() === t);
   });
+}
+
+async function makeInvite() {
+  const res = await fetch(API + '/admin/invites', { method: 'POST', headers: hdr() });
+  const d = await res.json();
+  if (!res.ok) { toast(d.error || '실패'); return; }
+  try { await navigator.clipboard.writeText(d.code); toast('발급됨 · 복사됨: ' + d.code); } catch { toast('발급됨: ' + d.code); }
+  loadInvites();
+}
+async function loadInvites() {
+  const res = await fetch(API + '/admin/invites', { headers: hdr() });
+  if (!res.ok) return;
+  const { invites } = await res.json();
+  document.getElementById('inviteList').innerHTML = invites.map(i =>
+    `<div class="keyRow"><div class="k" style="font-family:Consolas,monospace;letter-spacing:0.15em">${i.code}</div>` +
+    `<div class="sz">${new Date(i.created).toLocaleString('ko-KR')}</div>` +
+    `<button onclick="navigator.clipboard.writeText('${i.code}').then(()=>toast('복사됨'))">복사</button>` +
+    `<button class="danger" onclick="delInvite('${i.code}')">삭제</button></div>`
+  ).join('') || '<p class="hint">발급된 초대코드가 없습니다</p>';
+}
+async function delInvite(code) {
+  await fetch(API + '/admin/invites?code=' + code, { method: 'DELETE', headers: hdr() });
+  loadInvites();
 }
 
 async function loadUsers() {
@@ -240,7 +266,7 @@ async function loadStats() {
       document.getElementById('whoami').textContent = '👤 ' + d.user + (d.admin ? ' (관리자)' : '');
       document.getElementById('tabUsers').style.display = IS_ADMIN ? 'block' : 'none';
       loadImgs(); loadKeys(); loadStats();
-      if (IS_ADMIN) loadUsers();
+      if (IS_ADMIN) { loadUsers(); loadInvites(); }
       return;
     }
     AUTH = ''; localStorage.removeItem('vn_admin_auth');
