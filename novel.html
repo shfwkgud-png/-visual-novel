@@ -1748,7 +1748,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v96</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v97</span></span>
     <div class="top-btns">
       <button class="top-btn" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드">♪</button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3861,55 +3861,43 @@ const SFX = (() => {
     src.connect(f); f.connect(g); g.connect(c.destination);
     src.start(t0); src.stop(t0 + dur + 0.05);
   }
+  // --- real CC0 samples (sfx/ folder). Scene actions ONLY — no UI beeps. ---
+  const SAMPLES = {
+    sword: ['sword1', 'sword2', 'sword3'],
+    swing: ['swing1', 'swing2', 'swing3'],
+    draw:  ['draw1', 'draw2'],
+    gun: ['gun1', 'gun2'],
+    explosion: ['explosion1'],
+    punch: ['punch1', 'punch2', 'punch3'],
+    thunder: ['thunder1'],
+    magic: ['magic1', 'magic2'],
+    monster: ['monster1', 'monster2', 'monster3'],
+    door: ['door1', 'door2'],
+    crash: ['crash1', 'crash2', 'crash3']
+  };
+  const bufCache = {};
+  async function loadSample(name) {
+    if (bufCache[name]) return bufCache[name];
+    const c = ac(); if (!c) return null;
+    const res = await fetch('sfx/' + name + '.wav');
+    if (!res.ok) throw new Error('sfx ' + res.status);
+    return (bufCache[name] = await c.decodeAudioData(await res.arrayBuffer()));
+  }
   function play(kind) {
     if (!on()) return;
-    try {
-      // --- UI ---
-      if (kind === 'tick')   tone(1350, 0.045, 0.022, 'sine');
-      else if (kind === 'send')   { tone(520, 0.09, 0.05, 'sine', 0, 320); }
-      else if (kind === 'choice') { tone(880, 0.06, 0.045, 'triangle'); tone(1320, 0.07, 0.03, 'sine', 0.05); }
-      else if (kind === 'ending') { [523, 659, 784, 1047].forEach((f, i) => tone(f, 1.4, 0.05, 'sine', i * 0.18)); }
-      // --- SCENE ACTIONS (AI-triggered per dialogue line) ---
-      else if (kind === 'explosion') {
-        tone(70, 0.5, 0.22, 'sine', 0, -40);            // sub thump
-        noise(0.9, 0.30, 2200, 90, 'lowpass');          // blast tail
-      }
-      else if (kind === 'sword') {
-        noise(0.10, 0.22, 5200, 2600, 'bandpass', 0, 6); // metallic scrape
-        tone(2350, 0.16, 0.09, 'square', 0, -900);       // ring
-        tone(3520, 0.24, 0.05, 'sine', 0.01, -1200);
-      }
-      else if (kind === 'gun') {
-        noise(0.07, 0.34, 4000, 900, 'lowpass');         // crack
-        tone(120, 0.16, 0.14, 'sine', 0, -60);           // body
-        noise(0.4, 0.05, 900, 200, 'lowpass', 0.06);     // echo tail
-      }
-      else if (kind === 'punch') {
-        tone(160, 0.13, 0.22, 'sine', 0, -95);
-        noise(0.05, 0.14, 1400, 500, 'lowpass');
-      }
-      else if (kind === 'thunder') {
-        noise(2.2, 0.16, 500, 60, 'lowpass');
-        tone(55, 1.6, 0.10, 'sine', 0.1, -20);
-      }
-      else if (kind === 'magic') {
-        tone(660, 0.5, 0.05, 'sine', 0, 900);            // rising gliss
-        tone(990, 0.55, 0.04, 'triangle', 0.08, 1200);
-        noise(0.6, 0.03, 3000, 8000, 'highpass', 0.05);  // sparkle
-      }
-      else if (kind === 'door') {
-        tone(95, 0.09, 0.16, 'sine', 0, -25);
-        tone(95, 0.09, 0.16, 'sine', 0.22, -25);
-      }
-      else if (kind === 'crash') {
-        noise(0.5, 0.24, 3000, 300, 'lowpass');
-        tone(220, 0.2, 0.08, 'square', 0, -140);
-      }
-      else if (kind === 'scream') {
-        noise(0.5, 0.07, 1200, 2600, 'bandpass', 0, 3);
-        tone(880, 0.4, 0.04, 'sawtooth', 0, 260);
-      }
-    } catch {}
+    const list = SAMPLES[kind];
+    if (!list) return;   // UI beeps (tick/send/choice/ending) are gone — no synth
+    const name = list[Math.floor(Math.random() * list.length)];
+    loadSample(name).then(buf => {
+      const c = ac(); if (!c || !buf) return;
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = 0.94 + Math.random() * 0.12;   // subtle variety
+      const g = c.createGain();
+      g.gain.value = kind === 'thunder' ? 0.55 : 0.72;
+      src.connect(g); g.connect(c.destination);
+      src.start();
+    }).catch(() => {});   // file missing → silence (no cheesy fallback)
   }
   return { play };
 })();
@@ -4760,7 +4748,6 @@ function showNextDialogue() {
   }
 
   const d = dialogueQueue.shift();
-  SFX.play('tick');
   if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); }
   isShowing = true;
   waitingForTap = false;
