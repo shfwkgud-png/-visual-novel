@@ -66,6 +66,20 @@
   .settings-note { background:rgba(201,168,76,0.08); border:1px solid var(--border); border-radius:10px;
     padding:11px 14px; font-size:0.76rem; color:var(--text); line-height:1.7; margin-bottom:4px; }
   .settings-note b { color:var(--gold); }
+  .forge-bar { background:var(--panel); border:1px solid var(--border); border-radius:11px; padding:12px 14px; margin-bottom:10px; }
+  .forge-bar .row1 { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .forge-bar input[type=text] { flex:1; min-width:180px; background:#0d0b16; border:1px solid var(--border); color:var(--text); padding:8px 11px; border-radius:8px; font-size:0.82rem; }
+  .forge-bar .toggles { display:flex; gap:16px; flex-wrap:wrap; margin-top:9px; font-size:0.78rem; color:var(--text); }
+  .forge-bar label.tg { display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .forge-bar .st { font-size:0.72rem; color:var(--dim); }
+  .genbtn { background:#3a2d55; border:1px solid var(--gold); color:var(--gold); font-weight:700; }
+  .out-card .oh .genbtn { margin-left:0; }
+  .gimg-wrap { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .gimg { border:1px solid var(--border); border-radius:8px; overflow:hidden; width:150px; background:#000; }
+  .gimg img { width:150px; display:block; cursor:pointer; }
+  .gimg .grow { display:flex; flex-direction:column; gap:3px; padding:5px; }
+  .gimg .grow button { font-size:0.64rem; padding:4px 6px; border-radius:6px; }
+  .gimg .sd { font-size:0.62rem; color:var(--dim); text-align:center; }
 </style>
 </head>
 <body>
@@ -117,9 +131,24 @@
     <div class="gen-wrap">
       <p class="hint">캐릭터 외모를 한 번 입력하면 <b style="color:var(--gold)">동일인물</b>의 표정 6종이 자동 생성됩니다. NSFW는 아래 빌더에서 노출·포즈·상황을 골라 조합하세요. 모델: <b style="color:var(--gold)">WAI-illustrious (Illustrious 계열)</b>.</p>
 
+      <div class="forge-bar">
+        <div class="row1">
+          <b style="color:var(--gold);font-size:0.82rem;letter-spacing:0.08em">🎨 FORGE 연결</b>
+          <input type="text" id="forgeUrl" placeholder="http://127.0.0.1:7860  또는  https://xxx.trycloudflare.com">
+          <button onclick="testForge()">연결 확인</button>
+          <span class="st" id="forgeStat">미연결</span>
+        </div>
+        <div class="toggles">
+          <label class="tg"><input type="checkbox" id="gHires" checked> Hires fix (업스케일 1.5×) — 화질 ↑</label>
+          <label class="tg"><input type="checkbox" id="gADetailer" checked> ADetailer (얼굴 보정)</label>
+          <label class="tg">장수 <select id="gBatch" style="background:#0d0b16;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px"><option>1</option><option selected>2</option><option>4</option></select></label>
+          <label class="tg">방향 <select id="gOrient" onchange="0" style="background:#0d0b16;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px"><option value="portrait">세로 832×1216</option><option value="land">가로 1216×832</option><option value="square">정방 1024²</option></select></label>
+        </div>
+        <div class="st" style="margin-top:8px">버튼 누르면 <b style="color:var(--gold)">Forge가 자동으로 그려서</b> 여기에 표시됩니다. Forge는 <code>--api --cors-allow-origins=*</code> 로 실행돼 있어야 함 (아래 설명).</div>
+      </div>
       <div class="settings-note">
-        <b>SD Forge 설정</b> — 샘플러 <b>Euler a</b> · Steps <b>28~30</b> · CFG <b>5~6</b> · 해상도 <b>832×1216</b>(세로)/<b>1216×832</b>(가로) ·
-        일관성 위해 <b>Seed 고정</b>(아래 값 복사해서 Forge에 입력)
+        <b>자동 설정</b> — 샘플러 Euler a · Steps 30 · CFG 5 · Hires R-ESRGAN 4x+ Anime6B(denoise 0.4) · ADetailer face ·
+        일관성용 <b>Seed</b>는 위 시트의 Seed 칸에 넣으면 모든 생성에 적용됩니다.
       </div>
 
       <div class="sec-title">① 캐릭터 시트 (한 번만 — 모든 이미지에서 고정)</div>
@@ -143,7 +172,7 @@
         <select id="gSaved" onchange="pickSaved()" style="background:var(--panel);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:9px"><option value="">— 저장된 캐릭터 —</option></select>
       </div>
 
-      <div class="sec-title">② 표정 세트 (SFW · 자동 6종)</div>
+      <div class="sec-title">② 표정 세트 (SFW · 자동 6종) <button class="genbtn" style="font-size:0.68rem;padding:5px 12px;margin-left:8px" onclick="genAllExpr()">🎨 6종 모두 생성</button></div>
       <div id="exprOut"></div>
 
       <div class="sec-title">③ NSFW 빌더 — 노출·포즈·상황 골라서 조합</div>
@@ -273,7 +302,7 @@ function showTab(t) {
 }
 
 // ===== SD 프롬프트 생성기 (WAI-illustrious) =====
-const G_QUALITY = 'masterpiece, best quality, amazing quality, newest, absurdres, highres';
+const G_QUALITY = 'masterpiece, best quality, amazing quality, very aesthetic, newest, absurdres, highres';
 const G_NEG = '(worst quality, low quality:1.4), lowres, bad anatomy, bad hands, missing fingers, extra digits, ' +
   'fused fingers, extra arms, malformed limbs, extra limbs, text, watermark, signature, username, logo, ' +
   'jpeg artifacts, monochrome, sketch, censored, mosaic censoring';
@@ -296,6 +325,7 @@ function genInit() {
   document.getElementById('negTa').value = G_NEG;
   if (!genInited) {
     genInited = true;
+    document.getElementById('forgeUrl').value = FORGE;
     document.getElementById('poseChips').innerHTML = G_POSES.map(p =>
       `<span class="chip" data-p="${p}" onclick="togChip(this,'p')">${p}</span>`).join('');
     document.getElementById('sitChips').innerHTML = G_SITS.map(s =>
@@ -327,8 +357,11 @@ function seedLine() {
 }
 function card(title, prompt) {
   const id = 'oc' + Math.random().toString(36).slice(2, 8);
-  return `<div class="out-card"><div class="oh"><b>${title}</b><button onclick="copyEl('${id}')">복사</button></div>` +
-    `<textarea id="${id}" readonly>${prompt}</textarea></div>`;
+  return `<div class="out-card"><div class="oh"><b>${title}</b>` +
+    `<button class="genbtn" onclick="genImage('${id}')">🎨 생성</button>` +
+    `<button onclick="copyEl('${id}')">복사</button></div>` +
+    `<textarea id="${id}" readonly>${prompt}</textarea>` +
+    `<div class="gimg-wrap" id="${id}_img"></div></div>`;
 }
 function regen() {
   const style = document.getElementById('gStyle').value.trim();
@@ -402,6 +435,104 @@ function refreshSavedList() {
 function pickSaved() {
   const n = document.getElementById('gSaved').value; if (!n) return;
   const all = savedChars(); if (all[n]) applySheet(all[n]);
+}
+
+// ===== Forge txt2img API 연동 (자동 생성) =====
+let FORGE = localStorage.getItem('vn_forge_url') || 'http://127.0.0.1:7860';
+const genImages = {};   // mountId -> [{seed, b64}]
+function forgeBase() {
+  const v = document.getElementById('forgeUrl').value.trim() || FORGE;
+  return v.replace(/\/+$/, '');
+}
+async function testForge() {
+  FORGE = forgeBase(); localStorage.setItem('vn_forge_url', FORGE);
+  const st = document.getElementById('forgeStat');
+  st.textContent = '확인 중…'; st.style.color = 'var(--dim)';
+  try {
+    const r = await fetch(FORGE + '/sdapi/v1/sd-models', { method:'GET' });
+    if (!r.ok) throw 0;
+    const m = await r.json();
+    st.textContent = '✔ 연결됨 (' + m.length + '개 모델)'; st.style.color = 'var(--gold)';
+  } catch {
+    st.textContent = '✗ 연결 실패 — Forge 실행/--api/URL 확인'; st.style.color = '#e06a6a';
+  }
+}
+function forgeDims() {
+  const o = document.getElementById('gOrient').value;
+  if (o === 'land') return [1216, 832];
+  if (o === 'square') return [1024, 1024];
+  return [832, 1216];
+}
+function forgePayload(prompt) {
+  const seed = document.getElementById('gSeed').value.trim();
+  const [w, h] = forgeDims();
+  const p = {
+    prompt, negative_prompt: G_NEG,
+    steps: 30, cfg_scale: 5, sampler_name: 'Euler a', scheduler: 'Automatic',
+    width: w, height: h,
+    seed: seed ? parseInt(seed, 10) : -1,
+    batch_size: parseInt(document.getElementById('gBatch').value || '1', 10),
+    n_iter: 1, save_images: false, send_images: true
+  };
+  if (document.getElementById('gHires').checked) {
+    p.enable_hr = true; p.hr_scale = 1.5; p.hr_upscaler = 'R-ESRGAN 4x+ Anime6B';
+    p.hr_second_pass_steps = 15; p.denoising_strength = 0.4;
+  }
+  if (document.getElementById('gADetailer').checked) {
+    p.alwayson_scripts = { ADetailer: { args: [true, false,
+      { ad_model: 'face_yolov8n.pt', ad_denoising_strength: 0.4, ad_confidence: 0.3 }] } };
+  }
+  return p;
+}
+async function genImage(id) {
+  const prompt = document.getElementById(id).value;
+  const mount = document.getElementById(id + '_img');
+  mount.innerHTML = '<span class="hint" style="padding:8px">⏳ Forge가 그리는 중… (Hires+ADetailer면 20~40초)</span>';
+  try {
+    const r = await fetch(forgeBase() + '/sdapi/v1/txt2img', {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(forgePayload(prompt))
+    });
+    if (!r.ok) { mount.innerHTML = `<span class="hint" style="color:#e06a6a;padding:8px">Forge 오류 ${r.status} — ${r.status===404?'--api 안 켜짐':'설정 확인'}</span>`; return; }
+    const d = await r.json();
+    let seeds = []; try { const info = JSON.parse(d.info); seeds = info.all_seeds || [info.seed]; } catch {}
+    genImages[id] = d.images.map((b64, i) => ({ seed: seeds[i] ?? '?', b64 }));
+    renderGen(id);
+  } catch (e) {
+    mount.innerHTML = '<span class="hint" style="color:#e06a6a;padding:8px">연결 실패 — Forge URL/실행/CORS 확인 (연결 확인 버튼)</span>';
+  }
+}
+function renderGen(id) {
+  const mount = document.getElementById(id + '_img');
+  mount.innerHTML = genImages[id].map((im, i) => {
+    const src = 'data:image/png;base64,' + im.b64;
+    return `<div class="gimg"><img src="${src}" onclick="window.open().document.write('<img src=\\'${src}\\'>')">` +
+      `<div class="sd">seed ${im.seed}</div><div class="grow">` +
+      `<button onclick="useSeed('${im.seed}')">시드 고정</button>` +
+      `<button class="gold" onclick="uploadGen('${id}',${i})">앱에 업로드</button></div></div>`;
+  }).join('');
+}
+function useSeed(s) {
+  document.getElementById('gSeed').value = s;
+  regen(); toast('Seed ' + s + ' 고정됨');
+}
+async function uploadGen(id, i) {
+  const im = genImages[id][i];
+  const name = 'sd' + Date.now().toString(36) + '.png';
+  const bin = atob(im.b64); const arr = new Uint8Array(bin.length);
+  for (let j = 0; j < bin.length; j++) arr[j] = bin.charCodeAt(j);
+  const blob = new Blob([arr], { type: 'image/png' });
+  const r = await fetch(API + '/img?name=' + name, { method:'PUT', headers:{ ...hdr(), 'Content-Type':'image/png' }, body: blob });
+  if (r.ok) {
+    const url = forgeBaseImgUrl(name);
+    try { await navigator.clipboard.writeText(url); } catch {}
+    toast('업로드됨 · URL 복사됨');
+  } else toast('업로드 실패');
+}
+function forgeBaseImgUrl(name) { return API + '/img?name=' + name; }
+async function genAllExpr() {
+  const cards = document.querySelectorAll('#exprOut .out-card textarea');
+  for (const ta of cards) { await genImage(ta.id); }
 }
 
 async function makeInvite() {
