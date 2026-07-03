@@ -1028,6 +1028,43 @@
   }
   #imgViewerBtns #ivDelBtn { color: #e06a6a; border-color: rgba(224,106,106,0.4); }
 
+  /* SAVE SLOTS */
+  #slotPanel {
+    position: fixed; inset: 0;
+    background: rgba(4,4,8,0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 55;
+  }
+  #slotInner {
+    width: min(420px, 92vw);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px 18px;
+  }
+  #slotTitle { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-bottom: 14px; }
+  .slot-item {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .slot-info { flex: 1; min-width: 0; }
+  .slot-name { font-size: 0.85rem; color: var(--text); font-weight: 700; }
+  .slot-meta { font-size: 0.7rem; color: var(--text-dim); margin-top: 3px; }
+  .slot-btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); border-radius: 9px;
+    padding: 8px 12px; font-size: 0.75rem; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .slot-btn.save { border-color: var(--gold-dim); color: var(--gold); }
+
   /* ENDING CARD */
   #endingCard {
     position: fixed; inset: 0;
@@ -1627,6 +1664,15 @@
   </div>
 </div>
 
+<!-- ===== SAVE SLOTS ===== -->
+<div id="slotPanel" onclick="toggleSlots()">
+  <div id="slotInner" onclick="event.stopPropagation()">
+    <div id="slotTitle">세이브 슬롯 <span class="c-hint">분기 실험용 — 자동 저장과 별개</span></div>
+    <div id="slotList"></div>
+    <button class="my-btn" onclick="toggleSlots()">닫기</button>
+  </div>
+</div>
+
 <!-- ===== ENDING CARD ===== -->
 <div id="endingCard">
   <div id="endingInner">
@@ -1679,6 +1725,7 @@
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
+      <button class="top-btn" onclick="toggleSlots()" title="세이브 슬롯">💾</button>
       <button class="top-btn" onclick="refreshApp()" title="최신 버전으로 갱신">⟳</button>
       <button class="top-btn" onclick="exitToMain()" title="홈으로">⌂</button>
     </div>
@@ -3234,45 +3281,48 @@ function startGame(isContinue) {
   if (isContinue) {
     const save = loadSave();
     if (save) {
-      gameHistory = save.gameHistory || [];
-      gameState = save.gameState || gameState;
-      storySummary = save.storySummary || '';
-      summaryIndex = save.summaryIndex || 0;
-      lastBg = save.lastBg || null;
-      turnCount = save.turnCount || 0;
-      dialogueLog = save.dialogueLog || [];
-      playerName = save.playerName || gameState.name || '카이든';
-      playerDesc = save.playerDesc || '';
-      API_KEY = save.apiKey || API_KEY;
-      if (save.provider) PROVIDER = save.provider;
-      if (save.nimUrl) NIM_URL = save.nimUrl;
-      // world time flow: if enabled and real time passed, the world moved on too
-      if (timeflowOn(STORY.id) && save.savedAt && Date.now() - save.savedAt > 3 * 3600000) {
-        window._timeSkipNote = humanGap(Date.now() - save.savedAt);
-      }
-      updateStatusUI();
-      if (lastBg) setBg(lastBg);
-
-      // Replay last response to fully restore the previous scene
-      const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
-      if (lastAssistant) {
-        try {
-          const data = JSON.parse(lastAssistant.content);
-          const chars = detectActiveChars(gameHistory.slice(-6));
-          // Replay without re-logging or re-applying state
-          replaying = true;
-          processResponse({ ...data, state_update: null }, chars);
-        } catch {
-          enterInputMode();
-        }
-      } else {
-        enterInputMode();
-      }
+      restoreAndReplay(save, true);
       return;
     }
   }
 
   beginStory();
+}
+
+// Restore a save payload into the running game and replay the last scene.
+// Used by 이어하기 and by save-slot loading.
+function restoreAndReplay(save, checkTimeflow) {
+  gameHistory = save.gameHistory || [];
+  gameState = save.gameState || gameState;
+  storySummary = save.storySummary || '';
+  summaryIndex = save.summaryIndex || 0;
+  lastBg = save.lastBg || null;
+  turnCount = save.turnCount || 0;
+  dialogueLog = save.dialogueLog || [];
+  playerName = save.playerName || gameState.name || '주인공';
+  playerDesc = save.playerDesc || '';
+  API_KEY = save.apiKey || API_KEY;
+  if (save.provider) PROVIDER = save.provider;
+  if (save.nimUrl) NIM_URL = save.nimUrl;
+  // world time flow: if enabled and real time passed, the world moved on too
+  if (checkTimeflow && timeflowOn(STORY.id) && save.savedAt && Date.now() - save.savedAt > 3 * 3600000) {
+    window._timeSkipNote = humanGap(Date.now() - save.savedAt);
+  }
+  updateStatusUI();
+  if (lastBg) setBg(lastBg);
+  const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
+  if (lastAssistant) {
+    try {
+      const data = JSON.parse(lastAssistant.content);
+      const chars = detectActiveChars(gameHistory.slice(-6));
+      replaying = true;
+      processResponse({ ...data, state_update: null }, chars);
+    } catch {
+      enterInputMode();
+    }
+  } else {
+    enterInputMode();
+  }
 }
 
 async function beginStory() {
@@ -4986,6 +5036,68 @@ function switchStatusTab(t) {
   document.getElementById('tabSituation').classList.toggle('active', t === 'situation');
   document.getElementById('tabProfile').classList.toggle('active', t === 'profile');
   renderStatusPanel();
+}
+
+// ===== SAVE SLOTS (3 per story — branch experiments) =====
+function slotKey(n) { return 'vn_slot_' + STORY.id + '_' + n; }
+
+function toggleSlots() {
+  const p = document.getElementById('slotPanel');
+  const showing = p.style.display === 'flex';
+  p.style.display = showing ? 'none' : 'flex';
+  if (!showing) renderSlots();
+}
+
+function renderSlots() {
+  let html = '';
+  for (let n = 1; n <= 3; n++) {
+    let sv = null;
+    try { sv = JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch {}
+    const meta = sv
+      ? `${esc(sv.gameState?.time || '')} · ${esc(sv.gameState?.location || '')} · ${timeAgo(sv.savedAt)}`
+      : '비어 있음';
+    html += `<div class="slot-item"><div class="slot-info">` +
+      `<div class="slot-name">슬롯 ${n}</div><div class="slot-meta">${meta}</div></div>` +
+      `<button class="slot-btn save" onclick="saveToSlot(${n})">저장</button>` +
+      (sv ? `<button class="slot-btn" onclick="loadFromSlot(${n})">불러오기</button>` : '') +
+      (sv ? `<button class="slot-btn" onclick="clearSlot(${n})">✕</button>` : '') +
+      `</div>`;
+  }
+  document.getElementById('slotList').innerHTML = html;
+}
+
+function currentSavePayload() {
+  return {
+    gameHistory, gameState, storySummary, summaryIndex, lastBg, turnCount,
+    dialogueLog, playerName, playerDesc,
+    provider: PROVIDER, nimUrl: NIM_URL, apiKey: API_KEY, savedAt: Date.now()
+  };
+}
+
+function saveToSlot(n) {
+  let had = false;
+  try { had = !!localStorage.getItem(slotKey(n)); } catch {}
+  if (had && !confirm(`슬롯 ${n}을 덮어쓸까요?`)) return;
+  localStorage.setItem(slotKey(n), JSON.stringify(currentSavePayload()));
+  try { syncPut('slot' + n + ':' + STORY.id, localStorage.getItem(slotKey(n))).catch(() => {}); } catch {}
+  renderSlots();
+}
+
+function loadFromSlot(n) {
+  let sv = null;
+  try { sv = JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch {}
+  if (!sv) return;
+  if (!confirm(`슬롯 ${n}을 불러올까요? 현재 진행은 자동 저장에 남습니다.`)) return;
+  toggleSlots();
+  resetSprites();
+  restoreAndReplay(sv, false);
+  autoSave();   // loaded state becomes the active line
+}
+
+function clearSlot(n) {
+  if (!confirm(`슬롯 ${n}을 비울까요?`)) return;
+  localStorage.removeItem(slotKey(n));
+  renderSlots();
 }
 
 // ===== WORLD TIME FLOW (per-story option) =====
