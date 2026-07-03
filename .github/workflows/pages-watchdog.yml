@@ -1,0 +1,38 @@
+name: Pages deploy watchdog
+# GitHub Pages' built-in deploy step fails transiently ("try again later").
+# This watchdog watches the pages-build-deployment run for the pushed commit
+# and re-runs it automatically until it succeeds.
+on:
+  push:
+    branches: [main]
+permissions:
+  actions: write
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = context.sha;
+            const wait = ms => new Promise(r => setTimeout(r, ms));
+            let retries = 0;
+            for (let i = 0; i < 24; i++) {           // watch up to ~12 min
+              await wait(30000);
+              const rs = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo, per_page: 20 });
+              const run = rs.data.workflow_runs.find(w =>
+                w.name === 'pages build and deployment' && w.head_sha === sha);
+              if (!run || run.status !== 'completed') continue;
+              if (run.conclusion === 'success') { core.info('Pages deploy OK'); return; }
+              if (retries >= 4) break;
+              retries++;
+              core.warning(`Pages deploy failed (run #${run.run_number}) — retry ${retries}`);
+              try {
+                await github.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: run.id });
+              } catch (e) {
+                try { await github.rest.actions.reRunWorkflow({ owner, repo, run_id: run.id }); } catch (e2) {}
+              }
+              await wait(45000);
+            }
+            core.setFailed('Pages deploy still failing after retries');
