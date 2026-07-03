@@ -461,6 +461,17 @@
     border: 1px solid rgba(255,255,255,0.1);
   }
   .d-char-name { font-size: 0.66rem; color: var(--text-dim); margin-top: 5px; }
+  #timeflowRow {
+    display: flex; align-items: flex-start; gap: 9px;
+    margin-top: 16px;
+    padding: 11px 13px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.75rem; color: var(--text-dim); line-height: 1.5;
+    cursor: pointer;
+  }
+  #timeflowRow input { margin-top: 2px; accent-color: #c9a84c; }
+
   #detailActions {
     position: fixed; left: 0; right: 0; bottom: 0;
     display: flex; gap: 10px;
@@ -913,6 +924,44 @@
   #navPrev { left: 10px; }
   #navNext { right: 10px; }
 
+  /* ENDING CARD */
+  #endingCard {
+    position: fixed; inset: 0;
+    background: rgba(2,2,6,0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 60;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  #endingCard.show { opacity: 1; }
+  #endingInner { text-align: center; padding: 0 30px; max-width: 420px; }
+  #endingFin {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem; letter-spacing: 0.6em; text-indent: 0.6em;
+    color: var(--gold-dim); margin-bottom: 18px;
+  }
+  #endingTitle {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.6rem; font-weight: 800; color: var(--gold);
+    text-shadow: 0 0 30px rgba(201,168,76,0.35);
+    line-height: 1.4;
+  }
+  #endingStory { font-size: 0.82rem; color: var(--text-dim); margin-top: 12px; letter-spacing: 0.1em; }
+  #endingNote { font-size: 0.72rem; color: var(--text-dim); margin-top: 26px; opacity: 0.7; }
+  #endingBtns { display: flex; gap: 10px; margin-top: 34px; }
+  #endingBtns button {
+    flex: 1; padding: 14px; border-radius: 13px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); font-size: 0.9rem; cursor: pointer;
+  }
+  #endingBtns button.primary {
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    border: none; color: #1a1208; font-weight: 800;
+  }
+
   /* GENERATION BAND — player's line in a thin FULL-WIDTH strip while the AI
      writes: no chip/box, just hairlines above & below (Frontia). */
   #genPill {
@@ -1320,6 +1369,10 @@
     <div id="detailTitle"></div>
     <div id="detailTags"></div>
     <div id="detailDesc"></div>
+    <label id="timeflowRow">
+      <input type="checkbox" id="timeflowChk" onchange="setTimeflow(this.checked)">
+      <span>⏳ 세계 시간 흐름 — 접속하지 않는 동안에도 세계의 시간이 흐릅니다 (이어하기 시 그동안의 변화 반영)</span>
+    </label>
     <div class="detail-label" id="detailCharsLabel">등장 캐릭터</div>
     <div id="detailChars"></div>
   </div>
@@ -1453,6 +1506,20 @@
   </div>
 </div>
 
+<!-- ===== ENDING CARD ===== -->
+<div id="endingCard">
+  <div id="endingInner">
+    <div id="endingFin">FIN</div>
+    <div id="endingTitle"></div>
+    <div id="endingStory"></div>
+    <div id="endingNote">엔딩이 기록되었습니다</div>
+    <div id="endingBtns">
+      <button onclick="dismissEnding()">에필로그 계속</button>
+      <button class="primary" onclick="endingToHome()">홈으로</button>
+    </div>
+  </div>
+</div>
+
 <div id="errbox" onclick="this.style.display='none'" style="position:fixed;top:70px;left:8px;right:8px;z-index:99999;background:rgba(150,20,20,0.96);color:#fff;font:11px/1.4 monospace;padding:9px 10px;border-radius:8px;display:none;white-space:pre-wrap;word-break:break-word"></div>
 
 <!-- BACKGROUND + CHARACTER: full-screen, OUTSIDE #gameScreen so they're never
@@ -1483,7 +1550,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v82</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v83</span></span>
     <div class="top-btns">
       <button class="top-btn" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드">♪</button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -1682,6 +1749,7 @@ const ENGINE_RULES_PROMPT = `
   ],
   "background": "배경 그룹명 (아래 목록에서 선택, 장면 변화 없으면 null)",
   "mood": "장면의 분위기 음악 키: calm|tension|battle|romance|sad|mystery|none 중 하나 (분위기 변화가 있을 때만, 없으면 null)",
+  "ending": "엔딩 조건이 충족되어 이야기가 결말에 도달한 경우에만 그 엔딩 제목. 평소엔 반드시 null",
   "state_update": {
     "rep": 숫자 변화량 (없으면 0),
     "gold": 숫자 변화량 (없으면 0),
@@ -1813,6 +1881,13 @@ function buildStatePrompt() {
   if (chron.length) {
     s += '\n## 연대기 (이미 확정된 과거 — 절대 모순되게 쓰지 말 것):\n';
     chron.slice(-30).forEach(c => { s += `- ${c}\n`; });
+  }
+  // one-shot: world moved on while the player was away (time-flow option)
+  if (window._timeSkipNote) {
+    s += `
+## 시간 경과 (이번 응답에 반드시 반영):
+- 플레이어가 자리를 비운 사이 현실로 약 ${window._timeSkipNote}이 지났다. 세계의 시간도 그만큼 흘렀다. 다음 장면은 그 경과를 자연스럽게 반영해 시작할 것 (그동안 있었던 일, 인물들의 변화, 시간대 갱신). 단 플레이어가 없는 사이 주인공을 임의로 큰 사건에 휘말리게 하지는 말 것
+`;
   }
   // hidden stage direction from the director pass
   const dir = gameState.director;
@@ -2067,12 +2142,14 @@ function openStoryDetail(id) {
   document.getElementById('detailTags').innerHTML =
     `<span class="d-tag">${esc(s.genre || '다크 판타지')}</span><span class="d-tag">등장인물 ${charIds.length}</span>` +
     (s.id && s.id[0] === 'u' ? '<span class="d-tag">내 에피소드</span>' : '') +
-    (saveInfoFor(id) ? `<span class="d-tag" style="color:#6fa8ff">진행 중</span>` : '');
+    (saveInfoFor(id) ? `<span class="d-tag" style="color:#6fa8ff">진행 중</span>` : '') +
+    (endingsFor(id).length ? `<span class="d-tag" style="color:var(--gold)">엔딩 ${endingsFor(id).length}개 달성</span>` : '');
   document.getElementById('detailDesc').textContent = s.desc || '';
   document.getElementById('detailChars').innerHTML = charIds.slice(0, 12).map(cid => {
     return `<div class="d-char"><div class="d-char-img" style="background-image:url('${charImgSrc(cid, chars)}')"></div>` +
       `<div class="d-char-name">${chars[cid].name}</div></div>`;
   }).join('');
+  document.getElementById('timeflowChk').checked = timeflowOn(id);
   const sv = saveInfoFor(id);
   const cbtn = document.getElementById('detailContinueBtn');
   cbtn.disabled = !sv;
@@ -2950,6 +3027,10 @@ function startGame(isContinue) {
       API_KEY = save.apiKey || API_KEY;
       if (save.provider) PROVIDER = save.provider;
       if (save.nimUrl) NIM_URL = save.nimUrl;
+      // world time flow: if enabled and real time passed, the world moved on too
+      if (timeflowOn(STORY.id) && save.savedAt && Date.now() - save.savedAt > 3 * 3600000) {
+        window._timeSkipNote = humanGap(Date.now() - save.savedAt);
+      }
       updateStatusUI();
       if (lastBg) setBg(lastBg);
 
@@ -3673,6 +3754,7 @@ function splitNarration(text) {
 // ===== PROCESS RESPONSE =====
 function processResponse(data, activeCharIds) {
   hideThinking();
+  window._timeSkipNote = null;   // one-shot consumed
   // NOTE: do NOT force historyMode=false here — if the player is browsing
   // history when the response lands, we defer playing it (see end of fn).
 
@@ -3681,6 +3763,7 @@ function processResponse(data, activeCharIds) {
     setBg(data.background);
   }
   if (data.mood) Ambient.setMood(data.mood);
+  window._pendingEnding = (data.ending && typeof data.ending === 'string') ? data.ending : null;
 
   if (data.state_update) {
     const s = data.state_update;
@@ -3910,6 +3993,12 @@ function updateSpriteEmotion(charId, emotion, pose) {
 function showNextDialogue() {
   if (dialogueQueue.length === 0) {
     replaying = false;
+    if (window._pendingEnding) {
+      const e = window._pendingEnding;
+      window._pendingEnding = null;
+      showEndingCard(e);
+      return;
+    }
     if (window._pendingChoices && window._pendingChoices.length > 0) {
       showChoices(window._pendingChoices);
     } else {
@@ -4394,6 +4483,55 @@ function switchStatusTab(t) {
   document.getElementById('tabSituation').classList.toggle('active', t === 'situation');
   document.getElementById('tabProfile').classList.toggle('active', t === 'profile');
   renderStatusPanel();
+}
+
+// ===== WORLD TIME FLOW (per-story option) =====
+function timeflowOn(id) { return localStorage.getItem('vn_timeflow_' + id) === '1'; }
+function setTimeflow(on) {
+  if (!detailStoryId) return;
+  localStorage.setItem('vn_timeflow_' + detailStoryId, on ? '1' : '0');
+}
+
+function humanGap(ms) {
+  const h = Math.floor(ms / 3600000);
+  if (h < 24) return h + '시간';
+  return Math.floor(h / 24) + '일 ' + (h % 24) + '시간';
+}
+
+// ===== ENDING SYSTEM =====
+function endingsFor(id) {
+  try { return JSON.parse(localStorage.getItem('vn_endings_' + id) || '[]'); } catch { return []; }
+}
+
+function showEndingCard(title) {
+  // record the achievement (once per title)
+  const list = endingsFor(STORY.id);
+  if (!list.includes(title)) {
+    list.push(title);
+    localStorage.setItem('vn_endings_' + STORY.id, JSON.stringify(list));
+    try { syncPut('endings:' + STORY.id, list).catch(() => {}); } catch {}
+  }
+  Ambient.setMood('sad');
+  document.getElementById('endingTitle').textContent = title;
+  document.getElementById('endingStory').textContent = STORY.title;
+  const card = document.getElementById('endingCard');
+  card.style.display = 'flex';
+  requestAnimationFrame(() => card.classList.add('show'));
+  autoSave();
+}
+
+function dismissEnding() {
+  const card = document.getElementById('endingCard');
+  card.classList.remove('show');
+  setTimeout(() => { card.style.display = 'none'; }, 400);
+  enterInputMode();
+}
+
+function endingToHome() {
+  const card = document.getElementById('endingCard');
+  card.classList.remove('show');
+  card.style.display = 'none';
+  exitToMain();
 }
 
 // Exit the game back to the main shell (progress is auto-saved every turn)
