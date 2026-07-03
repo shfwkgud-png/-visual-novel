@@ -1649,6 +1649,7 @@
           <button class="my-btn" onclick="doLogin()">로그인</button>
           <button class="my-btn" onclick="doRegister()">회원가입</button>
         </div>
+        <div id="gsiBtn" style="display:flex;justify-content:center"></div>
       </div>
       <div id="acctLogged" style="display:none">
         <div id="syncBtnRow">
@@ -1736,7 +1737,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v92</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v93</span></span>
     <div class="top-btns">
       <button class="top-btn" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드">♪</button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2383,6 +2384,7 @@ function quickContinue(id) {
 function openSettings() {
   document.getElementById('apiScreen').style.display = 'flex';
   updateAcctUI();
+  initGoogleBtn();
 }
 function closeSettings() {
   document.getElementById('apiScreen').style.display = 'none';
@@ -2398,6 +2400,8 @@ function saveSettings() {
 
 // ===== CLOUD BACKUP / DEVICE SYNC (Cloudflare KV via pandora-sync worker) =====
 const SYNC_URL = 'https://pandora-sync.pasokong99.workers.dev';
+// Google Sign-In client id — paste yours here to enable the Google button
+const GOOGLE_CLIENT_ID = '';
 
 function syncToken() {
   try { return localStorage.getItem('vn_sync_token') || ''; } catch { return ''; }
@@ -2416,6 +2420,40 @@ function authHeaders() {
 function hasSyncAuth() { return !!(authToken() || syncToken()); }
 
 function acctMsg(m) { const el = document.getElementById('acctMsg'); if (el) el.textContent = m; }
+
+// ----- Google Sign-In (enabled when GOOGLE_CLIENT_ID is set) -----
+let _gsiLoaded = false;
+function initGoogleBtn() {
+  if (!GOOGLE_CLIENT_ID || authToken()) return;
+  const render = () => {
+    try {
+      google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCred });
+      google.accounts.id.renderButton(document.getElementById('gsiBtn'),
+        { theme: 'filled_black', size: 'large', text: 'continue_with', locale: 'ko' });
+    } catch {}
+  };
+  if (_gsiLoaded) { render(); return; }
+  const sc = document.createElement('script');
+  sc.src = 'https://accounts.google.com/gsi/client';
+  sc.onload = () => { _gsiLoaded = true; render(); };
+  document.head.appendChild(sc);
+}
+async function onGoogleCred(resp) {
+  acctMsg('구글 인증 확인 중…');
+  try {
+    const res = await fetch(SYNC_URL + '/auth/google', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: resp.credential })
+    });
+    const d = await res.json();
+    if (!res.ok) { acctMsg(d.error || '구글 로그인 실패'); return; }
+    localStorage.setItem('vn_auth', d.token);
+    localStorage.setItem('vn_auth_user', d.display || d.user);
+    localStorage.setItem('vn_auth_admin', d.admin ? '1' : '0');
+    acctMsg(d.admin ? '✓ 관리자로 로그인됨 (Google)' : '✓ Google 로그인됨');
+    updateAcctUI();
+  } catch { acctMsg('네트워크 오류'); }
+}
 
 function updateAcctUI() {
   const logged = !!authToken();

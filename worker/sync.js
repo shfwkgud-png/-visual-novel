@@ -103,6 +103,32 @@ export default {
       const admin = (await env.PANDORA_KV.get('sys:admin')) === u;
       return json({ ok: true, token: await makeToken(u, env), user: u, admin });
     }
+    // Google Sign-In: verify the GIS ID token server-side, map to an account
+    if (url.pathname === '/auth/google' && req.method === 'POST') {
+      if (!env.GOOGLE_CLIENT_ID) return json({ error: '구글 로그인이 아직 설정되지 않았습니다' }, 501);
+      let b; try { b = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
+      const cred = String(b.credential || '');
+      if (!cred) return json({ error: 'credential required' }, 400);
+      const vr = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(cred));
+      if (!vr.ok) return json({ error: '구글 토큰 검증 실패' }, 401);
+      const info = await vr.json();
+      if (info.aud !== env.GOOGLE_CLIENT_ID) return json({ error: 'aud mismatch' }, 401);
+      if (Number(info.exp) * 1000 < Date.now()) return json({ error: 'expired' }, 401);
+      // stable account id from the Google subject
+      const u = 'g' + info.sub;
+      if (!(await env.PANDORA_KV.get('user:' + u))) {
+        await env.PANDORA_KV.put('user:' + u, JSON.stringify({
+          provider: 'google',
+          email: info.email || '',
+          name: info.name || (info.email || '').split('@')[0],
+          created: Date.now()
+        }));
+        if (!(await env.PANDORA_KV.get('sys:admin'))) await env.PANDORA_KV.put('sys:admin', u);
+      }
+      const admin = (await env.PANDORA_KV.get('sys:admin')) === u;
+      const rec = JSON.parse((await env.PANDORA_KV.get('user:' + u)) || '{}');
+      return json({ ok: true, token: await makeToken(u, env), user: u, display: rec.name || rec.email || u, admin });
+    }
     if (url.pathname === '/auth/me') {
       const who = await resolveNs(req, env);
       if (!who || !who.user) return json({ error: 'no auth' }, 401);
