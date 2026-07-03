@@ -924,6 +924,35 @@
   #navPrev { left: 10px; }
   #navNext { right: 10px; }
 
+  /* IMAGE VIEWER */
+  #imgViewer {
+    position: fixed; inset: 0;
+    background: rgba(2,2,6,0.94);
+    display: none;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 1600;
+    padding: 20px;
+  }
+  #imgViewerImg {
+    max-width: 94vw; max-height: 72vh;
+    object-fit: contain;
+    border-radius: 10px;
+    background:
+      repeating-conic-gradient(rgba(255,255,255,0.06) 0% 25%, transparent 0% 50%) 0 0 / 22px 22px;
+  }
+  #imgViewerBtns { display: flex; gap: 10px; margin-top: 22px; }
+  #imgViewerBtns button {
+    padding: 12px 20px; border-radius: 12px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); font-size: 0.88rem; cursor: pointer;
+  }
+  #imgViewerBtns #ivUseBtn {
+    background: linear-gradient(135deg, var(--gold), #b8923a);
+    border: none; color: #1a1208; font-weight: 800;
+  }
+  #imgViewerBtns #ivDelBtn { color: #e06a6a; border-color: rgba(224,106,106,0.4); }
+
   /* ENDING CARD */
   #endingCard {
     position: fixed; inset: 0;
@@ -1455,7 +1484,10 @@
     <div class="creator-step" id="cStep4" style="display:none">
       <div class="c-label">시작 배경 <b>*</b></div>
       <select id="cStartBg" class="profile-input"></select>
-      <button class="my-btn" onclick="uploadForBg()">📷 배경 이미지 업로드 (이 스토리 전용)</button>
+      <div class="c-row2">
+        <button class="my-btn" style="flex:2" onclick="uploadForBg()">📷 배경 업로드 (이 스토리 전용)</button>
+        <button class="my-btn" style="flex:1" onclick="deleteSelectedBg()">🗑 삭제</button>
+      </div>
       <div class="c-label">오프닝 지시문 <b>*</b> <span class="c-hint">첫 장면을 어떻게 시작할지 AI에게 지시 ({이름} = 주인공 이름)</span></div>
       <textarea id="cStartPrompt" class="profile-input profile-textarea" style="height:120px" placeholder="예: 왕도의 뒷골목, 비 내리는 밤. {이름}이(가) 쫓기던 소녀와 부딪히는 장면으로 시작해줘."></textarea>
       <div class="c-label">첫 장면 등장 캐릭터</div>
@@ -1503,6 +1535,16 @@
     </div>
     <button class="start-btn" onclick="saveSettings()">저장</button>
     <button id="settingsCloseBtn" onclick="closeSettings()">닫기</button>
+  </div>
+</div>
+
+<!-- ===== IMAGE VIEWER (uploads: enlarge / use / delete) ===== -->
+<div id="imgViewer" onclick="closeImgViewer()">
+  <img id="imgViewerImg" alt="">
+  <div id="imgViewerBtns" onclick="event.stopPropagation()">
+    <button id="ivUseBtn">이 이미지 사용</button>
+    <button id="ivDelBtn">🗑 삭제</button>
+    <button onclick="closeImgViewer()">닫기</button>
   </div>
 </div>
 
@@ -2637,6 +2679,36 @@ function validateCreator() {
   return null;
 }
 
+// ===== IMAGE VIEWER (enlarge / use / delete uploaded images) =====
+let _ivId = null, _ivMode = null;
+function openImgViewer(id, mode) {
+  const up = getUploads().faces[id];
+  if (!up) return;
+  _ivId = id; _ivMode = mode;
+  document.getElementById('imgViewerImg').src = up.url;
+  const used = !!cChars[id];
+  const useBtn = document.getElementById('ivUseBtn');
+  useBtn.style.display = (mode === 'face' && used) ? 'none' : 'block';
+  useBtn.onclick = () => {
+    if (_ivMode === 'cover') pickCover(up.url);
+    else pickFace(_ivId);
+    closeImgViewer();
+  };
+  document.getElementById('ivDelBtn').onclick = () => {
+    if (!confirm('이 업로드 이미지를 삭제할까요? (이미 캐릭터로 배정된 곳에는 영향 없음)')) return;
+    const u = getUploads();
+    delete u.faces[_ivId];
+    saveUploads(u);
+    renderCoverGallery(); renderCharGallery();
+    closeImgViewer();
+  };
+  document.getElementById('imgViewer').style.display = 'flex';
+}
+function closeImgViewer() {
+  document.getElementById('imgViewer').style.display = 'none';
+  _ivId = null;
+}
+
 // Start-background select: built-in groups + this story's uploaded backgrounds
 function refreshBgSelect(keep) {
   const sel = document.getElementById('cStartBg');
@@ -2646,6 +2718,14 @@ function refreshBgSelect(keep) {
   html += BG_OPTIONS.map(([k, l]) => `<option value="${k}">${l} (${k})</option>`).join('');
   sel.innerHTML = html;
   if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function deleteSelectedBg() {
+  const k = document.getElementById('cStartBg').value;
+  if (!cCustomBgs[k]) { alert('업로드한 배경을 선택한 상태에서만 삭제할 수 있습니다'); return; }
+  if (!confirm(`'${cCustomBgs[k].label || k}' 배경을 삭제할까요?`)) return;
+  delete cCustomBgs[k];
+  refreshBgSelect();
 }
 
 function uploadForBg() {
@@ -2669,9 +2749,11 @@ function allFaceTiles() {
 
 function renderCoverGallery() {
   const upTile = `<div class="c-face c-up" onclick="uploadForCover()">＋<span>업로드</span></div>`;
-  document.getElementById('cCoverGallery').innerHTML = upTile + allFaceTiles().map(t =>
-    `<div class="c-face${cCoverUrl === t.url ? ' sel' : ''}" style="background-image:url('${t.url}')" onclick="pickCover('${t.url.replace(/'/g, '')}')"></div>`
-  ).join('');
+  document.getElementById('cCoverGallery').innerHTML = upTile + allFaceTiles().map(t => {
+    const isUp = !t.id.startsWith('f');
+    const act = isUp ? `openImgViewer('${t.id}','cover')` : `pickCover('${t.url.replace(/'/g, '')}')`;
+    return `<div class="c-face${cCoverUrl === t.url ? ' sel' : ''}" style="background-image:url('${t.url}')" onclick="${act}"></div>`;
+  }).join('');
 }
 function pickCover(url) { cCoverUrl = url; renderCoverGallery(); }
 function uploadForCover() {
@@ -2685,7 +2767,9 @@ function renderCharGallery() {
   const upTile = `<div class="c-face c-up" onclick="uploadForFace()">＋<span>업로드</span></div>`;
   document.getElementById('cCharGallery').innerHTML = upTile + allFaceTiles().map(t => {
     const used = cChars[t.id];
-    return `<div class="c-face${cPickedFace === t.id ? ' sel' : ''}" style="background-image:url('${t.url}');${used ? 'opacity:0.3' : ''}" onclick="${used ? '' : `pickFace('${t.id}')`}"></div>`;
+    const isUp = !t.id.startsWith('f');
+    const act = isUp ? `openImgViewer('${t.id}','face')` : (used ? '' : `pickFace('${t.id}')`);
+    return `<div class="c-face${cPickedFace === t.id ? ' sel' : ''}" style="background-image:url('${t.url}');${used ? 'opacity:0.3' : ''}" onclick="${act}"></div>`;
   }).join('');
 }
 function uploadForFace() {
@@ -3290,6 +3374,45 @@ const Ambient = (() => {
 
   setTimeout(updateBtn, 0);
   return { setMood, stop, toggle };
+})();
+
+// ===== SFX — tiny synthesized UI sounds (share the ♪ toggle with Ambient) =====
+const SFX = (() => {
+  let ctx = null;
+  function on() { return (localStorage.getItem('vn_bgm') ?? '1') === '1'; }
+  function ac() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    return ctx;
+  }
+  function tone(freq, dur, vol, type = 'sine', when = 0, slide = 0) {
+    const c = ac(); if (!c) return;
+    const t0 = c.currentTime + when;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t0 + dur);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function play(kind) {
+    if (!on()) return;
+    try {
+      if (kind === 'tick')   tone(1350, 0.045, 0.028, 'sine');
+      else if (kind === 'send')   { tone(520, 0.09, 0.05, 'sine', 0, 320); }
+      else if (kind === 'choice') { tone(880, 0.06, 0.045, 'triangle'); tone(1320, 0.07, 0.03, 'sine', 0.05); }
+      else if (kind === 'ending') { [523, 659, 784, 1047].forEach((f, i) => tone(f, 1.4, 0.05, 'sine', i * 0.18)); }
+      else if (kind === 'open')   tone(700, 0.06, 0.035, 'triangle');
+    } catch {}
+  }
+  return { play };
 })();
 
 // Small utility LLM call (director/summary-grade side passes)
@@ -4008,6 +4131,7 @@ function showNextDialogue() {
   }
 
   const d = dialogueQueue.shift();
+  SFX.play('tick');
   isShowing = true;
   waitingForTap = false;
 
@@ -4339,7 +4463,9 @@ function showChoices(choices) {
     btn.innerHTML = `<span class="choice-num">${i + 1}</span><span>${choice}</span>`;
     btn.className = 'choice-btn';
     btn.onclick = () => {
+      SFX.play('choice');
       choiceDiv.remove();
+      window._genText = choice;
       handlePlayerInput(choice);
     };
     choiceDiv.appendChild(btn);
@@ -4386,6 +4512,7 @@ async function sendMessage() {
   const cb = document.getElementById('choiceBox');
   if (cb) cb.remove();
 
+  SFX.play('send');
   handlePlayerInput(text);
 }
 
@@ -4512,6 +4639,7 @@ function showEndingCard(title) {
     try { syncPut('endings:' + STORY.id, list).catch(() => {}); } catch {}
   }
   Ambient.setMood('sad');
+  SFX.play('ending');
   document.getElementById('endingTitle').textContent = title;
   document.getElementById('endingStory').textContent = STORY.title;
   const card = document.getElementById('endingCard');
