@@ -151,6 +151,14 @@
         일관성용 <b>Seed</b>는 위 시트의 Seed 칸에 넣으면 모든 생성에 적용됩니다.
       </div>
 
+      <div class="chipbox" style="margin:8px 0 2px">
+        <span class="chip on" id="modeAnime" onclick="setMode('anime')">🎴 애니 캐릭터</span>
+        <span class="chip" id="modeReal" onclick="setMode('real')">📷 실사 인물</span>
+        <span class="chip" id="modeBg" onclick="setMode('bg')">🏞 배경</span>
+        <span class="st" id="ckptStat" style="align-self:center;margin-left:6px"></span>
+      </div>
+
+      <div id="charSec">
       <div class="sec-title">① 캐릭터 시트 (한 번만 — 모든 이미지에서 고정)</div>
       <div class="gen-grid">
         <div class="fld"><label>고유 이름 토큰 (영문, 예: freya)</label><input id="gName" placeholder="freya" oninput="regen()"></div>
@@ -203,6 +211,24 @@
         </select>
       </div>
       <div id="nsfwOut"></div>
+      </div><!-- /charSec -->
+
+      <div id="bgSec" style="display:none">
+        <div class="sec-title">배경 생성</div>
+        <div class="chipbox" style="margin-bottom:6px; align-items:center">
+          <span class="chip on" id="bgStyleAnime" onclick="setBgStyle('anime')">애니 화풍</span>
+          <span class="chip" id="bgStyleReal" onclick="setBgStyle('real')">실사</span>
+          <label class="tg" style="margin-left:auto;font-size:0.76rem;color:var(--text)"><input type="checkbox" id="bgNoHuman" checked onchange="regenBg()"> 인물 없음 (no humans)</label>
+        </div>
+        <div class="fld" style="margin-bottom:4px"><label>장소 (1개 권장)</label></div>
+        <div class="chipbox" id="bgPlaceChips"></div>
+        <div class="fld" style="margin:8px 0 4px"><label>시간 · 날씨 · 조명</label></div>
+        <div class="chipbox" id="bgTimeChips"></div>
+        <div class="fld" style="margin:8px 0 4px"><label>분위기</label></div>
+        <div class="chipbox" id="bgMoodChips"></div>
+        <div class="fld" style="margin:8px 0 2px"><label>추가 묘사 (자유 입력 · 영문)</label><input id="bgExtra" placeholder="ancient stone pillars, glowing blue runes, mist" oninput="regenBg()"></div>
+        <div id="bgOut" style="margin-top:10px"></div>
+      </div>
 
       <div class="sec-title">공통 네거티브 프롬프트</div>
       <div class="out-card"><div class="oh"><b>Negative</b><button onclick="copyEl('negTa')">복사</button></div>
@@ -306,6 +332,24 @@ const G_QUALITY = 'masterpiece, best quality, amazing quality, very aesthetic, n
 const G_NEG = '(worst quality, low quality:1.4), lowres, bad anatomy, bad hands, missing fingers, extra digits, ' +
   'fused fingers, extra arms, malformed limbs, extra limbs, text, watermark, signature, username, logo, ' +
   'jpeg artifacts, monochrome, sketch, censored, mosaic censoring';
+const G_NEG_REAL = '(worst quality, low quality:1.4), lowres, bad anatomy, bad hands, missing fingers, extra digits, ' +
+  'fused fingers, malformed limbs, extra limbs, text, watermark, signature, jpeg artifacts, ' +
+  '(anime, cartoon, cgi, 3d, render, painting, illustration, drawing, sketch:1.3), plastic skin, airbrushed, doll, deformed';
+const Q_ANIME = 'masterpiece, best quality, amazing quality, very aesthetic, newest, absurdres, highres';
+const Q_REAL = 'masterpiece, best quality, photorealistic, realistic, raw photo, ultra detailed, 8k uhd, ' +
+  'detailed skin texture, skin pores, professional lighting, sharp focus, depth of field';
+let genMode = 'anime';   // anime | real | bg
+let bgStyle = 'anime';   // anime | real
+function isReal() { return genMode === 'real' || (genMode === 'bg' && bgStyle === 'real'); }
+function curQ() { return isReal() ? Q_REAL : Q_ANIME; }
+function curNeg() { return isReal() ? G_NEG_REAL : G_NEG; }
+const BG_PLACES = ['forest','deep forest','castle exterior','castle interior','throne room','grand hall',
+  'tavern interior','medieval town street','marketplace','dungeon','prison cell','cathedral interior','library',
+  'blacksmith shop','bedroom','luxurious bedroom','bathroom','hot spring','battlefield','ancient ruins','cave',
+  'mountains','snowy field','desert','beach','harbor','magic academy','dark alley','rooftop','flower garden','riverside'];
+const BG_TIME = ['day','night','sunset','dawn','golden hour','overcast','rain','snow','fog','storm','moonlight',
+  'torchlight','candlelight','starry sky'];
+const BG_MOOD = ['peaceful','serene','ominous','eerie','cozy','epic','gloomy','sacred','romantic','mysterious','tense','melancholic'];
 const G_EXPR = [
   ['무표정', 'neutral expression, closed mouth'],
   ['웃음',   'smile, happy, open mouth, light blush'],
@@ -319,27 +363,65 @@ const G_POSES = ['standing','sitting','on back','on stomach','on side','kneeling
 const G_SITS = ['pov','from above','from below','from behind','from side','close-up','full body','looking at viewer',
   'sex','vaginal','oral','fellatio','handjob','paizuri','cum','cum on body','after sex','restrained','tied up',
   'nipples','pussy','indoors','bedroom','outdoors','night','sweat','saliva'];
-let genPoses = new Set(), genSits = new Set();
+const genSet = { p:new Set(), s:new Set(), bp:new Set(), bt:new Set(), bm:new Set() };
 let genInited = false;
+function chipHtml(arr, key) {
+  return arr.map(v => `<span class="chip" data-v="${v}" onclick="togChip(this,'${key}')">${v}</span>`).join('');
+}
 function genInit() {
-  document.getElementById('negTa').value = G_NEG;
+  document.getElementById('negTa').value = curNeg();
   if (!genInited) {
     genInited = true;
     document.getElementById('forgeUrl').value = FORGE;
-    document.getElementById('poseChips').innerHTML = G_POSES.map(p =>
-      `<span class="chip" data-p="${p}" onclick="togChip(this,'p')">${p}</span>`).join('');
-    document.getElementById('sitChips').innerHTML = G_SITS.map(s =>
-      `<span class="chip" data-s="${s}" onclick="togChip(this,'s')">${s}</span>`).join('');
+    document.getElementById('poseChips').innerHTML = chipHtml(G_POSES, 'p');
+    document.getElementById('sitChips').innerHTML = chipHtml(G_SITS, 's');
+    document.getElementById('bgPlaceChips').innerHTML = chipHtml(BG_PLACES, 'bp');
+    document.getElementById('bgTimeChips').innerHTML = chipHtml(BG_TIME, 'bt');
+    document.getElementById('bgMoodChips').innerHTML = chipHtml(BG_MOOD, 'bm');
     refreshSavedList();
   }
-  regen();
+  regen(); updateCkptStat();
 }
-function togChip(el, kind) {
+function togChip(el, key) {
   el.classList.toggle('on');
-  const set = kind === 'p' ? genPoses : genSits;
-  const v = el.getAttribute(kind === 'p' ? 'data-p' : 'data-s');
-  el.classList.contains('on') ? set.add(v) : set.delete(v);
-  regenNsfw();
+  const v = el.getAttribute('data-v');
+  el.classList.contains('on') ? genSet[key].add(v) : genSet[key].delete(v);
+  (key === 'p' || key === 's') ? regenNsfw() : regenBg();
+}
+function setMode(m) {
+  genMode = m;
+  ['Anime','Real','Bg'].forEach(x => document.getElementById('mode'+x).classList.toggle('on', x.toLowerCase() === m));
+  document.getElementById('charSec').style.display = (m === 'bg') ? 'none' : 'block';
+  document.getElementById('bgSec').style.display = (m === 'bg') ? 'block' : 'none';
+  document.getElementById('gOrient').value = (m === 'bg') ? 'land' : 'portrait';
+  document.getElementById('negTa').value = curNeg();
+  updateCkptStat();
+  (m === 'bg') ? regenBg() : regen();
+}
+function setBgStyle(s) {
+  bgStyle = s;
+  document.getElementById('bgStyleAnime').classList.toggle('on', s === 'anime');
+  document.getElementById('bgStyleReal').classList.toggle('on', s === 'real');
+  document.getElementById('negTa').value = curNeg();
+  updateCkptStat(); regenBg();
+}
+function regenBg() {
+  const place = [...genSet.bp].join(', ');
+  const time = [...genSet.bt].join(', ');
+  const mood = [...genSet.bm].join(', ');
+  const extra = document.getElementById('bgExtra').value.trim();
+  const noHuman = document.getElementById('bgNoHuman').checked;
+  const base = (bgStyle === 'real') ? 'scenery, landscape photography, establishing shot' : 'scenery, detailed background, fantasy';
+  const parts = [curQ(), base];
+  if (noHuman) parts.push('no humans');
+  [place, time, mood, extra].forEach(x => { if (x) parts.push(x); });
+  document.getElementById('bgOut').innerHTML = card('배경 · 조합 결과', parts.join(', '));
+}
+function updateCkptStat() {
+  const el = document.getElementById('ckptStat'); if (!el) return;
+  const ck = resolveCkpt();
+  if (ck) { el.textContent = '모델: ' + ck.replace(/\s*\[.*$/, ''); el.style.color = 'var(--gold)'; }
+  else { el.textContent = isReal() ? '⚠ 실사 체크포인트 대기중 (RealVisXL 다운로드/연결 확인)' : '⚠ 연결 확인 먼저'; el.style.color = '#e0a76a'; }
 }
 function sheetBlock() {
   const name = document.getElementById('gName').value.trim();
@@ -370,7 +452,7 @@ function regen() {
   const tail = (style ? ', ' + style : '');
   const seedHint = document.getElementById('gSeed').value.trim();
   let html = G_EXPR.map(([ko, tag]) => {
-    const p = `${G_QUALITY}, ${sheet}${outfit ? ', ' + outfit : ''}, ` +
+    const p = `${curQ()}, ${sheet}${outfit ? ', ' + outfit : ''}, ` +
       `upper body, portrait, looking at viewer, simple background, ${tag}${tail}`;
     return card('표정 · ' + ko, p);
   }).join('');
@@ -385,9 +467,9 @@ function regenNsfw() {
   const exp = document.getElementById('nExp').value;
   const expr = document.getElementById('nExpr').value;
   const clothes = exp || outfit;
-  const poses = [...genPoses].join(', ');
-  const sits = [...genSits].join(', ');
-  const p = [G_QUALITY, sheet, clothes, poses, sits, expr, style].filter(Boolean).join(', ');
+  const poses = [...genSet.p].join(', ');
+  const sits = [...genSet.s].join(', ');
+  const p = [curQ(), sheet, clothes, poses, sits, expr, style].filter(Boolean).join(', ');
   const seed = document.getElementById('gSeed').value.trim();
   const seedNote = seed ? `<p class="hint" style="margin-top:-4px">Seed <b style="color:var(--gold)">${seed}</b> 고정 — 표정 세트와 같은 얼굴로 상황만 바뀝니다</p>` : '';
   document.getElementById('nsfwOut').innerHTML = seedNote + card('NSFW · 조합 결과', p);
@@ -439,7 +521,13 @@ function pickSaved() {
 
 // ===== Forge txt2img API 연동 (자동 생성) =====
 let FORGE = localStorage.getItem('vn_forge_url') || 'http://127.0.0.1:7860';
+let FORGE_MODELS = [];  // sd-models list from Forge
 const genImages = {};   // mountId -> [{seed, b64}]
+function resolveCkpt() {
+  const want = isReal() ? /realvis/i : /(wai).*illustrious|illustrious.*sdxl|^wai/i;
+  const m = FORGE_MODELS.find(x => want.test(x.model_name || x.title || ''));
+  return m ? m.title : null;
+}
 function forgeBase() {
   const v = document.getElementById('forgeUrl').value.trim() || FORGE;
   return v.replace(/\/+$/, '');
@@ -449,9 +537,11 @@ async function testForge() {
   const st = document.getElementById('forgeStat');
   st.textContent = '확인 중…'; st.style.color = 'var(--dim)';
   try {
+    try { await fetch(FORGE + '/sdapi/v1/refresh-checkpoints', { method:'POST' }); } catch {}
     const r = await fetch(FORGE + '/sdapi/v1/sd-models', { method:'GET' });
     if (!r.ok) throw 0;
     const m = await r.json();
+    FORGE_MODELS = m; updateCkptStat();
     st.textContent = '✔ 연결됨 (' + m.length + '개 모델)'; st.style.color = 'var(--gold)';
   } catch {
     st.textContent = '✗ 연결 실패 — Forge 실행/--api/URL 확인'; st.style.color = '#e06a6a';
@@ -466,14 +556,18 @@ function forgeDims() {
 function forgePayload(prompt) {
   const seed = document.getElementById('gSeed').value.trim();
   const [w, h] = forgeDims();
+  const real = isReal();
   const p = {
-    prompt, negative_prompt: G_NEG,
-    steps: 30, cfg_scale: 5, sampler_name: 'Euler a', scheduler: 'Automatic',
+    prompt, negative_prompt: curNeg(),
+    steps: 30, cfg_scale: real ? 4.5 : 5,
+    sampler_name: real ? 'DPM++ 2M' : 'Euler a', scheduler: real ? 'Karras' : 'Automatic',
     width: w, height: h,
     seed: seed ? parseInt(seed, 10) : -1,
     batch_size: parseInt(document.getElementById('gBatch').value || '1', 10),
     n_iter: 1, save_images: false, send_images: true
   };
+  const ck = resolveCkpt();
+  if (ck) { p.override_settings = { sd_model_checkpoint: ck }; p.override_settings_restore_afterwards = false; }
   if (document.getElementById('gHires').checked) {
     p.enable_hr = true; p.hr_scale = 1.5; p.hr_upscaler = 'R-ESRGAN 4x+ Anime6B';
     p.hr_second_pass_steps = 15; p.denoising_strength = 0.4;
