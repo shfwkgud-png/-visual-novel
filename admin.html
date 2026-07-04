@@ -157,6 +157,15 @@
         <span class="chip" id="modeBg" onclick="setMode('bg')">🏞 배경</span>
         <span class="st" id="ckptStat" style="align-self:center;margin-left:6px"></span>
       </div>
+      <div id="realOpts" style="display:none; margin:2px 0 8px; gap:16px; align-items:center; flex-wrap:wrap; font-size:0.78rem; color:var(--text)" >
+        <label class="tg" style="display:inline-flex;align-items:center;gap:6px">실사 모델
+          <select id="gRealModel" onchange="onRealModel()" style="background:#0d0b16;border:1px solid var(--border);color:var(--text);border-radius:7px;padding:6px 9px"></select>
+        </label>
+        <label class="tg" id="kdollWrap" style="display:none;align-items:center;gap:6px;margin-left:14px">
+          <input type="checkbox" id="gKdoll" checked onchange="regen()"> koreanDollLikeness LoRA (강도 0.65)
+        </label>
+        <span class="st" id="realHint" style="margin-left:8px"></span>
+      </div>
 
       <div id="charSec">
       <div class="sec-title">① 캐릭터 시트 (한 번만 — 모든 이미지에서 고정)</div>
@@ -393,6 +402,7 @@ function setMode(m) {
   ['Anime','Real','Bg'].forEach(x => document.getElementById('mode'+x).classList.toggle('on', x.toLowerCase() === m));
   document.getElementById('charSec').style.display = (m === 'bg') ? 'none' : 'block';
   document.getElementById('bgSec').style.display = (m === 'bg') ? 'block' : 'none';
+  document.getElementById('realOpts').style.display = (m === 'real') ? 'flex' : 'none';
   document.getElementById('gOrient').value = (m === 'bg') ? 'land' : 'portrait';
   document.getElementById('negTa').value = curNeg();
   updateCkptStat();
@@ -523,10 +533,33 @@ function pickSaved() {
 let FORGE = localStorage.getItem('vn_forge_url') || 'http://127.0.0.1:7860';
 let FORGE_MODELS = [];  // sd-models list from Forge
 const genImages = {};   // mountId -> [{seed, b64}]
+function selectedRealModel() { const el = document.getElementById('gRealModel'); return el ? el.value : ''; }
+function isSD15(name) { return /majic|chillout|korean|realisticvision|\bbrav\b|cutegirl|chilled/i.test(name || ''); }
 function resolveCkpt() {
-  const want = isReal() ? /realvis/i : /(wai).*illustrious|illustrious.*sdxl|^wai/i;
-  const m = FORGE_MODELS.find(x => want.test(x.model_name || x.title || ''));
+  if (isReal()) {
+    const sel = selectedRealModel();
+    if (sel) { const m = FORGE_MODELS.find(x => x.model_name === sel || x.title === sel); return m ? m.title : null; }
+    const m = FORGE_MODELS.find(x => /realvis/i.test(x.model_name || '')); return m ? m.title : null;
+  }
+  const m = FORGE_MODELS.find(x => /wai|illustrious/i.test(x.model_name || ''));
   return m ? m.title : null;
+}
+function fillRealModels() {
+  const el = document.getElementById('gRealModel'); if (!el) return;
+  const reals = FORGE_MODELS.filter(x => !/illustrious|^wai|pony|animagine|anime/i.test(x.model_name || ''));
+  const prev = el.value;
+  el.innerHTML = reals.map(x => `<option value="${x.model_name}">${x.model_name}</option>`).join('') || '<option value="">(실사 모델 없음)</option>';
+  // 우선순위: epicrealism > realvis > 첫번째
+  const pref = reals.find(x => /epicrealism/i.test(x.model_name)) || reals.find(x => /realvis/i.test(x.model_name));
+  el.value = prev && reals.some(r => r.model_name === prev) ? prev : (pref ? pref.model_name : (reals[0] ? reals[0].model_name : ''));
+  onRealModel();
+}
+function onRealModel() {
+  const sd15 = isSD15(selectedRealModel());
+  const kw = document.getElementById('kdollWrap'); if (kw) kw.style.display = sd15 ? 'inline-flex' : 'none';
+  const rh = document.getElementById('realHint');
+  if (rh) rh.textContent = sd15 ? 'SD1.5 · 512×768 · CFG7 · 가이드 K-doll 룩' : 'SDXL · 832×1216 · Hires';
+  updateCkptStat();
 }
 function forgeBase() {
   const v = document.getElementById('forgeUrl').value.trim() || FORGE;
@@ -541,7 +574,7 @@ async function testForge() {
     const r = await fetch(FORGE + '/sdapi/v1/sd-models', { method:'GET' });
     if (!r.ok) throw 0;
     const m = await r.json();
-    FORGE_MODELS = m; updateCkptStat();
+    FORGE_MODELS = m; fillRealModels(); updateCkptStat();
     st.textContent = '✔ 연결됨 (' + m.length + '개 모델)'; st.style.color = 'var(--gold)';
   } catch {
     st.textContent = '✗ 연결 실패 — Forge 실행/--api/URL 확인'; st.style.color = '#e06a6a';
@@ -569,9 +602,19 @@ function forgePayload(prompt) {
   const ck = resolveCkpt();
   if (ck) { p.override_settings = { sd_model_checkpoint: ck }; p.override_settings_restore_afterwards = false; }
   if (document.getElementById('gHires').checked) {
-    p.enable_hr = true; p.hr_scale = 1.5; p.hr_upscaler = 'R-ESRGAN 4x+ Anime6B';
+    p.enable_hr = true; p.hr_scale = 1.5;
+    p.hr_upscaler = real ? 'R-ESRGAN 4x+' : 'R-ESRGAN 4x+ Anime6B';   // 실사엔 애니 업스케일러 미사용
     p.hr_second_pass_steps = 15; p.denoising_strength = 0.4;
     p.hr_additional_modules = [];  // Forge API 버그 회피 (None이면 500)
+  }
+  if (real && isSD15(selectedRealModel())) {
+    const o = document.getElementById('gOrient').value;
+    p.width = o === 'square' ? 640 : (o === 'land' ? 768 : 512);
+    p.height = o === 'square' ? 640 : (o === 'land' ? 512 : 768);
+    p.cfg_scale = 7; p.sampler_name = 'DPM++ 2M'; p.scheduler = 'Karras';
+    if (p.enable_hr) { p.hr_scale = 2.0; p.hr_upscaler = 'R-ESRGAN 4x+'; }
+    const kd = document.getElementById('gKdoll');
+    if (kd && kd.checked) p.prompt += ', <lora:koreanDollLikeness_v20:0.65>, ulzzang, korean, kpop idol';
   }
   if (document.getElementById('gADetailer').checked) {
     p.alwayson_scripts = { ADetailer: { args: [true, false,
