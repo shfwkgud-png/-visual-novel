@@ -1,0 +1,18 @@
+# === 생성 이미지 에셋 — 공개 repo이므로 절대 커밋 금지 (특히 NSFW) ===
+sd_samples/
+character/25_full_nsfw/
+character/25_upper_nsfw/
+**/nsfw/
+**/nsfw_sprite/
+**/nsfw_cg/
+**/*_nsfw/
+**/*_nsfw*/
+
+# 대용량 이미지/모델 산출물
+*.psd
+*.zip
+
+# 로컬 생성기 임시/로그
+_cors_proxy.log
+_proxy_*.log
+_batch*.py
