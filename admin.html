@@ -141,6 +141,7 @@
         <div class="toggles">
           <label class="tg"><input type="checkbox" id="gHires" checked> Hires fix (업스케일 1.5×) — 화질 ↑</label>
           <label class="tg"><input type="checkbox" id="gADetailer" checked> ADetailer (얼굴 보정)</label>
+          <label class="tg"><input type="checkbox" id="gTransparent"> 투명 배경 스프라이트 (layerdiffuse)</label>
           <label class="tg">장수 <select id="gBatch" style="background:#0d0b16;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px"><option>1</option><option selected>2</option><option>4</option></select></label>
           <label class="tg">방향 <select id="gOrient" onchange="0" style="background:#0d0b16;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px"><option value="portrait">세로 832×1216</option><option value="land">가로 1216×832</option><option value="square">정방 1024²</option></select></label>
         </div>
@@ -619,6 +620,17 @@ function forgePayload(prompt) {
   if (document.getElementById('gADetailer').checked) {
     p.alwayson_scripts = { ADetailer: { args: [true, false,
       { ad_model: 'face_yolov8n.pt', ad_denoising_strength: 0.4, ad_confidence: 0.3 }] } };
+  }
+  // 투명 배경 스프라이트 (layerdiffuse) — 캐릭터 모드에서만
+  const tr = document.getElementById('gTransparent');
+  if (tr && tr.checked && genMode !== 'bg') {
+    const sd15b = real && isSD15(selectedRealModel());
+    const method = sd15b
+      ? '(SD1.5) Only Generate Transparent Image (Attention Injection)'
+      : '(SDXL) Only Generate Transparent Image (Attention Injection)';
+    p.alwayson_scripts = p.alwayson_scripts || {};
+    p.alwayson_scripts.LayerDiffuse = { args: [true, method, 1.0, 1.0, null, null, null, 'Crop and Resize', false, '', '', ''] };
+    delete p.enable_hr;  // 투명 생성 시 Hires는 알파 손상 우려 → 비활성
   }
   return p;
 }
