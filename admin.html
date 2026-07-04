@@ -673,12 +673,39 @@ function useSeed(s) {
   document.getElementById('gSeed').value = s;
   regen(); toast('Seed ' + s + ' 고정됨');
 }
+function b64toBlob(b64) {
+  const bin = atob(b64); const a = new Uint8Array(bin.length);
+  for (let j = 0; j < bin.length; j++) a[j] = bin.charCodeAt(j);
+  return new Blob([a], { type: 'image/png' });
+}
+// 투명 스프라이트의 옅은 배경 잔상(알파 하한>0)을 완전 투명으로 정규화
+function normalizeAlphaBlob(b64) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+        const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+        const dat = ctx.getImageData(0, 0, c.width, c.height); const d = dat.data;
+        let mn = 255, mx = 0, hasA = false;
+        for (let k = 3; k < d.length; k += 4) { const a = d[k]; if (a < 255) hasA = true; if (a < mn) mn = a; if (a > mx) mx = a; }
+        if (hasA && mn > 4 && mn < 200 && mx > mn) {
+          const range = 255 - mn;
+          for (let k = 3; k < d.length; k += 4) d[k] = Math.max(0, Math.min(255, (d[k] - mn) * 255 / range));
+          ctx.putImageData(dat, 0, 0);
+          c.toBlob(b => res(b || b64toBlob(b64)), 'image/png'); return;
+        }
+        res(b64toBlob(b64));
+      } catch (e) { res(b64toBlob(b64)); }
+    };
+    img.onerror = () => res(b64toBlob(b64));
+    img.src = 'data:image/png;base64,' + b64;
+  });
+}
 async function uploadGen(id, i) {
   const im = genImages[id][i];
   const name = 'sd' + Date.now().toString(36) + '.png';
-  const bin = atob(im.b64); const arr = new Uint8Array(bin.length);
-  for (let j = 0; j < bin.length; j++) arr[j] = bin.charCodeAt(j);
-  const blob = new Blob([arr], { type: 'image/png' });
+  const blob = await normalizeAlphaBlob(im.b64);
   const r = await fetch(API + '/img?name=' + name, { method:'PUT', headers:{ ...hdr(), 'Content-Type':'image/png' }, body: blob });
   if (r.ok) {
     const url = forgeBaseImgUrl(name);
