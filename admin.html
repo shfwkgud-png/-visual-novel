@@ -622,13 +622,15 @@ function forgePayload(prompt) {
     const kd = document.getElementById('gKdoll');
     if (kd && kd.checked) p.prompt += ', <lora:koreanDollLikeness_v20:0.65>, ulzzang, korean, kpop idol';
   }
-  if (document.getElementById('gADetailer').checked) {
+  const tr = document.getElementById('gTransparent');
+  const wantTransparent = tr && tr.checked && genMode !== 'bg';
+  // ADetailer는 투명 스프라이트에서 알파 채널을 손상시키므로 투명 시 자동 제외
+  if (document.getElementById('gADetailer').checked && !wantTransparent) {
     p.alwayson_scripts = { ADetailer: { args: [true, false,
       { ad_model: 'face_yolov8n.pt', ad_denoising_strength: 0.4, ad_confidence: 0.3 }] } };
   }
   // 투명 배경 스프라이트 (layerdiffuse) — 캐릭터 모드에서만
-  const tr = document.getElementById('gTransparent');
-  if (tr && tr.checked && genMode !== 'bg') {
+  if (wantTransparent) {
     const sd15b = real && isSD15(selectedRealModel());
     const method = sd15b
       ? '(SD1.5) Only Generate Transparent Image (Attention Injection)'
