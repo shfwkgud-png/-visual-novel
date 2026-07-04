@@ -536,22 +536,27 @@ let FORGE_MODELS = [];  // sd-models list from Forge
 const genImages = {};   // mountId -> [{seed, b64}]
 function selectedRealModel() { const el = document.getElementById('gRealModel'); return el ? el.value : ''; }
 function isSD15(name) { return /majic|chillout|korean|realisticvision|\bbrav\b|cutegirl|chilled/i.test(name || ''); }
+function pick(re) { const m = FORGE_MODELS.find(x => re.test(x.model_name || '')); return m ? m.title : null; }
 function resolveCkpt() {
-  if (isReal()) {
+  if (genMode === 'bg') {
+    // 실사 배경 = epiCRealism XL (인물엔 안 씀), 애니 배경 = WAI
+    if (bgStyle === 'real') return pick(/epicrealism/i) || pick(/realvis/i);
+    return pick(/wai|illustrious/i);
+  }
+  if (genMode === 'real') {
     const sel = selectedRealModel();
     if (sel) { const m = FORGE_MODELS.find(x => x.model_name === sel || x.title === sel); return m ? m.title : null; }
-    const m = FORGE_MODELS.find(x => /realvis/i.test(x.model_name || '')); return m ? m.title : null;
+    return pick(/majic/i) || pick(/realvis/i);   // 실사 인물 기본 = K-doll(majicMIX)
   }
-  const m = FORGE_MODELS.find(x => /wai|illustrious/i.test(x.model_name || ''));
-  return m ? m.title : null;
+  return pick(/wai|illustrious/i);
 }
 function fillRealModels() {
   const el = document.getElementById('gRealModel'); if (!el) return;
   const reals = FORGE_MODELS.filter(x => !/illustrious|^wai|pony|animagine|anime/i.test(x.model_name || ''));
   const prev = el.value;
   el.innerHTML = reals.map(x => `<option value="${x.model_name}">${x.model_name}</option>`).join('') || '<option value="">(실사 모델 없음)</option>';
-  // 우선순위: epicrealism > realvis > 첫번째
-  const pref = reals.find(x => /epicrealism/i.test(x.model_name)) || reals.find(x => /realvis/i.test(x.model_name));
+  // 실사 인물 기본 우선순위: majicMIX(K-doll) > realvis > epicrealism(배경용이라 인물 후순위)
+  const pref = reals.find(x => /majic/i.test(x.model_name)) || reals.find(x => /realvis/i.test(x.model_name)) || reals.find(x => /epicrealism/i.test(x.model_name));
   el.value = prev && reals.some(r => r.model_name === prev) ? prev : (pref ? pref.model_name : (reals[0] ? reals[0].model_name : ''));
   onRealModel();
 }
