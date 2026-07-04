@@ -564,7 +564,7 @@ function onRealModel() {
   const sd15 = isSD15(selectedRealModel());
   const kw = document.getElementById('kdollWrap'); if (kw) kw.style.display = sd15 ? 'inline-flex' : 'none';
   const rh = document.getElementById('realHint');
-  if (rh) rh.textContent = sd15 ? 'SD1.5 · 512×768 · CFG7 · 가이드 K-doll 룩' : 'SDXL · 832×1216 · Hires';
+  if (rh) rh.textContent = sd15 ? 'SD1.5 · 512×768 · CFG7 · K-doll 룩 · 투명토글 미지원(배경제거는 서버 rembg)' : 'SDXL · 832×1216 · Hires · 투명토글 지원';
   updateCkptStat();
 }
 function forgeBase() {
@@ -629,14 +629,12 @@ function forgePayload(prompt) {
     p.alwayson_scripts = { ADetailer: { args: [true, false,
       { ad_model: 'face_yolov8n.pt', ad_denoising_strength: 0.4, ad_confidence: 0.3 }] } };
   }
-  // 투명 배경 스프라이트 (layerdiffuse) — 캐릭터 모드에서만
-  if (wantTransparent) {
-    const sd15b = real && isSD15(selectedRealModel());
-    const method = sd15b
-      ? '(SD1.5) Only Generate Transparent Image (Attention Injection)'
-      : '(SDXL) Only Generate Transparent Image (Attention Injection)';
+  // 투명 배경 스프라이트 (layerdiffuse) — SDXL 캐릭터 모드에서만.
+  // SD1.5(majicMIX 등)는 이 Forge에서 layerdiffuse가 깨져(모델 오염→재시작 필요) 적용하지 않음.
+  if (wantTransparent && !(real && isSD15(selectedRealModel()))) {
     p.alwayson_scripts = p.alwayson_scripts || {};
-    p.alwayson_scripts.LayerDiffuse = { args: [true, method, 1.0, 1.0, null, null, null, 'Crop and Resize', false, '', '', ''] };
+    p.alwayson_scripts.LayerDiffuse = { args: [true, '(SDXL) Only Generate Transparent Image (Attention Injection)',
+      1.0, 1.0, null, null, null, 'Crop and Resize', false, '', '', ''] };
     delete p.enable_hr;  // 투명 생성 시 Hires는 알파 손상 우려 → 비활성
   }
   return p;
