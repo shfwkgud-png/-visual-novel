@@ -7,58 +7,52 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — SO정답 레시피 (body height:100vh + fixed 100vh)</title>
+<title>DIAG — inset:0 vs height:100vh (앱 패턴 최종확인)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  /* ★confound 제거: height:100% → 100vh. (SO/gist/pwa-test 셋다 강조한 유일 정답값)
-     body는 position:fixed 아님(엘라스틱 스크롤 훅 없음 — SO 질문자가 이게 범인이랬음) */
-  html, body { height:100vh; background:#16a34a; }   /* 초록 = 정적 배경. 틈 있으면 초록 보임 */
-  body { color:#fff; font-family:ui-monospace,'Courier New',monospace; overflow:hidden; }
+  html, body { height:100vh; overflow:hidden; background:#16a34a; }  /* 초록 = 틈 있으면 보임 */
+  body { color:#fff; font-family:ui-monospace,'Courier New',monospace; }
 
-  /* SO 정답: 풀스크린 fixed 레이어 = top:0;left:0;width:100vw;height:100vh */
-  #vhLayer {
-    position:fixed; top:0; left:0; width:100vw; height:100vh;
-    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = fixed 100vh */
+  /* 왼쪽: 우리 앱 화면 패턴 = position:fixed; inset:0 */
+  #leftInset {
+    position:fixed; inset:0; width:50%; left:0;
+    background:repeating-linear-gradient(135deg,#2860d0 0 30px,#1d49a8 30px 60px); /* 파랑 = inset:0 */
     z-index:0;
   }
-  .fixbar {
-    position:fixed; left:0; right:0; bottom:0; z-index:5;
-    padding:12px 0 calc(12px + env(safe-area-inset-bottom));
-    background:#2860d0; text-align:center; font-size:12px; font-weight:800; border-top:2px solid #fff;
+  /* 오른쪽: SO 검증 패턴 = top:0; height:100vh */
+  #rightVh {
+    position:fixed; top:0; right:0; left:50%; width:50%; height:100vh;
+    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = height:100vh */
+    z-index:0;
   }
   #panel { position:fixed; top:calc(env(safe-area-inset-top) + 12px); left:12px; right:12px; z-index:9;
     background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.3); border-radius:12px;
     padding:12px; font-size:11.5px; line-height:1.85; }
   #panel b{color:#ffe000}
-  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 84px); z-index:9;
-    background:rgba(0,0,0,.78); border-radius:10px; padding:12px 14px; font-size:12.5px; line-height:1.65;
+  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 14px); z-index:9;
+    background:rgba(0,0,0,.8); border-radius:10px; padding:12px 14px; font-size:12.5px; line-height:1.65;
     font-family:'Malgun Gothic',sans-serif; color:#fff; }
   .q b{color:#ffe000}
 </style></head>
 <body>
-  <div id="vhLayer"></div>
+  <div id="leftInset"></div>
+  <div id="rightVh"></div>
   <div id="panel">측정 중…</div>
   <div class="q">
-    <b>판정 (SO 정답 레시피 · black-translucent 유지):</b><br>
-    ▸ 파란바 아래 <span style="color:#3ee87a">초록</span> 사라지고 빨강이 <b>홈막대까지 꽉</b> = <b>정답</b> (body를 100%→100vh로 고친 게 핵심)<br>
-    ▸ 아직 초록 띠 = black-translucent 제거로 전환<br>
-    ★ 홈화면 아이콘으로 열고 스샷 1장
+    <b>최종확인:</b> 화면 <b>맨 아래 홈막대 자리</b>를 좌/우로 비교<br>
+    ▸ <span style="color:#5b8cf0">왼(파랑=inset:0)</span>도 바닥까지 참 = <b>body만 고치면 앱 끝</b><br>
+    ▸ 왼쪽만 아래에 <span style="color:#3ee87a">초록</span> 틈 = 앱 화면도 height:100vh로 바꿔야 함<br>
+    ★ 스샷 1장 (맨 아래 좌우 색 차이만 보면 됨)
   </div>
-  <div class="fixbar">입력바 (이 뒤/아래를 보세요)</div>
 <script>
-  function probe(unit){
-    const el=document.createElement('div');
-    el.style.cssText='position:fixed;top:0;width:0;visibility:hidden;height:'+unit;
-    document.body.appendChild(el); const h=el.offsetHeight; el.remove(); return h;
-  }
+  function probe(u){const el=document.createElement('div');el.style.cssText='position:fixed;top:0;width:0;visibility:hidden;height:'+u;document.body.appendChild(el);const h=el.offsetHeight;el.remove();return h;}
   function upd(){
     const s=document.createElement('div');
     s.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0';
     document.body.appendChild(s); const sab=s.offsetHeight; s.remove();
     document.getElementById('panel').innerHTML=
       `100vh <b>${probe('100vh')}</b> · 100dvh <b>${probe('100dvh')}</b> · 100lvh <b>${probe('100lvh')}</b><br>`+
-      `safeTop <b>${probe('env(safe-area-inset-top)')}</b> · safeBot <b>${sab}px</b><br>`+
-      `<b>body:100vh + fixed:100vh + black-translucent</b>`;
+      `safeBot <b>${sab}px</b> · 왼=inset:0(파랑) 오른=height:100vh(빨강)`;
   }
   upd(); setInterval(upd,700);
 </script>
