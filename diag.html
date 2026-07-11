@@ -62,12 +62,11 @@
   window.addEventListener('scroll',upd);
   setInterval(upd,120);
 
-  // ★ kiding gist 트릭: 포커스 순간 입력창을 즉시 투명(하드) → iOS가 스크롤 결정 안 함
-  //   transition 없으니 진짜로 딱 사라졌다 나타남(=블링크 보여야 정상)
+  // ★ kiding gist 트릭: 포커스 순간 입력창을 즉시 opacity 0 → iOS 스크롤 결정 차단
+  //   ★opacity만! visibility:hidden 쓰면 포커스를 잃어 키보드가 안 뜬다(=입력불가)
   txt.addEventListener('focus', () => {
     txt.style.opacity = '0';
-    txt.style.visibility = 'hidden';   // opacity+visibility 둘 다(더 확실히 "안 보임")
-    setTimeout(() => { txt.style.opacity = '1'; txt.style.visibility = 'visible'; }, 200);
+    setTimeout(() => { txt.style.opacity = '1'; }, 200);
   });
 </script>
 </body></html>
