@@ -7,32 +7,33 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — 키보드 움찔 격리 (순수 레시피, 처리JS 없음)</title>
+<title>DIAG — body fixed+height:100vh (검은띠+움찔 동시해결 시도)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100vh; overflow:hidden; background:#16a34a; }
-  body { color:#fff; font-family:ui-monospace,'Courier New',monospace; }
-
-  /* 풀스크린 배경(빨강) — 움찔 시 이게 화면 기준으로 움직이는지 본다 */
+  /* ★후보 정답: position:fixed 유지(스크롤잠금=팬차단) + inset:0 대신 height:100vh(클램프회피) */
+  html { height:100vh; overflow:hidden; background:#16a34a; }
+  body {
+    position: fixed; top:0; left:0; width:100vw; height:100vh; overflow:hidden;
+    background:#16a34a; color:#fff; font-family:ui-monospace,'Courier New',monospace;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  }
   #bg { position:fixed; top:0; left:0; width:100vw; height:100vh;
     background:repeating-linear-gradient(135deg,#dc2626 0 34px,#b01c1c 34px 68px); z-index:0; }
-  /* 화면 정중앙 고정 기준선(노랑) — 배경 무늬가 이 선 기준으로 튀는지 관찰 */
   #midline { position:fixed; top:50%; left:0; right:0; height:3px; background:#ffe000; z-index:3; }
-  #midline::after{content:'← 화면 정중앙 기준선';position:absolute;left:8px;top:5px;color:#ffe000;font-size:12px;font-weight:800}
-
-  /* 상단 고정 바(파랑) — 화면 위 끝 기준 */
+  #midline::after{content:'← 화면 정중앙 기준선(팬 되면 이게 위로 튐)';position:absolute;left:8px;top:5px;color:#ffe000;font-size:11px;font-weight:800}
   #topbar { position:fixed; top:0; left:0; right:0; z-index:4;
     padding:calc(env(safe-area-inset-top) + 6px) 12px 8px;
     background:rgba(0,0,50,.82); font-size:11px; line-height:1.7; }
   #topbar b{color:#ffe000}
-
-  /* 하단 입력바 — 우리 앱과 동일 구조 (fixed bottom:0, 키보드 위로 떠야) */
+  /* 하단 입력바 + 수치를 입력창 바로 위에 (키보드 위, 항상 보임) */
   #inbar { position:fixed; left:0; right:0; bottom:0; z-index:5;
-    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    padding:8px 12px calc(10px + env(safe-area-inset-bottom));
     background:#2860d0; border-top:2px solid #fff; }
+  #readout{ font-size:11px; line-height:1.5; margin-bottom:7px; color:#fff; }
+  #readout b{color:#ffe000}
   #inbar input { width:100%; font-size:16px; padding:11px 12px; border-radius:10px; border:0;
     background:#0a0a0f; color:#fff; outline:2px solid #ffe000; }
-  .q { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 62px); z-index:6;
+  .q { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 60px); z-index:6;
     background:rgba(0,0,0,.8); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.6;
     font-family:'Malgun Gothic',sans-serif; }
   .q b{color:#ffe000}
@@ -42,22 +43,24 @@
   <div id="midline"></div>
   <div id="topbar">측정 중…</div>
   <div class="q">
-    <b>키보드 움찔 격리 테스트</b> (앱의 키보드처리 JS 전혀 없음)<br>
-    ▸ 아래 <b>노란 테두리 입력창</b>을 눌러 키보드를 올려봐<br>
-    ▸ 올라올 때 <b>배경(빨강)이 화면기준으로 움찔?</b> 스샷/영상<br>
-    ▸ <b>offTop</b> 값이 0에서 확 튀면 = iOS가 화면을 패닝하는 것<br>
-    ★ 처음 앱엔 움찔 없었다니, 순수 레시피에도 움찔 나는지 확인
+    <b>검은띠+움찔 동시해결 시도</b> (body: fixed + height:100vh)<br>
+    ▸ <b>키보드 닫힘</b>: 빨강이 바닥까지? (검은띠 확인)<br>
+    ▸ <b>입력창 누름</b>: 배경/기준선이 <b>안 튀면</b> = 움찔 해결<br>
+    ▸ 아래 <b>offTop</b>이 <b>0 유지</b>면 팬 차단 성공
   </div>
-  <div id="inbar"><input id="txt" type="text" placeholder="여기 눌러 키보드 올리기" autocomplete="off"></div>
+  <div id="inbar">
+    <div id="readout">측정 중…</div>
+    <input id="txt" type="text" placeholder="여기 눌러 키보드 올리기" autocomplete="off">
+  </div>
 <script>
   const vv=window.visualViewport;
   let maxOff=0;
   function upd(){
-    const off = vv ? Math.round(vv.offsetTop) : '-';
-    if (typeof off==='number' && off>maxOff) maxOff=off;
-    document.getElementById('topbar').innerHTML=
-      `innerH <b>${window.innerHeight}</b> · vvH <b>${vv?Math.round(vv.height):'-'}</b> · `+
-      `offTop <b>${off}</b> (최대 <b>${maxOff}</b>) · scrollY <b>${Math.round(window.scrollY)}</b>`;
+    const off = vv ? Math.round(vv.offsetTop) : 0;
+    if (off>maxOff) maxOff=off;
+    const txt=`innerH <b>${window.innerHeight}</b> · vvH <b>${vv?Math.round(vv.height):'-'}</b> · offTop <b>${off}</b>(max<b>${maxOff}</b>) · scrollY <b>${Math.round(window.scrollY||0)}</b>`;
+    document.getElementById('readout').innerHTML=txt;
+    document.getElementById('topbar').innerHTML=txt;
   }
   upd();
   if(vv){ vv.addEventListener('resize',upd); vv.addEventListener('scroll',upd); }
