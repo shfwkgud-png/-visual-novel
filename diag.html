@@ -1,75 +1,54 @@
 <!DOCTYPE html>
 <html lang="ko"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>PANDORA 뷰포트 측정</title>
+<title>DIAG — html 배경 접근</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html { background:#0a0a1a; }
-  body { position:fixed; inset:0; background:#d81f45; color:#fff; overflow:hidden;
-    font-family:ui-monospace,'Courier New',monospace; }
-  /* 세 후보 컨테이너 — 각각 다른 방식으로 "화면 꽉 채우기" 시도 */
-  .col { position:fixed; top:0; width:33.33%; overflow:hidden; }
-  /* A: height:100dvh (현재 앱이 쓰는 것) */
-  #colA { left:0;   height:100dvh; background:rgba(40,120,255,.30); }
-  /* B: top:0 + bottom:0 못박기 (높이 단위 안 씀) */
-  #colB { left:33.33%; bottom:0; background:rgba(40,220,120,.24); }
-  /* C: height:100lvh */
-  #colC { right:0;  height:100lvh; background:rgba(255,150,40,.22); }
-  /* 각 컨테이너의 바닥 캡 (여기가 화면 진짜 바닥에 닿아야 함) */
-  .cap { position:absolute; left:0; right:0; bottom:0; height:40px; font-size:10px; font-weight:800;
-    display:flex; align-items:center; justify-content:center; border-top:2px solid #fff; }
-  #colA .cap { background:#1e5fd8; }
-  #colB .cap { background:#12a84f; }
-  #colC .cap { background:#d97a1e; }
-  /* 화면 진짜 바닥 기준선 (screen.height 위치를 JS가 그림) */
-  #trueline { position:fixed; left:0; right:0; height:3px; background:#ffe000; z-index:8;
-    box-shadow:0 0 0 1px #000; }
-  #trueline span { position:absolute; right:6px; top:-16px; font-size:10px; color:#ffe000; font-weight:800; }
-  #panel { position:fixed; top:calc(env(safe-area-inset-top) + 14px); left:10px; right:10px; z-index:9;
-    background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.28); border-radius:12px;
-    padding:13px 13px; font-size:12px; line-height:1.9; word-break:keep-all; }
-  #panel b { color:#ffe000; } #panel .ok { color:#3ee87a; } #panel .no { color:#ff6b6b; }
-  #hint { position:fixed; left:12px; right:12px; z-index:9; font-size:11px; line-height:1.55;
-    top:calc(env(safe-area-inset-top) + 210px); background:rgba(0,0,0,.55); border-radius:9px; padding:9px 11px; }
+  /* ★리서치 방식: 배경을 html에 background-attachment:fixed + min-height + 사방 env 패딩 */
+  html {
+    min-height: calc(100% + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: repeating-linear-gradient(135deg, #16a34a 0 26px, #128a3e 26px 52px);  /* ← 초록 = html 배경. 세이프에어리어까지 칠해지면 성공 */
+    background-attachment: fixed;
+  }
+  body { min-height:100vh; color:#fff; font-family:ui-monospace,'Courier New',monospace;
+    /* body는 반투명 빨강 = 만약 초록 위에 빨강이 덮이면 html이 아니라 body가 채우는 것 */
+    background: transparent; overflow-x:hidden; }
+  /* 하단 고정 바 (앱 입력바 흉내) — position:fixed bottom:0 */
+  .fixbar { position:fixed; left:0; right:0; bottom:0; z-index:5;
+    padding:12px 0 calc(12px + env(safe-area-inset-bottom));
+    background:#2860d0; text-align:center; font-size:12px; font-weight:800; border-top:2px solid #fff; }
+  #panel { position:fixed; top:calc(env(safe-area-inset-top) + 14px); left:12px; right:12px; z-index:9;
+    background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.3); border-radius:12px;
+    padding:13px; font-size:12px; line-height:1.9; }
+  #panel b{color:#ffe000}
+  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 92px); z-index:9;
+    background:rgba(0,0,0,.7); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.6;
+    font-family:'Malgun Gothic',sans-serif; color:#fff; }
 </style></head>
 <body>
-  <div class="col" id="colA"><div class="cap" id="capA">A: 100dvh</div></div>
-  <div class="col" id="colB"><div class="cap" id="capB">B: top+bottom</div></div>
-  <div class="col" id="colC"><div class="cap" id="capC">C: 100lvh</div></div>
-  <div id="trueline" style="top:0"><span>screen 바닥</span></div>
   <div id="panel">측정 중…</div>
-  <div id="hint">
-    빨강 = 못 덮은 틈. 각 컬럼 바(A/B/C)가 <b>노란 기준선</b>에 닿으면 그 방식이 정답.<br>
-    ★ 반드시 <b>홈화면 아이콘</b>으로 열고 스크린샷 1장!
+  <div class="q">
+    <b>확인:</b> 맨 아래 파란 바 <b>아래(홈인디케이터 자리)</b>가<br>
+    <span style="color:#3ee87a">초록</span>이면 → html 배경 방식 <b>성공</b> (이걸로 앱 고침)<br>
+    <span style="color:#ff6b6b">검정/빨강</span>이면 → 이것도 실패 (iOS 한계)<br>
+    ★ 홈화면 아이콘으로 열고 스샷 1장!
   </div>
+  <div class="fixbar">입력바 (이 아래를 보세요)</div>
 <script>
-  function px(el){ return Math.round(el.getBoundingClientRect().bottom); }
   function upd(){
-    const sh = screen.height, ih = window.innerHeight;
-    // safe-area-bottom 실측
-    const p = document.createElement('div');
-    p.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0'; document.body.appendChild(p);
-    const sab = p.offsetHeight; p.remove();
-    const a = px(document.getElementById('capA'));
-    const b = px(document.getElementById('capB'));
-    const c = px(document.getElementById('capC'));
-    const target = sh;                 // 정답 = 물리 화면 바닥(screen.height)
-    document.getElementById('trueline').style.top = (target-2)+'px';
-    const mark = v => v>=target-1 ? `<span class="ok">${v}px ✓바닥도달</span>` : `<span class="no">${v}px (틈 ${target-v}px)</span>`;
-    document.getElementById('panel').innerHTML =
-      `screen <b>${sh}</b> · innerH <b>${ih}</b> · safeBot <b>${sab}</b> · standalone <b>${window.navigator.standalone||matchMedia('(display-mode:standalone)').matches}</b>`+
-      `<div style="height:6px"></div>`+
-      `A 100dvh &nbsp;&nbsp;&nbsp;→ ${mark(a)}<br>`+
-      `B top+bottom → ${mark(b)}<br>`+
-      `C 100lvh &nbsp;&nbsp;&nbsp;→ ${mark(c)}`;
+    const p=document.createElement('div');
+    p.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0';document.body.appendChild(p);
+    const sab=p.offsetHeight;p.remove();
+    document.getElementById('panel').innerHTML=
+      `screen <b>${screen.height}</b> · innerH <b>${window.innerHeight}</b> · safeBot <b>${sab}px</b><br>`+
+      `standalone <b>${window.navigator.standalone||matchMedia('(display-mode:standalone)').matches}</b> — <b>html 배경 방식 테스트</b>`;
   }
-  upd(); setInterval(upd,600);
-  if(window.visualViewport){visualViewport.addEventListener('resize',upd);visualViewport.addEventListener('scroll',upd);}
-  window.addEventListener('resize',upd);
+  upd(); setInterval(upd,700);
 </script>
 </body></html>
