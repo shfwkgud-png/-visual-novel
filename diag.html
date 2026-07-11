@@ -2,52 +2,66 @@
 <html lang="ko"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — fixed vs static 세이프에어리어 판정</title>
+<title>DIAG — 100vh 실측 (Reddit fozzedout 해법)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  /* ① 정적 배경: html/body에 초록. 404처럼 iOS가 세이프에어리어까지 칠하는지 */
-  html, body { height:100%; background:#16a34a; }  /* 초록 = 정적 배경 */
+  /* 정적 배경(초록) — html/body. 우리앱 v46노트: "html 배경은 세이프에어리어에 안보임" 재확인용 */
+  html, body { height:100%; background:#16a34a; }
   body { color:#fff; font-family:ui-monospace,'Courier New',monospace; overflow:hidden; }
 
-  /* ② fixed 풀스크린 빨강 박스 (우리 앱의 #bgLayer와 동일한 방식) */
-  #fixedbg {
+  /* ★핵심: fixed 풀스크린 레이어를 순수 height:100vh 로. (100lvh/100dvh 아님)
+     Reddit 결론 = black-translucent에선 100vh만 진짜 바닥까지 채운다 */
+  #vhLayer {
     position:fixed; top:0; left:0; width:100%;
-    height:100vh;   /* 폴백 */
-    height:100lvh;  /* iOS = 852 */
-    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = fixed 레이어 */
+    height:100vh;   /* ← 이게 진짜 852(바닥)까지 닿는지가 판정 포인트 */
+    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = 100vh fixed */
     z-index:0;
   }
+  /* 하단 입력바 흉내 — fixed bottom:0 (우리앱 입력바와 동일) */
+  .fixbar {
+    position:fixed; left:0; right:0; bottom:0; z-index:5;
+    padding:12px 0 calc(12px + env(safe-area-inset-bottom));
+    background:#2860d0; text-align:center; font-size:12px; font-weight:800; border-top:2px solid #fff;
+  }
 
-  #panel { position:fixed; top:calc(env(safe-area-inset-top) + 14px); left:12px; right:12px; z-index:9;
+  #panel { position:fixed; top:calc(env(safe-area-inset-top) + 12px); left:12px; right:12px; z-index:9;
     background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.3); border-radius:12px;
-    padding:13px; font-size:12px; line-height:1.9; }
+    padding:12px; font-size:11.5px; line-height:1.85; }
   #panel b{color:#ffe000}
-  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 14px); z-index:9;
-    background:rgba(0,0,0,.75); border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.7;
+  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 84px); z-index:9;
+    background:rgba(0,0,0,.78); border-radius:10px; padding:12px 14px; font-size:12.5px; line-height:1.65;
     font-family:'Malgun Gothic',sans-serif; color:#fff; }
   .q b{color:#ffe000}
 </style></head>
 <body>
-  <div id="fixedbg"></div>
+  <div id="vhLayer"></div>
   <div id="panel">측정 중…</div>
   <div class="q">
-    <b>판정:</b> 맨 아래 홈인디케이터 자리(막대 있는 곳) 색은?<br>
-    ▸ <span style="color:#3ee87a">초록</span> = fixed는 세이프에어리어 못 칠함 → 배경을 <b>정적</b>으로 바꾸면 해결<br>
-    ▸ <span style="color:#ff6b6b">빨강</span> = fixed도 칠함 → 버그는 딴 데<br>
+    <b>판정:</b> 파란 입력바 <b>뒤/아래 전체</b> 색은?<br>
+    ▸ 빨강이 <b>바닥(홈막대)까지</b> 꽉 참 = <b>100vh가 정답</b> → 앱도 100vh로<br>
+    ▸ 맨아래 <span style="color:#3ee87a">초록</span>/검정 틈 = 100vh도 실패 → black-translucent 제거로 전환<br>
     ★ 홈화면 아이콘으로 열고 <b>스샷 1장</b>
   </div>
+  <div class="fixbar">입력바 (이 뒤/아래를 보세요)</div>
 <script>
+  function probe(unit){
+    const el=document.createElement('div');
+    el.style.cssText='position:fixed;top:0;width:0;visibility:hidden;height:'+unit;
+    document.body.appendChild(el); const h=el.offsetHeight; el.remove(); return h;
+  }
   function upd(){
-    const p=document.createElement('div');
-    p.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0';document.body.appendChild(p);
-    const sab=p.offsetHeight;p.remove();
+    const s=document.createElement('div');
+    s.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0';
+    document.body.appendChild(s); const sab=s.offsetHeight; s.remove();
     document.getElementById('panel').innerHTML=
-      `screen <b>${screen.height}</b> · innerH <b>${window.innerHeight}</b> · safeBot <b>${sab}px</b><br>`+
-      `standalone <b>${window.navigator.standalone||matchMedia('(display-mode:standalone)').matches}</b> — <b>fixed vs static 판정</b>`;
+      `screen <b>${screen.height}</b> · innerH <b>${window.innerHeight}</b><br>`+
+      `100vh <b>${probe('100vh')}</b> · 100dvh <b>${probe('100dvh')}</b> · 100lvh <b>${probe('100lvh')}</b><br>`+
+      `safeBot <b>${sab}px</b> · standalone <b>${window.navigator.standalone||matchMedia('(display-mode:standalone)').matches}</b>`;
   }
   upd(); setInterval(upd,700);
 </script>
