@@ -27,7 +27,7 @@
   #readout{ font-size:11px; line-height:1.5; margin-bottom:7px; color:#fff; }
   #readout b{color:#ffe000}
   #inbar input { width:100%; font-size:16px; padding:11px 12px; border-radius:10px; border:0;
-    background:#0a0a0f; color:#fff; outline:2px solid #ffe000; transition:opacity .12s; }
+    background:#0a0a0f; color:#fff; outline:2px solid #ffe000; }  /* ★transition 제거 — 즉시 opacity 0 되어야 트릭 먹힘 */
   .q { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 60px); z-index:6;
     background:rgba(0,0,0,.8); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.6;
     font-family:'Malgun Gothic',sans-serif; }
@@ -62,11 +62,12 @@
   window.addEventListener('scroll',upd);
   setInterval(upd,120);
 
-  // ★ kiding gist 트릭: 포커스 순간 입력창을 잠깐 투명하게 → iOS가 스크롤 결정 안 함
+  // ★ kiding gist 트릭: 포커스 순간 입력창을 즉시 투명(하드) → iOS가 스크롤 결정 안 함
+  //   transition 없으니 진짜로 딱 사라졌다 나타남(=블링크 보여야 정상)
   txt.addEventListener('focus', () => {
     txt.style.opacity = '0';
-    // 여러 프레임 유지했다 복구 (iOS 스크롤 결정 창을 확실히 지나가게)
-    setTimeout(() => { txt.style.opacity = '1'; }, 250);
+    txt.style.visibility = 'hidden';   // opacity+visibility 둘 다(더 확실히 "안 보임")
+    setTimeout(() => { txt.style.opacity = '1'; txt.style.visibility = 'visible'; }, 200);
   });
 </script>
 </body></html>
