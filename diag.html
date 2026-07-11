@@ -7,53 +7,61 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — inset:0 vs height:100vh (앱 패턴 최종확인)</title>
+<title>DIAG — 키보드 움찔 격리 (순수 레시피, 처리JS 없음)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100vh; overflow:hidden; background:#16a34a; }  /* 초록 = 틈 있으면 보임 */
+  html, body { height:100vh; overflow:hidden; background:#16a34a; }
   body { color:#fff; font-family:ui-monospace,'Courier New',monospace; }
 
-  /* 왼쪽: 우리 앱 화면 패턴 = position:fixed; inset:0 */
-  #leftInset {
-    position:fixed; inset:0; width:50%; left:0;
-    background:repeating-linear-gradient(135deg,#2860d0 0 30px,#1d49a8 30px 60px); /* 파랑 = inset:0 */
-    z-index:0;
-  }
-  /* 오른쪽: SO 검증 패턴 = top:0; height:100vh */
-  #rightVh {
-    position:fixed; top:0; right:0; left:50%; width:50%; height:100vh;
-    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = height:100vh */
-    z-index:0;
-  }
-  #panel { position:fixed; top:calc(env(safe-area-inset-top) + 12px); left:12px; right:12px; z-index:9;
-    background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.3); border-radius:12px;
-    padding:12px; font-size:11.5px; line-height:1.85; }
-  #panel b{color:#ffe000}
-  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 14px); z-index:9;
-    background:rgba(0,0,0,.8); border-radius:10px; padding:12px 14px; font-size:12.5px; line-height:1.65;
-    font-family:'Malgun Gothic',sans-serif; color:#fff; }
+  /* 풀스크린 배경(빨강) — 움찔 시 이게 화면 기준으로 움직이는지 본다 */
+  #bg { position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:repeating-linear-gradient(135deg,#dc2626 0 34px,#b01c1c 34px 68px); z-index:0; }
+  /* 화면 정중앙 고정 기준선(노랑) — 배경 무늬가 이 선 기준으로 튀는지 관찰 */
+  #midline { position:fixed; top:50%; left:0; right:0; height:3px; background:#ffe000; z-index:3; }
+  #midline::after{content:'← 화면 정중앙 기준선';position:absolute;left:8px;top:5px;color:#ffe000;font-size:12px;font-weight:800}
+
+  /* 상단 고정 바(파랑) — 화면 위 끝 기준 */
+  #topbar { position:fixed; top:0; left:0; right:0; z-index:4;
+    padding:calc(env(safe-area-inset-top) + 6px) 12px 8px;
+    background:rgba(0,0,50,.82); font-size:11px; line-height:1.7; }
+  #topbar b{color:#ffe000}
+
+  /* 하단 입력바 — 우리 앱과 동일 구조 (fixed bottom:0, 키보드 위로 떠야) */
+  #inbar { position:fixed; left:0; right:0; bottom:0; z-index:5;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    background:#2860d0; border-top:2px solid #fff; }
+  #inbar input { width:100%; font-size:16px; padding:11px 12px; border-radius:10px; border:0;
+    background:#0a0a0f; color:#fff; outline:2px solid #ffe000; }
+  .q { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 62px); z-index:6;
+    background:rgba(0,0,0,.8); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.6;
+    font-family:'Malgun Gothic',sans-serif; }
   .q b{color:#ffe000}
 </style></head>
 <body>
-  <div id="leftInset"></div>
-  <div id="rightVh"></div>
-  <div id="panel">측정 중…</div>
+  <div id="bg"></div>
+  <div id="midline"></div>
+  <div id="topbar">측정 중…</div>
   <div class="q">
-    <b>최종확인:</b> 화면 <b>맨 아래 홈막대 자리</b>를 좌/우로 비교<br>
-    ▸ <span style="color:#5b8cf0">왼(파랑=inset:0)</span>도 바닥까지 참 = <b>body만 고치면 앱 끝</b><br>
-    ▸ 왼쪽만 아래에 <span style="color:#3ee87a">초록</span> 틈 = 앱 화면도 height:100vh로 바꿔야 함<br>
-    ★ 스샷 1장 (맨 아래 좌우 색 차이만 보면 됨)
+    <b>키보드 움찔 격리 테스트</b> (앱의 키보드처리 JS 전혀 없음)<br>
+    ▸ 아래 <b>노란 테두리 입력창</b>을 눌러 키보드를 올려봐<br>
+    ▸ 올라올 때 <b>배경(빨강)이 화면기준으로 움찔?</b> 스샷/영상<br>
+    ▸ <b>offTop</b> 값이 0에서 확 튀면 = iOS가 화면을 패닝하는 것<br>
+    ★ 처음 앱엔 움찔 없었다니, 순수 레시피에도 움찔 나는지 확인
   </div>
+  <div id="inbar"><input id="txt" type="text" placeholder="여기 눌러 키보드 올리기" autocomplete="off"></div>
 <script>
-  function probe(u){const el=document.createElement('div');el.style.cssText='position:fixed;top:0;width:0;visibility:hidden;height:'+u;document.body.appendChild(el);const h=el.offsetHeight;el.remove();return h;}
+  const vv=window.visualViewport;
+  let maxOff=0;
   function upd(){
-    const s=document.createElement('div');
-    s.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0';
-    document.body.appendChild(s); const sab=s.offsetHeight; s.remove();
-    document.getElementById('panel').innerHTML=
-      `100vh <b>${probe('100vh')}</b> · 100dvh <b>${probe('100dvh')}</b> · 100lvh <b>${probe('100lvh')}</b><br>`+
-      `safeBot <b>${sab}px</b> · 왼=inset:0(파랑) 오른=height:100vh(빨강)`;
+    const off = vv ? Math.round(vv.offsetTop) : '-';
+    if (typeof off==='number' && off>maxOff) maxOff=off;
+    document.getElementById('topbar').innerHTML=
+      `innerH <b>${window.innerHeight}</b> · vvH <b>${vv?Math.round(vv.height):'-'}</b> · `+
+      `offTop <b>${off}</b> (최대 <b>${maxOff}</b>) · scrollY <b>${Math.round(window.scrollY)}</b>`;
   }
-  upd(); setInterval(upd,700);
+  upd();
+  if(vv){ vv.addEventListener('resize',upd); vv.addEventListener('scroll',upd); }
+  window.addEventListener('scroll',upd);
+  setInterval(upd,120);
 </script>
 </body></html>
