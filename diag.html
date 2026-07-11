@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko"><head>
 <meta charset="utf-8">
-<!-- ★변수 하나 추가: interactive-widget=resizes-content (키보드 시 스크롤 대신 뷰포트 축소) -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — interactive-widget=resizes-content (키보드 팬 차단 시도)</title>
+<title>DIAG — opacity flicker (kiding gist: iOS 포커스 스크롤 차단)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100vh; overflow:hidden; background:#16a34a; }
@@ -28,7 +27,7 @@
   #readout{ font-size:11px; line-height:1.5; margin-bottom:7px; color:#fff; }
   #readout b{color:#ffe000}
   #inbar input { width:100%; font-size:16px; padding:11px 12px; border-radius:10px; border:0;
-    background:#0a0a0f; color:#fff; outline:2px solid #ffe000; }
+    background:#0a0a0f; color:#fff; outline:2px solid #ffe000; transition:opacity .12s; }
   .q { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 60px); z-index:6;
     background:rgba(0,0,0,.8); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.6;
     font-family:'Malgun Gothic',sans-serif; }
@@ -39,28 +38,35 @@
   <div id="midline"></div>
   <div id="topbar">측정 중…</div>
   <div class="q">
-    <b>interactive-widget=resizes-content 테스트</b><br>
-    ▸ 입력창 눌러 키보드 올림 → <b>기준선/배경 안 튀면</b> 성공<br>
-    ▸ 입력창 위 <b>offTop=0 유지</b>면 팬 차단됨 (iOS 지원 확인)<br>
-    ▸ 만약 offTop이 또 튀면 = iOS가 이 속성 미지원 → 다른 방법
+    <b>opacity flicker 테스트</b> (kiding gist)<br>
+    ▸ 입력창 누름 → 아주 짧게 깜빡하고 키보드 올라옴<br>
+    ▸ <b>기준선/배경 안 튀고</b> 입력창 위 <b>offTop=0 유지</b>면 성공<br>
+    ▸ 또 튀면 = 이 트릭도 이 iOS에선 안 먹힘
   </div>
   <div id="inbar">
     <div id="readout">측정 중…</div>
     <input id="txt" type="text" placeholder="여기 눌러 키보드 올리기" autocomplete="off">
   </div>
 <script>
-  const vv=window.visualViewport;
+  const vv=window.visualViewport, txt=document.getElementById('txt');
   let maxOff=0;
   function upd(){
     const off = vv ? Math.round(vv.offsetTop) : 0;
     if (off>maxOff) maxOff=off;
-    const txt=`innerH <b>${window.innerHeight}</b> · vvH <b>${vv?Math.round(vv.height):'-'}</b> · offTop <b>${off}</b>(max<b>${maxOff}</b>) · scrollY <b>${Math.round(window.scrollY||0)}</b>`;
-    document.getElementById('readout').innerHTML=txt;
-    document.getElementById('topbar').innerHTML=txt;
+    const s=`innerH <b>${window.innerHeight}</b> · vvH <b>${vv?Math.round(vv.height):'-'}</b> · offTop <b>${off}</b>(max<b>${maxOff}</b>) · scrollY <b>${Math.round(window.scrollY||0)}</b>`;
+    document.getElementById('readout').innerHTML=s;
+    document.getElementById('topbar').innerHTML=s;
   }
   upd();
   if(vv){ vv.addEventListener('resize',upd); vv.addEventListener('scroll',upd); }
   window.addEventListener('scroll',upd);
   setInterval(upd,120);
+
+  // ★ kiding gist 트릭: 포커스 순간 입력창을 잠깐 투명하게 → iOS가 스크롤 결정 안 함
+  txt.addEventListener('focus', () => {
+    txt.style.opacity = '0';
+    // 여러 프레임 유지했다 복구 (iOS 스크롤 결정 창을 확실히 지나가게)
+    setTimeout(() => { txt.style.opacity = '1'; }, 250);
+  });
 </script>
 </body></html>
