@@ -22,9 +22,24 @@
   /* 상단 세이프에어리어 표시 (초록) */
   .safe-top { position:fixed; top:0; left:0; right:0;
     height:env(safe-area-inset-top); background:rgba(60,220,130,.6); z-index:5; }
-  /* A안: gameScreen처럼 100dvh 컨테이너 (파랑) + 그 안 bottom:0 바(노랑) */
-  .stageA { position:fixed; top:0; left:0; width:100%; height:100dvh;
-    background:rgba(40,120,255,.28); z-index:1; }
+  /* ===== 실제 게임화면 구조 재현: 좌(현재방식) vs 우(제안fix) ===== */
+  /* 공통: 뒤에 깔린 bg는 100lvh로 풀높이 (앱의 #bgLayer와 동일) */
+  .bgfull { position:fixed; inset:0; height:100lvh; z-index:0;
+    background:repeating-linear-gradient(135deg,#3a2a55 0 22px,#332448 22px 44px); }
+  /* 좌: 현재 앱 = height:var(--vvh,100dvh) = 793 (짧음 → 아래 빨강 틈) */
+  .stageA { position:fixed; top:0; left:0; width:50%; height:var(--vvh,100dvh);
+    background:rgba(40,120,255,.22); z-index:1; border-right:2px dashed #fff; overflow:hidden; }
+  /* 우: 제안 fix = height:100lvh = 852 (풀높이 → 틈 없음) */
+  .stageB { position:fixed; top:0; right:0; width:50%; height:100lvh;
+    background:rgba(255,140,40,.16); z-index:1; overflow:hidden; }
+  /* 각 스테이지의 bottom:0 바 (게임의 입력바 위치 재현) */
+  .stageA .ibar, .stageB .ibar { position:absolute; left:0; right:0; bottom:0;
+    padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+    text-align:center; font-size:11px; font-weight:800; border-top:2px solid #fff; }
+  .stageA .ibar { background:#2860d0; }
+  .stageB .ibar { background:#d97a20; }
+  .stg-lab { position:absolute; top:calc(env(safe-area-inset-top) + 96px); width:100%;
+    text-align:center; font-size:11px; font-weight:800; opacity:.9; }
   /* B안: 진짜 바닥까지 = 100lvh (앱 bgLayer가 쓰는 것) 경계선 */
   .lvhMark { position:fixed; top:0; left:0; width:6px; height:100lvh;
     background:#ffd000; z-index:6; }
@@ -48,21 +63,16 @@
 </style></head>
 <body>
   <div class="safe-top"></div>
-  <div class="stageA"></div>
+  <div class="stageA"><div class="stg-lab">좌: 현재 방식<br>height:--vvh</div><div class="ibar">현재 바<br>여기 아래 빨강?</div></div>
+  <div class="stageB"><div class="stg-lab">우: 제안 fix<br>height:100lvh</div><div class="ibar">fix 바<br>빨강 없어야 함</div></div>
   <div class="lvhMark"></div>
   <div class="dvhMark"></div>
 
   <div id="nums">측정 중…</div>
 
   <div class="legend">
-    <div><i style="background:#e02040">빨강</i> = 앱이라면 검정(틈) &nbsp; <i style="background:#14b45a;color:#fff">초록바</i> = tabBar 방식</div>
-    <div><i style="background:#ffd000;color:#000">노랑선(좌)</i> 100lvh &nbsp; <i style="background:#00e0ff;color:#000">하늘선(우)</i> 100dvh &nbsp; <i style="background:#3c7bff">파랑</i> 100dvh 영역</div>
-    <div style="margin-top:5px">★ <b>홈 화면에 추가</b> 후 그 아이콘으로 열고 스크린샷 1장!</div>
-  </div>
-
-  <div class="bar">
-    ↑ 이 초록 바 아래에 <b>빨강</b>이 보이나요?
-    <small id="mode">standalone 여부 측정 중…</small>
+    <div><b>좌(파랑)</b> = 현재 앱 방식 · <b>우(주황)</b> = 제안 fix</div>
+    <div style="margin-top:5px">맨 아래 <b>파란 바 아래에 빨강 틈</b>이 보이고,<br><b>주황 바는 바닥까지 꽉</b> 차면 → fix 성공 확정!</div>
   </div>
 
 <script>
@@ -79,12 +89,8 @@
     probe.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0'; document.body.appendChild(probe);
     const sab = probe.offsetHeight; probe.remove();
     const standalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-    document.getElementById('mode').textContent = standalone ? '✓ 홈화면 앱(standalone)으로 열림 — 정확한 측정' : '✗ Safari로 열림 — 홈화면에 추가해서 여세요';
     document.getElementById('nums').innerHTML =
-      `screen.height <b>${screen.height}</b>  ·  dpr <b>${window.devicePixelRatio}</b><br>`+
-      `innerHeight <b>${window.innerHeight}</b><br>`+
-      `visualViewport.h <b>${vv?Math.round(vv.height):'-'}</b>  top <b>${vv?Math.round(vv.offsetTop):'-'}</b><br>`+
-      `100dvh <b>${dvh}</b>  ·  100lvh <b>${lvh}</b><br>`+
+      `100dvh <b>${dvh}</b>  vs  100lvh <b>${lvh}</b>  (차이 <b>${lvh-dvh}px</b>=틈)<br>`+
       `safe-area-bottom <b>${sab}px</b>  ·  standalone <b>${standalone}</b>`;
   }
   upd();
