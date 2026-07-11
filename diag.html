@@ -23,7 +23,8 @@
   #topbar b{color:#ffe000}
   #inbar { position:fixed; left:0; right:0; bottom:0; z-index:5;
     padding:8px 12px calc(10px + env(safe-area-inset-bottom));
-    background:#2860d0; border-top:2px solid #fff; }
+    background:#2860d0; border-top:2px solid #fff;
+    will-change:transform; }  /* ★JS가 키보드 높이만큼 위로 translateY */
   #readout{ font-size:11px; line-height:1.5; margin-bottom:7px; color:#fff; }
   #readout b{color:#ffe000}
   #inbar input { width:100%; font-size:16px; padding:11px 12px; border-radius:10px; border:0;
@@ -48,17 +49,26 @@
     <input id="txt" type="text" placeholder="여기 눌러 키보드 올리기" autocomplete="off">
   </div>
 <script>
-  const vv=window.visualViewport, txt=document.getElementById('txt');
+  const vv=window.visualViewport, txt=document.getElementById('txt'), inbar=document.getElementById('inbar');
   let maxOff=0;
+  // ★입력바를 키보드 위로 직접 올림 (팬을 막았으니 우리가 위치시킴)
+  function positionInput(){
+    const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+    inbar.style.transform = `translateY(${-kb}px)`;
+  }
   function upd(){
     const off = vv ? Math.round(vv.offsetTop) : 0;
     if (off>maxOff) maxOff=off;
-    const s=`innerH <b>${window.innerHeight}</b> · vvH <b>${vv?Math.round(vv.height):'-'}</b> · offTop <b>${off}</b>(max<b>${maxOff}</b>) · scrollY <b>${Math.round(window.scrollY||0)}</b>`;
+    const kb = vv ? Math.round(window.innerHeight - vv.height - vv.offsetTop) : 0;
+    const s=`innerH <b>${window.innerHeight}</b> · vvH <b>${vv?Math.round(vv.height):'-'}</b> · offTop <b>${off}</b> · kb <b>${kb}</b> · lift <b>${kb}px</b>`;
     document.getElementById('readout').innerHTML=s;
     document.getElementById('topbar').innerHTML=s;
   }
-  upd();
-  if(vv){ vv.addEventListener('resize',upd); vv.addEventListener('scroll',upd); }
+  upd(); positionInput();
+  if(vv){
+    vv.addEventListener('resize',()=>{positionInput();upd();});
+    vv.addEventListener('scroll',()=>{positionInput();upd();});
+  }
   window.addEventListener('scroll',upd);
   setInterval(upd,120);
 
