@@ -4,18 +4,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<!-- ★변수격리: black-translucent 를 뺐음 (방금 diag와 이거 하나만 다름) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — black-translucent 제거 (변수격리)</title>
+<title>DIAG — SO정답 레시피 (body height:100vh + fixed 100vh)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100%; background:#16a34a; }   /* 초록 = 정적 배경 */
+  /* ★confound 제거: height:100% → 100vh. (SO/gist/pwa-test 셋다 강조한 유일 정답값)
+     body는 position:fixed 아님(엘라스틱 스크롤 훅 없음 — SO 질문자가 이게 범인이랬음) */
+  html, body { height:100vh; background:#16a34a; }   /* 초록 = 정적 배경. 틈 있으면 초록 보임 */
   body { color:#fff; font-family:ui-monospace,'Courier New',monospace; overflow:hidden; }
 
+  /* SO 정답: 풀스크린 fixed 레이어 = top:0;left:0;width:100vw;height:100vh */
   #vhLayer {
-    position:fixed; top:0; left:0; width:100%;
-    height:100vh;
+    position:fixed; top:0; left:0; width:100vw; height:100vh;
     background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = fixed 100vh */
     z-index:0;
   }
@@ -37,10 +39,10 @@
   <div id="vhLayer"></div>
   <div id="panel">측정 중…</div>
   <div class="q">
-    <b>판정 (black-translucent 뺀 버전):</b><br>
-    ▸ 파란바 아래 <span style="color:#3ee87a">초록 띠</span>가 <b>사라지고</b> 빨강이 바닥까지 = <b>black-translucent 제거가 정답</b><br>
-    ▸ 아직 초록 띠 남음 = 그것도 아님<br>
-    ★ 방금 스샷이랑 <b>맨아래 비교</b> · 스샷 1장
+    <b>판정 (SO 정답 레시피 · black-translucent 유지):</b><br>
+    ▸ 파란바 아래 <span style="color:#3ee87a">초록</span> 사라지고 빨강이 <b>홈막대까지 꽉</b> = <b>정답</b> (body를 100%→100vh로 고친 게 핵심)<br>
+    ▸ 아직 초록 띠 = black-translucent 제거로 전환<br>
+    ★ 홈화면 아이콘으로 열고 스샷 1장
   </div>
   <div class="fixbar">입력바 (이 뒤/아래를 보세요)</div>
 <script>
@@ -54,9 +56,9 @@
     s.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0';
     document.body.appendChild(s); const sab=s.offsetHeight; s.remove();
     document.getElementById('panel').innerHTML=
-      `screen <b>${screen.height}</b> · innerH <b>${window.innerHeight}</b><br>`+
       `100vh <b>${probe('100vh')}</b> · 100dvh <b>${probe('100dvh')}</b> · 100lvh <b>${probe('100lvh')}</b><br>`+
-      `safeTop <b>${probe('env(safe-area-inset-top)')}</b> · safeBot <b>${sab}px</b> · <b>NO black-translucent</b>`;
+      `safeTop <b>${probe('env(safe-area-inset-top)')}</b> · safeBot <b>${sab}px</b><br>`+
+      `<b>body:100vh + fixed:100vh + black-translucent</b>`;
   }
   upd(); setInterval(upd,700);
 </script>
