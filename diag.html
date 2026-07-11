@@ -4,31 +4,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- ★변수격리: black-translucent 를 뺐음 (방금 diag와 이거 하나만 다름) -->
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — 100vh 실측 (Reddit fozzedout 해법)</title>
+<title>DIAG — black-translucent 제거 (변수격리)</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  /* 정적 배경(초록) — html/body. 우리앱 v46노트: "html 배경은 세이프에어리어에 안보임" 재확인용 */
-  html, body { height:100%; background:#16a34a; }
+  html, body { height:100%; background:#16a34a; }   /* 초록 = 정적 배경 */
   body { color:#fff; font-family:ui-monospace,'Courier New',monospace; overflow:hidden; }
 
-  /* ★핵심: fixed 풀스크린 레이어를 순수 height:100vh 로. (100lvh/100dvh 아님)
-     Reddit 결론 = black-translucent에선 100vh만 진짜 바닥까지 채운다 */
   #vhLayer {
     position:fixed; top:0; left:0; width:100%;
-    height:100vh;   /* ← 이게 진짜 852(바닥)까지 닿는지가 판정 포인트 */
-    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = 100vh fixed */
+    height:100vh;
+    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = fixed 100vh */
     z-index:0;
   }
-  /* 하단 입력바 흉내 — fixed bottom:0 (우리앱 입력바와 동일) */
   .fixbar {
     position:fixed; left:0; right:0; bottom:0; z-index:5;
     padding:12px 0 calc(12px + env(safe-area-inset-bottom));
     background:#2860d0; text-align:center; font-size:12px; font-weight:800; border-top:2px solid #fff;
   }
-
   #panel { position:fixed; top:calc(env(safe-area-inset-top) + 12px); left:12px; right:12px; z-index:9;
     background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.3); border-radius:12px;
     padding:12px; font-size:11.5px; line-height:1.85; }
@@ -42,10 +37,10 @@
   <div id="vhLayer"></div>
   <div id="panel">측정 중…</div>
   <div class="q">
-    <b>판정:</b> 파란 입력바 <b>뒤/아래 전체</b> 색은?<br>
-    ▸ 빨강이 <b>바닥(홈막대)까지</b> 꽉 참 = <b>100vh가 정답</b> → 앱도 100vh로<br>
-    ▸ 맨아래 <span style="color:#3ee87a">초록</span>/검정 틈 = 100vh도 실패 → black-translucent 제거로 전환<br>
-    ★ 홈화면 아이콘으로 열고 <b>스샷 1장</b>
+    <b>판정 (black-translucent 뺀 버전):</b><br>
+    ▸ 파란바 아래 <span style="color:#3ee87a">초록 띠</span>가 <b>사라지고</b> 빨강이 바닥까지 = <b>black-translucent 제거가 정답</b><br>
+    ▸ 아직 초록 띠 남음 = 그것도 아님<br>
+    ★ 방금 스샷이랑 <b>맨아래 비교</b> · 스샷 1장
   </div>
   <div class="fixbar">입력바 (이 뒤/아래를 보세요)</div>
 <script>
@@ -61,7 +56,7 @@
     document.getElementById('panel').innerHTML=
       `screen <b>${screen.height}</b> · innerH <b>${window.innerHeight}</b><br>`+
       `100vh <b>${probe('100vh')}</b> · 100dvh <b>${probe('100dvh')}</b> · 100lvh <b>${probe('100lvh')}</b><br>`+
-      `safeBot <b>${sab}px</b> · standalone <b>${window.navigator.standalone||matchMedia('(display-mode:standalone)').matches}</b>`;
+      `safeTop <b>${probe('env(safe-area-inset-top)')}</b> · safeBot <b>${sab}px</b> · <b>NO black-translucent</b>`;
   }
   upd(); setInterval(upd,700);
 </script>
