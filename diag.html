@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<!-- ★ 실제 앱(novel.html)과 100% 동일한 뷰포트/PWA 메타 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DIAG">
+<meta name="theme-color" content="#0a0a0f">
+<title>PANDORA 뷰포트 진단</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  /* body = 실제 앱과 동일: fixed inset:0, bg는 앱의 --bg(#0a0a0f) 대신 ★빨강★
+     → 앱이라면 검게 보일 "틈"이 여기선 빨강으로 드러남 */
+  html { background:#0a0a1a; }
+  body {
+    position:fixed; inset:0;
+    background:#e02040;                 /* ← 앱에선 이 자리가 #0a0a0f(검정). 진단용 빨강 */
+    font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif;
+    color:#fff; overflow:hidden;
+  }
+  /* 상단 세이프에어리어 표시 (초록) */
+  .safe-top { position:fixed; top:0; left:0; right:0;
+    height:env(safe-area-inset-top); background:rgba(60,220,130,.6); z-index:5; }
+  /* A안: gameScreen처럼 100dvh 컨테이너 (파랑) + 그 안 bottom:0 바(노랑) */
+  .stageA { position:fixed; top:0; left:0; width:100%; height:100dvh;
+    background:rgba(40,120,255,.28); z-index:1; }
+  /* B안: 진짜 바닥까지 = 100lvh (앱 bgLayer가 쓰는 것) 경계선 */
+  .lvhMark { position:fixed; top:0; left:0; width:6px; height:100lvh;
+    background:#ffd000; z-index:6; }
+  .dvhMark { position:fixed; top:0; right:0; width:6px; height:100dvh;
+    background:#00e0ff; z-index:6; }
+  /* 바닥 바: 실제 앱 #tabBar와 동일한 방식 (absolute bottom:0 + safe-area 패딩) */
+  .bar { position:absolute; left:0; right:0; bottom:0; z-index:4;
+    background:rgba(20,180,90,.92);     /* ← 초록 바 = 세이프에어리어까지 칠해지는지 확인 */
+    padding:12px 0 calc(12px + env(safe-area-inset-bottom));
+    text-align:center; font-size:13px; font-weight:700;
+    border-top:2px solid #fff; }
+  .bar small { display:block; font-weight:400; opacity:.85; font-size:11px; margin-top:2px; }
+  /* 숫자 리드아웃 */
+  #nums { position:fixed; top:calc(env(safe-area-inset-top) + 16px); left:16px; right:16px; z-index:9;
+    background:rgba(0,0,0,.72); border:1px solid rgba(255,255,255,.25); border-radius:12px;
+    padding:14px 16px; font-family:ui-monospace,'Courier New',monospace; font-size:13px; line-height:1.7; }
+  #nums b { color:#ffd000; }
+  .legend { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 78px); left:16px; right:16px; z-index:9;
+    font-size:11.5px; line-height:1.6; background:rgba(0,0,0,.6); border-radius:10px; padding:10px 12px; }
+  .legend i { font-style:normal; padding:1px 6px; border-radius:5px; }
+</style></head>
+<body>
+  <div class="safe-top"></div>
+  <div class="stageA"></div>
+  <div class="lvhMark"></div>
+  <div class="dvhMark"></div>
+
+  <div id="nums">측정 중…</div>
+
+  <div class="legend">
+    <div><i style="background:#e02040">빨강</i> = 앱이라면 검정(틈) &nbsp; <i style="background:#14b45a;color:#fff">초록바</i> = tabBar 방식</div>
+    <div><i style="background:#ffd000;color:#000">노랑선(좌)</i> 100lvh &nbsp; <i style="background:#00e0ff;color:#000">하늘선(우)</i> 100dvh &nbsp; <i style="background:#3c7bff">파랑</i> 100dvh 영역</div>
+    <div style="margin-top:5px">★ <b>홈 화면에 추가</b> 후 그 아이콘으로 열고 스크린샷 1장!</div>
+  </div>
+
+  <div class="bar">
+    ↑ 이 초록 바 아래에 <b>빨강</b>이 보이나요?
+    <small id="mode">standalone 여부 측정 중…</small>
+  </div>
+
+<script>
+  function upd() {
+    const vv = window.visualViewport;
+    const dv = document.createElement('div');
+    dv.style.cssText='position:fixed;top:0;height:100dvh;width:0;visibility:hidden'; document.body.appendChild(dv);
+    const dvh = dv.offsetHeight; dv.remove();
+    const lv = document.createElement('div');
+    lv.style.cssText='position:fixed;top:0;height:100lvh;width:0;visibility:hidden'; document.body.appendChild(lv);
+    const lvh = lv.offsetHeight; lv.remove();
+    const cs = getComputedStyle(document.documentElement);
+    const probe = document.createElement('div');
+    probe.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0'; document.body.appendChild(probe);
+    const sab = probe.offsetHeight; probe.remove();
+    const standalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    document.getElementById('mode').textContent = standalone ? '✓ 홈화면 앱(standalone)으로 열림 — 정확한 측정' : '✗ Safari로 열림 — 홈화면에 추가해서 여세요';
+    document.getElementById('nums').innerHTML =
+      `screen.height <b>${screen.height}</b>  ·  dpr <b>${window.devicePixelRatio}</b><br>`+
+      `innerHeight <b>${window.innerHeight}</b><br>`+
+      `visualViewport.h <b>${vv?Math.round(vv.height):'-'}</b>  top <b>${vv?Math.round(vv.offsetTop):'-'}</b><br>`+
+      `100dvh <b>${dvh}</b>  ·  100lvh <b>${lvh}</b><br>`+
+      `safe-area-bottom <b>${sab}px</b>  ·  standalone <b>${standalone}</b>`;
+  }
+  upd();
+  if (window.visualViewport){ visualViewport.addEventListener('resize',upd); visualViewport.addEventListener('scroll',upd); }
+  window.addEventListener('resize',upd);
+  setInterval(upd, 800);
+</script>
+</body></html>
