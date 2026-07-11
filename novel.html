@@ -857,12 +857,14 @@
     height: 100lvh;   /* iOS large viewport = 852 */
     /* bottom fades to SOLID #0a0a0f so the scene smoothly darkens into the iOS
        safe-area strip (also #0a0a0f) — no visible seam (blend approach). */
-    background: linear-gradient(to top,
+    /* ★임시 OFF(하단틈 검증용 2026-07-12) — 확인 끝나면 아래 background 주석 되살리기 */
+    background: transparent;
+    /* background: linear-gradient(to top,
       #0a0a0f 0%,
       rgba(10,10,15,0.92) 5%,
       rgba(0,0,0,0.45) 15%,
       rgba(0,0,0,0.04) 45%,
-      rgba(0,0,0,0.2) 100%);
+      rgba(0,0,0,0.2) 100%); */
     z-index: 1;
   }
 
@@ -954,13 +956,15 @@
     /* Frontia-style scrim: character's lower body clearly darkens toward the
        bottom (this layer is z3, ABOVE the character z2), so the dialogue text
        sits on a strong dark backdrop (easy on the eyes). */
-    background: linear-gradient(to top,
+    /* ★임시 OFF(하단틈 검증용 2026-07-12) — 확인 끝나면 아래 background 주석 되살리기 */
+    background: transparent;
+    /* background: linear-gradient(to top,
       rgba(6,6,12,0.8) 0%,
       rgba(6,6,12,0.7) 18%,
       rgba(6,6,12,0.48) 34%,
       rgba(6,6,12,0.24) 50%,
       rgba(6,6,12,0.07) 64%,
-      transparent 74%);
+      transparent 74%); */
   }
   #dialogueContent {
     /* text lifted well off the bottom (Frontia sits the text in the lower third) */
