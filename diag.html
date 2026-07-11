@@ -6,40 +6,40 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIAG">
 <meta name="theme-color" content="#0a0a0f">
-<title>DIAG — html 배경 접근</title>
+<title>DIAG — fixed vs static 세이프에어리어 판정</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  /* ★리서치 방식: 배경을 html에 background-attachment:fixed + min-height + 사방 env 패딩 */
-  html {
-    min-height: calc(100% + env(safe-area-inset-top));
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    background: repeating-linear-gradient(135deg, #16a34a 0 26px, #128a3e 26px 52px);  /* ← 초록 = html 배경. 세이프에어리어까지 칠해지면 성공 */
-    background-attachment: fixed;
+  /* ① 정적 배경: html/body에 초록. 404처럼 iOS가 세이프에어리어까지 칠하는지 */
+  html, body { height:100%; background:#16a34a; }  /* 초록 = 정적 배경 */
+  body { color:#fff; font-family:ui-monospace,'Courier New',monospace; overflow:hidden; }
+
+  /* ② fixed 풀스크린 빨강 박스 (우리 앱의 #bgLayer와 동일한 방식) */
+  #fixedbg {
+    position:fixed; top:0; left:0; width:100%;
+    height:100vh;   /* 폴백 */
+    height:100lvh;  /* iOS = 852 */
+    background:repeating-linear-gradient(135deg,#dc2626 0 30px,#b01c1c 30px 60px); /* 빨강 = fixed 레이어 */
+    z-index:0;
   }
-  body { min-height:100vh; color:#fff; font-family:ui-monospace,'Courier New',monospace;
-    /* body는 반투명 빨강 = 만약 초록 위에 빨강이 덮이면 html이 아니라 body가 채우는 것 */
-    background: transparent; overflow-x:hidden; }
-  /* 하단 고정 바 (앱 입력바 흉내) — position:fixed bottom:0 */
-  .fixbar { position:fixed; left:0; right:0; bottom:0; z-index:5;
-    padding:12px 0 calc(12px + env(safe-area-inset-bottom));
-    background:#2860d0; text-align:center; font-size:12px; font-weight:800; border-top:2px solid #fff; }
+
   #panel { position:fixed; top:calc(env(safe-area-inset-top) + 14px); left:12px; right:12px; z-index:9;
     background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.3); border-radius:12px;
     padding:13px; font-size:12px; line-height:1.9; }
   #panel b{color:#ffe000}
-  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 92px); z-index:9;
-    background:rgba(0,0,0,.7); border-radius:10px; padding:11px 13px; font-size:12.5px; line-height:1.6;
+  .q { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 14px); z-index:9;
+    background:rgba(0,0,0,.75); border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.7;
     font-family:'Malgun Gothic',sans-serif; color:#fff; }
+  .q b{color:#ffe000}
 </style></head>
 <body>
+  <div id="fixedbg"></div>
   <div id="panel">측정 중…</div>
   <div class="q">
-    <b>확인:</b> 맨 아래 파란 바 <b>아래(홈인디케이터 자리)</b>가<br>
-    <span style="color:#3ee87a">초록</span>이면 → html 배경 방식 <b>성공</b> (이걸로 앱 고침)<br>
-    <span style="color:#ff6b6b">검정/빨강</span>이면 → 이것도 실패 (iOS 한계)<br>
-    ★ 홈화면 아이콘으로 열고 스샷 1장!
+    <b>판정:</b> 맨 아래 홈인디케이터 자리(막대 있는 곳) 색은?<br>
+    ▸ <span style="color:#3ee87a">초록</span> = fixed는 세이프에어리어 못 칠함 → 배경을 <b>정적</b>으로 바꾸면 해결<br>
+    ▸ <span style="color:#ff6b6b">빨강</span> = fixed도 칠함 → 버그는 딴 데<br>
+    ★ 홈화면 아이콘으로 열고 <b>스샷 1장</b>
   </div>
-  <div class="fixbar">입력바 (이 아래를 보세요)</div>
 <script>
   function upd(){
     const p=document.createElement('div');
@@ -47,7 +47,7 @@
     const sab=p.offsetHeight;p.remove();
     document.getElementById('panel').innerHTML=
       `screen <b>${screen.height}</b> · innerH <b>${window.innerHeight}</b> · safeBot <b>${sab}px</b><br>`+
-      `standalone <b>${window.navigator.standalone||matchMedia('(display-mode:standalone)').matches}</b> — <b>html 배경 방식 테스트</b>`;
+      `standalone <b>${window.navigator.standalone||matchMedia('(display-mode:standalone)').matches}</b> — <b>fixed vs static 판정</b>`;
   }
   upd(); setInterval(upd,700);
 </script>
