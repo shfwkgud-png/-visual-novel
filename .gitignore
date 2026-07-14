@@ -1,5 +1,11 @@
 # === 생성 이미지 에셋 — 공개 repo이므로 절대 커밋 금지 (특히 NSFW) ===
-sd_samples/
+# 예외(2026-07-15 폰 플레이 구축): SFW 스프라이트/배경 webp만 커밋. PNG 원본·_prev·nsfw는 계속 차단.
+sd_samples/*
+!sd_samples/characters/
+!sd_samples/backgrounds/
+sd_samples/characters/**/*.png
+sd_samples/backgrounds/**/*.png
+sd_samples/**/_prev*/
 character/25_full_nsfw/
 character/25_upper_nsfw/
 **/nsfw/

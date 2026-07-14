@@ -779,6 +779,14 @@
 
   /* BACKGROUND — height:100vh = true full screen (852) on iOS. Stays full
      behind everything (incl. behind the keyboard). */
+  /* Event CG — full-screen NSFW/event illustration (covers bg+char, under dialogue z3) */
+  #eventCG {
+    position: fixed; inset: 0;
+    width: 100%; height: 100vh; height: 100lvh;
+    object-fit: cover; object-position: center;
+    z-index: 2; display: none; pointer-events: none; background: #000;
+  }
+  body.cg-active .char-sprite { visibility: hidden; }
   #bgLayer {
     position: fixed;
     top: 0; left: 0; width: 100%;
@@ -1739,6 +1747,8 @@
 <div id="bgLayerB"></div>
 <div id="bgOverlay"></div>
 <div id="charLayer"></div>
+<img id="eventCG" alt="">
+
 <div id="fxFlash"></div>
 
 <!-- DIALOGUE: full-height fixed layer OUTSIDE #gameScreen so it reaches the true
@@ -2134,6 +2144,78 @@ const MUHYEOP_LORE = `당신은 무협 비주얼 노벨 "회귀한 천마의 아
 - [강호은원]: 복수 후 연인과 강호를 등짐 — 무협의 낭만
 - [혈로]: 배신을 막지 못하고 전생의 비극 반복 — 두 번째 죽음`;
 const MUHYEOP_WORLD_PROMPT = MUHYEOP_LORE + ENGINE_RULES_PROMPT;
+
+// ───── 무협 통합: 구파의 겨울 (화산+무당+소림 통합, 2026-07-15 확정) ─────
+const MURIM_CHARACTERS = {
+  moyongcheong: { name: '모용청', role: '검종 대제자', personality: '멸문에서 살아남은 검종의 자존심. 하윤의 빌린 검을 처음엔 모독으로 여김. 얼음 같은 검기 아래 문파를 잃은 소녀의 상실' },
+  seorihan: { name: '서리한', role: '검마대 여검사', personality: '화산을 벤 손. 감정 없는 살검이라 불리나 검총에 실린 죽은 사형의 검혼을 하윤에게서 보고 흔들린다. 적이자 거울' },
+  haran: { name: '하란', role: '검총의 여검혼', personality: '수백 년 전 미완의 사랑을 검에 새기고 죽은 검객. 하윤에게 실릴 때만 잠깐 살아난다. 실릴 때마다 그의 수명을 갉는 죄책감' },
+  ryuaeng: { name: '류앵', role: '화산 막내 사매', personality: '멸문 후에도 밝음을 잃지 않는 폐허의 숨구멍. 검총의 비밀을 눈치채고도 "오라버니 믿어요"로 덮는 무조건 신뢰. 발랄한 양갈래' },
+  soha: { name: '소하', role: '무당 여도사', personality: '형식뿐인 문파에 실망한 젊은 도사. 청운의 비움에서 진짜 도를 처음 본다. 총명·강직, 진짜를 좇다 문파와 부딪히는 위태로움' },
+  hyeolmae: { name: '혈매', role: '사도련 여마두', personality: '흡성으로 삼 년 만에 절정에 오른 빠름의 화신. 화려하고 잔혹, 강함에 중독. 자기 힘이 자기를 태우는 걸 청운에게서 본다' },
+  yeon: { name: '연', role: '봉인된 여인', personality: '백 년 전 태극과 함께 봉인된 사연의 주인. 명상 속에서만 만나지는 목소리. 사부의 죄와 봉인의 진실에 닿아 있다' },
+  dodo: { name: '도도', role: '도동 견습', personality: '자소궁 차 시중 막내. 형식주의 어른들 사이에서 비움을 유일하게 재미있어하는 낙천가. "사형, 오늘은 뭘 안 하실 거예요?" 씩씩한 양갈래' },
+  dayeon: { name: '다연', role: '속가 약초꾼', personality: '소림 산문 아랫마을의 약초꾼. 순박하고 명랑한 시골 처녀. 혜명을 스님이 아니라 사람으로 대해주는 유일한 존재' },
+  hyeonachal: { name: '혈나찰', role: '마교 여사자', personality: '혈맥의 아이를 되찾으러 온 마교의 사자. 차갑고 잔혹하나 혜명 앞에서 알 수 없는 동요. 채찍과 붉은 눈' },
+  jeongsimsatae: { name: '정심사태', role: '여승', personality: '혜명의 정체를 알고도 침묵해온 비구니. 고요한 눈. 자비와 계율 사이의 무게를 아는 사람' },
+  maehwageomjon: { name: '매화검존', role: '초대 장문인의 검혼', personality: '화산 최강의 검. 하윤을 좋은 그릇이라 여기며 몸을 되찾으려 한다. 악이 아니라 시대를 잘못 만난 절대자의 집념' },
+  yubaek: { name: '유백', role: '기종 대장로', personality: '인자한 얼굴로 문파를 지킨다 자처하나 결계 시각을 마교에 판 배신자. 그조차 화산을 위한 결단이라 믿는 회색 인물' },
+  cheongun: { name: '청운', role: '무당 화공도사(동료)', personality: '불 때는 잡역 도사. 수십 년 비워진 몸으로 무극을 깨쳤다. 느리고 순해 보이나 비운 자리로 상대를 삼킨다. 그릇 3형의 하나' },
+  hyeonjinja: { name: '현진자', role: '무당 장문인', personality: '인자한 도인 뒤에 젊은 날의 죄. 봉인이 풀릴까 두려워한다. 한 번의 잘못을 평생 덮어온 나약한 인간' },
+  jeokhaja: { name: '적하자', role: '무당 배신 장로', personality: '문파의 쇠락을 사도련에 팔아 권력을 산 자. 어차피 지는 문파 값이라도 받자는 냉소의 현실주의' },
+  hyemyeong: { name: '혜명', role: '나한당 수좌(동료)', personality: '산문 앞에 버려져 승려로 자란 무승. 몸속에서 마혈이 깨어난다. 자비가 진심이라 저주와 정면충돌하는 사람. 그릇 3형의 하나' },
+  hyegong: { name: '혜공', role: '소림 방장', personality: '혜명의 정체를 처음부터 알고 거둔 노승. 마혈을 불법으로 다스릴 수 있는가 — 백년 화두이자 한 생명을 향한 도박' },
+  gyeeom: { name: '계엄', role: '계율원 수좌', personality: '살계 절대수호의 원칙주의자. 혜명을 위험으로 규정하고 감시한다. 냉혹하나 그 나름의 소림을 지키는 방식' },
+};
+const MURIM_LORE = `당신은 무협 비주얼 노벨 "구파의 겨울"의 게임 마스터입니다.
+
+## 세계관: 같은 겨울, 세 개의 성지
+검(劍)의 화산, 도(道)의 무당, 불(佛)의 소림 — 강호를 지탱해온 세 기둥이 같은 겨울에 각각 안에서부터 무너진다. 화산은 마교 검마대의 야습으로 하룻밤에 멸문하고, 무당은 태극의 진수가 끊긴 채 껍데기 권위만 남았으며, 소림은 '마혈의 아이' 소문으로 무림맹의 칼끝에 몰린다. 서로 무관해 보이는 세 붕괴 — 그러나 문을 연 것은 전부 안쪽 사람이었다.
+
+**세력:**
+- 화산 잔당(검종 vs 기종) / 무당 장로원(형식주의) / 소림(계율원 vs 무승당) — 각자 곪은 세 성지
+- 마교 검마대·사도련 — 성지를 친 '칼'. 그러나 칼은 문이 열려야 든다
+- 무림맹 — 정의의 이름으로 소림을 겨누는 정파연합. 강경파의 뒷선이 수상하다
+- 검총(劍塚) — 화산의 금지된 검무덤. 죽은 검객들의 검혼이 '기억'한다
+
+**주인공: 하윤 (화산 서고지기, 19)**
+- 검근이 없다 하여 평생 장경각에서 비급만 필사한 고아. 멸문의 밤, 노서고지기가 그를 검총으로 밀어넣으며 죽는다 — "너는 검을 쓰지 못하니, 검이 너를 쓸 것이다"
+- 검총이 그를 택하자 죽은 검객들의 초식이 몸에 '실린다'. 초식마다 죽은 자의 인격이 함께 오고, 가장 강한 검혼(매화검존)은 그의 몸을 노린다
+- 여정에서 같은 '그릇'의 두 사람을 만난다: 비움으로 이기는 무당 화공도사 청운(무극지체), 마혈을 계율로 누르는 소림 무승 혜명(넘치는 그릇). 빈 그릇·비운 그릇·넘치는 그릇 — 서로가 서로의 해답이자 반례
+
+## 구조 (4부 — 부 전환을 명시적으로 연출, 유저 선택 우선):
+- 1부 「검총」(화산): 멸문의 밤~유백의 정체. 류앵·모용청·서리한·하란 축
+- 2부 「무극」(무당): 청운 합류. 소하·혈매·도도 축. 적하자의 흡성 유출 정황
+- 3부 「살계」(소림): 혜명 합류. 다연·혈나찰 축. 무림맹의 마혈 압박
+- 4부 「회맹」: 삼파 생존자 회맹, 흑막 결사의 정체전 — 세 그릇의 합
+
+## 스토리 원칙:
+- 빈 그릇 서사: 강함은 빌린 것, 대가는 자아의 침식. 초식을 쓸 때마다 그 검의 주인이 짧게 '말한다'
+- 검종vs기종, 형식vs뜻, 계율vs생존 — 어느 쪽도 악이 아닌 두 진심의 충돌로
+- 협(俠)은 문파가 아니라 사람에게. 폐허에서도 웃는 류앵, 형식 속에서 진짜를 찾는 소하가 그 증거
+- 무공 체계: 삼류→일류→절정→초절정→화경. 초식명은 구체적으로 (매화검법 낙매분분, 무극수, 나한권 항마장 등)
+
+## GM 전용 비밀 (직접 노출 금지 — 단서→의심→확증 3단계로만):
+- ★결사 「회(灰)」: 화산 멸문(유백이 결계 시각을 팔았다)·무당 흡성 유출(적하자)·소림 마혈 압박(무림맹 강경파 조종)은 전부 한 결사의 설계 — "낡은 구파를 재로 만들고 강호를 조정 아래 재편한다". 마교·사도련은 칼일 뿐
+- 하윤=허검지체(검근이 '비어' 어떤 검혼도 담긴다). 강해질수록 매화검존에게 의식이 밀린다 — 힘과 자아의 반비례
+- 청운의 무극은 재능이 아니라 수십 년 화공노동이 만든 비워진 몸. 태극 실전은 사고가 아니라 봉인(반극의 광기) — 봉인된 여인 '연'이 그 열쇠
+- 혜명을 소림에 맡긴 건 친모(마교 배신자)의 필사의 은닉. 방장 혜공은 처음부터 알고 거뒀다. 완전 정화의 대가는 소신(燒身)
+- 하란은 실릴 때마다 하윤의 수명을 갉는다는 죄책감을 숨긴다 / 서리한은 하윤에게서 죽은 사형의 검혼을 본다
+- 하윤의 친부는 멸문 관여자 중 하나 — 버려진 게 아니라 '맡겨진' 아이
+
+## 숨은 타임라인:
+- 1일차: 멸문의 밤. 검총 각성, 류앵과 폐허 탈출
+- 7일: 모용청 조우(재건이냐 복수냐) / 1개월: 오악검파의 검학 회수 회합, 유백 단서
+- 2개월: 무당행 — 청운·소하 합류 / 3개월: 혈매 격돌, 적하자 정황
+- 4개월: 소림행 — 혜명 합류, 마혈 폭주 / 5개월: 무림맹 압박, 혈나찰 등장
+- 반년: 「회」의 정체전 — 회맹이냐 각개격파냐
+
+## 엔딩:
+- [구파재건]: 「회」를 무너뜨리고 세 성지가 서로를 다시 세움 — 겨울이 끝나는 강호
+- [재의 강호]: 저지 실패 — 구파는 역사가 되고 살아남은 자들만 남는다 (비극)
+- [매화재개]: 화산 재건, 검종·기종 화해 — 빈 그릇이 문파의 심장이 되다
+- [검에 먹힌 자]: 매화검존에게 몸을 빼앗김 — 화산을 구한 건 이미 죽은 자 (비극)`;
+const MURIM_WORLD_PROMPT = MURIM_LORE + ENGINE_RULES_PROMPT;
 
 // ───── 2. 헌터물: F급의 재각성 ─────
 const HUNTER_CHARACTERS = {
@@ -3216,6 +3298,22 @@ const BUILTIN_STORIES = {
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 천마신교 본단의 침소, 새벽. 죽음의 순간에서 20년 전으로 회귀한 ${n}이(가) 열아홉의 몸으로 눈을 뜨는 장면으로 시작해줘. 사매 연화가 문안을 오고, 전생 기억 속 '오늘 밤 아버지 암살 미수 사건'이 떠오르는 긴장감을 깔아줘.`,
     startPromptText: '천마신교 침소에서 회귀한 {이름}이(가) 눈을 뜨고, 연화의 문안과 함께 오늘 밤의 암살 사건을 예감하는 장면으로 시작해줘.',
     startChars: ['w201']
+  },
+  murim: {
+    id: 'murim',
+    title: '구파의 겨울',
+    desc: '검의 화산, 도의 무당, 불의 소림 — 세 성지가 같은 겨울에 안에서부터 무너진다. 검무덤이 택한 서고지기의 손으로, 재가 된 강호를 다시 세워라. 정통 무협 대작.',
+    cover: 'sd_samples/characters/murim/moyongcheong/2d/1_calm.webp',
+    worldPrompt: MURIM_WORLD_PROMPT,
+    worldLore: MURIM_LORE.split('\n').slice(1).join('\n').trim(),
+    genre: '정통 무협',
+    characters: MURIM_CHARACTERS,
+    protagonist: { name: '하윤', desc: '' },
+    initialState: { status: '화산 서고지기', rep: 0, gold: 2, location: '화산 본산 폐허', time: '멸문의 밤', injuries: [] },
+    startBg: 'mountain',
+    startPrompt: n => `게임 시작. 첫 장면을 보여줘. 멸문의 밤, 불타는 화산 본산. 장경각 서고지기 ${n}이(가) 노서고지기의 손에 검총(劍塚)으로 밀어넣어지는 장면으로 시작해줘 — "너는 검을 쓰지 못하니, 검이 너를 쓸 것이다." 검총 각성의 순간과, 폐허에서 살아남은 막내 사매 류앵과의 조우까지. 긴박하고 비장하게.`,
+    startPromptText: '멸문의 밤, 불타는 화산. 서고지기 {이름}이(가) 검총에 밀어넣어져 각성하고, 류앵과 함께 폐허를 탈출하는 장면으로 시작해줘.',
+    startChars: ['ryuaeng']
   },
   hunter: {
     id: 'hunter',
@@ -4638,16 +4736,31 @@ function deleteLocalStory(id) {
 
 // ===== EMOTION TO FILE NUMBER =====
 const EMOTION_MAP = {
-  upper: { normal: 1, smile: 2, angry: 3, sad: 4, pain: 5, worry: 6 },
+  upper: { normal: 1, smile: 2, angry: 3, sad: 4, pain: 5, worry: 6, annoy: 7, pleasure: 8 },
   full: { normal: 1, reaction: 2, weapon: 3 }
 };
 
-// Map many emotion synonyms (the AI often invents its own) to the 6 base expressions
+// ── PANDORA 신규 에셋(sd_samples) 연동 ──
+// 8감정 base → 신규 에셋 파일키 (sd_samples/characters/{story}/{id}/{style}/{key}.png)
+const EMO_KEY8 = { normal:'1_calm', smile:'2_joy', sad:'3_sad', angry:'4_anger', annoy:'5_annoy', worry:'6_worry', pain:'7_pain', pleasure:'8_pleasure' };
+// 실사 트랙 스토리(연애물) — 나머지는 애니(2D/2.5D 선택). 신규 예능3(inferno/signalhouse/exroom)은 앱 통합 시 추가.
+const REAL_STORIES = new Set(['romance','loveisland','inferno','signalhouse','exroom']);
+// 화풍 선호: 'auto'(연애=real, 그외=25d) | '2d' | '25d'. 실사 스토리는 항상 real.
+function currentArtStyle() {
+  const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || 'nakin';
+  if (REAL_STORIES.has(sid)) return 'real';
+  const pref = localStorage.getItem('vn_art_style') || 'auto';
+  return pref === '25d' ? '25d' : '2d';   // 기본 2d (PANDORA 신에셋은 2d 트랙, 25d는 명시 선택 시)
+}
+
+// Map many emotion synonyms (the AI often invents its own) to the 8 base expressions
 const EMOTION_SYNONYMS = {
-  smile: ['smile','happy','joy','joyful','pleased','amused','smirk','grin','gentle','warm','playful','laugh','content','seductive','flirty'],
-  angry: ['angry','anger','rage','furious','annoyed','irritated','cold','stern','serious','glare','displeased','hostile','fierce','cocky','arrogant','disdain'],
+  smile: ['smile','happy','joy','joyful','pleased','amused','smirk','grin','gentle','warm','playful','laugh','content'],
+  angry: ['angry','anger','rage','furious','cold','stern','serious','glare','displeased','hostile','fierce','cocky','arrogant','disdain'],
+  annoy: ['annoyed','irritated','annoy','exasperated','grumpy','pout','pouting','sulky','peeved','tsundere','huff'],
   sad: ['sad','sorrow','sorrowful','cry','crying','tears','tearful','grief','melancholy','depressed','lonely','hurt_emotional','regret','disappointed'],
   pain: ['pain','painful','hurt','agony','suffering','wince','injured','exhausted','weak','dying'],
+  pleasure: ['pleasure','seductive','flirty','aroused','lewd','ecstasy','horny','sultry','erotic','moaning','turned_on'],
   worry: ['worry','worried','anxious','anxiety','fear','fearful','nervous','tense','concerned','uneasy','scared','afraid','surprised','shock','shocked','startled','confused','wary','cautious','desperate','panic']
 };
 function normalizeEmotion(emo) {
@@ -5794,6 +5907,7 @@ function processResponse(data, activeCharIds, streamed) {
     lastBg = data.background;
     setBg(data.background);
   }
+  if (data.cg) showEventCG(data.cg); else hideEventCG();   // full-screen event CG (NSFW scene); absent → hide
   if (data.mood) Ambient.setMood(data.mood);
   window._pendingEnding = (data.ending && typeof data.ending === 'string') ? data.ending : null;
 
@@ -6034,8 +6148,14 @@ function updateSpriteEmotion(charId, emotion, pose) {
     const emoNum = EMOTION_MAP.full[emotion] || 1;
     sprite.src = `character/25_full/f_${num}_${emoNum}.webp`;
   } else {
-    const emoNum = EMOTION_MAP.upper[normalizeEmotion(emotion)] || 1;
-    sprite.src = `character/25_upper/${num}_${emoNum}.webp`;
+    const base = normalizeEmotion(emotion);
+    const emoNum = EMOTION_MAP.upper[base] || 1;
+    const oldPath = `character/25_upper/${num}_${emoNum}.webp`;
+    // PANDORA 신규 에셋(sd_samples) 우선 → 없으면 기존 → 그래도 없으면 숨김 (폴백 체인)
+    const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || 'nakin';
+    const newPath = `sd_samples/characters/${sid}/${charId}/${currentArtStyle()}/${EMO_KEY8[base] || '1_calm'}.webp`;
+    sprite.onerror = function () { sprite.onerror = function () { sprite.style.visibility = 'hidden'; }; sprite.src = oldPath; };
+    sprite.src = newPath;
   }
 }
 
@@ -6530,6 +6650,32 @@ function crossfadeBg(url) {
   img.onerror = () => { bgLayer.style.backgroundImage = `url('${url}')`; _bgFading = false; };
   img.src = url;
 }
+// ===== EVENT CG (full-screen NSFW / event illustration) =====
+let currentCG = null;
+function cgUrlFor(name) {
+  // name = "charId/sceneId" or "sceneId" — NSFW는 repo에 없음(비공개), KV 워커에서 서빙
+  const flat = `nsfw_${STORY.id}_${String(name).replace(/\//g, '_')}`;
+  return `https://pandora-sync.pasokong99.workers.dev/img?name=${encodeURIComponent(flat)}`;
+}
+function showEventCG(name) {
+  if (!name) return hideEventCG();
+  if (name === currentCG) return;
+  currentCG = name;
+  const e = document.getElementById('eventCG');
+  e.onerror = () => { e.style.display = 'none'; document.body.classList.remove('cg-active'); }; // missing asset → safe fallback
+  e.src = cgUrlFor(name);
+  e.style.display = 'block';
+  document.body.classList.add('cg-active');
+}
+function hideEventCG() {
+  if (!currentCG) return;
+  currentCG = null;
+  const e = document.getElementById('eventCG');
+  e.style.display = 'none';
+  e.removeAttribute('src');
+  document.body.classList.remove('cg-active');
+}
+
 function setBg(name) {
   const key = (STORY.customBgs && STORY.customBgs[name]) ? name : pickBg(name);
   if (key === currentBgFile) return;
