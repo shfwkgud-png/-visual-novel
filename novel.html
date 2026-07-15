@@ -3185,6 +3185,11 @@ function buildCustomWorldPrompt(s) {
     lore += `\n\n## 이 스토리 전용 배경 (background 필드에 아래 키도 사용 가능 — 어울리는 장면에서 우선 사용):`;
     for (const k in s.customBgs) lore += `\n- ${k}: ${s.customBgs[k].label || ''}`;
   }
+  // 스토리 폴더 배경(신형) 키도 GM에 공개 — customBgs와 중복 없이
+  if (typeof STORY_BG_FILES !== 'undefined' && STORY_BG_FILES[s.id]) {
+    const extra = STORY_BG_FILES[s.id].filter(k => !(s.customBgs && s.customBgs[k]));
+    if (extra.length) lore += `\n\n## 사용 가능 배경 키 (background 필드는 반드시 이 목록 중에서 선택):\n${extra.join(', ')}`;
+  }
   return lore + ENGINE_RULES_PROMPT;
 }
 
@@ -5065,14 +5070,23 @@ function restoreAndReplay(save, checkTimeflow) {
   }
 }
 
+// ★시작 플로우(유저 지시 2026-07-15): 프롤로그 → 모드 선택(스토리/자유) → 캐릭터 설정 입력 → 본편.
+const START_FLOW = `
+
+[시작 연출 지시 — 반드시 이 순서대로]
+1) 이번 첫 응답은 "프롤로그"다. 위 시작 장면을 주인공 이름 없이("그대", 직책 등으로 지칭) 분위기 있게 압축 연출하고, 마지막에 choices 필드로 정확히 이 두 개만 제시하라: ["📖 스토리 모드 — 정해진 서사를 따라 깊게 몰입한다", "🕊️ 자유 모드 — 이 세계에서 내 마음대로 살아간다"].
+2) 유저가 모드를 고르면: 그 모드를 기억하고, "캐릭터 설정을 입력해 주세요. 형식: 이름/나이/성별/특징 (예: 하윤/20살/남자/검근 없는 서고지기)" 라고 요청하라. 이때 choices는 비워라.
+3) [캐릭터 설정 확정] 메시지를 받으면 그 이름·나이·성별·특징을 주인공에게 영구 반영하고 본편 첫 장면을 시작하라. 특징은 외모·평판·능력에 실제로 영향을 줘야 한다(예: "못생김"이면 NPC 반응에 반영).
+4) 이후 진행: 스토리 모드면 메인 서사를 적극 전개하되 선택지는 항상 의미 있게, 자유 모드면 유저의 행동 자유를 최우선하고 메인 서사는 배경에서 흐르게 하라.`;
+
 async function beginStory() {
   if (STORY.startBg) setBg(STORY.startBg); // default scene bg so the first screen is never empty
   Ambient.setMood('calm');
   const intro = {
     role: 'user',
-    content: typeof STORY.startPrompt === 'function'
+    content: (typeof STORY.startPrompt === 'function'
       ? STORY.startPrompt(playerName)
-      : ('게임 시작. 첫 장면을 보여줘. ' + (STORY.startPrompt || '')).split('{이름}').join(playerName)
+      : ('게임 시작. 첫 장면을 보여줘. ' + (STORY.startPrompt || '')).split('{이름}').join(playerName)) + START_FLOW
   };
   gameHistory.push(intro);
   await callGemini(STORY.startChars || []);
@@ -6648,6 +6662,16 @@ async function sendMessage() {
 }
 
 async function handlePlayerInput(text) {
+  // ★캐릭터 설정 입력 감지: "이름/나이/성별/특징" → 앱의 주인공 설정 자체를 갱신(단순 이름 표시가 아니라 프롬프트·상태 전반에 반영)
+  const prof = String(text).trim().match(/^([^/\n]{1,12})\s*\/\s*(\d{1,3})\s*살?\s*\/\s*(남|여)(?:자|성)?\s*\/\s*(.{1,60})$/);
+  if (prof) {
+    playerName = prof[1].trim();
+    playerDesc = `${prof[2]}살 ${prof[3]}성, ${prof[4].trim()}`;
+    if (gameState) gameState.name = playerName;
+    STORY.protagonist = { ...(STORY.protagonist || {}), name: playerName, desc: playerDesc };
+    text = `[캐릭터 설정 확정] 이름: ${playerName} / 나이: ${prof[2]}살 / 성별: ${prof[3]} / 특징: ${prof[4].trim()} — 이 설정을 주인공에게 영구 반영하고 본편을 시작해줘.`;
+    updateStatusUI && updateStatusUI();
+  }
   dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null });
   gameHistory.push({ role: 'user', content: text });
   window._pendingPlayerLine = text;  // shown verbatim as the first line of the next response
@@ -6700,9 +6724,14 @@ function detectActiveChars(history) {
 }
 
 // ===== BACKGROUND =====
+// 스토리별 신형 배경 매니페스트(sd_samples/backgrounds/<story>/<key>.webp).
+// 구형 background/ 폴더는 매니페스트에 없는 키의 최후 폴백(사실상 낙인의검 계열 전용 — 유저 지시 2026-07-15).
+const STORY_BG_FILES = {"academy":["academy_courtyard","campus","dorm_room","duel_arena","forbidden_library","great_hall","headmaster_office","infirmary","rank_arena","training_ground"],"cyber":["club_nova","corp_tower","cyberspace","gang_hideout","megacity_night","neon_alley","ripperdoc","slum_clinic"],"deathgame":["control_room","dormitory","game_room_trap","lobby_hall","underground_passage"],"exroom":["date_drive","date_seaside","house_bedroom","house_kitchen","house_living","x_room"],"gumiho":["afterlife_office","bukhansan","cafe_college","club_succubus","fortune_shop","goblin_pawnshop","hangang_night","shrine"],"hero":["back_deal","broadcast_studio","city_incident","management_bureau","starforce_lobby","training_hall","vigilante_hideout"],"hunter":["black_market","dungeon_cave","gate_break","gate_rift","guild_tower","hospital_er","hunter_assoc","porter_room"],"inferno":["couple_game_beach","heaven_pool","heaven_suite","hell_island_beach","hell_island_camp","sunset_deck"],"isekai":["adventurer_guild","demon_castle","dungeon_forest","frontier_village","mine_village","palace_hall","smithy","summon_hall","summon_room","throne_hall"],"kyungsung":["detective_office","gisaeng_house","jongno_street","myeongdong_cathedral","pawnshop","police_station","research_lab"],"loveisland":["beach_day","date_spot","observation_studio","sunset_deck","villa_bedroom","villa_lounge","villa_pool"],"muhyeop":["brothel_manhwaru","cheonma_hall","demon_cult_hall","gaekjan_inn","geomchong_field","imperial_office","inn_courtyard","manhwaru","murim_alliance","murimmaeng_hall","sacheondangga","secluded_cave","snow_peak","sword_valley","tangfamily_garden"],"murim":["arhat_hall","bamboo_forest","bing_palace_hall","blood_altar","cloud_cliff","daeung_hall","dalma_cave","dharma_cave","discipline_hall","evil_sect_den","five_mountains_hall","heaven_demon_hall","herb_field","herb_village","heretic_lair","huashan_ruins","hwasan_ruins","ice_plain","imperial_office","inn_hall","jaso_kitchen","kitchen_furnace","library_stacks","main_temple","market_street","mountain_gate","nahan_hall","plum_peak","precept_hall","prison_cell","river_ferry","scripture_pavilion","sado_hall","sealed_cave","snow_mountain","snow_road","sorim_yard","sword_tomb","taegeuk_hall","taiji_hall","temple_gate","training_platform","wudang_yard","abandoned_temple"],"nakin":["arena","bern_alley_dawn","bern_alley_night","catacomb","cathedral","harbor_docks","pirate_deck","tavern_interior","throne_hall","witch_hut"],"palace":["court_assembly","east_palace","palace_corridor","queen_quarters","rear_garden","royal_clinic","throne_hall"],"romance":["fine_restaurant","hangang_night","hospital_vip","hotel_suite","js_office","mansion_living","mansion_study","secretary_desk"],"signalhouse":["date_cafe","house_bedroom","house_kitchen","house_living","house_rooftop","house_yard","night_street"],"throne":["court_hall","dungeon","north_wall","private_chamber","royal_library","sun_temple","throne_room"],"timeloop":["accident_alley","alley_cafe","convenience_store","flower_shop","fortune_house","police_station"],"voidship":["bridge","coldsleep","crew_lounge","engine_room","free_port","space_orbit"],"zombie":["apartment_barricade","convenience_store","empty_avenue","hospital_infected","research_lab","rooftop_refuge","subway_underground"]};
 let currentBgFile = null;
 function bgUrlFor(key) {
   if (STORY.customBgs && STORY.customBgs[key]) return STORY.customBgs[key].url;
+  const sb = STORY_BG_FILES[STORY.id];
+  if (sb && sb.includes(key)) return `sd_samples/backgrounds/${STORY.id}/${key}.webp`;
   return `background/${key}.webp`;
 }
 // Crossfade to a new background: paint the B layer, fade it in over the old
@@ -6760,7 +6789,8 @@ function hideEventCG() {
 }
 
 function setBg(name) {
-  const key = (STORY.customBgs && STORY.customBgs[name]) ? name : pickBg(name);
+  const sb = STORY_BG_FILES[STORY.id];
+  const key = ((STORY.customBgs && STORY.customBgs[name]) || (sb && sb.includes(name))) ? name : pickBg(name);
   if (key === currentBgFile) return;
   currentBgFile = key;
   crossfadeBg(bgUrlFor(key));
