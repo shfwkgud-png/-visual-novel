@@ -979,28 +979,29 @@
       transparent 74%);
   }
   #dialogueContent {
-    /* ★Frontia 구조: 대사 블록이 화면 56% 지점에 "상단 고정" — 텍스트가 길어지면
-       아래로 자라난다(기존 bottom-anchor는 위로 자라 위치가 널뛰었음) */
+    /* ★Frontia 캡처 실측치(1179×2556, 2026-07-16): 이름 상단 61.2% 고정,
+       텍스트는 아래로만 성장. 좌여백 33px. */
     position: absolute;
-    top: 56%;
+    top: 61%;
     left: 0; right: 0;
-    padding: 0 26px;
-    max-height: calc(44% - calc(96px + env(safe-area-inset-bottom)));
+    padding: 0 32px;
+    max-height: calc(39% - calc(90px + env(safe-area-inset-bottom)));
     overflow: hidden;
   }
-  /* Frontia 네임플레이트: 작은 흰 이름 + 이름폭보다 살짝 긴 얇은 룰 */
+  /* Frontia 네임플레이트 실측: 이름은 밑줄 시작보다 14px 들여쓰기, 밑줄=이름폭+28px,
+     이름→밑줄 10px, 밑줄→본문 14px */
   #nameplate {
     display: table;             /* fit-content — 룰이 이름 폭+여유만큼만 */
-    border-bottom: 1px solid rgba(255,255,255,0.4);
-    padding: 0 34px 7px 2px;
-    margin: 0 0 13px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.45);
+    padding: 0 14px 10px 14px;
+    margin: 0 0 14px 2px;
   }
   #speakerAvatar { display: none; }
   #speakerName {
     font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.72rem;
     color: rgba(255,255,255,0.92);
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
     font-weight: 500;
     text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   }
@@ -1016,13 +1017,12 @@
   }
   #dialogueText {
     font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
-    font-size: 1.04rem;
+    font-size: 1rem;
     font-weight: 400;
-    line-height: 1.72;
+    line-height: 1.85;
     color: #ffffff;
     white-space: pre-wrap;
     letter-spacing: -0.01em;
-    padding-left: 6px;
     text-shadow: 0 1px 3px rgba(0,0,0,0.7);
   }
   #dialoguePanel.narration-mode #dialogueText {
@@ -1506,9 +1506,9 @@
      override the base/staging rules above (v55/v56 fixes were dead because a
      height:100% here won). Sizing lives ONLY in the char staging section. */
   @media (max-width: 600px) {
-    #dialogueText { font-size: 0.99rem; line-height: 1.7; }
+    #dialogueText { font-size: 1rem; line-height: 1.85; }
     #dialoguePanel { min-height: 78px; }
-    #speakerName { font-size: 0.82rem; }
+    #speakerName { font-size: 0.72rem; }
     .start-btn { width: min(280px, 80vw); }
   }
 
