@@ -791,6 +791,8 @@
     object-fit: cover; object-position: center;
     z-index: 2; display: none; pointer-events: none; background: #000;
   }
+  #eventCG.cg-show { animation: cgIn 350ms ease-out; }
+  @keyframes cgIn { from { opacity: 0; } to { opacity: 1; } }
   body.cg-active .char-sprite { visibility: hidden; }
   #bgLayer {
     position: fixed;
@@ -904,12 +906,13 @@
     /* --arScale: JS-set per sprite = min(1, sqrt(0.70/aspect)) — wide sprites
        (near-square 107 etc.) get their height reduced so the on-screen AREA
        reads consistent across all characters. */
-    height: calc(62% * var(--arScale, 1));   /* ≈ 프레야's approved apparent size */
+    /* ★스프라이트 하단(카우보이샷 절단선)은 화면 바닥에 붙인다 — 절단선이 공중에
+       뜨지 않게 리프트 제거+높이 보상(유저 지시: 가리지 말고 배치로 해결) */
+    height: calc(65% * var(--arScale, 1));
     max-width: 108vw;
     object-fit: contain;
     object-position: bottom center;
-    /* --ty raises the sprite up (single small lift; multi more via their rules). */
-    --ty: -4%;   /* v52 value (rolled back) */
+    --ty: 0%;
     transform: translate(var(--tx, 0%), var(--ty, 0%)) scale(var(--sc, 1));
     transform-origin: bottom center;
     transition: filter 0.4s ease, opacity 0.5s ease, transform 0.35s ease;
@@ -931,13 +934,13 @@
   /* v48-style side-by-side spacing (less overlap), but raised up via --ty (v49). */
   /* smaller + far less overlap so the two stand APART (not stuck), raised higher. */
   #charLayer[data-count="2"] { gap: 0; }
-  #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: calc(58% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -12vw; --ty: -18%; }
+  #charLayer[data-count="2"] .char-sprite { max-width: 84vw; height: calc(68% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -12vw; --ty: 0%; }
   /* 3-4 chars: total width must stay near 100vw or the outer ones get pushed
      off-screen (three 52%-tall sprites ≈ 190vw). Smaller + deeper overlap. */
   #charLayer[data-count="3"] { gap: 0; }
-  #charLayer[data-count="3"] .char-sprite { max-width: 60vw; height: calc(42% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -13vw; --ty: -15%; }
+  #charLayer[data-count="3"] .char-sprite { max-width: 60vw; height: calc(48% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -13vw; --ty: 0%; }
   #charLayer[data-count="4"] { gap: 0; }
-  #charLayer[data-count="4"] .char-sprite { max-width: 52vw;  height: calc(36% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -12vw; --ty: -12%; }
+  #charLayer[data-count="4"] .char-sprite { max-width: 52vw;  height: calc(40% * var(--arScale, 1)); flex-shrink: 0; margin: 0 -12vw; --ty: 0%; }
   /* When one of TWO speaks: slide toward center + zoom in (steps up front), the
      silent one stays at its side, dimmed. Zoom is scoped to multi-char only, so a
      lone (tall) sprite never crops. (Extra/narrator = all neutral = no slide/zoom.) */
@@ -948,7 +951,7 @@
   #charLayer[data-count="4"] .char-sprite.speaking { --sc: 1.08; }
   /* Full-body sprites are taller — shrink so the top isn't cut (#5) */
   .char-sprite.fullbody { height: 90%; }
-  #charLayer[data-count="2"] .char-sprite.fullbody { height: 52%; }
+  #charLayer[data-count="2"] .char-sprite.fullbody { height: 60%; }
 
   /* DIALOGUE — OUTSIDE #gameScreen, full-height (100vh = true bottom 852) so it
      always reaches the real bottom (no black strip) AND does NOT rise with the
@@ -967,16 +970,13 @@
     /* Frontia-style scrim: character's lower body clearly darkens toward the
        bottom (this layer is z3, ABOVE the character z2), so the dialogue text
        sits on a strong dark backdrop (easy on the eyes). */
-    /* 하단은 거의 불투명하게 — 스프라이트(카우보이샷) 하단 절단선을 스크림이 가림
-       (구 검은바 역할, Frontia도 하단 근불투명 스크림) */
     background: linear-gradient(to top,
-      rgba(6,6,12,0.97) 0%,
-      rgba(6,6,12,0.95) 14%,
-      rgba(6,6,12,0.85) 26%,
-      rgba(6,6,12,0.55) 40%,
-      rgba(6,6,12,0.25) 54%,
-      rgba(6,6,12,0.07) 66%,
-      transparent 76%);
+      rgba(6,6,12,0.8) 0%,
+      rgba(6,6,12,0.7) 18%,
+      rgba(6,6,12,0.48) 34%,
+      rgba(6,6,12,0.24) 50%,
+      rgba(6,6,12,0.07) 64%,
+      transparent 74%);
   }
   #dialogueContent {
     /* ★Frontia 구조: 대사 블록이 화면 56% 지점에 "상단 고정" — 텍스트가 길어지면
@@ -1348,7 +1348,11 @@
     display: none;
     flex-direction: column;
   }
-  #statusPanel.visible { display: flex; }
+  #statusPanel.visible { display: flex; animation: panelIn 200ms cubic-bezier(0.23, 1, 0.32, 1); }
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   #statusHeader {
     display: flex; align-items: center; gap: 10px;
     padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
@@ -1405,6 +1409,18 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.8);
   }
   .choice-btn:active { transform: scale(0.985); background: rgba(40,32,56,0.6); }
+  /* 선택지 스태거 등장(유지 — 유저가 제거 요청한 적 없음) */
+  .choice-btn { animation: choiceIn 240ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+  .choice-btn:nth-child(1) { animation-delay: 0ms; }
+  .choice-btn:nth-child(2) { animation-delay: 40ms; }
+  .choice-btn:nth-child(3) { animation-delay: 80ms; }
+  .choice-btn:nth-child(4) { animation-delay: 120ms; }
+  .choice-btn:nth-child(5) { animation-delay: 160ms; }
+  .choice-btn:nth-child(6) { animation-delay: 200ms; }
+  @keyframes choiceIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   @media (hover: hover) and (pointer: fine) {
     .choice-btn:hover { border-color: rgba(201,168,76,0.55); }
   }
@@ -6585,10 +6601,11 @@ function renderHistoryEntry() {
   // Restore the full scene at this moment: background, sprites, expression.
   // ★플레이어 대사 등 sprites/bgFile 기록이 없는 항목은 "가장 가까운 이전 기록"을
   // 계승(없으면 캐릭터가 통째로 사라지던 버그 수정)
-  let bgFile = entry.bgFile, sprites = entry.sprites;
+  let bgFile = entry.bgFile;
+  let sprites = (entry.sprites && entry.sprites.length) ? entry.sprites : null;
   for (let i = historyPos - 1; i >= 0 && (!bgFile || !sprites); i--) {
     if (!bgFile && dialogueLog[i].bgFile) bgFile = dialogueLog[i].bgFile;
-    if (!sprites && dialogueLog[i].sprites) sprites = dialogueLog[i].sprites;
+    if (!sprites && dialogueLog[i].sprites && dialogueLog[i].sprites.length) sprites = dialogueLog[i].sprites;
   }
   if (bgFile) setBgFile(bgFile);
   if (sprites) rebuildSprites(sprites, entry.char_id, entry.emotion, entry.pose);
@@ -6615,7 +6632,7 @@ function exitHistory() {
   }
   const p = window._present || {};
   if (p.bgFile) setBgFile(p.bgFile);
-  if (p.sprites) rebuildSprites(p.sprites, p.charId, p.emotion, p.pose);
+  if (p.sprites && p.sprites.length) rebuildSprites(p.sprites, p.charId, p.emotion, p.pose);
   setNameplate(p.speaker || '', p.charId);
   dialogueText.textContent = p.text || '';
   const hint = document.getElementById('continueHint');
@@ -6818,6 +6835,7 @@ function showEventCG(name) {
   currentCG = name;
   const e = document.getElementById('eventCG');
   e.onerror = () => { e.style.display = 'none'; document.body.classList.remove('cg-active'); }; // missing asset → safe fallback
+  e.onload = () => { e.classList.remove('cg-show'); void e.offsetWidth; e.classList.add('cg-show'); };
   e.src = cgUrlFor(name);
   e.style.display = 'block';
   document.body.classList.add('cg-active');
