@@ -8,5 +8,10 @@ compatibility_date = "2026-06-01"
 binding = "PANDORA_KV"
 id = "43b018628433424b9ba41c01347c7330"
 
+# R2: NSFW CG store (public-by-URL serving via GET /img?name=)
+[[r2_buckets]]
+binding = "R2_IMG"
+bucket_name = "pandora-img"
+
 [vars]
 GOOGLE_CLIENT_ID = "888890730020-j136s19u4euq7sp0et4vb418b0mqar80.apps.googleusercontent.com"

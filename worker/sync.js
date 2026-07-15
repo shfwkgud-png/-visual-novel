@@ -181,6 +181,27 @@ export default {
       return json({ users, admin: await env.PANDORA_KV.get('sys:admin') });
     }
 
+    // ---- IMAGE STORE (R2-backed) ----
+    // GET /img?name=<id> — serve from R2 (URL 소지 = 접근. novel.html cgUrlFor가 쓰는 경로)
+    if (url.pathname === '/img' && req.method === 'GET') {
+      const name = (url.searchParams.get('name') || '').replace(/[^a-zA-Z0-9_.-]/g, '');
+      if (!name) return new Response('name required', { status: 400, headers: CORS });
+      // NSFW는 로그인 토큰 필수 (?t= — <img>는 헤더를 못 보내므로 쿼리로)
+      if (name.startsWith('nsfw_')) {
+        const user = await verifyToken(url.searchParams.get('t') || '', env);
+        if (!user) return new Response('login required', { status: 401, headers: CORS });
+      }
+      const obj = await env.R2_IMG.get(name);
+      if (!obj) return new Response('not found', { status: 404, headers: CORS });
+      return new Response(obj.body, {
+        headers: {
+          ...CORS,
+          'Content-Type': (obj.httpMetadata && obj.httpMetadata.contentType) || 'image/webp',
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      });
+    }
+
     // ---- IMAGE STORE (KV-backed, free tier) ----
     // GET /img/<ns>/<id>  — public (possessing the URL grants access; ns is a
     //                       token hash, unguessable). Served with long cache.
@@ -224,6 +245,18 @@ export default {
         { headers: { ...CORS, 'Content-Type': 'application/json' } });
     }
     if (url.pathname === '/img' && req.method === 'PUT') {
+      // R2 direct upload (local gen pipeline; X-Upload-Key = wrangler secret UPLOAD_KEY)
+      const upKey = req.headers.get('X-Upload-Key') || '';
+      if (upKey && env.UPLOAD_KEY && upKey === env.UPLOAD_KEY) {
+        const rname = (url.searchParams.get('name') || '').replace(/[^a-zA-Z0-9_.-]/g, '');
+        if (!rname) return json({ error: 'name' }, 400);
+        const rbuf = await req.arrayBuffer();
+        if (rbuf.byteLength > 8_000_000) return json({ error: 'too large' }, 413);
+        await env.R2_IMG.put(rname, rbuf, {
+          httpMetadata: { contentType: req.headers.get('Content-Type') || 'image/webp' }
+        });
+        return json({ ok: true, r2: true, name: rname });
+      }
       const who = await resolveNs(req, env);
       if (!who) return json({ error: 'auth' }, 401);
       const ns = who.ns;
