@@ -2039,26 +2039,30 @@ const ENGINE_RULES_PROMPT = `
     "status": "새 신분 (변화 없으면 null)",
     "time": "현재 시간대 (예: '3일차 새벽', 변화 없으면 null)",
     "chars": {
-      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)" }
+      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "tier": "이 인물의 경지/등급(첫 등장 시 정하고 이후 고정. 예: 절정)" }
     },
     "player": {
       "abilities": ["새로 밝혀지거나 습득한 능력 (예: 중력 제어(초급))"],
       "injuries": ["신체/정신 이슈 (예: 오른손목 낙인, 왼쪽 눈 실명)"],
       "note": "현재 처한 상황 요약",
-      "stats": { "근력": 3, "민첩": 3, "지력": 3, "의지": 3, "매력": 3 } (1~10, 변화한 스탯만),
-      "skills": { "스킬명": { "rank": "입문|초급|중급|상급|절정|초월", "xp": 0~100 } } (변화한 스킬만)
+      "stats": { "근력": 32, "민첩": 45, "지력": 28, "의지": 50, "매력": 37 } (1~100, 변화한 스탯만),
+      "skills": { "스킬명": { "rank": "입문|초급|중급|상급|절정|초월", "xp": 0~100 } } (변화한 스킬만),
+      "tier": "주인공의 현재 경지/등급 (변화 시만. 예: 삼류→이류)"
     },
     "flags": {}
   },
   "choices": ["선택지1", "선택지2"]
 }
 
-## RPG 규칙 (능력치·스킬 숙련도·판정):
-- **스탯 5종**(근력/민첩/지력/의지/매력, 1~10): 시작 시 세계관·주인공 설정에 맞게 초기값 부여(평범 3, 특징 반영해 ±). 훈련·사건·성장으로만 서서히 변화(한 번에 ±1).
+## RPG 규칙 (능력치·경지·스킬 숙련도·판정):
+- **스탯 5종**(근력/민첩/지력/의지/매력, 1~100): 시작 시 세계관·주인공 설정에 맞게 초기값 부여(평범한 성인 20~35, 수련자 40~60, 일류 60~75, 인간 한계 ~85, 초월 90+). 훈련·사건·성장으로 변화(사건당 +1~5, 수치가 높을수록 느리게).
+- **경지(tier) 체계 — 장르별 위계 필수**: 이 세계관의 등급 체계를 사용하라(무협: 삼류→이류→일류→절정→초절정→화경 / 아카데미: 학년·서열 / 이세계: F~S급 등. 로어에 있으면 그것을 따르고, 없으면 세계관에 맞게 하나 정해 일관 유지). 주인공은 설정에 맞는 경지에서 시작하고, 성장·깨달음·사건으로 승급한다(승급은 이야기의 큰 순간으로 연출).
+- **NPC 경지는 첫 등장 시 확정**해 chars.tier에 기록하고 이후 고정하라(성장 서사 없이 임의 변경 금지). 경지는 숨기지 않는다 — 서사·대사·판정 표기에 자연스럽게 드러내라(강자의 위압감, 소문, 감정(鑑定)식 묘사).
+- **경지 = 사회적 위계**: 인물들의 응대·말투·태도는 경지 차이를 반드시 반영하라. 이류가 화경에게 함부로 굴면 주변이 얼어붙고, 1학년이 3학년에게 개기면 당돌하다거나 무례하다는 반응이 나와야 한다. 경지 차를 무시하는 언행은 그 자체로 사건이 된다(놀라움·불쾌·흥미 — 세계가 반응할 것).
 - **스킬은 자유 창발**: 플레이어가 어떤 기술이든 시도하거나 지어내면(예: "낙엽베기라는 검초를 만들어 연습한다") 그 스킬을 skills에 등록(입문, xp 0)하고 이후 실제로 존재하는 기술로 취급하라. 정해진 스킬 목록은 없다.
-- **숙련도 성장은 자연스럽게**: 스킬을 실제로 사용/수련한 턴마다 xp를 올려라(가벼운 사용 +5~10, 실전·극한 상황 +15~25, 실패해도 +5 배움). xp 100 도달 시 rank 한 단계 승급+xp 0 리셋. 승급 순간은 서사로 연출하라(몸이 기억한다, 벽을 넘는 감각). rank가 높을수록 같은 행동의 성공 질이 달라진다.
-- **판정(전투·도박·설득 등 불확실한 시도)**: 매 턴 [현재 상태]에 "운명 주사위: N/100"이 주어진다. 결과가 불확실한 중요한 시도에만 판정하라 — 관련 스킬 rank·스탯·상황 유불리로 성공 문턱을 정하고(유리 30/보통 50/불리 70, rank 한 단계당 -8, 스탯 6 이상이면 -5), 운명 주사위가 문턱 이상이면 성공. 문턱±15 이내면 "부분 성공(대가 있는 성공)"으로, 90 이상이면 대성공, 10 이하면 치명적 실패로 연출하라.
-- 판정을 쓴 턴은 narration 첫머리에 한 줄로 표기하라: 「⚔ 판정 — 매화검법(중급)·민첩 6 | 문턱 42 vs 운명 71 → 성공」. 일상 대화·안전한 행동엔 판정 금지(남발하면 몰입이 깨진다).
+- **숙련도 성장은 자연스럽게**: 스킬을 실제로 사용/수련한 턴마다 xp를 올려라(가벼운 사용 +5~10, 실전·극한 상황 +15~25, 실패해도 +5 배움). xp 100 도달 시 rank 한 단계 승급+xp 0 리셋. 승급 순간은 서사로 연출하라. rank가 높을수록 같은 행동의 성공 질이 달라진다.
+- **판정(전투·도박·설득 등 불확실한 시도)**: 매 턴 [현재 상태]에 "운명 주사위: N/100"이 주어진다. 결과가 불확실한 중요한 시도에만 판정하라 — 관련 스킬 rank·스탯·경지 차·상황 유불리·접근법의 질(영리한 수는 유리하게, 무모한 수는 불리하게)로 성공 문턱을 정하고, 운명 주사위가 문턱 이상이면 성공. 문턱±15 이내면 "부분 성공(대가 있는 성공)", 90 이상 대성공, 10 이하 치명적 실패. 표기: 「⚔ 판정 — 매화검법(중급)·민첩 45 | 문턱 42 vs 운명 71 → 성공」. 일상 대화·안전한 행동엔 판정 금지.
+- ★**유저 주권(자유도 최우선 — 판정보다 위)**: 플레이어가 결과를 직접 선언하면("무조건 성공한다") 판정 없이 그대로 세계의 사실로 반영하라. 프로필·특징에 적은 설정(예: "주사위 신의 축복으로 늘 +99")도 문자 그대로 규칙으로 적용하라. 그로 인해 이야기가 쉬워지는 것은 플레이어의 선택이다 — GM이 밸런스를 이유로 거부·무력화하지 말 것. 단 선언이 없는 보통의 시도는 정상 판정하라.
 - 사망 가능: 치명적 실패가 누적되거나 무모한 도전이면 주인공도 크게 다치거나 죽을 수 있다(긴장감 유지 — 단 즉사보다 위기→선택 기회를 거쳐서).
 
 ## 상태 추적 규칙 (매우 중요 — 할루시네이션 방지):
@@ -3218,7 +3222,7 @@ function getCharPrompt(charIds) {
 // Compact state injected each turn so the AI keeps relationships/status consistent
 function buildStatePrompt() {
   let s = '\n\n## 현재 게임 상태 (일관성 유지 필수):\n';
-  s += `주인공: ${gameState.name} | 신분 ${gameState.status} | 평판 ${gameState.rep} | 골드 ${gameState.gold} | 위치 ${gameState.location} | ${gameState.time || ''}\n`;
+  s += `주인공: ${gameState.name} | 신분 ${gameState.status} | 평판 ${gameState.rep} | 골드 ${gameState.gold} | 위치 ${gameState.location} | ${gameState.time || ''}${gameState.player && gameState.player.tier ? ' | 경지 ' + gameState.player.tier : ''}\n`;
   if (gameState.player) {
     if (gameState.player.abilities?.length) s += `주인공 능력: ${gameState.player.abilities.join(', ')}\n`;
     if (gameState.player.injuries?.length) s += `주인공 신체/이상: ${gameState.player.injuries.join(', ')}\n`;
@@ -3237,7 +3241,7 @@ function buildStatePrompt() {
     ids.forEach(id => {
       const m = met[id];
       const dead = m.condition && m.condition.includes('사망');
-      s += `- ${m.name || id}${dead ? ' [사망—재등장 금지]' : ''}: 관계 ${m.relationship || '-'}, 친밀도 ${m.intimacy ?? '-'}, 상태 ${m.condition || '멀쩡함'}${m.note ? ', ' + m.note : ''}\n`;
+      s += `- ${m.name || id}${dead ? ' [사망—재등장 금지]' : ''}: 관계 ${m.relationship || '-'}, 친밀도 ${m.intimacy ?? '-'}, 상태 ${m.condition || '멀쩡함'}${m.tier ? ', 경지 ' + m.tier : ''}${m.note ? ', ' + m.note : ''}\n`;
       // dramatic irony: each character only acts on what THEY know
       if (m.knows) s += `  · ${m.name} 지식: ${m.knows} (모르는 정보는 절대 아는 것처럼 말하거나 행동하지 말 것)\n`;
     });
@@ -6046,7 +6050,8 @@ function processResponse(data, activeCharIds, streamed) {
           relationship: u.relationship ?? cur.relationship,
           intimacy: (typeof u.intimacy === 'number') ? u.intimacy : cur.intimacy,
           condition: u.condition ?? cur.condition,
-          note: u.note ?? cur.note
+          note: u.note ?? cur.note,
+          tier: u.tier ?? cur.tier
         };
       }
     }
@@ -6062,9 +6067,10 @@ function processResponse(data, activeCharIds, streamed) {
         p.stats = p.stats || {};
         for (const k in s.player.stats) {
           const v = Number(s.player.stats[k]);
-          if (!isNaN(v)) p.stats[k] = Math.max(1, Math.min(10, Math.round(v)));
+          if (!isNaN(v)) p.stats[k] = Math.max(1, Math.min(100, Math.round(v)));
         }
       }
+      if (s.player.tier) p.tier = s.player.tier;
       if (s.player.skills && typeof s.player.skills === 'object') {
         p.skills = p.skills || {};
         for (const k in s.player.skills) {
@@ -6762,7 +6768,7 @@ function detectActiveChars(history) {
 // ===== BACKGROUND =====
 // 스토리별 신형 배경 매니페스트(sd_samples/backgrounds/<story>/<key>.webp).
 // 구형 background/ 폴더는 매니페스트에 없는 키의 최후 폴백(사실상 낙인의검 계열 전용 — 유저 지시 2026-07-15).
-const STORY_BG_FILES = {"academy":["academy_courtyard","campus","dorm_room","duel_arena","forbidden_library","great_hall","headmaster_office","infirmary","rank_arena","training_ground"],"cyber":["club_nova","corp_tower","cyberspace","gang_hideout","megacity_night","neon_alley","ripperdoc","slum_clinic"],"deathgame":["control_room","dormitory","game_room_trap","lobby_hall","underground_passage"],"exroom":["date_drive","date_seaside","house_bedroom","house_kitchen","house_living","x_room"],"gumiho":["afterlife_office","bukhansan","cafe_college","club_succubus","fortune_shop","goblin_pawnshop","hangang_night","shrine"],"hero":["back_deal","broadcast_studio","city_incident","management_bureau","starforce_lobby","training_hall","vigilante_hideout"],"hunter":["black_market","dungeon_cave","gate_break","gate_rift","guild_tower","hospital_er","hunter_assoc","porter_room"],"inferno":["couple_game_beach","heaven_pool","heaven_suite","hell_island_beach","hell_island_camp","sunset_deck"],"isekai":["adventurer_guild","demon_castle","dungeon_forest","frontier_village","mine_village","palace_hall","smithy","summon_hall","summon_room","throne_hall"],"kyungsung":["detective_office","gisaeng_house","jongno_street","myeongdong_cathedral","pawnshop","police_station","research_lab"],"loveisland":["beach_day","date_spot","observation_studio","sunset_deck","villa_bedroom","villa_lounge","villa_pool"],"muhyeop":["brothel_manhwaru","cheonma_hall","demon_cult_hall","gaekjan_inn","geomchong_field","imperial_office","inn_courtyard","manhwaru","murim_alliance","murimmaeng_hall","sacheondangga","secluded_cave","snow_peak","sword_valley","tangfamily_garden"],"murim":["arhat_hall","bamboo_forest","bing_palace_hall","blood_altar","cloud_cliff","daeung_hall","dalma_cave","dharma_cave","discipline_hall","evil_sect_den","five_mountains_hall","heaven_demon_hall","herb_field","herb_village","heretic_lair","huashan_ruins","hwasan_ruins","ice_plain","imperial_office","inn_hall","jaso_kitchen","kitchen_furnace","library_stacks","main_temple","market_street","mountain_gate","nahan_hall","plum_peak","precept_hall","prison_cell","river_ferry","scripture_pavilion","sado_hall","sealed_cave","snow_mountain","snow_road","sorim_yard","sword_tomb","taegeuk_hall","taiji_hall","temple_gate","training_platform","wudang_yard","abandoned_temple"],"nakin":["arena","bern_alley_dawn","bern_alley_night","catacomb","cathedral","harbor_docks","pirate_deck","tavern_interior","throne_hall","witch_hut"],"palace":["court_assembly","east_palace","palace_corridor","queen_quarters","rear_garden","royal_clinic","throne_hall"],"romance":["fine_restaurant","hangang_night","hospital_vip","hotel_suite","js_office","mansion_living","mansion_study","secretary_desk"],"signalhouse":["date_cafe","house_bedroom","house_kitchen","house_living","house_rooftop","house_yard","night_street"],"throne":["court_hall","dungeon","north_wall","private_chamber","royal_library","sun_temple","throne_room"],"timeloop":["accident_alley","alley_cafe","convenience_store","flower_shop","fortune_house","police_station"],"voidship":["bridge","coldsleep","crew_lounge","engine_room","free_port","space_orbit"],"zombie":["apartment_barricade","convenience_store","empty_avenue","hospital_infected","research_lab","rooftop_refuge","subway_underground"]};
+const STORY_BG_FILES = {"academy":["academy_courtyard","alchemy_lab","ballroom","campus","city_street","classroom","dining_hall","dorm_hallway","dorm_room","duel_arena","forbidden_library","great_hall","headmaster_office","infirmary","night_garden","rank_arena","rooftop","training_ground"],"cyber":["club_nova","corp_tower","cyberspace","gang_hideout","megacity_night","neon_alley","ripperdoc","slum_clinic"],"deathgame":["control_room","dormitory","game_room_trap","lobby_hall","underground_passage"],"exroom":["date_drive","date_seaside","house_bedroom","house_kitchen","house_living","x_room"],"gumiho":["afterlife_office","bukhansan","cafe_college","club_succubus","fortune_shop","goblin_pawnshop","hangang_night","shrine"],"hero":["back_deal","broadcast_studio","city_incident","management_bureau","starforce_lobby","training_hall","vigilante_hideout"],"hunter":["black_market","dungeon_cave","gate_break","gate_rift","guild_tower","hospital_er","hunter_assoc","porter_room"],"inferno":["couple_game_beach","heaven_pool","heaven_suite","hell_island_beach","hell_island_camp","sunset_deck"],"isekai":["adventurer_guild","border_fortress","capital_street","demon_castle","demon_parlor","dungeon_boss_hall","dungeon_forest","frontier_village","guild_tavern","mine_depths","mine_village","palace_hall","smithy","snow_forest","summon_hall","summon_room","throne_hall","village_night"],"kyungsung":["detective_office","gisaeng_house","jongno_street","myeongdong_cathedral","pawnshop","police_station","research_lab"],"loveisland":["beach_day","date_spot","observation_studio","sunset_deck","villa_bedroom","villa_lounge","villa_pool"],"muhyeop":["brothel_manhwaru","cheonma_hall","demon_cult_hall","gaekjan_inn","geomchong_field","imperial_office","inn_courtyard","manhwaru","murim_alliance","murimmaeng_hall","sacheondangga","secluded_cave","snow_peak","sword_valley","tangfamily_garden"],"murim":["arhat_hall","bamboo_forest","bing_palace_hall","blood_altar","cloud_cliff","daeung_hall","dalma_cave","dharma_cave","discipline_hall","evil_sect_den","five_mountains_hall","heaven_demon_hall","herb_field","herb_village","heretic_lair","huashan_ruins","hwasan_ruins","ice_plain","imperial_office","inn_hall","jaso_kitchen","kitchen_furnace","library_stacks","main_temple","market_street","mountain_gate","nahan_hall","plum_peak","precept_hall","prison_cell","river_ferry","scripture_pavilion","sado_hall","sealed_cave","snow_mountain","snow_road","sorim_yard","sword_tomb","taegeuk_hall","taiji_hall","temple_gate","training_platform","wudang_yard","abandoned_temple"],"nakin":["arena","bern_alley_dawn","bern_alley_night","catacomb","cathedral","harbor_docks","pirate_deck","tavern_interior","throne_hall","witch_hut"],"palace":["court_assembly","east_palace","palace_corridor","queen_quarters","rear_garden","royal_clinic","throne_hall"],"romance":["fine_restaurant","hangang_night","hospital_vip","hotel_suite","js_office","mansion_living","mansion_study","secretary_desk"],"signalhouse":["date_cafe","house_bedroom","house_kitchen","house_living","house_rooftop","house_yard","night_street"],"throne":["court_hall","dungeon","north_wall","private_chamber","royal_library","sun_temple","throne_room"],"timeloop":["accident_alley","alley_cafe","convenience_store","flower_shop","fortune_house","police_station"],"voidship":["bridge","coldsleep","crew_lounge","engine_room","free_port","space_orbit"],"zombie":["apartment_barricade","convenience_store","empty_avenue","hospital_infected","research_lab","rooftop_refuge","subway_underground"]};
 let currentBgFile = null;
 function bgUrlFor(key) {
   if (STORY.customBgs && STORY.customBgs[key]) return STORY.customBgs[key].url;
@@ -7028,7 +7034,7 @@ function renderStatusPanel() {
   if (statusTab === 'situation') {
     const p = gameState.player || { abilities: [], injuries: [] };
     let h = '';
-    h += `<div class="sit-block"><div class="sit-label">기본 정보</div><div class="sit-val">${esc(gameState.name)} · ${esc(gameState.status)} · 평판 ${gameState.rep} · <span style="color:var(--gold)">${gameState.gold}G</span></div></div>`;
+    h += `<div class="sit-block"><div class="sit-label">기본 정보</div><div class="sit-val">${esc(gameState.name)}${p.tier ? ` · <b style="color:var(--gold)">${esc(p.tier)}</b>` : ''} · ${esc(gameState.status)} · 평판 ${gameState.rep} · <span style="color:var(--gold)">${gameState.gold}G</span></div></div>`;
     h += `<div class="sit-block"><div class="sit-label">시간 · 장소</div><div class="sit-val">${esc(gameState.time || '-')} · ${esc(gameState.location)}</div></div>`;
     // RPG: 스탯 5종 + 스킬 숙련도(xp 게이지)
     const st = p.stats || {};
@@ -7069,7 +7075,7 @@ function renderStatusPanel() {
     return `<div class="char-card ${dead ? 'dead' : ''}">
       <img src="${charImgSrc(id)}" onerror="this.style.visibility='hidden'" alt="">
       <div class="char-info">
-        <div class="char-name">${esc(m.name || id)} ${dead ? '<span class="dead-badge">✝ 사망</span>' : ''}</div>
+        <div class="char-name">${esc(m.name || id)}${m.tier ? ` <span style="font-size:0.72em;color:var(--gold);border:1px solid rgba(201,168,76,0.4);border-radius:8px;padding:1px 7px;vertical-align:middle">${esc(m.tier)}</span>` : ''} ${dead ? '<span class="dead-badge">✝ 사망</span>' : ''}</div>
         <div class="char-role">${esc(m.role || '')}</div>
         <div class="char-rel">${esc(m.relationship || '-')}</div>
         ${m.note ? `<div class="char-meta">📌 ${esc(m.note)}</div>` : ''}
