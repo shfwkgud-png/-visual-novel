@@ -802,7 +802,11 @@
     background-position: center;
     background-image: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%);
     z-index: 0;
+    transition: filter 0.6s ease;
   }
+  /* Frontia식 배경 블라인드: 캐릭터가 서 있으면 배경을 블러+딤(인물 집중) */
+  body:has(#charLayer .char-sprite) #bgLayer,
+  body:has(#charLayer .char-sprite) #bgLayerB { filter: blur(6px) brightness(0.78); }
   /* crossfade partner for #bgLayer (background switches fade, not cut) */
   #bgLayerB {
     position: fixed;
@@ -813,7 +817,7 @@
     background-position: center;
     z-index: 0;
     opacity: 0;
-    transition: opacity 0.7s ease;
+    transition: opacity 0.7s ease, filter 0.6s ease;
   }
   #fxFlash {
     position: fixed; inset: 0;
@@ -976,36 +980,33 @@
     /* text lifted well off the bottom (Frontia sits the text in the lower third) */
     padding: 40px 30px calc(116px + env(safe-area-inset-bottom));
   }
+  /* Frontia식 네임플레이트: 흰 이름 + 아래로 길게 뻗는 얇은 룰 */
   #nameplate {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 7px 2px;
+    display: block;
+    width: min(52%, 250px);
+    border-bottom: 1px solid rgba(255,255,255,0.32);
+    padding: 0 2px 8px;
+    margin: 0 0 12px 2px;
   }
   #speakerAvatar { display: none; }
   #speakerName {
-    font-family: 'Noto Serif KR', serif;
-    font-size: 0.9rem;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.95);
+    letter-spacing: 0.03em;
+    font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
   }
-  #speakerName::before {
-    content: '';
-    display: inline-block;
-    width: 12px; height: 1px;
-    background: var(--gold);
-    vertical-align: middle;
-    margin-right: 7px;
-    opacity: 0.7;
+  #nameplate.narrator {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 8px;
   }
   #nameplate.narrator #speakerName {
     color: rgba(220,212,235,0.8);
     font-weight: 400; font-style: italic;
     letter-spacing: 0.1em; font-size: 0.78rem;
   }
-  #nameplate.narrator #speakerName::before { display: none; }
   #dialoguePanel {
     background: none;
     border: none;
@@ -1015,12 +1016,12 @@
     position: relative;
   }
   #dialogueText {
-    font-size: 0.9rem;
-    line-height: 1.7;
-    color: #f8f3ea;
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #ffffff;
     white-space: pre-wrap;
-    letter-spacing: 0.01em;
-    text-shadow: 0 1px 2px #000, 0 1px 5px #000, 0 2px 10px #000, 0 0 18px rgba(0,0,0,0.85);
+    letter-spacing: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.55);
   }
   #dialoguePanel.narration-mode #dialogueText {
     color: #e9e3f2;
@@ -1504,9 +1505,9 @@
      override the base/staging rules above (v55/v56 fixes were dead because a
      height:100% here won). Sizing lives ONLY in the char staging section. */
   @media (max-width: 600px) {
-    #dialogueText { font-size: 0.84rem; line-height: 1.68; }
+    #dialogueText { font-size: 0.95rem; line-height: 1.78; }
     #dialoguePanel { min-height: 78px; }
-    #speakerName { font-size: 0.85rem; }
+    #speakerName { font-size: 0.84rem; }
     .start-btn { width: min(280px, 80vw); }
   }
 
@@ -1849,7 +1850,7 @@
            (⌄⌄✓) to real form fields only — this way it never appears (Frontia). -->
       <div id="userInput" contenteditable="plaintext-only" enterkeyhint="send"
            data-placeholder="(주위를 둘러본다) 또는 대사 입력" onkeydown="handleKey(event)"></div>
-      <button id="sendBtn" onclick="sendMessage()">➤</button>
+      <button id="sendBtn">➤</button>
     </div>
   </div>
 
@@ -3353,7 +3354,42 @@ const BUILTIN_STORIES = {
     characters: MURIM_CHARACTERS,
     protagonist: { name: '하윤', desc: '' },
     initialState: { status: '화산 서고지기', rep: 0, gold: 2, location: '화산 본산 폐허', time: '멸문의 밤', injuries: [] },
-    startBg: 'mountain',
+    // ★무협 전용 신형 배경 32종(sd_samples/backgrounds/murim) — 구형 background/ 폴백 차단
+    customBgs: {
+      sword_tomb:        { url: 'sd_samples/backgrounds/murim/sword_tomb.webp',        label: '검총(검무덤)' },
+      hwasan_ruins:      { url: 'sd_samples/backgrounds/murim/hwasan_ruins.webp',      label: '화산 본산 폐허' },
+      huashan_ruins:     { url: 'sd_samples/backgrounds/murim/huashan_ruins.webp',     label: '화산 폐허(설경)' },
+      plum_peak:         { url: 'sd_samples/backgrounds/murim/plum_peak.webp',         label: '매화봉' },
+      scripture_pavilion:{ url: 'sd_samples/backgrounds/murim/scripture_pavilion.webp',label: '장경각' },
+      library_stacks:    { url: 'sd_samples/backgrounds/murim/library_stacks.webp',    label: '서고 서가' },
+      mountain_gate:     { url: 'sd_samples/backgrounds/murim/mountain_gate.webp',     label: '산문' },
+      snow_mountain:     { url: 'sd_samples/backgrounds/murim/snow_mountain.webp',     label: '설산 능선' },
+      cloud_cliff:       { url: 'sd_samples/backgrounds/murim/cloud_cliff.webp',       label: '운해 절벽' },
+      training_platform: { url: 'sd_samples/backgrounds/murim/training_platform.webp', label: '연무장' },
+      taegeuk_hall:      { url: 'sd_samples/backgrounds/murim/taegeuk_hall.webp',      label: '태극전(무당)' },
+      taiji_hall:        { url: 'sd_samples/backgrounds/murim/taiji_hall.webp',        label: '태극 수련전' },
+      wudang_yard:       { url: 'sd_samples/backgrounds/murim/wudang_yard.webp',       label: '무당 앞마당' },
+      jaso_kitchen:      { url: 'sd_samples/backgrounds/murim/jaso_kitchen.webp',      label: '자소궁 부엌' },
+      kitchen_furnace:   { url: 'sd_samples/backgrounds/murim/kitchen_furnace.webp',   label: '아궁이' },
+      sealed_cave:       { url: 'sd_samples/backgrounds/murim/sealed_cave.webp',       label: '봉인 동굴' },
+      main_temple:       { url: 'sd_samples/backgrounds/murim/main_temple.webp',       label: '소림 대전' },
+      daeung_hall:       { url: 'sd_samples/backgrounds/murim/daeung_hall.webp',       label: '대웅전' },
+      arhat_hall:        { url: 'sd_samples/backgrounds/murim/arhat_hall.webp',        label: '나한당' },
+      nahan_hall:        { url: 'sd_samples/backgrounds/murim/nahan_hall.webp',        label: '나한 수련당' },
+      precept_hall:      { url: 'sd_samples/backgrounds/murim/precept_hall.webp',      label: '계율원' },
+      discipline_hall:   { url: 'sd_samples/backgrounds/murim/discipline_hall.webp',   label: '계율 심문당' },
+      dalma_cave:        { url: 'sd_samples/backgrounds/murim/dalma_cave.webp',        label: '달마동' },
+      dharma_cave:       { url: 'sd_samples/backgrounds/murim/dharma_cave.webp',       label: '면벽 동굴' },
+      temple_gate:       { url: 'sd_samples/backgrounds/murim/temple_gate.webp',       label: '소림 산문' },
+      sorim_yard:        { url: 'sd_samples/backgrounds/murim/sorim_yard.webp',        label: '소림 앞마당' },
+      herb_village:      { url: 'sd_samples/backgrounds/murim/herb_village.webp',      label: '산 아랫마을' },
+      herb_field:        { url: 'sd_samples/backgrounds/murim/herb_field.webp',        label: '약초밭' },
+      five_mountains_hall:{ url: 'sd_samples/backgrounds/murim/five_mountains_hall.webp', label: '오악 회맹전' },
+      imperial_office:   { url: 'sd_samples/backgrounds/murim/imperial_office.webp',   label: '관아' },
+      evil_sect_den:     { url: 'sd_samples/backgrounds/murim/evil_sect_den.webp',     label: '사파 소굴' },
+      heretic_lair:      { url: 'sd_samples/backgrounds/murim/heretic_lair.webp',      label: '마교 거점' },
+    },
+    startBg: 'hwasan_ruins',
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 멸문의 밤, 불타는 화산 본산. 장경각 서고지기 ${n}이(가) 노서고지기의 손에 검총(劍塚)으로 밀어넣어지는 장면으로 시작해줘 — "너는 검을 쓰지 못하니, 검이 너를 쓸 것이다." 검총 각성의 순간과, 폐허에서 살아남은 막내 사매 류앵과의 조우까지. 긴박하고 비장하게.`,
     startPromptText: '멸문의 밤, 불타는 화산. 서고지기 {이름}이(가) 검총에 밀어넣어져 각성하고, 류앵과 함께 폐허를 탈출하는 장면으로 시작해줘.',
     startChars: ['ryuaeng']
@@ -4829,6 +4865,9 @@ const dialogueBox = document.getElementById('dialogueBox');
 const inputBar = document.getElementById('inputBar');
 const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
+// iOS: 키보드 열린 상태서 탭하면 blur→입력바 이동으로 click 유실(두 번 눌러야 전송되던 버그).
+// pointerdown은 blur보다 먼저 발화 + preventDefault로 포커스 유지(키보드 유지한 채 전송).
+sendBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); sendMessage(); });
 const statusPanel = document.getElementById('statusPanel');
 
 // Set nameplate name + avatar based on speaker
