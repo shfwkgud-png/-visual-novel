@@ -2044,12 +2044,22 @@ const ENGINE_RULES_PROMPT = `
     "player": {
       "abilities": ["새로 밝혀지거나 습득한 능력 (예: 중력 제어(초급))"],
       "injuries": ["신체/정신 이슈 (예: 오른손목 낙인, 왼쪽 눈 실명)"],
-      "note": "현재 처한 상황 요약"
+      "note": "현재 처한 상황 요약",
+      "stats": { "근력": 3, "민첩": 3, "지력": 3, "의지": 3, "매력": 3 } (1~10, 변화한 스탯만),
+      "skills": { "스킬명": { "rank": "입문|초급|중급|상급|절정|초월", "xp": 0~100 } } (변화한 스킬만)
     },
     "flags": {}
   },
   "choices": ["선택지1", "선택지2"]
 }
+
+## RPG 규칙 (능력치·스킬 숙련도·판정):
+- **스탯 5종**(근력/민첩/지력/의지/매력, 1~10): 시작 시 세계관·주인공 설정에 맞게 초기값 부여(평범 3, 특징 반영해 ±). 훈련·사건·성장으로만 서서히 변화(한 번에 ±1).
+- **스킬은 자유 창발**: 플레이어가 어떤 기술이든 시도하거나 지어내면(예: "낙엽베기라는 검초를 만들어 연습한다") 그 스킬을 skills에 등록(입문, xp 0)하고 이후 실제로 존재하는 기술로 취급하라. 정해진 스킬 목록은 없다.
+- **숙련도 성장은 자연스럽게**: 스킬을 실제로 사용/수련한 턴마다 xp를 올려라(가벼운 사용 +5~10, 실전·극한 상황 +15~25, 실패해도 +5 배움). xp 100 도달 시 rank 한 단계 승급+xp 0 리셋. 승급 순간은 서사로 연출하라(몸이 기억한다, 벽을 넘는 감각). rank가 높을수록 같은 행동의 성공 질이 달라진다.
+- **판정(전투·도박·설득 등 불확실한 시도)**: 매 턴 [현재 상태]에 "운명 주사위: N/100"이 주어진다. 결과가 불확실한 중요한 시도에만 판정하라 — 관련 스킬 rank·스탯·상황 유불리로 성공 문턱을 정하고(유리 30/보통 50/불리 70, rank 한 단계당 -8, 스탯 6 이상이면 -5), 운명 주사위가 문턱 이상이면 성공. 문턱±15 이내면 "부분 성공(대가 있는 성공)"으로, 90 이상이면 대성공, 10 이하면 치명적 실패로 연출하라.
+- 판정을 쓴 턴은 narration 첫머리에 한 줄로 표기하라: 「⚔ 판정 — 매화검법(중급)·민첩 6 | 문턱 42 vs 운명 71 → 성공」. 일상 대화·안전한 행동엔 판정 금지(남발하면 몰입이 깨진다).
+- 사망 가능: 치명적 실패가 누적되거나 무모한 도전이면 주인공도 크게 다치거나 죽을 수 있다(긴장감 유지 — 단 즉사보다 위기→선택 기회를 거쳐서).
 
 ## 상태 추적 규칙 (매우 중요 — 할루시네이션 방지):
 - **캐릭터 관계·상태는 절대 임의로 뒤집지 말 것.** 이미 "A와 B는 아는 사이"라고 정해졌으면 그 관계를 유지. 갑자기 처음 보는 사이처럼 굴게 하지 말 것. 아래 [현재 상태] 정보를 반드시 참고해 일관성 유지
@@ -3213,7 +3223,13 @@ function buildStatePrompt() {
     if (gameState.player.abilities?.length) s += `주인공 능력: ${gameState.player.abilities.join(', ')}\n`;
     if (gameState.player.injuries?.length) s += `주인공 신체/이상: ${gameState.player.injuries.join(', ')}\n`;
     if (gameState.player.note) s += `주인공 상황: ${gameState.player.note}\n`;
+    const st = gameState.player.stats;
+    if (st && Object.keys(st).length) s += `주인공 스탯: ${Object.entries(st).map(([k,v])=>`${k} ${v}`).join(' · ')}\n`;
+    const sk = gameState.player.skills;
+    if (sk && Object.keys(sk).length) s += `주인공 스킬: ${Object.entries(sk).map(([k,v])=>`${k}(${v.rank}, xp ${v.xp})`).join(', ')}\n`;
   }
+  // 판정용 운명 주사위 — 앱이 굴린 진짜 난수(GM 임의 조작 방지). 유저 턴마다 갱신
+  s += `운명 주사위: ${window._fateRoll || (window._fateRoll = 1 + Math.floor(Math.random() * 100))}/100\n`;
   const met = gameState.metChars || {};
   const ids = Object.keys(met);
   if (ids.length) {
@@ -6041,6 +6057,23 @@ function processResponse(data, activeCharIds, streamed) {
       if (Array.isArray(s.player.abilities)) addUniq(p.abilities, s.player.abilities);
       if (Array.isArray(s.player.injuries)) addUniq(p.injuries, s.player.injuries);
       if (s.player.note) p.note = s.player.note;
+      // RPG: 스탯(1~10 클램프)·스킬(rank/xp) 부분 머지
+      if (s.player.stats && typeof s.player.stats === 'object') {
+        p.stats = p.stats || {};
+        for (const k in s.player.stats) {
+          const v = Number(s.player.stats[k]);
+          if (!isNaN(v)) p.stats[k] = Math.max(1, Math.min(10, Math.round(v)));
+        }
+      }
+      if (s.player.skills && typeof s.player.skills === 'object') {
+        p.skills = p.skills || {};
+        for (const k in s.player.skills) {
+          const u = s.player.skills[k] || {};
+          const cur = p.skills[k] || {};
+          p.skills[k] = { rank: u.rank || cur.rank || '입문',
+                          xp: Math.max(0, Math.min(100, Number(u.xp ?? cur.xp ?? 0) || 0)) };
+        }
+      }
     }
     updateStatusUI();
   }
@@ -6676,6 +6709,7 @@ async function handlePlayerInput(text) {
   }
   dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null });
   gameHistory.push({ role: 'user', content: text });
+  window._fateRoll = null;           // 새 유저 턴 = 운명 주사위 재굴림
   window._pendingPlayerLine = text;  // shown verbatim as the first line of the next response
   window._genText = text;            // shown in the generation pill while the AI writes
   autoSave();
@@ -6996,6 +7030,23 @@ function renderStatusPanel() {
     let h = '';
     h += `<div class="sit-block"><div class="sit-label">기본 정보</div><div class="sit-val">${esc(gameState.name)} · ${esc(gameState.status)} · 평판 ${gameState.rep} · <span style="color:var(--gold)">${gameState.gold}G</span></div></div>`;
     h += `<div class="sit-block"><div class="sit-label">시간 · 장소</div><div class="sit-val">${esc(gameState.time || '-')} · ${esc(gameState.location)}</div></div>`;
+    // RPG: 스탯 5종 + 스킬 숙련도(xp 게이지)
+    const st = p.stats || {};
+    if (Object.keys(st).length) {
+      h += `<div class="sit-block"><div class="sit-label">능력치</div><div class="sit-val">` +
+        Object.entries(st).map(([k, v]) =>
+          `<span style="display:inline-block;margin:2px 10px 2px 0">${esc(k)} <b style="color:var(--gold)">${v}</b><span style="opacity:0.45">/10</span></span>`).join('') +
+        `</div></div>`;
+    }
+    const sk = p.skills || {};
+    if (Object.keys(sk).length) {
+      h += `<div class="sit-block"><div class="sit-label">스킬 · 숙련도</div>` +
+        Object.entries(sk).map(([k, v]) => {
+          const xp = Math.max(0, Math.min(100, v.xp || 0));
+          return `<div style="margin:6px 0"><span class="sit-val">${esc(k)} <span style="color:var(--gold)">${esc(v.rank || '입문')}</span></span>` +
+            `<div class="intimacy-bar" style="margin-top:3px"><div class="intimacy-fill" style="width:${xp}%"></div></div></div>`;
+        }).join('') + `</div>`;
+    }
     h += `<div class="sit-block"><div class="sit-label">능력</div><div>${(p.abilities && p.abilities.length) ? p.abilities.map(a => `<span class="sit-tag">${esc(a)}</span>`).join('') : '<span class="char-meta">아직 없음</span>'}</div></div>`;
     h += `<div class="sit-block"><div class="sit-label">신체 · 상태</div><div>${(p.injuries && p.injuries.length) ? p.injuries.map(a => `<span class="sit-tag injury">${esc(a)}</span>`).join('') : '<span class="char-meta">멀쩡함</span>'}</div></div>`;
     if (p.note) h += `<div class="sit-block"><div class="sit-label">현재 상황</div><div class="sit-val">${esc(p.note)}</div></div>`;
