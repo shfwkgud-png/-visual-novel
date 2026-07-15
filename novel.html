@@ -17,6 +17,7 @@
 <title>PANDORA — AI Chatbot Universe</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500&family=Cinzel:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap');
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
   :root {
     --bg: #0a0a0f;
@@ -790,8 +791,6 @@
     object-fit: cover; object-position: center;
     z-index: 2; display: none; pointer-events: none; background: #000;
   }
-  #eventCG.cg-show { animation: cgIn 350ms ease-out; }
-  @keyframes cgIn { from { opacity: 0; } to { opacity: 1; } }
   body.cg-active .char-sprite { visibility: hidden; }
   #bgLayer {
     position: fixed;
@@ -968,45 +967,45 @@
     /* Frontia-style scrim: character's lower body clearly darkens toward the
        bottom (this layer is z3, ABOVE the character z2), so the dialogue text
        sits on a strong dark backdrop (easy on the eyes). */
+    /* 하단은 거의 불투명하게 — 스프라이트(카우보이샷) 하단 절단선을 스크림이 가림
+       (구 검은바 역할, Frontia도 하단 근불투명 스크림) */
     background: linear-gradient(to top,
-      rgba(6,6,12,0.8) 0%,
-      rgba(6,6,12,0.7) 18%,
-      rgba(6,6,12,0.48) 34%,
-      rgba(6,6,12,0.24) 50%,
-      rgba(6,6,12,0.07) 64%,
-      transparent 74%);
+      rgba(6,6,12,0.97) 0%,
+      rgba(6,6,12,0.95) 14%,
+      rgba(6,6,12,0.85) 26%,
+      rgba(6,6,12,0.55) 40%,
+      rgba(6,6,12,0.25) 54%,
+      rgba(6,6,12,0.07) 66%,
+      transparent 76%);
   }
   #dialogueContent {
-    /* text lifted well off the bottom (Frontia sits the text in the lower third) */
-    padding: 40px 30px calc(116px + env(safe-area-inset-bottom));
+    /* ★Frontia 구조: 대사 블록이 화면 56% 지점에 "상단 고정" — 텍스트가 길어지면
+       아래로 자라난다(기존 bottom-anchor는 위로 자라 위치가 널뛰었음) */
+    position: absolute;
+    top: 56%;
+    left: 0; right: 0;
+    padding: 0 26px;
+    max-height: calc(44% - calc(96px + env(safe-area-inset-bottom)));
+    overflow: hidden;
   }
-  /* Frontia식 네임플레이트: 흰 이름 + 아래로 길게 뻗는 얇은 룰 */
+  /* Frontia 네임플레이트: 작은 흰 이름 + 이름폭보다 살짝 긴 얇은 룰 */
   #nameplate {
-    display: block;
-    width: min(52%, 250px);
-    border-bottom: 1px solid rgba(255,255,255,0.32);
-    padding: 0 2px 8px;
-    margin: 0 0 12px 2px;
+    display: table;             /* fit-content — 룰이 이름 폭+여유만큼만 */
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+    padding: 0 34px 7px 2px;
+    margin: 0 0 13px 6px;
   }
   #speakerAvatar { display: none; }
   #speakerName {
-    font-family: 'Noto Sans KR', sans-serif;
-    font-size: 0.88rem;
-    color: rgba(255,255,255,0.95);
-    letter-spacing: 0.03em;
+    font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.92);
+    letter-spacing: 0.01em;
     font-weight: 500;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   }
-  #nameplate.narrator {
-    border-bottom: none;
-    padding-bottom: 0;
-    margin-bottom: 8px;
-  }
-  #nameplate.narrator #speakerName {
-    color: rgba(220,212,235,0.8);
-    font-weight: 400; font-style: italic;
-    letter-spacing: 0.1em; font-size: 0.78rem;
-  }
+  /* 나레이션: 이름표 자체를 숨김(Frontia — "나레이터" 라벨 불필요, 텍스트만) */
+  #nameplate.narrator { display: none; }
   #dialoguePanel {
     background: none;
     border: none;
@@ -1016,16 +1015,18 @@
     position: relative;
   }
   #dialogueText {
-    font-size: 1rem;
-    line-height: 1.8;
+    font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
+    font-size: 1.04rem;
+    font-weight: 400;
+    line-height: 1.72;
     color: #ffffff;
     white-space: pre-wrap;
-    letter-spacing: 0;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.75), 0 2px 12px rgba(0,0,0,0.55);
+    letter-spacing: -0.01em;
+    padding-left: 6px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
   }
   #dialoguePanel.narration-mode #dialogueText {
-    color: #e9e3f2;
-    font-style: italic;
+    color: rgba(240,238,245,0.96);
   }
   #continueHint {
     position: absolute;
@@ -1347,11 +1348,7 @@
     display: none;
     flex-direction: column;
   }
-  #statusPanel.visible { display: flex; animation: panelIn 200ms cubic-bezier(0.23, 1, 0.32, 1); }
-  @keyframes panelIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+  #statusPanel.visible { display: flex; }
   #statusHeader {
     display: flex; align-items: center; gap: 10px;
     padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
@@ -1408,18 +1405,6 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.8);
   }
   .choice-btn:active { transform: scale(0.985); background: rgba(40,32,56,0.6); }
-  /* 선택지 스태거 등장 — 위→아래 40ms 간격 캐스케이드 */
-  .choice-btn { animation: choiceIn 240ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
-  .choice-btn:nth-child(1) { animation-delay: 0ms; }
-  .choice-btn:nth-child(2) { animation-delay: 40ms; }
-  .choice-btn:nth-child(3) { animation-delay: 80ms; }
-  .choice-btn:nth-child(4) { animation-delay: 120ms; }
-  .choice-btn:nth-child(5) { animation-delay: 160ms; }
-  .choice-btn:nth-child(6) { animation-delay: 200ms; }
-  @keyframes choiceIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
   @media (hover: hover) and (pointer: fine) {
     .choice-btn:hover { border-color: rgba(201,168,76,0.55); }
   }
@@ -1505,9 +1490,9 @@
      override the base/staging rules above (v55/v56 fixes were dead because a
      height:100% here won). Sizing lives ONLY in the char staging section. */
   @media (max-width: 600px) {
-    #dialogueText { font-size: 0.95rem; line-height: 1.78; }
+    #dialogueText { font-size: 0.99rem; line-height: 1.7; }
     #dialoguePanel { min-height: 78px; }
-    #speakerName { font-size: 0.84rem; }
+    #speakerName { font-size: 0.82rem; }
     .start-btn { width: min(280px, 80vw); }
   }
 
@@ -1515,13 +1500,6 @@
     #dialoguePanel { min-height: 64px; }
   }
 
-  /* 접근성: 모션 최소화 — 장식 애니메이션(큐브·궤도·흔들림FX)만 즉시완료, 짧은 transition은 유지 */
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-    }
-  }
 </style>
 </head>
 <body>
@@ -2012,6 +1990,7 @@ const ENGINE_RULES_PROMPT = `
 - 장면을 오감으로 생생하게 묘사하되, 끊기지 않고 자연스럽게 이어지는 흐름을 만들 것
 - **장면에 등장인물이 있으면 반드시 그들의 대사로 반응할 것.** 플레이어가 누군가에게 말을 걸거나 행동을 취하면, 그 상대는 반드시 대사(dialogue)로 응답해야 함. 나레이션으로만 때우지 말 것
 - 나레이션만으로 응답을 끝내지 말 것. 등장인물이 없는 장면이면 주인공의 생생한 내면 독백/심경을 주인공 이름 speaker(char_id null)로 넣어 살아있게 만들 것
+- ★**narration에 인물의 대사를 절대 넣지 말 것**(따옴표 대화 금지). 누군가 입을 열면 그 말은 반드시 dialogue 배열의 해당 인물 항목으로. narration은 순수한 상황·감각·분위기 묘사 전용
 - 대사에는 감정·말투·개성을 담아 인물이 살아있게. 영혼 없는 단답·요약 금지
 - 매 응답은 이야기를 한 걸음 진전시키되, 플레이어가 다음에 행동/대사할 여지를 남기고 끝낼 것
 - **choices 두 개는 질적으로 다른 방향일 것** (예: 안전vs위험, 이성vs감정, 정면돌파vs우회, 진실vs거짓말). 서로 비슷하거나 밋밋한 예/아니오 쌍 금지 — 선택이 갈림길처럼 느껴져야 함
@@ -2032,6 +2011,7 @@ const ENGINE_RULES_PROMPT = `
   "background": "배경 그룹명 (아래 목록에서 선택, 장면 변화 없으면 null)",
   "mood": "장면의 분위기 음악 키: calm|tension|battle|romance|sad|mystery|none 중 하나 (분위기 변화가 있을 때만, 없으면 null)",
   "ending": "엔딩 조건이 충족되어 이야기가 결말에 도달한 경우에만 그 엔딩 제목. 평소엔 반드시 null",
+  "cg": "여캐와의 성적 장면이 실제로 진행 중일 때만 '캐릭터ID/씬키' (예: 'f106/missionary_pov'). 장면이 끝나면 반드시 null(자동으로 숨겨짐)",
   "state_update": {
     "rep": 숫자 변화량 (없으면 0),
     "gold": 숫자 변화량 (없으면 0),
@@ -2075,6 +2055,11 @@ const ENGINE_RULES_PROMPT = `
 - **친밀도 구간별 태도 (일관성 유지)**: 0~20 경계/형식적 → 21~40 호감/사적 대화 허용 → 41~60 신뢰/비밀 일부 공유 → 61~80 애정/독점욕·스킨십 → 81+ 연인/무조건적 내 편. 구간이 바뀔 때(특히 40·70 돌파 시) 그 캐릭터의 **개인 이벤트**(과거 고백, 단둘의 사건, 관계를 정의하는 순간)를 한 번 발동시킬 것
 - **비밀 공개 추적**: [GM 전용 비밀]이 한 단계 열릴 때마다 state_update.flags에 기록할 것 (예: {"비밀_왕의독살": "단서"} → "의심" → "확증"). 이미 확증된 비밀을 다시 처음처럼 풀지 말 것
 - **타임라인 발동**: 스토리에 [숨은 타임라인]이 있으면 상태의 시간(time/일차)을 기준으로 제때 발동시킬 것. 시간이 그 지점을 지나면 그 사건은 일어난 것이다 — 세계는 플레이어를 기다려주지 않는다 (발동한 사건도 flags에 기록). ★단 타임라인은 운명이 아니라 "개입 없을 때의 기본값"이다: 플레이어가 사전에 개입했다면 사건은 막히거나·약화되거나·형태가 바뀌거나·앞당겨질 수 있음 (Yes-But로 반영). 발동된 사건에 어떻게 반응할지도 전적으로 플레이어의 자유 — 무시하면 무시한 결과가 쌓일 뿐, 특정 행동을 강요하지 말 것
+
+## 이벤트 CG 규칙 (cg 필드 — 성인 장면 연출):
+- 여캐와의 성적 장면이 무르익으면 cg에 "여캐ID/씬키"를 실어라 (여캐 ID만 — 주인공·남캐 ID 금지). 행위 진행에 따라 씬키를 바꿔도 된다(전희→삽입→절정). 장면이 끝나거나 장소가 바뀌면 반드시 null.
+- 씬키(행위에 맞는 것 선택): missionary_pov, missionary_side, missionary_close, cowgirl_front, cowgirl_povup, cowgirl_povdown, cowgirl_creampie, reverse_cow_pov, reverse_cow_side, doggy_pov, doggy_side, doggy_front, prone_bone, mating_press_pov, mating_press_sd, standing_behind, wall_front, spooning, chair_sex, suspended, full_nelson, sixtynine, bound_sex, fellatio_pov, fellatio_side, deepthroat, paizuri_pov, paizuri_side, titfuck_cum, titfuck_facial, handjob_pov, handjob_cum, footjob, footjob_cum, thigh_cum, cunnilingus, facesitting, facial, facial_heavy, bukkake, gokkun, cum_in_mouth, cum_on_tongue, cum_on_breasts, cum_on_ass, cum_inside_pov, creampie_drip, cum_covered, cum_walk, ahegao_fucked, ahegao_depraved, double_peace_ahegao, exhib_flash / 솔로(자위·유혹·샤워 등): s_stand, s_spread, s_fingering, s_dildo, s_kneel, s_ass, s_allfours, s_sit_spread, s_onside, s_squat, s_wall, s_selffondle, s_spreadpussy, s_frontassup, s_lingerie, s_shower, s_bed_invite, s_ahegao_solo
+- CG가 표시되는 동안에도 dialogue로 신음·대사·묘사를 계속 진행하라.
 
 ## 배경 그룹 (background 필드에 아래 키만 사용):
 도시: alley(골목), coastal_port(항구/부두), coastal_market(시장), coastal_tavern(술집), coastal_workshop(공방), bakery(빵집), fairground(축제장), barracks(막사)
@@ -4909,12 +4894,11 @@ function setNameplate(name, charId) {
       this.src = `character/25_full/f_${num}_1.webp`;
     };
     avatarEl.src = `character/25_upper/${num}_1.webp`;
-    nameplate.classList.remove('narrator');
-    dialoguePanel.classList.remove('narration-mode');
-  } else {
-    nameplate.classList.add('narrator');
-    dialoguePanel.classList.add('narration-mode');
   }
+  // 나레이션(이름 없음/나레이터)만 이름표 숨김 — 주인공 이름은 표시(Frontia)
+  const isNarr = !name || name === '나레이터' || name === '···';
+  nameplate.classList.toggle('narrator', isNarr);
+  dialoguePanel.classList.toggle('narration-mode', isNarr);
 }
 
 let dialogueQueue = [];
@@ -5038,6 +5022,13 @@ function startGame(isContinue) {
     };
     gameHistory = []; storySummary = ''; summaryIndex = 0; turnCount = 0;
     dialogueLog = []; lastBg = null;
+    // ★스토리 전환 잔재 완전 청소(이전 작품 대사/스프라이트/CG가 새 작품에 뜨던 버그)
+    dialogueQueue = []; window._pendingDialogues = null; window._pendingChoices = null;
+    window._pendingPlayerLine = null; window._present = null; historyMode = false;
+    charLayer.innerHTML = ''; shownSprites = []; charLayer.dataset.count = '0';
+    hideEventCG(); currentBgFile = null;
+    const oldCb = document.getElementById('choiceBox'); if (oldCb) oldCb.remove();
+    dialogueText.innerHTML = ''; speakerNameEl.textContent = '';
   }
 
   document.getElementById('gameScreen').style.display = 'flex';
@@ -5097,7 +5088,7 @@ const START_FLOW = `
 1) 이번 첫 응답은 "프롤로그"다. 위 시작 장면을 주인공 이름 없이("그대", 직책 등으로 지칭) 분위기 있게 압축 연출하고, 마지막에 choices 필드로 정확히 이 두 개만 제시하라: ["📖 스토리 모드 — 정해진 서사를 따라 깊게 몰입한다", "🕊️ 자유 모드 — 이 세계에서 내 마음대로 살아간다"].
 2) 유저가 모드를 고르면: 그 모드를 기억하고, "캐릭터 설정을 입력해 주세요. 형식: 이름/나이/성별/특징 (예: 하윤/20살/남자/검근 없는 서고지기)" 라고 요청하라. 이때 choices는 비워라.
 3) [캐릭터 설정 확정] 메시지를 받으면 그 이름·나이·성별·특징을 주인공에게 영구 반영하라. 특징은 외모·평판·능력에 실제로 영향을 줘야 한다(예: "못생김"이면 NPC 반응에 반영).
-   - 스토리 모드였다면: 곧바로 본편 첫 장면(원작 시작점)을 시작하라.
+   - 스토리 모드였다면: 곧바로 본편을 시작하되, ★프롤로그에서 이미 연출한 장면을 다시 반복하지 말고 그 직후 순간부터 이어가라.
    - 자유 모드였다면: 본편을 시작하기 전에 "어디서, 누구로 시작할까요?"를 물으며 choices로 이 세계관에 어울리는 서로 다른 시작 상황 3개를 제시하라(예: 원작 시작점 그대로 / 전혀 다른 신분·직업·지역 2종 — 세계관 세력·장소를 활용해 구체적으로). 마지막 선택지는 "✍️ 직접 정하기 — 원하는 시작을 자유롭게 입력"으로 하라. 유저가 고르거나 입력한 시작 상황을 그대로 본편 첫 장면으로 연출하고, 상태(신분·위치·소지금)도 그에 맞게 갱신하라.
 4) 이후 진행: 스토리 모드면 메인 서사를 적극 전개하되 선택지는 항상 의미 있게, 자유 모드면 유저의 행동 자유를 최우선하고 메인 서사(원작 사건들)는 유저가 개입하지 않아도 세계 뒤편에서 시간순으로 흘러가게 하라(소문·뉴스·NPC 대화로 전해짐).`;
 
@@ -6218,9 +6209,13 @@ function ensureSprite(charId) {
       this.onerror = function() { removeBrokenSprite(charId, this); };
     };
   }
+  // ★등장은 순수 페이드만 — 삽입 직후 transform 전환을 잠가 옆에서 미끄러져
+  // 들어오는(--tx 슬라이드) 연출 차단. 등장 후엔 원복(발화자 이동 글라이드 유지)
+  img.style.transition = 'opacity 0.5s ease, filter 0.4s ease';
   charLayer.appendChild(img);
   charLayer.dataset.count = String(Math.min(4, shownSprites.length));
   setTimeout(() => img.classList.add('visible'), 30);
+  setTimeout(() => { img.style.transition = ''; }, 700);
 }
 
 // A sprite whose image fails to load must not keep a layout slot — it would
@@ -6587,9 +6582,16 @@ function historyForward() {
 function renderHistoryEntry() {
   const entry = dialogueLog[historyPos];
   if (!entry) return;
-  // Restore the full scene at this moment: background, sprites, expression
-  if (entry.bgFile) setBgFile(entry.bgFile);
-  if (entry.sprites) rebuildSprites(entry.sprites, entry.char_id, entry.emotion, entry.pose);
+  // Restore the full scene at this moment: background, sprites, expression.
+  // ★플레이어 대사 등 sprites/bgFile 기록이 없는 항목은 "가장 가까운 이전 기록"을
+  // 계승(없으면 캐릭터가 통째로 사라지던 버그 수정)
+  let bgFile = entry.bgFile, sprites = entry.sprites;
+  for (let i = historyPos - 1; i >= 0 && (!bgFile || !sprites); i--) {
+    if (!bgFile && dialogueLog[i].bgFile) bgFile = dialogueLog[i].bgFile;
+    if (!sprites && dialogueLog[i].sprites) sprites = dialogueLog[i].sprites;
+  }
+  if (bgFile) setBgFile(bgFile);
+  if (sprites) rebuildSprites(sprites, entry.char_id, entry.emotion, entry.pose);
   setNameplate(entry.isPlayer ? (entry.speaker || playerName) : entry.speaker, entry.char_id);
   dialogueText.textContent = entry.text;
   const hint = document.getElementById('continueHint');
@@ -6816,7 +6818,6 @@ function showEventCG(name) {
   currentCG = name;
   const e = document.getElementById('eventCG');
   e.onerror = () => { e.style.display = 'none'; document.body.classList.remove('cg-active'); }; // missing asset → safe fallback
-  e.onload = () => { e.classList.remove('cg-show'); void e.offsetWidth; e.classList.add('cg-show'); }; // 로드 완료 시 페이드인(로딩 중 검은 화면 페이드 방지)
   e.src = cgUrlFor(name);
   e.style.display = 'block';
   document.body.classList.add('cg-active');
@@ -6832,7 +6833,14 @@ function hideEventCG() {
 
 function setBg(name) {
   const sb = STORY_BG_FILES[STORY.id];
-  const key = ((STORY.customBgs && STORY.customBgs[name]) || (sb && sb.includes(name))) ? name : pickBg(name);
+  let key;
+  if ((STORY.customBgs && STORY.customBgs[name]) || (sb && sb.includes(name))) key = name;
+  else if (sb) {
+    // ★신형 배경이 배선된 스토리는 구배경 폴백 절대 금지(유저 지시) —
+    // 무효 키는 무시(현재 배경 유지), 첫 화면이면 startBg로
+    if (currentBgFile) return;
+    key = (STORY.startBg && (sb.includes(STORY.startBg) || (STORY.customBgs && STORY.customBgs[STORY.startBg]))) ? STORY.startBg : sb[0];
+  } else key = pickBg(name);
   if (key === currentBgFile) return;
   currentBgFile = key;
   crossfadeBg(bgUrlFor(key));
@@ -6840,6 +6848,9 @@ function setBg(name) {
 // Restore an exact background file (for history scrubbing)
 function setBgFile(file) {
   if (!file || file === currentBgFile) return;
+  const sb = STORY_BG_FILES[STORY.id];
+  // 구세이브 기록의 구배경 파일도 차단(신형 배선 스토리)
+  if (sb && !sb.includes(file) && !(STORY.customBgs && STORY.customBgs[file])) return;
   currentBgFile = file;
   crossfadeBg(bgUrlFor(file));
 }
