@@ -739,6 +739,13 @@
     font-family: 'Noto Sans KR', sans-serif;
   }
   #nimUrlInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+  #nimModelSel {
+    background: var(--panel); border: 1px solid rgba(201,168,76,0.3); color: var(--text);
+    padding: 13px 18px; border-radius: 24px; width: min(360px, 85vw);
+    font-size: 0.82rem; outline: none; text-align: center;
+    font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+  }
+  #nimModelSel:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
   #apiKeyInput {
     background: var(--panel);
     border: 1px solid rgba(201,168,76,0.3);
@@ -1725,11 +1732,16 @@
     <h1>AI 연결 설정</h1>
     <div id="providerRow">
       <button type="button" class="prov-btn active" id="provGemini" onclick="setProvider('gemini')">Gemini</button>
-      <button type="button" class="prov-btn" id="provNim" onclick="setProvider('nim')">Mistral 675B</button>
+      <button type="button" class="prov-btn" id="provNim" onclick="setProvider('nim')">NIM</button>
     </div>
     <p id="provHint">Gemini API 키를 입력하세요</p>
     <input type="password" id="apiKeyInput" placeholder="AIza...">
     <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
+    <select id="nimModelSel" style="display:none">
+      <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B (현재 작동)</option>
+      <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B (엔드포인트 복구 시)</option>
+      <option value="mistralai/mistral-large-3-675b-instruct-2512">Mistral Large 3 675B (엔드포인트 복구 시)</option>
+    </select>
 
     <button class="start-btn" onclick="saveSettings()">저장</button>
     <button id="settingsCloseBtn" onclick="closeSettings()">닫기</button>
@@ -1885,7 +1897,7 @@ let playerName = '카이든';
 let playerDesc = '';
 let PROVIDER = 'gemini';   // 'gemini' | 'nim'
 let NIM_URL = 'https://aichat.pasokong99.workers.dev';
-let NIM_MODEL = 'mistralai/mistral-large-3-675b-instruct-2512';
+let NIM_MODEL = 'meta/llama-3.1-70b-instruct';   // 기본 활성(2026-07-16 mistral-large-3-675b 엔드포인트 회수). 설정에서 675B 선택 가능(복구 시)
 
 const SUMMARY_INTERVAL = 8;
 const CONTEXT_RECENT = 8;
@@ -3948,8 +3960,11 @@ function closeSettings() {
 }
 function saveSettings() {
   if (PROVIDER === 'gemini') API_KEY = document.getElementById('apiKeyInput').value.trim();
-  else NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
-  try { localStorage.setItem('vn_cfg', JSON.stringify({ provider: PROVIDER, nimUrl: NIM_URL, apiKey: API_KEY })); } catch {}
+  else {
+    NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
+    NIM_MODEL = document.getElementById('nimModelSel').value || NIM_MODEL;
+  }
+  try { localStorage.setItem('vn_cfg', JSON.stringify({ provider: PROVIDER, nimUrl: NIM_URL, nimModel: NIM_MODEL, apiKey: API_KEY })); } catch {}
   closeSettings();
 }
 
@@ -4225,6 +4240,7 @@ async function restoreAll() {
       localStorage.setItem('vn_cfg', typeof cfg === 'string' ? cfg : JSON.stringify(cfg));
       if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
+      if (cfg.nimModel) NIM_MODEL = cfg.nimModel;
       if (cfg.provider) setProvider(cfg.provider);
       n++;
     }
@@ -5030,6 +5046,7 @@ function deleteSave() {
     if (cfg) {
       if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
+      if (cfg.nimModel) NIM_MODEL = cfg.nimModel;
       if (cfg.provider) setProvider(cfg.provider);
     }
   } catch {}
@@ -5059,12 +5076,14 @@ function setProvider(p) {
   document.getElementById('provNim').classList.toggle('active', p === 'nim');
   document.getElementById('apiKeyInput').style.display = p === 'gemini' ? 'block' : 'none';
   document.getElementById('nimUrlInput').style.display = p === 'nim' ? 'block' : 'none';
+  document.getElementById('nimModelSel').style.display = p === 'nim' ? 'block' : 'none';
   document.getElementById('provHint').textContent = p === 'gemini'
     ? 'Gemini API 키를 입력하세요'
-    : 'Mistral 675B (NVIDIA) — Worker 주소 확인';
+    : 'NVIDIA NIM — 모델 선택 + Worker 주소 확인';
   if (p === 'nim' && !document.getElementById('nimUrlInput').value) {
     document.getElementById('nimUrlInput').value = NIM_URL;
   }
+  if (p === 'nim') document.getElementById('nimModelSel').value = NIM_MODEL;
 }
 
 // ===== START =====
