@@ -1899,8 +1899,7 @@ let playerName = '카이든';
 let playerDesc = '';
 let PROVIDER = 'gemini';   // 'gemini' | 'nim'
 let NIM_URL = 'https://aichat.pasokong99.workers.dev';
-let NIM_MODEL = 'meta/llama-3.1-70b-instruct';   // 기본 활성(2026-07-16 mistral-large-3-675b 엔드포인트 회수). 설정에서 675B 선택 가능(복구 시)
-const NIM_FALLBACK_MODEL = 'meta/llama-3.1-70b-instruct';   // 선택 모델(3.3/675)이 죽었을 때 자동으로 받는 라이브 모델
+let NIM_MODEL = 'meta/llama-3.1-70b-instruct';   // 기본 활성. 설정 드롭다운에서 선택(deepseek-v4-pro 등). 폴백 없음
 
 const SUMMARY_INTERVAL = 8;
 const CONTEXT_RECENT = 8;
@@ -5806,9 +5805,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
 // NVIDIA NIM (via Cloudflare Worker proxy) — OpenAI-compatible, streaming required
 async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onChunk = null, model = NIM_MODEL) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120000);
-  // 죽은 엔드포인트(첫 토큰 무응답)를 빨리 감지 → 폴백이 즉시 받게 22초 컷
-  let firstTimer = setTimeout(() => controller.abort(), 22000);
+  const timeout = setTimeout(() => controller.abort(), 120000);   // 폴백 없음: 큐로 느려도 최대 120초 대기
   const oai = [{ role: 'system', content: systemContent }];
   messages.forEach(m => oai.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }));
   try {
@@ -5848,7 +5845,6 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
           const j = JSON.parse(payload);
           const dc = j.choices?.[0]?.delta?.content;
           if (dc) {
-            if (firstTimer) { clearTimeout(firstTimer); firstTimer = null; }   // 첫 토큰 도착 → 죽음 컷 해제
             full += dc;
             if (onChunk) { try { onChunk(full); } catch {} }
           }
@@ -5860,7 +5856,6 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
   } finally {
     clearTimeout(timeout);
-    if (firstTimer) clearTimeout(firstTimer);
   }
 }
 
@@ -5979,14 +5974,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   try {
     let result;
     if (PROVIDER === 'nim') {
-      // 선택 모델(3.3/675 등)이 이번 세션에 이미 죽은 걸로 확인됐으면 곧장 라이브 모델로
-      const primary = (window._nimPrimaryDown && NIM_MODEL !== NIM_FALLBACK_MODEL) ? NIM_FALLBACK_MODEL : NIM_MODEL;
-      result = await fetchNim(systemContent, messages, 0.7, 2000, onChunk, primary);
-      // 선택 모델이 응답 없음(죽은 엔드포인트)이고 아직 아무것도 출력 안 됐으면 → 3.1로 자동 폴백
-      if (result.error && primary !== NIM_FALLBACK_MODEL && !stream.active) {
-        window._nimPrimaryDown = true;
-        result = await fetchNim(systemContent, messages, 0.7, 2000, onChunk, NIM_FALLBACK_MODEL);
-      }
+      result = await fetchNim(systemContent, messages, 0.7, 2000, onChunk);   // 폴백 없음: 선택 모델 그대로
     } else {
       result = await fetchGemini(systemContent, messages);
     }
