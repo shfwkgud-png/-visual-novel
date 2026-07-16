@@ -4611,7 +4611,7 @@ function ivOpenCover(i) {
   showIv({
     src: t.url, useLabel: '표지로 사용',
     onUse: () => pickCover(t.url),
-    onDel: t.id.startsWith('f') ? null : () => delUpload(t.id)
+    onDel: (t.id.startsWith('f') || t.id.startsWith('b_')) ? null : () => delUpload(t.id)
   });
 }
 function ivOpenFace(i) {
@@ -4620,7 +4620,7 @@ function ivOpenFace(i) {
   showIv({
     src: t.url, useLabel: '이 얼굴로 캐릭터 만들기',
     onUse: used ? null : () => pickFace(t.id),
-    onDel: t.id.startsWith('f') ? null : () => delUpload(t.id)
+    onDel: (t.id.startsWith('f') || t.id.startsWith('b_')) ? null : () => delUpload(t.id)
   });
 }
 function ivView(src) { showIv({ src }); }   // view-only
@@ -4655,9 +4655,32 @@ function uploadForBg() {
   });
 }
 
-// All selectable faces: 25 built-in sprites + user uploads (shared library)
+// Built-in PANDORA story characters as selectable faces (murim/isekai/academy/muhyeop).
+// Each carries img + 8-emotion emoImgs so a custom episode renders them like an upload,
+// independent of the custom story's own id. (cid === sd_samples sprite folder name.)
+let _builtinFacesCache = null;
+function builtinFaceTiles() {
+  if (_builtinFacesCache) return _builtinFacesCache;
+  const src = [['murim', MURIM_CHARACTERS], ['isekai', ISEKAI_CHARACTERS], ['academy', ACADEMY_CHARACTERS], ['muhyeop', MUHYEOP_CHARACTERS]];
+  const tiles = [];
+  for (const [sid, defs] of src) {
+    for (const cid in defs) {
+      const dir = `sd_samples/characters/${sid}/${cid}/2d/`;
+      const emoImgs = {};
+      for (const k in EMO_KEY8) emoImgs[k] = dir + EMO_KEY8[k] + '.webp';
+      tiles.push({ id: 'b_' + sid + '_' + cid, url: dir + '1_calm.webp', img: dir + '1_calm.webp',
+                   emoImgs, name: defs[cid].name || cid, role: defs[cid].role || '', gender: defs[cid].gender || '' });
+    }
+  }
+  _builtinFacesCache = tiles;
+  return tiles;
+}
+function builtinFaceById(id) { return builtinFaceTiles().find(t => t.id === id); }
+
+// All selectable faces: PANDORA story sprites + 25 legacy sprites + user uploads
 function allFaceTiles() {
-  const tiles = SPRITE_NUMS.map(n => ({ id: 'f' + n, url: `character/25_upper/${n}_1.webp` }));
+  const tiles = builtinFaceTiles().slice();
+  SPRITE_NUMS.forEach(n => tiles.push({ id: 'f' + n, url: `character/25_upper/${n}_1.webp` }));
   const up = getUploads().faces;
   for (const id in up) tiles.push({ id, url: up[id].url });
   return tiles;
@@ -4734,7 +4757,12 @@ function pickFace(fid) {
   cPickedFace = fid;
   renderCharGallery();
   document.getElementById('cCharAddBtn').textContent = '＋ 이 캐릭터 추가';
-  document.getElementById('cCharGender').value = SPRITE_GENDER[String(fid).replace('f', '')] || '여성';
+  const bf = builtinFaceById(fid);   // PANDORA face → prefill name/role/gender (editable)
+  document.getElementById('cCharGender').value = (bf && bf.gender) || SPRITE_GENDER[String(fid).replace('f', '')] || '여성';
+  if (bf) {
+    const nm = document.getElementById('cCharName'); if (nm && !nm.value.trim()) nm.value = bf.name || '';
+    const rl = document.getElementById('cCharRole'); if (rl && !rl.value.trim()) rl.value = bf.role || '';
+  }
   document.getElementById('cCharForm').style.display = 'block';
   renderEmoGrid();
   document.getElementById('cCharName').focus();
@@ -4772,6 +4800,9 @@ function addCreatorChar() {
   if (up) {
     entry.img = up.url;   // uploaded face → engine renders this URL
     if (up.emo && Object.keys(up.emo).length) entry.emoImgs = { ...up.emo };
+  } else {
+    const bf = builtinFaceById(cPickedFace);   // PANDORA sprite → carry its 8-emotion set
+    if (bf) { entry.img = bf.img; entry.emoImgs = { ...bf.emoImgs }; }
   }
   cChars[cPickedFace] = entry;
   cPickedFace = null;
@@ -5067,6 +5098,7 @@ function startGame(isContinue) {
     };
     gameHistory = []; storySummary = ''; summaryIndex = 0; turnCount = 0;
     dialogueLog = []; lastBg = null;
+    window._modeChosen = false; window._freeMode = false;   // 시작 플로우 모드 상태 초기화
     // ★스토리 전환 잔재 완전 청소(이전 작품 대사/스프라이트/CG가 새 작품에 뜨던 버그)
     dialogueQueue = []; window._pendingDialogues = null; window._pendingChoices = null;
     window._pendingPlayerLine = null; window._present = null; historyMode = false;
@@ -6755,6 +6787,19 @@ async function handlePlayerInput(text) {
     text = `[캐릭터 설정 확정] 이름: ${playerName} / 나이: ${prof[2]}살 / 성별: ${prof[3]} / 특징: ${prof[4].trim()} — 이 설정을 주인공에게 영구 반영하고 본편을 시작해줘.`;
     updateStatusUI && updateStatusUI();
   }
+  // ★시작 플로우 모드 감지(프롤로그 직후 1회): 자유 모드면 이번 플레이의 무작위 시작 인물을
+  // 시드해 매 회차 첫 등장 인물이 달라지게 한다(스토리 모드는 고정 startChars 유지).
+  if (!window._modeChosen && /(자유|스토리)\s*모드/.test(text)) {
+    window._modeChosen = true;
+    if (/자유\s*모드/.test(text)) {
+      window._freeMode = true;
+      const roster = Object.keys(CHARACTERS || {});
+      if (roster.length) {
+        const rc = CHARACTERS[roster[Math.floor(Math.random() * roster.length)]];
+        if (rc && rc.name) text += `\n\n[자유 모드 무작위 시작 인물: '${rc.name}'. 3단계 시작 선택지와 첫 장면을 이 인물이 자연스럽게 등장하도록 구성하고, 원작 고정 시작 인물에 얽매이지 말 것.]`;
+      }
+    }
+  }
   // 플레이어 대사도 그 순간의 장면 상태(배경·스프라이트)를 기록 — 기록 넘김 시
   // 모든 페이지가 자기 상태를 정확히 복원(책장 원칙: 공란 페이지는 공란 그대로)
   dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null,
@@ -7128,7 +7173,7 @@ function renderStatusPanel() {
     const dead = m.condition && m.condition.includes('사망');
     const intim = Math.max(0, Math.min(100, m.intimacy ?? 0));
     return `<div class="char-card ${dead ? 'dead' : ''}">
-      <img src="${charImgSrc(id)}" onerror="this.style.visibility='hidden'" alt="">
+      <img src="${charImgSrc(id, CHARACTERS, (typeof STORY !== 'undefined' && STORY) ? STORY.id : undefined)}" onerror="this.style.visibility='hidden'" alt="">
       <div class="char-info">
         <div class="char-name">${esc(m.name || id)}${m.tier ? ` <span style="font-size:0.72em;color:var(--gold);border:1px solid rgba(201,168,76,0.4);border-radius:8px;padding:1px 7px;vertical-align:middle">${esc(m.tier)}</span>` : ''} ${dead ? '<span class="dead-badge">✝ 사망</span>' : ''}</div>
         <div class="char-role">${esc(m.role || '')}</div>
