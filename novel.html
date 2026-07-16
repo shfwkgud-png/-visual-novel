@@ -3875,7 +3875,7 @@ function openStoryDetail(id) {
     (endingsFor(id).length ? `<span class="d-tag" style="color:var(--gold)">엔딩 ${endingsFor(id).length}개 달성</span>` : '');
   document.getElementById('detailDesc').textContent = s.desc || '';
   document.getElementById('detailChars').innerHTML = charIds.slice(0, 12).map(cid => {
-    const srcEsc = charImgSrc(cid, chars).replace(/'/g, '');
+    const srcEsc = charImgSrc(cid, chars, s.id).replace(/'/g, '');
     return `<div class="d-char" onclick="ivView('${srcEsc}')" style="cursor:pointer"><div class="d-char-img" style="background-image:url('${srcEsc}')"></div>` +
       `<div class="d-char-name">${chars[cid].name}</div></div>`;
   }).join('');
@@ -4258,11 +4258,14 @@ function saveUploads(u) {
 }
 
 // image src for any character id: custom img url > uploaded face > sprite file
-function charImgSrc(id, defs) {
+function charImgSrc(id, defs, sid) {
   const c = (defs || CHARACTERS || {})[id];
   if (c && c.img) return c.img;
   const up = getUploads().faces[id];
   if (up) return up.url;
+  // PANDORA-asset stories keep per-character 2D sprites in sd_samples; the roster
+  // avatar resolves to the neutral (1_calm) sprite (cid === sprite folder name).
+  if (sid && PANDORA_STORIES.has(sid)) return `sd_samples/characters/${sid}/${id}/2d/1_calm.webp`;
   return `character/25_upper/${String(id).replace('f', '')}_1.webp`;
 }
 
@@ -4873,6 +4876,9 @@ const EMOTION_MAP = {
 const EMO_KEY8 = { normal:'1_calm', smile:'2_joy', sad:'3_sad', angry:'4_anger', annoy:'5_annoy', worry:'6_worry', pain:'7_pain', pleasure:'8_pleasure' };
 // 실사 트랙 스토리(연애물) — 나머지는 애니(2D/2.5D 선택). 신규 예능3(inferno/signalhouse/exroom)은 앱 통합 시 추가.
 const REAL_STORIES = new Set(['romance','loveisland','inferno','signalhouse','exroom']);
+// Stories whose characters ship per-character 2D sprites under sd_samples/characters/<sid>/<cid>/.
+// The roster avatar resolves to these (id === sprite folder name); other stories use legacy faces.
+const PANDORA_STORIES = new Set(['murim','academy','isekai','muhyeop']);
 // 화풍 선호: 'auto'(연애=real, 그외=25d) | '2d' | '25d'. 실사 스토리는 항상 real.
 function currentArtStyle() {
   const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || 'nakin';
