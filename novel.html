@@ -3457,6 +3457,7 @@ const BUILTIN_STORIES = {
     startBg: 'hwasan_ruins',
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 멸문의 밤, 불타는 화산 본산. 장경각 서고지기 ${n}이(가) 노서고지기의 손에 검총(劍塚)으로 밀어넣어지는 장면으로 시작해줘 — "너는 검을 쓰지 못하니, 검이 너를 쓸 것이다." 검총 각성의 순간과, 폐허에서 살아남은 막내 사매 류앵과의 조우까지. 긴박하고 비장하게.`,
     startPromptText: '멸문의 밤, 불타는 화산. 서고지기 {이름}이(가) 검총에 밀어넣어져 각성하고, 류앵과 함께 폐허를 탈출하는 장면으로 시작해줘.',
+    prologue: '그해 겨울, 화산은 불탔다. 검마대의 야습에 산문을 지키던 이들이 첫 칼에 스러지고, 칠백 년 비급을 품은 장경각마저 불길에 삼켜졌다. 검을 쥐어본 적 없어 평생 서고에서 비급만 필사하던 한 사람이, 노서고지기의 피 묻은 손에 이끌려 금단의 땅 검총으로 떠밀린다. "너는 검을 쓰지 못하니, 검이 너를 쓸 것이다." 돌문이 닫히고, 칠흑 속에서 수백의 죽은 검혼이 일제히 숨을 들이쉰다. 재가 된 강호의 겨울 — 그 한복판에서, 당신의 이야기가 시작된다.',
     startChars: ['ryuaeng']
   },
   hunter: {
@@ -5121,7 +5122,7 @@ function startGame(isContinue) {
     };
     gameHistory = []; storySummary = ''; summaryIndex = 0; turnCount = 0;
     dialogueLog = []; lastBg = null;
-    window._modeChosen = false; window._freeMode = false;   // 시작 플로우 모드 상태 초기화
+    window._modeChosen = false; window._freeMode = false; window._startPhase = null;   // 시작 플로우 상태 초기화
     // ★스토리 전환 잔재 완전 청소(이전 작품 대사/스프라이트/CG가 새 작품에 뜨던 버그)
     dialogueQueue = []; window._pendingDialogues = null; window._pendingChoices = null;
     window._pendingPlayerLine = null; window._present = null; historyMode = false;
@@ -5149,6 +5150,7 @@ function startGame(isContinue) {
 // Restore a save payload into the running game and replay the last scene.
 // Used by 이어하기 and by save-slot loading.
 function restoreAndReplay(save, checkTimeflow) {
+  window._startPhase = 'playing';   // 이어하기는 본편 진행 중 — 시작 플로우 상태머신 스킵
   gameHistory = save.gameHistory || [];
   gameState = save.gameState || gameState;
   storySummary = save.storySummary || '';
@@ -5193,9 +5195,25 @@ const START_FLOW = `
    - 자유 모드였다면: 본편을 시작하기 전에 "어디서, 누구로 시작할까요?"를 물으며 choices로 이 세계관에 어울리는 서로 다른 시작 상황 3개를 제시하라(예: 원작 시작점 그대로 / 전혀 다른 신분·직업·지역 2종 — 세계관 세력·장소를 활용해 구체적으로). 마지막 선택지는 "✍️ 직접 정하기 — 원하는 시작을 자유롭게 입력"으로 하라. 유저가 고르거나 입력한 시작 상황을 그대로 본편 첫 장면으로 연출하고, 상태(신분·위치·소지금)도 그에 맞게 갱신하라.
 4) 이후 진행: 스토리 모드면 메인 서사를 적극 전개하되 선택지는 항상 의미 있게, 자유 모드면 유저의 행동 자유를 최우선하고 메인 서사(원작 사건들)는 유저가 개입하지 않아도 세계 뒤편에서 시간순으로 흘러가게 하라(소문·뉴스·NPC 대화로 전해짐).`;
 
+// ★고정 스텝 렌더(AI 호출 없이): 앱이 만든 응답을 기존 렌더 파이프라인으로 출력.
+function renderFixedStep(narration, choices) {
+  const data = { narration, dialogue: [], choices: (choices && choices.length) ? choices : null,
+                 background: null, mood: null, cg: null, ending: null, state_update: null };
+  gameHistory.push({ role: 'assistant', content: JSON.stringify(data) });
+  processResponse(data, []);
+}
+
 async function beginStory() {
   if (STORY.startBg) setBg(STORY.startBg); // default scene bg so the first screen is never empty
   Ambient.setMood('calm');
+  // ★프롤로그가 정의된 스토리는 AI 생성 없이 앱이 고정 텍스트+모드선택지를 직접 띄운다
+  // (모델 무관 일관성 + 배경 고정 + 느린 첫 호출 제거). AI는 캐릭터 설정 이후 본편부터.
+  if (STORY.prologue) {
+    window._startPhase = 'mode';
+    renderFixedStep(STORY.prologue.split('{이름}').join(playerName || '그대'),
+      ["📖 스토리 모드 — 정해진 서사를 따라 깊게 몰입한다", "🕊️ 자유 모드 — 이 세계에서 내 마음대로 살아간다"]);
+    return;
+  }
   const intro = {
     role: 'user',
     content: (typeof STORY.startPrompt === 'function'
@@ -6807,6 +6825,45 @@ async function sendMessage() {
 }
 
 async function handlePlayerInput(text) {
+  // ★시작 플로우(prologue 정의 스토리): 프롤로그·모드선택·설정요청은 앱이 고정 처리(AI 호출 X).
+  if (window._startPhase === 'mode') {
+    dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
+    gameHistory.push({ role: 'user', content: text });
+    window._freeMode = /자유/.test(text);
+    window._modeChosen = true;
+    window._startPhase = 'setup';
+    window._pendingPlayerLine = text; window._genText = text;
+    renderFixedStep('당신은 이 이야기에서 누구입니까? 캐릭터를 설정해 주세요.\n형식: 이름/나이/성별/특징 (예: 무진/24살/남/떠돌이 검객) — 성별은 생략해도 됩니다.', null);
+    autoSave();
+    return;
+  }
+  if (window._startPhase === 'setup') {
+    const p = String(text).trim().match(/^([^/\n]{1,12})\s*\/\s*(\d{1,3})\s*살?\s*(?:\/\s*(남|여)(?:자|성)?)?\s*\/\s*(.{1,60})$/);
+    dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
+    gameHistory.push({ role: 'user', content: text });
+    window._pendingPlayerLine = text; window._genText = text;
+    if (!p) { renderFixedStep('형식이 맞지 않습니다. "이름/나이/특징" 으로 입력해 주세요. (예: 무진/24살/떠돌이 검객)', null); return; }
+    playerName = p[1].trim();
+    const gp = p[3] ? `${p[3]}성, ` : '';
+    playerDesc = `${p[2]}살 ${gp}${p[4].trim()}`;
+    if (gameState) gameState.name = playerName;
+    STORY.protagonist = { ...(STORY.protagonist || {}), name: playerName, desc: playerDesc };
+    updateStatusUI && updateStatusUI();
+    window._startPhase = 'playing';
+    let aiEx = `\n\n[캐릭터 설정 확정: 이름 ${playerName}, ${playerDesc}. 이 설정을 주인공에게 영구 반영하라.]`;
+    if (window._freeMode) {
+      const roster = Object.keys(CHARACTERS || {});
+      const rc = roster.length ? CHARACTERS[roster[Math.floor(Math.random() * roster.length)]] : null;
+      aiEx += `\n\n[자유 모드: 원작 고정 오프닝(정해진 시작 장소·사건)을 절대 반복하지 말고, 이 세계관 속 무작위의 평범한 장소(거리·저잣거리·주막·시장·나루터 등)에서 완전히 새로운 첫 장면으로 시작하라. 주인공은 원작 주인공이 아니라 유저가 설정한 평범한 인물이며, ${rc && rc.name ? `인물 '${rc.name}'을(를) 자연스럽게 등장시켜라.` : '이 세계 인물 하나를 자연스럽게 등장시켜라.'}]`;
+    } else {
+      aiEx += `\n\n[스토리 모드: 프롤로그(멸문의 밤·검총 각성) 직후 순간부터 본편 첫 장면을 시작하라. 프롤로그를 반복하지 말 것.]`;
+    }
+    gameHistory[gameHistory.length - 1].content = text + aiEx;   // 방금 push한 user 메시지에 지시 병합
+    window._fateRoll = null;
+    autoSave();
+    await callGemini([]);
+    return;
+  }
   // ★AI에게만 숨겨 보내는 지시(화면 대사엔 절대 노출 X). 캐릭터 설정 확정·자유모드 시드 등.
   let aiExtra = '';
   // ★캐릭터 설정 입력 감지: "이름/나이/특징" 또는 "이름/나이/성별/특징"(성별 선택) → 주인공 설정 갱신
