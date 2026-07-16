@@ -5951,7 +5951,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   const playerBlock = `\n\n## 주인공 설정 (플레이어 지정 — 최우선 반영):\n- 이름: ${playerName}\n- 주인공은 얼굴 스프라이트가 없음. 주인공 대사는 speaker를 "${playerName}", char_id를 null로 할 것`
     + (playerDesc.trim() ? `\n- 추가 특징(반드시 반영): ${playerDesc.trim()}` : '');
   const bgKeys = (STORY_BG_FILES[STORY.id] || []).join(', ');
+  const charIds = Object.keys(CHARACTERS || {}).join(', ');
   const systemContent = worldPrompt + playerBlock + charPrompt + buildStatePrompt()
+    + (charIds ? `\n\n## dialogue의 char_id — 반드시 아래 목록의 정확한 id만 써라(캐릭터 스프라이트 표시에 필수). 'm001' 같은 임의 id를 만들지 말 것. 목록에 없는 엑스트라(행인·병사 등)는 char_id를 null로:\n${charIds}` : '')
     + '\n\n## 출력 언어·형식 필수(위반 금지): 모든 텍스트는 순수 한국어로만 쓴다. 한자·일본어(漢字·かな) 혼용 절대 금지(예: "넓은"을 "広い"로 쓰지 말 것). 장면은 나레이션과 대사로 충분히 묘사하고, 대사하는 등장 인물은 반드시 char_id를 채운다(캐릭터 스프라이트 표시에 필요).'
     + (bgKeys ? `\n\n## background 필드 — 장소가 바뀌면 반드시 갱신하되, 아래 이 스토리의 배경 키 목록에서만 정확히 골라라(목록에 없는 이름을 쓰면 배경이 안 바뀐다). 저잣거리=market_street, 객잔/주막=inn_hall, 나루터=river_ferry, 마을=herb_village 등:\n${bgKeys}` : '');
   const messages = buildMessages();
