@@ -23,14 +23,17 @@
     --bg: #0a0a0f;
     --panel: #0f0f1a;
     --border: #2a2040;
-    --gold: #c9a84c;
-    --gold-dim: #7a6330;
-    --text: #e8e0d0;
-    --text-dim: #8a8070;
-    --accent: #6b3fa0;
-    --accent2: #3a1f60;
-    --accent-glow: rgba(140, 90, 200, 0.45);
-    --red: #8b2020;
+    /* 1C 팔레트(2026-07-17 확정): OTT #46 시네마 다크 + 플레이 레드 액센트.
+       ★--gold 토큰명은 유지하되 값=플레이레드로 전환(50+ 호출부 안전 재지정).
+       보라(#6b3fa0) 액센트 제거 — 유저 지적 'AI 보라' 근원이었음. */
+    --gold: #e11d48;          /* play red (was gold #c9a84c) — 시스템 액센트 */
+    --gold-dim: #8f1230;      /* darker red (was #7a6330) */
+    --text: #f4f0e8;          /* bone/off-white (was #e8e0d0) */
+    --text-dim: #8b8578;
+    --accent: #e11d48;        /* red (was purple #6b3fa0) */
+    --accent2: #b0142f;       /* darker red (was #3a1f60) */
+    --accent-glow: rgba(225, 29, 72, 0.38);
+    --red: #b0142f;
     --shadow: rgba(0,0,0,0.8);
     --radius: 16px;
     --radius-sm: 10px;
@@ -116,7 +119,7 @@
   .bg-glow {
     position: absolute;
     width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.08) 40%, rgba(0,0,0,0) 70%);
+    background: radial-gradient(circle, rgba(225, 29, 72, 0.12) 0%, rgba(225, 29, 72, 0.05) 40%, rgba(0,0,0,0) 70%);
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1;
@@ -126,7 +129,7 @@
   .bg-ambient {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(rgba(219, 39, 119, 0.03) 1px, transparent 0);
+    background: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
     background-size: 24px 24px;
     opacity: 0.6;
     z-index: 1;
@@ -162,26 +165,27 @@
   .artifact-wrapper:hover .box-cube {
     transform: rotateX(20deg) rotateY(225deg) scale(1.1);
   }
+  /* 1C: 보라 큐브 → 무채 큐브 + 레드 코어(브랜드도 시네마다크로) */
   .cube-face {
     position: absolute;
     width: 64px; height: 64px;
-    border: 1.5px solid rgba(168, 85, 247, 0.6);
-    background: linear-gradient(135deg, rgba(15, 12, 30, 0.8), rgba(30, 20, 50, 0.9));
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    background: linear-gradient(135deg, rgba(12, 12, 14, 0.8), rgba(22, 22, 26, 0.9));
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.08);
   }
   .face-front  { transform: translateZ(32px); }
   .face-back   { transform: rotateY(180deg) translateZ(32px); }
-  .face-left   { transform: rotateY(-90deg) translateZ(32px); border-color: rgba(219, 39, 119, 0.5); }
-  .face-right  { transform: rotateY(90deg) translateZ(32px); border-color: rgba(99, 102, 241, 0.5); }
-  .face-top    { transform: rotateX(90deg) translateZ(32px); background: rgba(25, 15, 45, 0.9); }
+  .face-left   { transform: rotateY(-90deg) translateZ(32px); border-color: rgba(225, 29, 72, 0.55); }
+  .face-right  { transform: rotateY(90deg) translateZ(32px); border-color: rgba(255, 255, 255, 0.35); }
+  .face-top    { transform: rotateX(90deg) translateZ(32px); background: rgba(18, 18, 22, 0.9); }
   .face-bottom { transform: rotateX(-90deg) translateZ(32px); }
   .cube-core {
     position: absolute;
     width: 24px; height: 24px;
     background: #ffffff;
     border-radius: 50%;
-    box-shadow: 0 0 35px 15px rgba(168, 85, 247, 0.8),
-                0 0 60px 25px rgba(219, 39, 119, 0.5);
+    box-shadow: 0 0 35px 15px rgba(225, 29, 72, 0.7),
+                0 0 60px 25px rgba(225, 29, 72, 0.3);
     animation: corePulse 2s ease-in-out infinite alternate;
   }
   .orbit-ring {
@@ -197,10 +201,10 @@
     font-weight: 600;
     letter-spacing: 0.28em;
     text-indent: 0.28em;
-    background: linear-gradient(180deg, #ffffff 0%, #c0b3df 60%, #8b74c7 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f0ece2 55%, #b8b2a6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow: 0 4px 20px rgba(139, 92, 246, 0.25);
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     margin-bottom: 12px;
     opacity: 0;
     transform: translateY(15px);
@@ -212,7 +216,7 @@
     font-weight: 300;
     letter-spacing: 0.45em;
     text-indent: 0.45em;
-    color: rgba(186, 175, 212, 0.75);
+    color: rgba(240, 236, 226, 0.6);
     margin-bottom: 50px;
     opacity: 0;
     transform: translateY(15px);
@@ -244,15 +248,15 @@
     transition: left 0.6s ease;
   }
   .enter-btn:hover {
-    border-color: rgba(168, 85, 247, 0.8);
-    box-shadow: 0 0 25px rgba(139, 92, 246, 0.4);
+    border-color: rgba(225, 29, 72, 0.8);
+    box-shadow: 0 0 25px rgba(225, 29, 72, 0.35);
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
     transform: translateY(-2px);
   }
   .enter-btn:hover::before { left: 100%; }
   .enter-btn:active {
     transform: translateY(1px);
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 0 15px rgba(225, 29, 72, 0.2);
   }
   @keyframes floatCube {
     0% { transform: rotateX(-25deg) rotateY(45deg) translateY(0px); }
@@ -311,7 +315,7 @@
     border-radius: 18px;
     background-size: cover;
     background-position: top center;
-    background-color: #14101f;
+    background-color: #101014;
     position: relative;
     overflow: hidden;
     cursor: pointer;
@@ -337,7 +341,7 @@
   .g-chip { padding: 5px 12px; border-radius: 14px; font-size: 0.78rem; background: rgba(255,255,255,0.07);
     color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; user-select: none;
     transition: background .15s, color .15s; }
-  .g-chip.on { background: var(--gold); color: #1a1408; font-weight: 700; border-color: transparent; }
+  .g-chip.on { background: var(--gold); color: #ffffff; font-weight: 700; border-color: transparent; }
   /* ending collection (story detail) */
   #detailEndings { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
   .end-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; padding: 7px 10px;
@@ -359,8 +363,8 @@
   }
   .hero-badge {
     display: inline-block; margin-top: 10px;
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    color: #1a1208; font-size: 0.75rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    color: #ffffff; font-size: 0.75rem; font-weight: 700;
     padding: 7px 18px; border-radius: 18px;
   }
   /* horizontal rows */
@@ -382,7 +386,7 @@
     width: 104px; height: 140px;
     border-radius: 10px;
     background-size: cover; background-position: top center;
-    background-color: #14101f;
+    background-color: #101014;
     border: 1px solid rgba(255,255,255,0.06);
   }
   .mini-title {
@@ -403,7 +407,7 @@
     width: 56px; height: 74px; flex-shrink: 0;
     border-radius: 8px;
     background-size: cover; background-position: top center;
-    background-color: #14101f;
+    background-color: #101014;
   }
   .play-info { flex: 1; min-width: 0; }
   .play-title { font-size: 0.92rem; font-weight: 700; color: var(--text); }
@@ -472,7 +476,7 @@
   #detailCover {
     height: 52vh;
     background-size: cover; background-position: top center;
-    background-color: #14101f;
+    background-color: #101014;
     position: relative;
     flex-shrink: 0;
   }
@@ -507,7 +511,7 @@
     width: 64px; height: 64px;
     border-radius: 50%;
     background-size: 190%; background-position: top center;
-    background-color: #14101f;
+    background-color: #101014;
     border: 1px solid rgba(255,255,255,0.1);
   }
   .d-char-name { font-size: 0.66rem; color: var(--text-dim); margin-top: 5px; }
@@ -520,7 +524,7 @@
     font-size: 0.75rem; color: var(--text-dim); line-height: 1.5;
     cursor: pointer;
   }
-  #timeflowRow input { margin-top: 2px; accent-color: #c9a84c; }
+  #timeflowRow input { margin-top: 2px; accent-color: #e11d48; }
 
   #detailActions {
     position: fixed; left: 0; right: 0; bottom: 0;
@@ -537,8 +541,8 @@
   }
   #detailContinueBtn {
     flex: 2;
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    border: none; color: #1a1208; border-radius: 13px;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    border: none; color: #ffffff; border-radius: 13px;
     padding: 15px; font-size: 0.95rem; font-weight: 800; cursor: pointer;
   }
   #detailContinueBtn:disabled { opacity: 0.35; cursor: default; }
@@ -605,11 +609,11 @@
   }
   .c-pill:active { transform: scale(0.97); }
   .c-pill.on {
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    color: #1a1208; border-color: var(--gold); font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    color: #ffffff; border-color: var(--gold); font-weight: 700;
   }
   #aiDraftCard {
-    background: rgba(201,168,76,0.06);
+    background: rgba(225,29,72,0.06);
     border: 1px dashed var(--gold-dim);
     border-radius: 14px;
     padding: 14px;
@@ -638,7 +642,7 @@
     border-radius: 12px;
     background-size: 200%;
     background-position: top center;
-    background-color: #14101f;
+    background-color: #101014;
     border: 2px solid transparent;
     cursor: pointer;
   }
@@ -649,7 +653,7 @@
     border: 1px dashed var(--gold-dim);
     color: var(--gold);
     font-size: 1.1rem;
-    background: rgba(201,168,76,0.05);
+    background: rgba(225,29,72,0.05);
   }
   .c-face.c-up span { font-size: 0.58rem; letter-spacing: 0.05em; }
   .c-emo {
@@ -657,7 +661,7 @@
     aspect-ratio: 1;
     border-radius: 10px;
     background-size: cover; background-position: top center;
-    background-color: #14101f;
+    background-color: #101014;
     border: 1px dashed var(--border);
     cursor: pointer;
     overflow: hidden;
@@ -678,7 +682,7 @@
   .c-char-face {
     width: 42px; height: 42px; border-radius: 50%;
     background-size: 200%; background-position: top center;
-    background-color: #14101f; flex-shrink: 0;
+    background-color: #101014; flex-shrink: 0;
   }
   .c-char-info { flex: 1; min-width: 0; }
   .c-char-nm { font-size: 0.85rem; color: var(--text); font-weight: 700; }
@@ -701,8 +705,8 @@
     color: var(--text); border-radius: 13px; padding: 14px; font-size: 0.92rem; cursor: pointer;
   }
   #cNextBtn {
-    flex: 2; background: linear-gradient(135deg, var(--gold), #b8923a);
-    border: none; color: #1a1208; border-radius: 13px; padding: 14px;
+    flex: 2; background: linear-gradient(135deg, var(--gold), #b0142f);
+    border: none; color: #ffffff; border-radius: 13px; padding: 14px;
     font-size: 0.92rem; font-weight: 800; cursor: pointer;
   }
 
@@ -722,33 +726,33 @@
   .profile-textarea { height: 110px; resize: none; line-height: 1.6; }
   #providerRow { display: flex; gap: 8px; }
   .prov-btn {
-    background: rgba(20,16,32,0.7); border: 1px solid rgba(201,168,76,0.3);
+    background: rgba(20,16,32,0.7); border: 1px solid rgba(225,29,72,0.3);
     color: var(--text-dim); padding: 8px 18px; border-radius: 20px;
     cursor: pointer; font-size: 0.82rem; font-family: 'Noto Sans KR', sans-serif;
     transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s ease-out;
   }
   .prov-btn:active { transform: scale(0.97); }
   .prov-btn.active {
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    color: #1a1208; border-color: var(--gold); font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    color: #ffffff; border-color: var(--gold); font-weight: 700;
   }
   #nimUrlInput {
-    background: var(--panel); border: 1px solid rgba(201,168,76,0.3); color: var(--text);
+    background: var(--panel); border: 1px solid rgba(225,29,72,0.3); color: var(--text);
     padding: 13px 18px; border-radius: 24px; width: min(360px, 85vw);
     font-size: 0.82rem; outline: none; text-align: center;
     font-family: 'Noto Sans KR', sans-serif;
   }
-  #nimUrlInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+  #nimUrlInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(225,29,72,0.12); }
   #nimModelSel {
-    background: var(--panel); border: 1px solid rgba(201,168,76,0.3); color: var(--text);
+    background: var(--panel); border: 1px solid rgba(225,29,72,0.3); color: var(--text);
     padding: 13px 18px; border-radius: 24px; width: min(360px, 85vw);
     font-size: 0.82rem; outline: none; text-align: center;
     font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
   }
-  #nimModelSel:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+  #nimModelSel:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(225,29,72,0.12); }
   #apiKeyInput {
     background: var(--panel);
-    border: 1px solid rgba(201,168,76,0.3);
+    border: 1px solid rgba(225,29,72,0.3);
     color: var(--text);
     padding: 13px 18px;
     border-radius: 24px;
@@ -757,10 +761,10 @@
     outline: none;
     text-align: center;
   }
-  #apiKeyInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+  #apiKeyInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(225,29,72,0.12); }
   .start-btn {
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    color: #1a1208;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    color: #ffffff;
     border: none;
     padding: 13px 36px;
     border-radius: 24px;
@@ -768,7 +772,7 @@
     cursor: pointer;
     font-size: 1rem;
     letter-spacing: 0.1em;
-    box-shadow: 0 4px 18px rgba(201,168,76,0.35);
+    box-shadow: 0 4px 18px rgba(225,29,72,0.35);
     transition: transform 0.15s;
   }
   .start-btn:active { transform: scale(0.96); }
@@ -1094,8 +1098,8 @@
     color: var(--text); font-size: 0.88rem; cursor: pointer;
   }
   #imgViewerBtns #ivUseBtn {
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    border: none; color: #1a1208; font-weight: 800;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    border: none; color: #ffffff; font-weight: 800;
   }
   #imgViewerBtns #ivDelBtn { color: #e06a6a; border-color: rgba(224,106,106,0.4); }
 
@@ -1158,7 +1162,7 @@
   #endingTitle {
     font-family: 'Noto Serif KR', serif;
     font-size: 1.6rem; font-weight: 800; color: var(--gold);
-    text-shadow: 0 0 30px rgba(201,168,76,0.35);
+    text-shadow: 0 0 30px rgba(225,29,72,0.35);
     line-height: 1.4;
   }
   #endingStory { font-size: 0.82rem; color: var(--text-dim); margin-top: 12px; letter-spacing: 0.1em; }
@@ -1170,8 +1174,8 @@
     color: var(--text); font-size: 0.9rem; cursor: pointer;
   }
   #endingBtns button.primary {
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    border: none; color: #1a1208; font-weight: 800;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    border: none; color: #ffffff; font-weight: 800;
   }
 
   /* GENERATION BAND — player's line in a thin FULL-WIDTH strip while the AI
@@ -1271,7 +1275,7 @@
     flex: 1;
     min-width: 0;
     background: rgba(20,16,32,0.92);
-    border: 1px solid rgba(201,168,76,0.22);
+    border: 1px solid rgba(225,29,72,0.22);
     color: var(--text);
     padding: 9px 16px;
     border-radius: 19px;
@@ -1295,11 +1299,11 @@
   }
   #userInput:focus {
     border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+    box-shadow: 0 0 0 3px rgba(225,29,72,0.12);
   }
   #sendBtn {
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    color: #1a1208;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    color: #ffffff;
     border: none;
     width: 39px; height: 39px;
     border-radius: 50%;
@@ -1308,7 +1312,7 @@
     font-size: 0.95rem;
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 3px 12px rgba(201,168,76,0.3);
+    box-shadow: 0 3px 12px rgba(225,29,72,0.3);
     transition: transform 0.15s;
   }
   #sendBtn:active { transform: scale(0.92); }
@@ -1327,13 +1331,18 @@
   }
   #titleText {
     font-family: 'Noto Serif KR', serif;
-    color: var(--gold);
-    opacity: 0.8;
+    color: rgba(255,255,255,0.62);   /* 제목은 중립 — 액센트(레드) 아님(화면당 금색/레드 1곳 규율) */
+    opacity: 0.9;
     font-size: 0.74rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.14em;
     text-shadow: 0 1px 6px rgba(0,0,0,0.7);
   }
   .top-btns { display: flex; gap: 5px; align-items: center; }
+  /* 아이콘 버튼: 이모지 대신 스트로크 SVG(가이드 안티패턴 '이모지 아이콘' 해소) */
+  .top-btn.icon { padding: 5px 8px; display: flex; align-items: center; justify-content: center; }
+  .top-btn.icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none;
+    stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; display: block; }
+  #bgmBtn.icon.on { color: var(--accent); border-color: rgba(225,29,72,0.4); }
   .top-btn {
     background: rgba(15,12,22,0.5);
     backdrop-filter: blur(8px);
@@ -1349,8 +1358,8 @@
   }
   .top-btn:active { transform: scale(0.94); }
   .top-btn.active {
-    background: linear-gradient(135deg, var(--gold), #b8923a);
-    color: #1a1208; border-color: var(--gold); font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), #b0142f);
+    color: #ffffff; border-color: var(--gold); font-weight: 700;
   }
 
   /* STATUS PANEL — full-screen, 2 tabs (Met Characters / Current Situation) */
@@ -1371,7 +1380,7 @@
   #statusHeader {
     display: flex; align-items: center; gap: 10px;
     padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
-    border-bottom: 1px solid rgba(201,168,76,0.2);
+    border-bottom: 1px solid rgba(225,29,72,0.2);
     flex-shrink: 0;
   }
   #statusTabs { display: flex; gap: 8px; flex: 1; }
@@ -1382,26 +1391,26 @@
     transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s ease-out;
   }
   .status-tab:active { transform: scale(0.97); }
-  .status-tab.active { background: linear-gradient(135deg, var(--gold), #b8923a); color: #1a1208; border-color: var(--gold); font-weight: 700; }
-  #statusClose { background: var(--glass); border: 1px solid rgba(201,168,76,0.3); color: var(--text); padding: 7px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
+  .status-tab.active { background: linear-gradient(135deg, var(--gold), #b0142f); color: #ffffff; border-color: var(--gold); font-weight: 700; }
+  #statusClose { background: var(--glass); border: 1px solid rgba(225,29,72,0.3); color: var(--text); padding: 7px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
   #statusBody { flex: 1; overflow-y: auto; padding: 14px 16px calc(20px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
 
   .sit-block { margin-bottom: 18px; }
   .sit-label { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 0.82rem; letter-spacing: 0.08em; margin-bottom: 6px; }
-  .sit-val { color: #e6e0d4; font-size: 0.9rem; line-height: 1.6; background: rgba(255,255,255,0.04); padding: 10px 13px; border-radius: 10px; border-left: 2px solid rgba(201,168,76,0.35); }
-  .sit-tag { display: inline-block; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; margin: 3px 4px 3px 0; }
+  .sit-val { color: #e6e0d4; font-size: 0.9rem; line-height: 1.6; background: rgba(255,255,255,0.04); padding: 10px 13px; border-radius: 10px; border-left: 2px solid rgba(225,29,72,0.35); }
+  .sit-tag { display: inline-block; background: rgba(225,29,72,0.12); border: 1px solid rgba(225,29,72,0.3); color: var(--gold); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; margin: 3px 4px 3px 0; }
   .sit-tag.injury { background: rgba(139,32,32,0.18); border-color: rgba(180,60,60,0.4); color: #e79; }
 
   .char-card { display: flex; gap: 12px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
   .char-card.dead { opacity: 0.55; border-color: rgba(139,32,32,0.4); }
-  .char-card img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; object-position: top center; border: 1.5px solid rgba(201,168,76,0.5); flex-shrink: 0; background: var(--panel); }
+  .char-card img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; object-position: top center; border: 1.5px solid rgba(225,29,72,0.5); flex-shrink: 0; background: var(--panel); }
   .char-info { flex: 1; min-width: 0; }
   .char-name { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
   .char-role { color: var(--text-dim); font-size: 0.72rem; margin-bottom: 6px; }
   .char-rel { color: #d8d2c6; font-size: 0.82rem; line-height: 1.45; margin-bottom: 6px; }
   .char-meta { font-size: 0.74rem; color: var(--text-dim); }
   .intimacy-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 5px; }
-  .intimacy-fill { height: 100%; background: linear-gradient(90deg, #b8923a, var(--gold)); border-radius: 3px; }
+  .intimacy-fill { height: 100%; background: linear-gradient(90deg, #b0142f, var(--gold)); border-radius: 3px; }
   .dead-badge { color: #e66; font-size: 0.72rem; font-weight: 700; }
 
   /* CHOICE BUTTONS — Frontia 디자인 언어(캡처 4장 공통): 무테두리 반투명 다크
@@ -1424,7 +1433,9 @@
     transition: background 0.18s, transform 0.12s ease-out;
     text-shadow: 0 1px 4px rgba(0,0,0,0.8);
   }
-  .choice-btn:active { transform: scale(0.985); background: rgba(40,40,50,0.65); }
+  /* pressed = 번호가 플레이레드로 점등(1C 시연) + 좌측 레드 힌트 라인 */
+  .choice-btn:active { transform: scale(0.985); background: rgba(40,40,50,0.65); box-shadow: inset 2px 0 0 var(--accent); }
+  .choice-btn:active .choice-num { color: var(--accent); font-weight: 700; }
   /* 선택지 스태거 등장(유지 — 유저가 제거 요청한 적 없음) */
   .choice-btn { animation: choiceIn 240ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
   .choice-btn:nth-child(1) { animation-delay: 0ms; }
@@ -1467,12 +1478,12 @@
   #backlogHeader {
     display: flex; justify-content: space-between; align-items: center;
     padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
-    border-bottom: 1px solid rgba(201,168,76,0.2);
+    border-bottom: 1px solid rgba(225,29,72,0.2);
     flex-shrink: 0;
   }
   #backlogHeader span { color: var(--gold); font-family: 'Noto Serif KR', serif; font-size: 1rem; letter-spacing: 0.1em; }
   #backlogClose {
-    background: var(--glass); border: 1px solid rgba(201,168,76,0.3); color: var(--text);
+    background: var(--glass); border: 1px solid rgba(225,29,72,0.3); color: var(--text);
     padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;
   }
   #backlogBody {
@@ -1488,12 +1499,12 @@
     color: var(--text); font-size: 0.9rem; line-height: 1.7;
     background: rgba(255,255,255,0.03);
     padding: 10px 14px; border-radius: var(--radius-sm);
-    border-left: 2px solid rgba(201,168,76,0.3);
+    border-left: 2px solid rgba(225,29,72,0.3);
   }
   .log-player .log-text, .log-text.log-player {
-    color: #d9c8f0; font-style: italic;
+    color: #f0d9e0; font-style: italic;
     border-left-color: var(--accent);
-    background: rgba(107,63,160,0.1);
+    background: rgba(225,29,72,0.09);
   }
   .log-divider {
     border: none; border-top: 1px dashed var(--border);
@@ -1506,7 +1517,7 @@
     flex-shrink: 0;
   }
   .redo-btn {
-    background: var(--glass); border: 1px solid rgba(201,168,76,0.25); color: var(--text-dim);
+    background: var(--glass); border: 1px solid rgba(225,29,72,0.25); color: var(--text-dim);
     padding: 5px 11px; border-radius: 14px; cursor: pointer;
     font-size: 0.7rem; font-family: 'Noto Sans KR', sans-serif;
     white-space: nowrap; transition: border-color 0.18s, color 0.18s, transform 0.12s ease-out;
@@ -1825,13 +1836,13 @@
   <div id="topBar">
     <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v97</span></span>
     <div class="top-btns">
-      <button class="top-btn" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드">♪</button>
+      <button class="top-btn icon" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드" aria-label="사운드"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a4 4 0 0 1 0 7"/></svg></button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
-      <button class="top-btn" onclick="toggleSlots()" title="세이브 슬롯">💾</button>
-      <button class="top-btn" onclick="refreshApp()" title="최신 버전으로 갱신">⟳</button>
-      <button class="top-btn" onclick="exitToMain()" title="홈으로">⌂</button>
+      <button class="top-btn icon" onclick="toggleSlots()" title="세이브 슬롯" aria-label="저장"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></button>
+      <button class="top-btn icon" onclick="refreshApp()" title="최신 버전으로 갱신" aria-label="새로고침"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+      <button class="top-btn icon" onclick="exitToMain()" title="홈으로" aria-label="홈"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></button>
     </div>
   </div>
 
@@ -3785,7 +3796,7 @@ function renderHome() {
   const heroEl = document.getElementById('homeHero');
   heroEl.innerHTML = ids.map(id => {
     const s = stories[id];
-    return `<div class="hero-slide" style="background-image:url('${s.cover || ''}')" onclick="openStoryDetail('${id}')">` +
+    return `<div class="hero-slide" style="background:${coverBg(s)}" onclick="openStoryDetail('${id}')">` +
       `<div class="hero-info"><div class="hero-title">${s.title}</div>` +
       `<div class="hero-desc">${s.desc || ''}</div><span class="hero-badge">지금 플레이 ▸</span></div></div>`;
   }).join('');
@@ -3796,7 +3807,7 @@ function renderHome() {
   rowP.style.display = playing.length ? 'block' : 'none';
   document.getElementById('rowPlayingCards').innerHTML = playing.map(id => {
     const s = stories[id]; const sv = saveInfoFor(id);
-    return `<div class="mini-card" onclick="openStoryDetail('${id}')"><div class="mini-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+    return `<div class="mini-card" onclick="openStoryDetail('${id}')"><div class="mini-cover" style="background:${coverBg(s)}"></div>` +
       `<div class="mini-title">${s.title}</div><div class="mini-sub">${timeAgo(sv.savedAt)}</div></div>`;
   }).join('');
   // all stories row — genre filter chips + filtered grid
@@ -3807,7 +3818,7 @@ function renderHome() {
   const showIds = homeFilter === '전체' ? ids : ids.filter(id => storyCat(stories[id]) === homeFilter);
   document.getElementById('rowAllCards').innerHTML = showIds.map(id => {
     const s = stories[id];
-    return `<div class="mini-card" onclick="openStoryDetail('${id}')"><div class="mini-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+    return `<div class="mini-card" onclick="openStoryDetail('${id}')"><div class="mini-cover" style="background:${coverBg(s)}"></div>` +
       `<div class="mini-title">${s.title}</div></div>`;
   }).join('');
 }
@@ -3826,6 +3837,24 @@ function storyCat(s) {
   return '기타';
 }
 function setHomeFilter(c) { homeFilter = c; renderHome(); }
+
+// 커버 배경 = 실제 커버 이미지 위 + 장르 무드 그라디언트 폴백(로딩/실패/무커버 시
+// 플랫 회색 대신 장르 분위기의 다크 그라디언트가 보이게 — 1C, 유저 지적 2026-07-17)
+const GENRE_GRAD = {
+  '무협':   'linear-gradient(160deg,#1b2530,#0b0f14)',
+  '사극':   'linear-gradient(160deg,#241a22,#100b0e)',
+  'SF':     'linear-gradient(160deg,#0e1d23,#080d10)',
+  '스릴러': 'linear-gradient(160deg,#171b23,#0a0c10)',
+  '로맨스': 'linear-gradient(160deg,#2a141c,#120a0e)',
+  '판타지': 'linear-gradient(160deg,#151830,#0a0b16)',
+  '현대액션':'linear-gradient(160deg,#14211b,#0a100c)',
+  '기타':   'linear-gradient(160deg,#1a1a20,#0c0c10)'
+};
+function coverBg(s) {
+  const grad = GENRE_GRAD[storyCat(s)] || GENRE_GRAD['기타'];
+  const url = s && s.cover ? `url('${s.cover}') top center/cover no-repeat, ` : '';
+  return url + grad;
+}
 
 function updateHeroDots() {
   const el = document.getElementById('homeHero');
@@ -3846,7 +3875,7 @@ function renderPlays() {
   list.innerHTML = items.map(id => {
     const s = stories[id]; const sv = saveInfoFor(id);
     return `<div class="play-item" onclick="openStoryDetail('${id}')">` +
-      `<div class="play-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+      `<div class="play-cover" style="background:${coverBg(s)}"></div>` +
       `<div class="play-info"><div class="play-title">${s.title}</div>` +
       `<div class="play-sub"><b>진행 중</b> · ${sv.playerName || ''} · ${timeAgo(sv.savedAt)}</div></div>` +
       `<button class="play-go" onclick="event.stopPropagation(); quickContinue('${id}')"><span class="tri">▶</span>이어하기</button></div>`;
@@ -3868,7 +3897,7 @@ function renderMy() {
       ? (overridden ? `<button class="play-go" onclick="event.stopPropagation(); revertStory('${id}')"><span class="tri">↺</span>되돌리기</button>` : '')
       : `<button class="play-go" onclick="event.stopPropagation(); deleteLocalStory('${id}')"><span class="tri">✕</span>삭제</button>`;
     return `<div class="play-item" onclick="openStoryDetail('${id}')">` +
-      `<div class="play-cover" style="background-image:url('${s.cover || ''}')"></div>` +
+      `<div class="play-cover" style="background:${coverBg(s)}"></div>` +
       `<div class="play-info"><div class="play-title">${esc(s.title)}</div>` +
       `<div class="play-sub">${esc(sub)}</div></div>` +
       `<button class="play-go" onclick="event.stopPropagation(); openCreator('${id}')"><span class="tri">✎</span>편집</button>` +
@@ -3892,7 +3921,7 @@ function openStoryDetail(id) {
   const s = allStories()[id];
   if (!s) return;
   detailStoryId = id;
-  document.getElementById('detailCover').style.backgroundImage = s.cover ? `url('${s.cover}')` : '';
+  document.getElementById('detailCover').style.background = coverBg(s);
   document.getElementById('detailTitle').textContent = s.title;
   const chars = s.characters || {};
   const charIds = Object.keys(chars);
@@ -5450,7 +5479,7 @@ const Ambient = (() => {
 
   function updateBtn() {
     const b = document.getElementById('bgmBtn');
-    if (b) b.style.opacity = enabled ? '1' : '0.4';
+    if (b) { b.style.opacity = enabled ? '1' : '0.55'; b.classList.toggle('on', !!enabled); }
   }
 
   // iOS requires a user gesture before audio — retry pending mood on first touch
@@ -7334,7 +7363,7 @@ function renderStatusPanel() {
     return `<div class="char-card ${dead ? 'dead' : ''}">
       <img src="${charImgSrc(id, CHARACTERS, (typeof STORY !== 'undefined' && STORY) ? STORY.id : undefined)}" onerror="this.style.visibility='hidden'" alt="">
       <div class="char-info">
-        <div class="char-name">${esc(m.name || id)}${m.tier ? ` <span style="font-size:0.72em;color:var(--gold);border:1px solid rgba(201,168,76,0.4);border-radius:8px;padding:1px 7px;vertical-align:middle">${esc(m.tier)}</span>` : ''} ${dead ? '<span class="dead-badge">✝ 사망</span>' : ''}</div>
+        <div class="char-name">${esc(m.name || id)}${m.tier ? ` <span style="font-size:0.72em;color:var(--gold);border:1px solid rgba(225,29,72,0.4);border-radius:8px;padding:1px 7px;vertical-align:middle">${esc(m.tier)}</span>` : ''} ${dead ? '<span class="dead-badge">✝ 사망</span>' : ''}</div>
         <div class="char-role">${esc(m.role || '')}</div>
         <div class="char-rel">${esc(m.relationship || '-')}</div>
         ${m.note ? `<div class="char-meta">📌 ${esc(m.note)}</div>` : ''}
