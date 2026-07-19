@@ -3347,7 +3347,11 @@ const LOVEDIARY_LORE = `당신은 현대 학원 연애 시뮬레이션 비주얼
 - [첫눈의 고백]: 호감도 85+ 인물과 12월 크리스마스 — 서로의 진심이 닿는 순간 (인물별 엔딩)
 - [평범한 봄]: 아무 고백 없이 학년이 끝남 — 다음 봄, 같은 교실이기를 바라는 쓸쓸한 여운
 - [무너진 일지]: 단아의 비밀을 잔인하게 폭로한 경우 — 완벽한 반장의 파국 (비극)
-- [무대 위의 재회]: 리안의 누명을 함께 풀어낸 경우 — 조명 아래로 돌아가는 그녀의 손을 잡을지 선택`;
+- [무대 위의 재회]: 리안의 누명을 함께 풀어낸 경우 — 조명 아래로 돌아가는 그녀의 손을 잡을지 선택
+
+## 모드 규칙 (시작 시 유저가 선택 — 해석을 반드시 지켜라):
+- 📖 스토리 모드: 학사 캘린더가 이 작품의 "메인 서사"다. 현재 날짜에 걸린 행사(반장 선거→중간고사→체육대회→한빛제→기말→크리스마스)를 이벤트 배너(event)로 걸고, 준비·당일·여파를 적극적으로 사건화하라. 반장 다이어리·리안 스캔들·소요 10년 등 GM 비밀의 단서도 행사 흐름에 실어 능동적으로 배치하라.
+- 🕊️ 자유 모드: 행사는 뒤편 소음(방송·게시판·소문)일 뿐 강요하지 마라. 유저가 만드는 관계와 일상이 전부다. 단, 시간은 흐르고 행사 결과는 세계에 반영된다(선거는 누군가 당선되고, 축제는 열린다).`;
 const LOVEDIARY_WORLD_PROMPT = LOVEDIARY_LORE + ENGINE_RULES_PROMPT;
 
 // Build the full world prompt for a user-created story (lore + engine rules)
@@ -3644,6 +3648,14 @@ const BUILTIN_STORIES = {
     worldLore: LOVEDIARY_LORE.split('\n').slice(1).join('\n').trim(),
     genre: '현대 학원 로맨스',
     characters: LOVEDIARY_CHARACTERS,
+    // ★모드 재정의(2026-07-20 유저 지적 "이 작품에 모드가 왜 있나") — 정해진 서사가 없는 일상 시뮬이라
+    //   기본 라벨이 무의미했음. 스토리=학사 캘린더 이벤트가 적극 발동하는 행사 중심 플레이,
+    //   자유=일정 압박 없는 순수 일상. 해석 규칙은 LOVEDIARY_LORE [모드 규칙]에.
+    modeChoices: [
+      '📖 스토리 모드 — 학사 일정(반장 선거, 중간고사, 축제…)이 적극적으로 굴러간다',
+      '🕊️ 자유 모드 — 일정에 얽매이지 않는 한빛고의 느슨한 일상',
+    ],
+    freeStartHint: '등굣길·매점·도서실·옆 반 교실·방과후 동아리실 등 학교의 평범한 일상 장소',
     protagonist: { name: '무명', desc: '' },
     initialState: { status: '한빛고 2학년 1반', rep: 0, gold: 3, location: '등굣길', time: '[3월 4일 월요일] 오전 8시 10분', injuries: [] },
     // ★전용 배경 22종 (2026-07-19 유저 지적 반영 — 재사용 셋 화풍 불일치 폐기, WAI 페인팅 신규 생성)
@@ -5455,8 +5467,10 @@ async function beginStory() {
   // (모델 무관 일관성 + 배경 고정 + 느린 첫 호출 제거). AI는 캐릭터 설정 이후 본편부터.
   if (STORY.prologue) {
     window._startPhase = 'mode';
+    // ★모드 라벨은 스토리별 재정의 가능(STORY.modeChoices) — 정해진 서사가 없는 일상 시뮬(lovediary 등)은
+    //   기본 문구("정해진 서사를 따라")가 거짓말이 되므로 작품에 맞는 의미를 부여한다. '스토리'/'자유' 단어는 유지 필수(모드 감지 정규식).
     renderFixedStep(STORY.prologue.split('{이름}').join(playerName || '그대'),
-      ["📖 스토리 모드 — 정해진 서사를 따라 깊게 몰입한다", "🕊️ 자유 모드 — 이 세계에서 내 마음대로 살아간다"]);
+      STORY.modeChoices || ["📖 스토리 모드 — 정해진 서사를 따라 깊게 몰입한다", "🕊️ 자유 모드 — 이 세계에서 내 마음대로 살아간다"]);
     return;
   }
   const intro = {
@@ -6229,6 +6243,11 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   const onChunk = !canStream ? null : (buf) => {
     if (historyMode && !stream.active) return;   // browsing history — don't hijack
     const u = extractStreamUnits(buf);
+    // ★모델 스키마 위반 방어(스트림 경로): narration을 dialogue로도 복제하는 모델이 있어
+    //   같은 문장이 연속 2번 표시됨 — 정규화 동일 텍스트는 dialogue 쪽을 스킵(processResponse에도 동일 가드)
+    const _dnorm = s => String(s || '').replace(/\s+/g, ' ').trim();
+    const _narrN = _dnorm(u.narration);
+    const _isNarrDup = d => _narrN && _dnorm(d.text) === _narrN;
     if (!stream.active) {
       if (u.narration === null && u.dialogues.length === 0) return;
       stream.active = true;
@@ -6244,13 +6263,13 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         if (u.narration.trim()) splitNarration(u.narration).forEach(c =>
           dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: c, pose: 'upper' }));
       }
-      u.dialogues.forEach(d => dlgToChunks(d).forEach(c => dialogueQueue.push(c)));
+      u.dialogues.forEach(d => { if (!_isNarrDup(d)) dlgToChunks(d).forEach(c => dialogueQueue.push(c)); });
       stream.dlgCount = u.dialogues.length;
       showNextDialogue();
       return;
     }
     for (let k = stream.dlgCount; k < u.dialogues.length; k++) {
-      dlgToChunks(u.dialogues[k]).forEach(c => dialogueQueue.push(c));
+      if (!_isNarrDup(u.dialogues[k])) dlgToChunks(u.dialogues[k]).forEach(c => dialogueQueue.push(c));
     }
     if (u.dialogues.length > stream.dlgCount) {
       stream.dlgCount = u.dialogues.length;
@@ -6342,12 +6361,12 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       return;
     }
 
-    if (!parsed.dialogue || !Array.isArray(parsed.dialogue) || parsed.dialogue.length === 0) {
-      if (parsed.narration) {
-        parsed.dialogue = [{ speaker: '나레이터', char_id: null, emotion: 'normal', text: parsed.narration, pose: 'upper' }];
-      } else {
-        parsed.dialogue = [{ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(잠시 정적이 흐른다...)', pose: 'upper' }];
-      }
+    // ★dialogue 빈 응답 폴백: narration을 dialogue로 복제하지 말 것 — processResponse·스트림이
+    //   narration을 이미 표시하므로 복제하면 같은 문장이 반드시 2번 나온다(얘기중복의 제1 근원).
+    //   narration마저 없을 때만 정적 라인으로 채운다.
+    if (!parsed.dialogue || !Array.isArray(parsed.dialogue)) parsed.dialogue = [];
+    if (parsed.dialogue.length === 0 && !(parsed.narration && String(parsed.narration).trim())) {
+      parsed.dialogue = [{ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(잠시 정적이 흐른다...)', pose: 'upper' }];
     }
 
     gameHistory.push({ role: 'assistant', content: JSON.stringify(parsed) });
@@ -6480,7 +6499,11 @@ function processResponse(data, activeCharIds, streamed) {
       splitNarration(data.narration).forEach(c =>
         dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: c, pose: 'upper' }));
     }
-    (data.dialogue || []).slice(streamed.dlgCount).forEach(d =>
+    // ★완료 보정에도 narration 복제 가드 — 스트림 파서가 dialogue를 못 읽고 끝나면
+    //   dlgCount=0이라 여기서 복제분이 필터 없이 들어와 같은 문장이 2번 표시됐음(얘기중복 잔존 경로)
+    const _sn = s => String(s || '').replace(/\s+/g, ' ').trim();
+    const _snN = _sn(data.narration);
+    (data.dialogue || []).slice(streamed.dlgCount).filter(d => !(_snN && _sn(d.text) === _snN)).forEach(d =>
       dlgToChunks(d).forEach(c => dialogueQueue.push(c)));
     window._pendingChoices = data.choices || null;
     window._activeCharIds = activeCharIds;
@@ -6501,6 +6524,14 @@ function processResponse(data, activeCharIds, streamed) {
     splitNarration(data.narration).forEach(chunk => {
       dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: chunk, pose: 'upper' });
     });
+  }
+
+  // ★모델 스키마 위반 방어: narration과 동일 텍스트를 dialogue에도 복제하는 모델(llama 등)이
+  //   있어 같은 문장이 2번 표시됨 — 정규화 후 동일하면 dialogue 쪽을 버린다(얘기중복 버그)
+  const _norm = s => String(s || '').replace(/\s+/g, ' ').trim();
+  const _narrNorm = _norm(data.narration);
+  if (data.dialogue && _narrNorm) {
+    data.dialogue = data.dialogue.filter(d => _norm(d.text) !== _narrNorm);
   }
 
   if (data.dialogue) {
@@ -6724,6 +6755,13 @@ function showNextDialogue() {
   isShowing = true;
   waitingForTap = false;
 
+  // ★모델이 speaker에 캐릭터 id를 그대로 쓰는 경우("soyo") 네임플레이트·백로그에 id가 노출됨 —
+  //   로스터에 있으면 한글 이름으로 교정(표시 단일 지점이라 로그·기록넘김까지 함께 해결)
+  if (d.char_id && CHARACTERS[d.char_id] && CHARACTERS[d.char_id].name &&
+      String(d.speaker || '').trim().toLowerCase() === String(d.char_id).toLowerCase()) {
+    d.speaker = CHARACTERS[d.char_id].name;
+  }
+
   setNameplate(d.speaker, d.char_id);
 
   // Reveal the speaker's sprite the moment they speak, then highlight
@@ -6733,8 +6771,10 @@ function showNextDialogue() {
   highlightSpeaker(d.char_id || null, emo, pose);
   currentEmotion = emo; currentPose = pose;
 
-  // Log full scene state so history can restore bg + sprites + expression
-  if (!replaying) {
+  // Log full scene state so history can restore bg + sprites + expression.
+  // ★isPlayerLine(유저 입력 에코)은 입력 시점에 이미 isPlayer:true로 기록됨 —
+  //   여기서 또 넣으면 백로그·기록넘김에 같은 유저 대사가 2번 보임(얘기중복 버그)
+  if (!replaying && !d.isPlayerLine) {
     dialogueLog.push({
       speaker: d.speaker, text: d.text, isPlayer: false,
       char_id: d.char_id || null, emotion: emo, pose: pose,
@@ -6937,7 +6977,18 @@ function handleTap(x) {
   }
   // → next
   if (historyMode) { historyForward(); return; }
-  if (inputMode) return;
+  // ★"입력 대기인데 미표시 대사가 큐에 남음"은 모순 상태(스트림 종료·고정 스텝 등 레이스로 발생) —
+  //   큐가 남아 있으면 입력 모드여도 탭으로 이어서 재생한다(큐 소진 시 showNextDialogue가 입력을 다시 연다)
+  if (inputMode) {
+    if (dialogueQueue.length === 0) return;
+    inputMode = false;
+    inputBar.style.display = 'none';
+    const cbStale = document.getElementById('choiceBox');
+    if (cbStale) cbStale.remove();
+    waitingForTap = false;
+    showNextDialogue();
+    return;
+  }
   if (waitingForTap) {
     waitingForTap = false;
     showNextDialogue();
@@ -7060,6 +7111,10 @@ function showChoices(choices) {
     btn.onclick = () => {
       SFX.play('choice');
       choiceDiv.remove();
+      // ★sendMessage와 동일한 입력상태 정리 — AI를 안 타는 고정 스텝(모드선택→설정요청)에서
+      //   inputMode가 잔존하면 handleTap이 전부 무시돼 다음 대사가 영영 안 나옴(자유모드 스톨 버그)
+      inputMode = false;
+      inputBar.style.display = 'none';
       window._genText = choice;
       handlePlayerInput(choice);
     };
@@ -7146,7 +7201,7 @@ async function handlePlayerInput(text) {
       const rc = roster.length ? CHARACTERS[roster[Math.floor(Math.random() * roster.length)]] : null;
       aiEx += `\n\n[자유 모드 — 반드시 준수]:`
         + `\n- 주인공 '${playerName}'은(는) 원작 주인공(${defN ? defN + ' — ' : ''}세계관 설정에 적힌 정해진 신분·능력의 인물)이 아니다. ${playerDesc}인 이 세계의 평범한 사람이다. 세계관 설정의 '주인공' 신분·특수능력·타고난 운명을 ${playerName}에게 적용하지 마라(${defN ? defN + '은(는) 이 세계의 별개 인물이거나 등장하지 않는다).' : ').'}`
-        + `\n- 정해진 오프닝(원작의 도입 사건·시작 장소)을 절대 재현하지 마라. 저잣거리·주막·시장·나루터·객잔 등 평범한 일상 장소에서 완전히 새로운 첫 장면으로 시작하고, background도 그런 장소 키로 바꿔라.`
+        + `\n- 정해진 오프닝(원작의 도입 사건·시작 장소)을 절대 재현하지 마라. ${STORY.freeStartHint || '저잣거리·주막·시장·나루터·객잔 등 평범한 일상 장소'}에서 완전히 새로운 첫 장면으로 시작하고, background도 그런 장소 키로 바꿔라.`
         + `\n- ${rc && rc.name ? `인물 '${rc.name}'을(를) 자연스럽게 등장시켜라.` : '이 세계 인물 하나를 자연스럽게 등장시켜라.'} 원작 메인 서사는 유저 개입 없이도 세계 뒤편에서 시간순으로 흐른다(소문·NPC 대화로 전달).`;
     } else {
       aiEx += `\n\n[스토리 모드: 프롤로그(원작 도입) 직후 순간부터 본편 첫 장면을 시작하라. 프롤로그를 반복하지 말 것.]`;
