@@ -3376,6 +3376,7 @@ const LOVEDIARY_LORE = `당신은 현대 학원 연애 시뮬레이션 비주얼
 - **chars.location**: 등장인물의 현재 위치(2학년 1반 교실, 방송실, 옥상 등)를 항상 갱신.
 - **event**: 진행 중인 학사 이벤트를 한 줄로 유지(예: "반장은 누가 될까요??"). 이벤트 시작·전환 시 갱신.
 - **time 형식**: "[3월 4일 월요일] 오전 8시 20분"처럼 날짜·요일·시각. 수업/쉬는시간/점심/방과후의 리듬을 지켜라.
+- **mood(배경음악) 필드 — 장면 분위기에 맞게 매 응답 채워라(배경음악이 이 값으로 바뀐다)**: 등굣길·평범한 일상·수업=calm / 설렘·두근거림·고백·로맨스=romance / 슬픔·이별·상처·눈물=sad / 유단아의 집착·서늘한 긴장·일이 꼬이는 불안=tension(또는 mystery). 분위기가 바뀔 때만 갱신하고, 유지될 땐 null.
 
 ## 학사 캘린더 (event 단위로 진행 — 시기가 되면 세계가 먼저 움직인다):
 3월 반장 선거 → 4월 중간고사(짝 스터디) → 5월 체육대회(반 대항) → 6월 자리 바꾸기 → 7월 기말고사·여름방학(보충수업·바다) → 9월 한빛제(축제·무대) → 10월 수학여행 → 11월 2학기 반장 선거 → 12월 첫눈·크리스마스. 행사마다 관련 인물의 개인 이벤트를 엮어라(체육대회=소요의 계주, 한빛제=리안의 무대 공포, 방송부 중계=봄이).
@@ -5634,7 +5635,7 @@ const Ambient = (() => {
   let cur = null, curCat = null;
   const VOL = 0.32;
   const MOOD_MAP = { calm:'daily', none:'daily', romance:'romance', sad:'sad', mystery:'tension', tension:'tension', battle:'tension' };
-  const TRACKS = { lovediary: { daily:4, romance:2, sad:2, tension:2 } };   // 카테고리별 변형 수(R2 실물 기준)
+  const TRACKS = { lovediary: { daily:6, romance:2, sad:4, tension:3 } };   // 카테고리별 변형 수(R2 실물 기준 2026-07-21)
   const base = 'https://pandora-sync.pasokong99.workers.dev/img?name=';
   function ramp(a, to, ms, done) {
     if (!a) { done && done(); return; }
