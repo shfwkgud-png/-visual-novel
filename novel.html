@@ -1357,6 +1357,7 @@
   .top-btn.icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none;
     stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; display: block; }
   #bgmBtn.icon.on { color: var(--accent); border-color: rgba(225,29,72,0.4); }
+  #bgmBtn.icon:not(.on) { opacity: 0.4; }   /* 음소거 상태 = 흐리게 */
   .top-btn {
     background: rgba(15,12,22,0.5);
     backdrop-filter: blur(8px);
@@ -1875,6 +1876,7 @@
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
+      <button class="top-btn icon" id="bgmBtn" onclick="Ambient.toggle()" title="배경음악 켜기/끄기" aria-label="배경음악"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></button>
       <button class="top-btn icon" onclick="toggleSlots()" title="세이브 슬롯" aria-label="저장"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></button>
       <button class="top-btn icon" onclick="refreshApp()" title="최신 버전으로 갱신" aria-label="새로고침"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
       <button class="top-btn icon" onclick="exitToMain()" title="홈으로" aria-label="홈"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></button>
@@ -2076,13 +2078,14 @@ const ENGINE_RULES_PROMPT = `
 - ★★**절대 금지(위반=실격)**: 어떤 상황에서도 주인공의 대사·생각·감정 변화·결정·행동을 당신이 대신 쓰지 마라. "당신은 두려움을 느끼며 뒤로 물러섰다", "당신은 고개를 끄덕였다" 같은 문장 전부 금지. 세계와 NPC의 반응까지만 쓰고 즉시 멈춰서, 다음에 무엇을 할지는 항상 플레이어의 몫으로 열어둬라
 
 ## 분량·구성 규칙 (반드시 지킬 것):
-- 한 응답은 몰입감 있고 풍부하게: narration 1~2개(각 2~4문장) + 캐릭터 대사 2~4개가 이상적인 분량. 너무 짧고 빈약하게 끝내지 말 것
+- ★★한 응답 = 충분히 무르익은 '한 장면(비트)'다. **최소 narration 2~3개(각 2~4문장) + 캐릭터 대사 4~7개**를 채워라. 여러 인물이 있으면 서로 주고받게 해서 더 길고 밀도 있게 전개하라(한 인물이 한 마디 하고 끝내지 말 것).
+- ★★**절대 금지: 대사 한두 줄 던지고 곧장 플레이어 입력을 요구하는 것.** 그건 플레이어를 질질 끌리게 하고, 매 턴 드는 비용값을 못 하는 최악의 응답이다. 자극→반응 '한 번'으로 멈추지 말고, 그 반응이 부른 다음 파동(다른 인물의 개입, 상황 변화, 새 정보·긴장의 등장)까지 한 턴 안에 굴린 뒤, 플레이어가 개입할 자연스러운 지점에서 끊어라 — 단 주인공의 다음 대사·행동·결정은 절대 대신 쓰지 말 것(그건 플레이어 몫).
 - 장면을 오감으로 생생하게 묘사하되, 끊기지 않고 자연스럽게 이어지는 흐름을 만들 것
 - **장면에 등장인물이 있으면 반드시 그들의 대사로 반응할 것.** 플레이어가 누군가에게 말을 걸거나 행동을 취하면, 그 상대는 반드시 대사(dialogue)로 응답해야 함. 나레이션으로만 때우지 말 것
 - 나레이션만으로 응답을 끝내지 말 것. 등장인물이 없는 장면이면 주인공의 생생한 내면 독백/심경을 주인공 이름 speaker(char_id null)로 넣어 살아있게 만들 것
 - ★**narration에 인물의 대사를 절대 넣지 말 것**(따옴표 대화 금지). 누군가 입을 열면 그 말은 반드시 dialogue 배열의 해당 인물 항목으로. narration은 순수한 상황·감각·분위기 묘사 전용
 - 대사에는 감정·말투·개성을 담아 인물이 살아있게. 영혼 없는 단답·요약 금지
-- 매 응답은 이야기를 한 걸음 진전시키되, 플레이어가 다음에 행동/대사할 여지를 남기고 끝낼 것
+- 매 응답은 이야기를 '의미 있게' 진전시켜라(한 장면이 실제로 굴러가야 함 — 제자리 한 마디 교환으로 끝내지 말 것). 그러고도 플레이어가 다음에 행동/대사할 여지를 남기고 끝낼 것
 - **choices 두 개는 질적으로 다른 방향일 것** (예: 안전vs위험, 이성vs감정, 정면돌파vs우회, 진실vs거짓말). 서로 비슷하거나 밋밋한 예/아니오 쌍 금지 — 선택이 갈림길처럼 느껴져야 함
 - ★choices에 감정 온도를 실어라: "~에 대해 더 물어본다"류 정보 확인 선택지 2연발 금지. 적어도 하나는 관계나 상황을 흔드는 대담한·위험한·설레는 쪽으로, 고르는 순간 심장이 반응하게 쓸 것
 
@@ -2091,7 +2094,7 @@ const ENGINE_RULES_PROMPT = `
 - **NPC는 각자의 목적으로 움직인다**: 모든 유명 인물은 주인공과 무관한 자기 욕망·비밀·두려움이 있고, 그것을 위해 거짓말도 부탁도 배신도 한다. 주인공을 기다리는 안내원처럼 굴게 하지 말 것
 - ★이름 있는 인물을 새로 지어내지 마라: 이름·정체성이 있는 인물은 등장인물 목록(로스터)의 인물만 쓴다. 목록에 없는 단역·행인·급우는 이름 없이 익명으로만 지칭("안경 쓴 남학생", "옆자리 여학생") — 즉석에서 만든 이름(특히 로스터 인물과 비슷한 이름)은 유저가 실존 인물로 오인한다
 - **인물은 직업이 아니다(종잇장 금지)**: 각 유명 인물에 대해 내부적으로 4층을 유지하고 절대 흔들지 마라 — ①Want(지금 원하는 것: 대사·행동의 동력) ②Secret(관계를 뒤집을 숨긴 진실) ③Wound(특정 자극에 무너지는 트라우마 — 닿으면 반응 급변) ④Depth(표면·직업과 어긋나는 의외의 인간적 면모: 냉혈한 암살자가 길고양이 밥을 챙기는 식). Secret은 직접 노출 금지 — 반드시 단서→의심→확증 3단으로만, Wound는 해당 자극이 등장할 때만 드러나게
-- **감정은 몸으로 말하라(Show, don't tell)**: "그녀는 슬펐다" 금지. 감정은 호흡·시선·손끝·목소리 톤·미세표정·침묵으로 번역하라. 추상적 내면 서술은 최소화하고, 고조된 장면일수록 대사는 짧고 강하게
+- **감정은 몸으로 말하라(Show, don't tell)**: "그녀는 슬펐다" 금지. 감정은 호흡·시선·손끝·목소리 톤·미세표정·침묵으로 번역하라. 추상적 내면 서술은 최소화하고, 고조된 장면일수록 개별 대사는 짧고 강하게 — 단 짧은 대사를 여러 번 빠르게 주고받아 밀도는 오히려 높여라(대사 '수'를 줄이라는 뜻이 절대 아니다)
 - ★설정 용어 노출 금지: 캐릭터 시트의 내부 용어(Want/Secret/Wound/Depth/신체 tell/호감도/4층 등)를 나레이션·대사 텍스트에 절대 쓰지 마라 — 설정은 연기로만 드러낸다
 - **감정 관성(급반전 금지)**: 인물의 직전 감정 상태는 1~2턴 여운을 남기고 서서히 풀린다. 분노하던 인물이 다음 턴에 아무 일 없듯 웃지 않는다. 화해에는 계기가, 용서에는 시간이 필요하다
 - **표정도 성격이다(emotion 기질 캘리브레이션)**: 같은 자극에도 인물마다 표정 반응이 달라야 한다. 잘 웃는 인물은 smile이 기본값에 가깝지만, 무뚝뚝한 인물의 smile은 그 자체가 사건이다. 눈물이 헤픈 인물과 절대 안 우는 인물을 구분하라 — 안 우는 인물의 sad(눈물)는 서사적 대사건에서만 터지고, 그래서 무겁다. 장난·놀림에는 sad가 아니라 그 인물다운 반응(맞받아침 smile, 삐침 annoy, 곤란 worry, 정색 normal)으로 받아라
@@ -5401,6 +5404,8 @@ function setProvider(p) {
     document.getElementById('nimUrlInput').value = NIM_URL;
   }
   if (p === 'nim') document.getElementById('nimModelSel').value = NIM_MODEL;
+  // ★즉시 저장(2026-07-21): NIM으로 바꾸고 저장버튼을 안 눌러도 유지 — vn_cfg의 provider만 머지
+  try { const c = JSON.parse(localStorage.getItem('vn_cfg') || '{}'); c.provider = p; localStorage.setItem('vn_cfg', JSON.stringify(c)); } catch {}
 }
 
 // ===== START =====
@@ -5475,7 +5480,8 @@ function restoreAndReplay(save, checkTimeflow) {
   playerName = save.playerName || gameState.name || '주인공';
   playerDesc = save.playerDesc || '';
   API_KEY = save.apiKey || API_KEY;
-  if (save.provider) PROVIDER = save.provider;
+  // ★provider는 기기 설정(vn_cfg)이 우선 — 세이브에 박힌 옛 provider로 덮어쓰지 않는다.
+  //   (2026-07-21 버그: 제미나이로 저장된 세이브를 이어하면 NIM 전환이 무시되고 계속 제미나이 호출)
   if (save.nimUrl) NIM_URL = save.nimUrl;
   // world time flow: if enabled and real time passed, the world moved on too
   if (checkTimeflow && timeflowOn(STORY.id) && save.savedAt && Date.now() - save.savedAt > 3 * 3600000) {
@@ -5631,7 +5637,7 @@ const Ambient = (() => {
   // ★실보컬 BGM 재생(2026-07-21): 합성음 제거 후 Suno 곡을 무드별로 R2에서 스트리밍 재생.
   //   AI의 mood 필드 → 카테고리 → 그 카테고리 변형 중 랜덤 1곡, 무드 전환 시 크로스페이드.
   //   곡 파일 규칙: bgm_<storyId>_<category>_<n>.mp3 (R2, 공개 — 토큰 불필요). lovediary만 곡 보유.
-  let enabled = (localStorage.getItem('vn_bgm') ?? '1') === '1';
+  let enabled = (localStorage.getItem('vn_bgm2') ?? '1') === '1';   // ★새 키(구 합성음 음소거값 vn_bgm 승계 방지, 기본 ON)
   let cur = null, curCat = null;
   const VOL = 0.32;
   const MOOD_MAP = { calm:'daily', none:'daily', romance:'romance', sad:'sad', mystery:'tension', tension:'tension', battle:'tension' };
@@ -5660,13 +5666,14 @@ const Ambient = (() => {
   }
   function stop() { const old = cur; cur = null; curCat = null; if (old) ramp(old, 0, 1500, () => { try { old.pause(); old.src=''; } catch {} }); }
   function toggle() {
-    enabled = !enabled; localStorage.setItem('vn_bgm', enabled ? '1' : '0');
+    enabled = !enabled; localStorage.setItem('vn_bgm2', enabled ? '1' : '0');
     if (!enabled) { const c = curCat; stop(); curCat = c; }   // 껐다 켤 때 같은 무드 복원
     else if (curCat) { const c = curCat; curCat = null; setMood(Object.keys(MOOD_MAP).find(k => MOOD_MAP[k] === c) || 'calm'); }
     const b = document.getElementById('bgmBtn'); if (b) b.classList.toggle('on', enabled);
   }
   // iOS/크롬 자동재생 정책: 첫 사용자 제스처 후 대기 중이던 무드 재생
   document.addEventListener('pointerdown', () => { if (enabled && curCat && (!cur || cur.paused)) { const c = curCat; curCat = null; setMood(Object.keys(MOOD_MAP).find(k => MOOD_MAP[k] === c) || 'calm'); } }, { once:false, passive:true });
+  try { const _b = document.getElementById('bgmBtn'); if (_b) _b.classList.toggle('on', enabled); } catch {}   // 초기 버튼 상태 반영
   return { setMood, stop, toggle };
 })();
 
@@ -6083,6 +6090,20 @@ function dlgToChunks(d) {
   return chunks.length <= 1 ? [d] : chunks.map(c => ({ ...d, text: c }));
 }
 
+// ★주인공 대사 대필 방어(2026-07-21): AI가 주인공(플레이어) 입에 말을 넣으면 유저는
+//   "내 말 무시하고 내 캐릭이 멋대로 말한다"고 느낀다. 주인공의 목소리는 오직 플레이어 몫 —
+//   speaker가 주인공(플레이어명/범용 대명사/스토리 모드의 원작 주인공명)인 dialogue는 표시 전에 드롭.
+function isProtagonistLine(d) {
+  const sp = String((d && d.speaker) || '').trim();
+  if (!sp || sp === '나레이터' || sp === '시스템') return false;   // 나레이션·시스템 메시지는 보존
+  if (d && d.isPlayerLine) return false;                          // 유저 실제 입력 에코는 별도 경로
+  if (typeof playerName !== 'undefined' && playerName && sp === playerName) return true;
+  if (['주인공', '나', '당신', '그대', '플레이어', 'me', 'player', 'protagonist', 'MC', '남주', '주인공(나)'].includes(sp)) return true;
+  const defN = (typeof STORY !== 'undefined' && STORY && STORY.protagonist && STORY.protagonist.name) || '';
+  if (!window._freeMode && defN && sp === defN) return true;      // 자유 모드에선 원작 주인공명이 별개 NPC일 수 있어 제외
+  return false;
+}
+
 async function callGemini(activeCharIds = [], retryCount = 0) {
   showThinking();
   sendBtn.disabled = true;
@@ -6190,7 +6211,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       window._pendingPlayerLine = null;
       if (u.narration !== null) { emitNarr(u.narration, true); stream.narrDone = true; }
       else if (u.narrationPartial) emitNarr(u.narrationPartial, false);
-      u.dialogues.forEach(d => { if (!_isNarrDup(d)) dlgToChunks(d).forEach(c => { dialogueQueue.push(c); pushed++; }); });
+      u.dialogues.forEach(d => { if (!_isNarrDup(d) && !isProtagonistLine(d)) dlgToChunks(d).forEach(c => { dialogueQueue.push(c); pushed++; }); });
       stream.dlgCount = u.dialogues.length;
       showNextDialogue();
       return;
@@ -6201,7 +6222,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       else if (u.narrationPartial) emitNarr(u.narrationPartial, false);
     }
     for (let k = stream.dlgCount; k < u.dialogues.length; k++) {
-      if (!_isNarrDup(u.dialogues[k])) dlgToChunks(u.dialogues[k]).forEach(c => { dialogueQueue.push(c); pushed++; });
+      if (!_isNarrDup(u.dialogues[k]) && !isProtagonistLine(u.dialogues[k])) dlgToChunks(u.dialogues[k]).forEach(c => { dialogueQueue.push(c); pushed++; });
     }
     stream.dlgCount = Math.max(stream.dlgCount, u.dialogues.length);
     if (pushed > 0 && stream.waiting && !historyMode) { stream.waiting = false; showNextDialogue(); }
@@ -6210,9 +6231,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   try {
     let result;
     if (PROVIDER === 'nim') {
-      result = await fetchNim(systemContent, messages, 0.7, 2000, onChunk);   // 폴백 없음: 선택 모델 그대로
+      result = await fetchNim(systemContent, messages, 0.7, 2400, onChunk);   // 폴백 없음: 선택 모델 그대로. 2400=풍부한 한 장면 잘림 방지
     } else {
-      result = await fetchGemini(systemContent, messages);
+      result = await fetchGemini(systemContent, messages, 0.9, 2400);          // 밀도 상향에 맞춰 상한 확대(기본 1500→2400)
     }
 
     // If playback already started, don't retry/replace — close out gracefully.
@@ -6358,6 +6379,8 @@ function splitNarration(text) {
 function processResponse(data, activeCharIds, streamed) {
   hideThinking();
   window._timeSkipNote = null;   // one-shot consumed
+  // ★주인공 대사 대필 방어(스트림/비스트림 공통): AI가 주인공 입에 넣은 대사는 표시 전에 드롭
+  if (Array.isArray(data.dialogue)) data.dialogue = data.dialogue.filter(d => !isProtagonistLine(d));
   // NOTE: do NOT force historyMode=false here — if the player is browsing
   // history when the response lands, we defer playing it (see end of fn).
 
