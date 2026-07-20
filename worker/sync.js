@@ -12,7 +12,8 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth',
+  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,Range',
+  'Access-Control-Expose-Headers': 'Content-Range,Accept-Ranges,Content-Length',
 };
 
 // ===== ACCOUNTS (username/password → HMAC session token) =====
@@ -191,15 +192,29 @@ export default {
         const user = await verifyToken(url.searchParams.get('t') || '', env);
         if (!user) return new Response('login required', { status: 401, headers: CORS });
       }
-      const obj = await env.R2_IMG.get(name);
+      // ★iOS Safari 미디어(오디오/비디오) 재생 필수: Range 요청 → 206 Partial Content.
+      //   200 전체응답이면 iOS <audio> 재생이 불안정(무음·루프 실패). 2026-07-21.
+      const hasRange = req.headers.has('Range');
+      const obj = await env.R2_IMG.get(name, hasRange ? { range: req.headers } : undefined);
       if (!obj) return new Response('not found', { status: 404, headers: CORS });
-      return new Response(obj.body, {
-        headers: {
-          ...CORS,
-          'Content-Type': (obj.httpMetadata && obj.httpMetadata.contentType) || 'image/webp',
-          'Cache-Control': 'public, max-age=31536000, immutable'
-        }
-      });
+      const h = {
+        ...CORS,
+        'Content-Type': (obj.httpMetadata && obj.httpMetadata.contentType) || 'image/webp',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Accept-Ranges': 'bytes',
+        'ETag': obj.httpEtag,
+      };
+      let status = 200;
+      if (hasRange && obj.range) {
+        const off = obj.range.offset ?? 0;
+        const len = obj.range.length ?? (obj.size - off);
+        h['Content-Range'] = `bytes ${off}-${off + len - 1}/${obj.size}`;
+        h['Content-Length'] = String(len);
+        status = 206;
+      } else {
+        h['Content-Length'] = String(obj.size);
+      }
+      return new Response(obj.body, { status, headers: h });
     }
 
     // ---- IMAGE STORE (KV-backed, free tier) ----
