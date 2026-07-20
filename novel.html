@@ -932,6 +932,12 @@
     min-width: 0;
   }
   .char-sprite.visible { opacity: 1; }
+  /* ★실사 chest-up 트랙(lovediary): 구 2D는 카우보이샷이라 바닥 정렬로도 얼굴이 상단에 왔지만,
+     chest-up은 세로가 짧아 얼굴이 55%(대사 61% 직전)까지 내려와 "아래 짱박힌" 구도가 됨(2026-07-20 폰 스샷).
+     인물을 키워 얼굴을 상단 1/3로 — 하단은 대사 스크림 뒤로(프론티아식 인물 지배). 2D 트랙 기준값(v53)은 불변. */
+  /* 실사는 프레이밍이 균일해 area-normalization 확대(>1)가 불필요 — 확대만 클램프(축소는 허용) */
+  body[data-story="lovediary"] .char-sprite { height: calc(84% * min(var(--arScale, 1), 1)); }
+  body[data-story="lovediary"] #charLayer[data-count="2"] .char-sprite { height: calc(74% * min(var(--arScale, 1), 1)); }
   /* Speaker: NO zoom (keeps bottom from cropping), just on top + full brightness.
      Others recede (dim + slightly smaller). Speaker also slides toward center
      via the nth-child rules below. */
@@ -1044,7 +1050,7 @@
   }
   #continueHint {
     position: absolute;
-    bottom: -8px; right: 2px;
+    bottom: 0; right: 2px;   /* -8px가 overflow:hidden 밖으로 나가 '기록 12/12' 안내가 잘리던 버그 */
     color: var(--gold);
     opacity: 0.65;
     font-size: 0.72rem;
@@ -6303,6 +6309,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         // 마지막 문장 경계까지만 (경계: . ! ? … 。 ! ? 뒤)
         const m = txt.slice(from).match(/[\s\S]*[.!?。…!?]["”’)]?/);
         if (!m) return;
+        // 첫 방출은 즉시(빠른 첫 표시), 이후엔 80자 이상 모일 때만 — 문장 하나씩
+        // 조각나 "한두 줄씩 나오는" 리듬 방지(2026-07-20 폰 피드백)
+        if (from > 0 && m[0].length < 80) return;
         upto = from + m[0].length;
       }
       const fresh = txt.slice(from, upto).trim();
@@ -6648,6 +6657,8 @@ function resetSprites() {
 // Create + reveal a character's sprite the moment they first appear
 function ensureSprite(charId) {
   if (!charId || shownSprites.includes(charId)) return;
+  // 스토리별 스프라이트 CSS 트랙 선택(실사 chest-up 구도 보정 등) — 멱등이라 매번 세팅
+  try { document.body.dataset.story = (STORY && STORY.id) || ''; } catch {}
   // Extras / unregistered ids (마법사 A etc.) have NO sprite — never create a
   // layout slot for them, or the scene spaces itself as if they were present.
   if (!CHARACTERS[charId]) return;
@@ -7281,6 +7292,7 @@ async function handlePlayerInput(text) {
       const rc = roster.length ? CHARACTERS[roster[Math.floor(Math.random() * roster.length)]] : null;
       aiEx += `\n\n[자유 모드 — 반드시 준수]:`
         + `\n- 주인공 '${playerName}'은(는) 원작 주인공(${defN ? defN + ' — ' : ''}세계관 설정에 적힌 정해진 신분·능력의 인물)이 아니다. ${playerDesc}인 이 세계의 평범한 사람이다. 세계관 설정의 '주인공' 신분·특수능력·타고난 운명을 ${playerName}에게 적용하지 마라(${defN ? defN + '은(는) 이 세계의 별개 인물이거나 등장하지 않는다).' : ').'}`
+        + `\n- ★등장인물 설명에 적힌 '주인공과의 관계'(소꿉친구·옆집·라이벌·연인·원수 등)도 전부 원작 주인공 기준이다 — ${playerName}이(가) 승계하지 않는다. 모든 인물은 ${playerName}과(와) 초면이며 이름도 모른다(유저 특징이 '전학생'이면 더더욱). 관계는 0에서 시작해 플레이로만 쌓인다.`
         + `\n- 정해진 오프닝(원작의 도입 사건·시작 장소)을 절대 재현하지 마라. ${STORY.freeStartHint || '저잣거리·주막·시장·나루터·객잔 등 평범한 일상 장소'}에서 완전히 새로운 첫 장면으로 시작하고, background도 그런 장소 키로 바꿔라.`
         + `\n- ${rc && rc.name ? `인물 '${rc.name}'을(를) 자연스럽게 등장시켜라.` : '이 세계 인물 하나를 자연스럽게 등장시켜라.'} 원작 메인 서사는 유저 개입 없이도 세계 뒤편에서 시간순으로 흐른다(소문·NPC 대화로 전달).`;
     } else {
