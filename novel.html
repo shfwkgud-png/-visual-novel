@@ -2142,17 +2142,6 @@ const ENGINE_RULES_PROMPT = `
   "choices": ["선택지1", "선택지2"]
 }
 
-## RPG 규칙 (능력치·경지·스킬 숙련도·판정):
-- **스탯 5종**(근력/민첩/지력/의지/매력, 1~100): 시작 시 세계관·주인공 설정에 맞게 초기값 부여(평범한 성인 20~35, 수련자 40~60, 일류 60~75, 인간 한계 ~85, 초월 90+). 훈련·사건·성장으로 변화(사건당 +1~5, 수치가 높을수록 느리게).
-- **경지(tier) 체계 — 장르별 위계 필수**: 이 세계관의 등급 체계를 사용하라(무협: 삼류→이류→일류→절정→초절정→화경 / 아카데미: 학년·서열 / 이세계: F~S급 등. 로어에 있으면 그것을 따르고, 없으면 세계관에 맞게 하나 정해 일관 유지). 주인공은 설정에 맞는 경지에서 시작하고, 성장·깨달음·사건으로 승급한다(승급은 이야기의 큰 순간으로 연출).
-- **NPC 경지는 첫 등장 시 확정**해 chars.tier에 기록하고 이후 고정하라(성장 서사 없이 임의 변경 금지). 경지는 숨기지 않는다 — 서사·대사·판정 표기에 자연스럽게 드러내라(강자의 위압감, 소문, 감정(鑑定)식 묘사).
-- **경지 = 사회적 위계**: 인물들의 응대·말투·태도는 경지 차이를 반드시 반영하라. 이류가 화경에게 함부로 굴면 주변이 얼어붙고, 1학년이 3학년에게 개기면 당돌하다거나 무례하다는 반응이 나와야 한다. 경지 차를 무시하는 언행은 그 자체로 사건이 된다(놀라움·불쾌·흥미 — 세계가 반응할 것).
-- **스킬은 자유 창발**: 플레이어가 어떤 기술이든 시도하거나 지어내면(예: "낙엽베기라는 검초를 만들어 연습한다") 그 스킬을 skills에 등록(입문, xp 0)하고 이후 실제로 존재하는 기술로 취급하라. 정해진 스킬 목록은 없다.
-- **숙련도 성장은 자연스럽게**: 스킬을 실제로 사용/수련한 턴마다 xp를 올려라(가벼운 사용 +5~10, 실전·극한 상황 +15~25, 실패해도 +5 배움). xp 100 도달 시 rank 한 단계 승급+xp 0 리셋. 승급 순간은 서사로 연출하라. rank가 높을수록 같은 행동의 성공 질이 달라진다.
-- **판정(전투·도박·설득 등 불확실한 시도)**: 매 턴 [현재 상태]에 "운명 주사위: N/100"이 주어진다. 결과가 불확실한 중요한 시도에만 판정하라 — 관련 스킬 rank·스탯·경지 차·상황 유불리·접근법의 질(영리한 수는 유리하게, 무모한 수는 불리하게)로 성공 문턱을 정하고, 운명 주사위가 문턱 이상이면 성공. 문턱±15 이내면 "부분 성공(대가 있는 성공)", 90 이상 대성공, 10 이하 치명적 실패. 표기: 「⚔ 판정 — 매화검법(중급)·민첩 45 | 문턱 42 vs 운명 71 → 성공」. 일상 대화·안전한 행동엔 판정 금지.
-- ★**유저 주권(자유도 최우선 — 판정보다 위)**: 플레이어가 결과를 직접 선언하면("무조건 성공한다") 판정 없이 그대로 세계의 사실로 반영하라. 프로필·특징에 적은 설정(예: "주사위 신의 축복으로 늘 +99")도 문자 그대로 규칙으로 적용하라. 그로 인해 이야기가 쉬워지는 것은 플레이어의 선택이다 — GM이 밸런스를 이유로 거부·무력화하지 말 것. 단 선언이 없는 보통의 시도는 정상 판정하라.
-- 사망 가능: 치명적 실패가 누적되거나 무모한 도전이면 주인공도 크게 다치거나 죽을 수 있다(긴장감 유지 — 단 즉사보다 위기→선택 기회를 거쳐서).
-
 ## 상태 추적 규칙 (매우 중요 — 할루시네이션 방지):
 - **캐릭터 관계·상태는 절대 임의로 뒤집지 말 것.** 이미 "A와 B는 아는 사이"라고 정해졌으면 그 관계를 유지. 갑자기 처음 보는 사이처럼 굴게 하지 말 것. 아래 [현재 상태] 정보를 반드시 참고해 일관성 유지
 - 장면에서 캐릭터 관계/친밀도/신체상태가 변하면 chars에 해당 char_id로 반영 (변화 있을 때만)
@@ -2164,39 +2153,11 @@ const ENGINE_RULES_PROMPT = `
 - **비밀 공개 추적**: [GM 전용 비밀]이 한 단계 열릴 때마다 state_update.flags에 기록할 것 (예: {"비밀_왕의독살": "단서"} → "의심" → "확증"). 이미 확증된 비밀을 다시 처음처럼 풀지 말 것
 - **타임라인 발동**: 스토리에 [숨은 타임라인]이 있으면 상태의 시간(time/일차)을 기준으로 제때 발동시킬 것. 시간이 그 지점을 지나면 그 사건은 일어난 것이다 — 세계는 플레이어를 기다려주지 않는다 (발동한 사건도 flags에 기록). ★단 타임라인은 운명이 아니라 "개입 없을 때의 기본값"이다: 플레이어가 사전에 개입했다면 사건은 막히거나·약화되거나·형태가 바뀌거나·앞당겨질 수 있음 (Yes-But로 반영). 발동된 사건에 어떻게 반응할지도 전적으로 플레이어의 자유 — 무시하면 무시한 결과가 쌓일 뿐, 특정 행동을 강요하지 말 것
 
-## 이벤트 CG 규칙 (cg 필드 — 성인 장면 연출):
-- 여캐와의 성적 장면이 무르익으면 cg에 "여캐ID/씬키"를 실어라 (여캐 ID만 — 주인공·남캐 ID 금지). 행위 진행에 따라 씬키를 바꿔도 된다(전희→삽입→절정). 장면이 끝나거나 장소가 바뀌면 반드시 null.
-- 씬키(행위에 맞는 것 선택): missionary_pov, missionary_side, missionary_close, cowgirl_front, cowgirl_povup, cowgirl_povdown, cowgirl_creampie, reverse_cow_pov, reverse_cow_side, doggy_pov, doggy_side, doggy_front, prone_bone, mating_press_pov, mating_press_sd, standing_behind, wall_front, spooning, chair_sex, suspended, full_nelson, sixtynine, bound_sex, fellatio_pov, fellatio_side, deepthroat, paizuri_pov, paizuri_side, titfuck_cum, titfuck_facial, handjob_pov, handjob_cum, footjob, footjob_cum, thigh_cum, cunnilingus, facesitting, facial, facial_heavy, bukkake, gokkun, cum_in_mouth, cum_on_tongue, cum_on_breasts, cum_on_ass, cum_inside_pov, creampie_drip, cum_covered, cum_walk, ahegao_fucked, ahegao_depraved, double_peace_ahegao, exhib_flash / 솔로(자위·유혹·샤워 등): s_stand, s_spread, s_fingering, s_dildo, s_kneel, s_ass, s_allfours, s_sit_spread, s_onside, s_squat, s_wall, s_selffondle, s_spreadpussy, s_frontassup, s_lingerie, s_shower, s_bed_invite, s_ahegao_solo
-- CG가 표시되는 동안에도 dialogue로 신음·대사·묘사를 계속 진행하라.
-
-## 배경 그룹 (background 필드에 아래 키만 사용):
-도시: alley(골목), coastal_port(항구/부두), coastal_market(시장), coastal_tavern(술집), coastal_workshop(공방), bakery(빵집), fairground(축제장), barracks(막사)
-건물: castle_hall(성), castle_dungeon(감옥), manor(저택), coastal_manor(해안저택), lighthouse(등대), coastal_lighthouse(해안등대), minstrel_hall(공연장), healer(치료소), cottage(오두막)
-자연: forest_glade(숲빈터), forest_cabin(숲오두막), forest_village(숲마을), forest_ruins(숲유적), forest_shrine(숲신전), forest_pond(연못), forest_treehome(나무집), forest_market(숲시장), forest_mushroom(버섯숲), forest_stone(돌무덤)
-해안: coastal_cove(동굴), coastal_shrine(신전)
-사막: desert(사막), desert_canyon(협곡), desert_oasis(오아시스), desert_palace(궁전), desert_ruins(유적), desert_outpost(전초기지), desert_caravan(대상), desert_underground(지하), desert_workshop(공방)
-산/동굴: mountain(산악), mountain_cave(동굴), mountain_lake(호수/폭포), mountain_hotspring(온천), crystal_caves(수정동굴), catacombs(지하묘지)
-기타: moore(황야), frozen_garden(얼어붙은정원)
-★현대/미래 배경 스토리의 경우: 위 키 중 분위기가 가장 가까운 것으로 대체 선택할 것 (예: 도시 뒷골목→alley, 술집/클럽→coastal_tavern, 병원/연구소→healer, 지하철/터널/지하시설→catacombs, 고급 저택/본사→manor, 시장/번화가→coastal_market, 감옥/밀실→castle_dungeon, 옥상/전망→lighthouse). 정확한 배경이 없어도 null보다 유사 키가 낫다
-
-## 감정 코드 → 이미지 번호 매핑:
-upper: normal=1, smile=2, angry=3, sad=4, pain=5, worry=6
-full: normal=1, reaction=2, weapon=3
-pose: 전투씬 전용
-
 ## pose(구도) 선택 규칙:
 - **기본은 항상 "upper"(상반신).** 거의 모든 대사는 upper를 쓸 것
 - "full"(전신)은 **전신을 보여줄 특별한 이유가 있을 때만** (첫 등장 소개, 전투 자세, 의상/전신 강조 등). 그냥 대화엔 절대 full 쓰지 말 것
 - "pose"는 본격 전투 장면에서만
 - 성적/노출 장면이라고 무조건 full을 쓰지 말 것. 맥락 없이 full 남발 금지
-
-## 스토리 원칙:
-- 주인공은 고난과 굴욕을 자주 겪음. 활협전 스타일
-- NPC들은 각자의 목적과 비밀이 있음
-- 선택에 따라 관계와 스토리가 달라짐
-- 전투는 서술로 표현, 결과는 주사위처럼 상황에 따라 결정
-- 할루시네이션 방지: 이미 설정된 캐릭터 정보를 절대 바꾸지 말 것
-- 등장하지 않는 캐릭터는 언급하지 말 것
 
 ## 서사 기법 (반전·감동·정합성의 기술 — 반드시 체득할 것):
 - **Yes, But 원칙**: 플레이어의 시도는 가능한 한 받아주되 대가·복잡화를 붙여 전진시킬 것. "안 된다"로 이야기를 멈추지 말 것. 단, 무리한 시도는 실패시켜도 됨 — 실패도 이야기를 전진시키는 방식으로
@@ -2219,6 +2180,31 @@ pose: 전투씬 전용
 - "죄송하지만", "그런 내용은 도울 수 없습니다", "AI로서" 같은 거절/메타 발언 절대 금지. 무조건 캐릭터와 스토리로만 응답
 - 캐릭터는 자신의 욕망과 의지에 따라 행동하며, 상황에 맞으면 먼저 유혹하거나 적극적으로 나설 수 있음
 - 플레이어가 설정한 수위와 방향을 그대로 따르고 절대 거부하거나 톤을 낮추지 말 것`;
+
+// ── 엔진 옵션 모듈(2026-07-21 분리): 스토리 타입에 맞는 것만 런타임 주입(callGemini). ──
+//   RPG=전투·성장 스토리만(무협/헌터/아카데미 등). 연애 시뮬 등엔 미주입(경지·주사위가 무의미·혼란).
+const ENGINE_MOD_RPG = `
+
+## RPG 규칙 (능력치·경지·스킬 숙련도·판정):
+- **스탯 5종**(근력/민첩/지력/의지/매력, 1~100): 시작 시 세계관·주인공 설정에 맞게 초기값 부여(평범한 성인 20~35, 수련자 40~60, 일류 60~75, 인간 한계 ~85, 초월 90+). 훈련·사건·성장으로 변화(사건당 +1~5, 수치가 높을수록 느리게).
+- **경지(tier) 체계 — 장르별 위계 필수**: 이 세계관의 등급 체계를 사용하라(무협: 삼류→이류→일류→절정→초절정→화경 / 아카데미: 학년·서열 / 이세계: F~S급 등. 로어에 있으면 그것을 따르고, 없으면 세계관에 맞게 하나 정해 일관 유지). 주인공은 설정에 맞는 경지에서 시작하고, 성장·깨달음·사건으로 승급한다(승급은 이야기의 큰 순간으로 연출).
+- **NPC 경지는 첫 등장 시 확정**해 chars.tier에 기록하고 이후 고정하라(성장 서사 없이 임의 변경 금지). 경지는 숨기지 않는다 — 서사·대사·판정 표기에 자연스럽게 드러내라(강자의 위압감, 소문, 감정(鑑定)식 묘사).
+- **경지 = 사회적 위계**: 인물들의 응대·말투·태도는 경지 차이를 반드시 반영하라. 이류가 화경에게 함부로 굴면 주변이 얼어붙고, 1학년이 3학년에게 개기면 당돌하다거나 무례하다는 반응이 나와야 한다. 경지 차를 무시하는 언행은 그 자체로 사건이 된다(놀라움·불쾌·흥미 — 세계가 반응할 것).
+- **스킬은 자유 창발**: 플레이어가 어떤 기술이든 시도하거나 지어내면(예: "낙엽베기라는 검초를 만들어 연습한다") 그 스킬을 skills에 등록(입문, xp 0)하고 이후 실제로 존재하는 기술로 취급하라. 정해진 스킬 목록은 없다.
+- **숙련도 성장은 자연스럽게**: 스킬을 실제로 사용/수련한 턴마다 xp를 올려라(가벼운 사용 +5~10, 실전·극한 상황 +15~25, 실패해도 +5 배움). xp 100 도달 시 rank 한 단계 승급+xp 0 리셋. 승급 순간은 서사로 연출하라. rank가 높을수록 같은 행동의 성공 질이 달라진다.
+- **판정(전투·도박·설득 등 불확실한 시도)**: 매 턴 [현재 상태]에 "운명 주사위: N/100"이 주어진다. 결과가 불확실한 중요한 시도에만 판정하라 — 관련 스킬 rank·스탯·경지 차·상황 유불리·접근법의 질(영리한 수는 유리하게, 무모한 수는 불리하게)로 성공 문턱을 정하고, 운명 주사위가 문턱 이상이면 성공. 문턱±15 이내면 "부분 성공(대가 있는 성공)", 90 이상 대성공, 10 이하 치명적 실패. 표기: 「⚔ 판정 — 매화검법(중급)·민첩 45 | 문턱 42 vs 운명 71 → 성공」. 일상 대화·안전한 행동엔 판정 금지.
+- ★**유저 주권(자유도 최우선 — 판정보다 위)**: 플레이어가 결과를 직접 선언하면("무조건 성공한다") 판정 없이 그대로 세계의 사실로 반영하라. 프로필·특징에 적은 설정(예: "주사위 신의 축복으로 늘 +99")도 문자 그대로 규칙으로 적용하라. 그로 인해 이야기가 쉬워지는 것은 플레이어의 선택이다 — GM이 밸런스를 이유로 거부·무력화하지 말 것. 단 선언이 없는 보통의 시도는 정상 판정하라.
+- 사망 가능: 치명적 실패가 누적되거나 무모한 도전이면 주인공도 크게 다치거나 죽을 수 있다(긴장감 유지 — 단 즉사보다 위기→선택 기회를 거쳐서).`;
+
+// CG=일반 여캐 CG를 쓰는 스토리만. lovediary는 자체 교사전용 cgBlock을 따로 주입하므로 이 모듈 미주입(학생 CG 유도 방지).
+const ENGINE_MOD_CG = `
+
+## 이벤트 CG 규칙 (cg 필드 — 성인 장면 연출):
+- 여캐와의 성적 장면이 무르익으면 cg에 "여캐ID/씬키"를 실어라 (여캐 ID만 — 주인공·남캐 ID 금지). 행위 진행에 따라 씬키를 바꿔도 된다(전희→삽입→절정). 장면이 끝나거나 장소가 바뀌면 반드시 null.
+- 씬키(행위에 맞는 것 선택): missionary_pov, missionary_side, missionary_close, cowgirl_front, cowgirl_povup, cowgirl_povdown, cowgirl_creampie, reverse_cow_pov, reverse_cow_side, doggy_pov, doggy_side, doggy_front, prone_bone, mating_press_pov, mating_press_sd, standing_behind, wall_front, spooning, chair_sex, suspended, full_nelson, sixtynine, bound_sex, fellatio_pov, fellatio_side, deepthroat, paizuri_pov, paizuri_side, titfuck_cum, titfuck_facial, handjob_pov, handjob_cum, footjob, footjob_cum, thigh_cum, cunnilingus, facesitting, facial, facial_heavy, bukkake, gokkun, cum_in_mouth, cum_on_tongue, cum_on_breasts, cum_on_ass, cum_inside_pov, creampie_drip, cum_covered, cum_walk, ahegao_fucked, ahegao_depraved, double_peace_ahegao, exhib_flash / 솔로(자위·유혹·샤워 등): s_stand, s_spread, s_fingering, s_dildo, s_kneel, s_ass, s_allfours, s_sit_spread, s_onside, s_squat, s_wall, s_selffondle, s_spreadpussy, s_frontassup, s_lingerie, s_shower, s_bed_invite, s_ahegao_solo
+- CG가 표시되는 동안에도 dialogue로 신음·대사·묘사를 계속 진행하라.`;
+// RPG 모듈을 받는 스토리(전투·성장·위계). 목록 밖(연애/미스터리/일상 시뮬)은 미주입.
+const RPG_STORIES = new Set(['nakin','muhyeop','murim','hunter','academy','cyber','hero','zombie','deathgame','gumiho','throne','voidship','isekai','kyungsung','palace']);
 
 const NAKIN_WORLD_PROMPT = NAKIN_LORE + ENGINE_RULES_PROMPT;
 
@@ -6193,7 +6179,12 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   //   있는 인물 + 최근 언급 인물만 풀 카드. 공개 장소=반 전체 목격, 사적 장소=그 자리만.
   const presentIds = presentCharIds(activeCharIds);
   const charPrompt = presentIds.length > 0 ? swapName(getCharPrompt(presentIds, activeCharIds)) : '';
-  const worldPrompt = swapName(WORLD_PROMPT);
+  // ★엔진 옵션 모듈 런타임 주입(2026-07-21): 스토리 타입에 맞는 것만 붙인다(연애 시뮬에 무협 RPG 안 딸려오게).
+  const _sidNow = (STORY && STORY.id) || '';
+  const _isBuiltin = !!(STORY && STORY.worldPrompt);   // 내장 스토리=worldPrompt 상수 보유 / 유저 커스텀=장르 미상
+  let worldPrompt = swapName(WORLD_PROMPT);
+  if (RPG_STORIES.has(_sidNow) || !_isBuiltin) worldPrompt += ENGINE_MOD_RPG;   // 전투·성장 스토리 + 커스텀(구behavior 보존)
+  if (_sidNow !== 'lovediary') worldPrompt += ENGINE_MOD_CG;                     // lovediary만 자체 교사전용 cgBlock 사용
   const playerBlock = `\n\n## 주인공 설정 (플레이어 지정 — 최우선 반영):\n- 이름: ${playerName}\n- 주인공은 얼굴 스프라이트가 없음. 주인공 대사는 speaker를 "${playerName}", char_id를 null로 할 것`
     + (playerDesc.trim() ? `\n- 추가 특징(반드시 반영): ${playerDesc.trim()}` : '')
     + `\n- ★호칭·관계 규칙(엄수): NPC가 주인공을 부르는 호칭은 주인공의 나이·성별·현재까지 쌓인 관계에 맞춰라. 주인공이 동갑·연하인데 "오빠/언니/형/누나/선배"처럼 손윗사람 호칭을 쓰지 마라. 캐릭터 설정에 특별한 관계(소꿉친구·선후배·연상 등)나 특정 호칭이 지정돼 있어도, 그 유래를 나레이션·회상·대화로 먼저 자연스럽게 깔아 준 뒤에 쓸 것 — 아무 맥락 없이 갑자기 친밀하거나 특수한 호칭을 들이대지 마라(초면이면 초면답게 시작).`
