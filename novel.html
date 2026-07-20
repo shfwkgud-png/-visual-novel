@@ -935,9 +935,11 @@
   /* ★실사 chest-up 트랙(lovediary): 구 2D는 카우보이샷이라 바닥 정렬로도 얼굴이 상단에 왔지만,
      chest-up은 세로가 짧아 얼굴이 55%(대사 61% 직전)까지 내려와 "아래 짱박힌" 구도가 됨(2026-07-20 폰 스샷).
      인물을 키워 얼굴을 상단 1/3로 — 하단은 대사 스크림 뒤로(프론티아식 인물 지배). 2D 트랙 기준값(v53)은 불변. */
-  /* 실사는 프레이밍이 균일해 area-normalization 확대(>1)가 불필요 — 확대만 클램프(축소는 허용) */
-  body[data-story="lovediary"] .char-sprite { height: calc(84% * min(var(--arScale, 1), 1)); }
-  body[data-story="lovediary"] #charLayer[data-count="2"] .char-sprite { height: calc(74% * min(var(--arScale, 1), 1)); }
+  /* 실사는 프레이밍이 균일해 area-normalization 확대(>1)가 불필요 — 확대만 클램프(축소는 허용).
+     v2(유저 "여전히 너무 크고 낮다"): 84% 바닥붙임 → 60%로 축소 + --ty 리프트로 절단선을 대사 스크림
+     뒤(~78%)에 숨김 — 눈높이 ~33%, 인물이 화면을 덮지 않는 자연 배치 */
+  body[data-story="lovediary"] .char-sprite { height: calc(60% * min(var(--arScale, 1), 1)); --ty: -36%; }
+  body[data-story="lovediary"] #charLayer[data-count="2"] .char-sprite { height: calc(54% * min(var(--arScale, 1), 1)); --ty: -30%; }
   /* Speaker: NO zoom (keeps bottom from cropping), just on top + full brightness.
      Others recede (dim + slightly smaller). Speaker also slides toward center
      via the nth-child rules below. */
@@ -7060,7 +7062,9 @@ function handleTap(x) {
     return;
   }
 
-  const leftZone = (x != null) && (x < window.innerWidth * 0.38);
+  // 좌측 탭존 38%→22%: 대사 넘기다 실수로 기록 모드에 들어가 "응답 없음"으로 오인하는
+  // 사고의 공범(2026-07-20 폰 스샷) — 기록 진입은 유지하되 실수 진입만 줄임
+  const leftZone = (x != null) && (x < window.innerWidth * 0.22);
 
   if (leftZone) {            // ← previous
     historyBack();
@@ -7246,6 +7250,9 @@ function handleKey(e) {
 async function sendMessage() {
   const text = (userInput.innerText || '').trim();
   if (!text || sendBtn.disabled) return;
+  // ★기록(히스토리) 모드에 갇힌 채 전송하면 응답이 _pendingDialogues에 홀드돼 화면 침묵
+  //   ("응답이 없어요" 사고의 진범, 2026-07-20) — 전송 순간 반드시 현재로 복귀
+  if (historyMode) exitHistory();
   userInput.textContent = '';
   inputBar.style.display = 'none';
   inputMode = false;
@@ -7794,6 +7801,8 @@ function renderBacklog() {
 // ===== REGENERATE / UNDO =====
 async function regenerate() {
   if (sendBtn.disabled) return;
+  // ★기록 모드 잔존 시 응답 홀드 방지(sendMessage와 동일 가드)
+  if (historyMode) exitHistory();
   // Remove last assistant response
   if (gameHistory.length > 0 && gameHistory[gameHistory.length - 1].role === 'assistant') {
     gameHistory.pop();
