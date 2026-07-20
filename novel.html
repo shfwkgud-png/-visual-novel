@@ -6747,10 +6747,16 @@ function showNextDialogue() {
 }
 
 function typeText(text, callback) {
+  text = (text == null) ? '' : String(text);   // ★undefined/null 가드(text[i] 크래시 방지 2026-07-21)
   clearInterval(window._typeTimer);   // 이전 타이머 생존 시 글자 섞임/중복 출력 방지
   dialogueText.textContent = '';
   const hint = document.getElementById('continueHint');
   hint.style.display = 'none';
+  window._typeFull = text;
+  if (!text.length) {                 // 빈 텍스트 → 타이핑 없이 즉시 완료(무한 undefined 방지)
+    hint.textContent = '▼ 탭하여 계속'; hint.style.display = 'block';
+    window._typeCallback = callback; callback(); return;
+  }
   let i = 0;
   const speed = 30;
   const timer = setInterval(() => {
