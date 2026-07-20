@@ -22,3 +22,7 @@ character/25_upper_nsfw/
 _cors_proxy.log
 _proxy_*.log
 _batch*.py
+
+# 개발 로그(NSFW 테스트 노트 포함) — 공개 저장소 커밋 금지
+DEVLOG.md
+PROJECT_LOG.md

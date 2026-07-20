@@ -6404,8 +6404,18 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         await waitWithCountdown(wait, retryCount + 1);
         return callGemini(activeCharIds, retryCount + 1);
       }
+      // ★NVIDIA 백엔드 간헐 장애(5xx·타임아웃·네트워크 끊김)도 자동 재시도(2026-07-20 유저 "또 api 뒤졌네").
+      //   스트림이 아직 시작 안 됐을 때만 — 이미 출력 중이면 위 graceful 블록이 처리함. 조용히 3회 재시도.
+      const transient = result.error.code >= 500 || result.error.code === 0 || !result.error.code
+        || /시간 초과|timeout|network|fetch|Failed|ECONN|502|503|504|abort/i.test(em);
+      if (transient && retryCount < 3) {
+        const wait = 3 + retryCount * 3;   // 3s, 6s, 9s
+        await waitWithCountdown(wait, retryCount + 1);
+        return callGemini(activeCharIds, retryCount + 1);
+      }
       hideThinking();
-      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: 'API 오류: ' + em, pose: 'upper' }]);
+      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal',
+        text: '서버 응답이 지연됩니다. [↺ 다시 답변]을 눌러 재시도하세요.\n(' + em.slice(0, 120) + ')', pose: 'upper' }]);
       enterInputMode();
       sendBtn.disabled = false;
       return;
