@@ -799,7 +799,7 @@
   #eventCG {
     position: fixed; inset: 0;
     width: 100%; height: 100vh; height: 100lvh;
-    object-fit: cover; object-position: center;
+    object-fit: contain; object-position: center;   /* cover=잘려 확대됨 → contain=인물 전체가 잘림없이(2026-07-21 유저 지적) */
     z-index: 2; display: none; pointer-events: none; background: #000;
   }
   #eventCG.cg-show { animation: cgIn 350ms ease-out; }
@@ -1792,13 +1792,10 @@
     <input type="password" id="apiKeyInput" placeholder="AIza...">
     <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
     <select id="nimModelSel" style="display:none">
-      <option value="deepseek-ai/deepseek-v4-pro">DeepSeek V4 Pro (추천 · 한국어·무검열 최상)</option>
-      <option value="qwen/qwen3.5-122b-a10b">Qwen 3.5 122B (빠름 · 한국어 좋음)</option>
-      <option value="mistralai/mistral-small-4-119b-2603">Mistral Small 4 119B (빠름 · 외국어 혼입 주의)</option>
+      <option value="nvidia/nemotron-3-ultra-550b-a55b">Nemotron 3 Ultra 550B (추천 · 한국어·서사 최상)</option>
       <option value="mistralai/mistral-medium-3.5-128b">Mistral Medium 3.5 128B (빠름 · 외국어 혼입 주의)</option>
       <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B (약함 · 폴백용)</option>
-      <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B (엔드포인트 복구 시)</option>
-      <option value="mistralai/mistral-large-3-675b-instruct-2512">Mistral Large 3 675B (엔드포인트 복구 시)</option>
+      <option value="deepseek-ai/deepseek-v4-pro">DeepSeek V4 Pro (NVIDIA 복구 시)</option>
     </select>
 
     <button class="start-btn" onclick="saveSettings()">저장</button>
@@ -1875,7 +1872,6 @@
   <div id="topBar">
     <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v97</span></span>
     <div class="top-btns">
-      <button class="top-btn icon" id="bgmBtn" onclick="Ambient.toggle()" title="분위기 사운드" aria-label="사운드"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a4 4 0 0 1 0 7"/></svg></button>
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
       <button class="top-btn" onclick="toggleStatus()">상태</button>
@@ -1959,9 +1955,9 @@ let playerName = '카이든';
 let playerDesc = '';
 let PROVIDER = 'gemini';   // 'gemini' | 'nim'
 let NIM_URL = 'https://aichat.pasokong99.workers.dev';
-let NIM_MODEL = 'deepseek-ai/deepseek-v4-pro';   // 기본=추천 모델(한국어·규칙준수 최상, 2026-07-20 실측 후 상향 — llama 70b는 재서술·언어혼입·밋밋한 선택지로 강등). 폴백 없음
-// 구 기본값(약함·폴백용 llama)이 localStorage에 저장된 유저를 새 기본으로 승격(의도적 선택이 아니라 잔존값)
-const NIM_MODEL_OLD_DEFAULT = 'meta/llama-3.1-70b-instruct';
+let NIM_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b';   // 기본=추천(2026-07-21 실측: 한국어 유창·서사 우수·스트리밍OK. deepseek-v4-pro가 NVIDIA DEGRADED 다운돼 교체). 폴백 없음
+// 구 기본값·수명종료(EOL)·다운 모델이 localStorage에 남은 유저를 새 추천 기본으로 자동 승격(의도적 선택 아닌 잔존값)
+const NIM_MODEL_OLD_DEFAULTS = ['meta/llama-3.1-70b-instruct', 'deepseek-ai/deepseek-v4-pro', 'qwen/qwen3.5-122b-a10b'];
 
 const SUMMARY_INTERVAL = 8;
 const CONTEXT_RECENT = 8;
@@ -4552,7 +4548,7 @@ async function restoreAll() {
       localStorage.setItem('vn_cfg', typeof cfg === 'string' ? cfg : JSON.stringify(cfg));
       if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
-      if (cfg.nimModel) NIM_MODEL = (cfg.nimModel === NIM_MODEL_OLD_DEFAULT) ? NIM_MODEL : cfg.nimModel;   // 구 기본값(llama)은 새 추천 기본으로 승격
+      if (cfg.nimModel) NIM_MODEL = NIM_MODEL_OLD_DEFAULTS.includes(cfg.nimModel) ? NIM_MODEL : cfg.nimModel;   // 구기본/EOL/다운 모델은 새 추천으로 승격
       if (cfg.provider) setProvider(cfg.provider);
       n++;
     }
@@ -5366,7 +5362,7 @@ function deleteSave() {
     if (cfg) {
       if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
-      if (cfg.nimModel) NIM_MODEL = (cfg.nimModel === NIM_MODEL_OLD_DEFAULT) ? NIM_MODEL : cfg.nimModel;   // 구 기본값(llama)은 새 추천 기본으로 승격
+      if (cfg.nimModel) NIM_MODEL = NIM_MODEL_OLD_DEFAULTS.includes(cfg.nimModel) ? NIM_MODEL : cfg.nimModel;   // 구기본/EOL/다운 모델은 새 추천으로 승격
       if (cfg.provider) setProvider(cfg.provider);
     }
   } catch {}
@@ -5631,142 +5627,9 @@ function buildMessages() {
 // matching pad: detuned chord oscillators + sub root + filtered noise +
 // slow LFO movement, crossfaded between moods.
 const Ambient = (() => {
-  let ctx = null, master = null, current = null, curKey = null;
-  let enabled = (localStorage.getItem('vn_bgm') ?? '1') === '1';
-
-  // root(Hz), chord intervals(semitones), filter cutoff, noise level, LFO rate
-  const MOODS = {
-    calm:    { root: 110.0, chord: [0, 7, 12, 16], cut: 900,  noise: 0.00, lfo: 0.05, vol: 0.05 },
-    romance: { root: 130.8, chord: [0, 4, 9, 14],  cut: 1200, noise: 0.00, lfo: 0.07, vol: 0.05 },
-    sad:     { root: 98.0,  chord: [0, 3, 10, 15], cut: 700,  noise: 0.00, lfo: 0.04, vol: 0.055 },
-    mystery: { root: 87.3,  chord: [0, 1, 7, 13],  cut: 650,  noise: 0.015, lfo: 0.09, vol: 0.05 },
-    tension: { root: 73.4,  chord: [0, 6, 12, 13], cut: 500,  noise: 0.03, lfo: 0.13, vol: 0.055 },
-    battle:  { root: 82.4,  chord: [0, 5, 7, 12],  cut: 800,  noise: 0.045, lfo: 0.35, vol: 0.06 }
-  };
-
-  function ensureCtx() {
-    if (!ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return false;
-      ctx = new AC();
-      master = ctx.createGain();
-      master.gain.value = 1;
-      master.connect(ctx.destination);
-    }
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-    return true;
-  }
-
-  function buildMood(key) {
-    const m = MOODS[key];
-    const g = ctx.createGain();          // mood bus (crossfade handle)
-    g.gain.value = 0;
-    const filt = ctx.createBiquadFilter();
-    filt.type = 'lowpass';
-    filt.frequency.value = m.cut;
-    filt.Q.value = 0.6;
-    filt.connect(g); g.connect(master);
-    const nodes = [g, filt];
-
-    // slow filter sweep for movement
-    const lfo = ctx.createOscillator();
-    const lfoG = ctx.createGain();
-    lfo.frequency.value = m.lfo;
-    lfoG.gain.value = m.cut * 0.35;
-    lfo.connect(lfoG); lfoG.connect(filt.frequency);
-    lfo.start(); nodes.push(lfo, lfoG);
-
-    // chord pad: two detuned oscillators per note
-    m.chord.forEach((semi, i) => {
-      const f = m.root * Math.pow(2, semi / 12);
-      [[-4, 'triangle'], [3, 'sine']].forEach(([det, type]) => {
-        const o = ctx.createOscillator();
-        o.type = type;
-        o.frequency.value = f;
-        o.detune.value = det;
-        const og = ctx.createGain();
-        og.gain.value = 0.16 / (1 + i * 0.35);
-        // per-note breathing
-        const bl = ctx.createOscillator(); const blg = ctx.createGain();
-        bl.frequency.value = 0.03 + i * 0.017;
-        blg.gain.value = og.gain.value * 0.5;
-        bl.connect(blg); blg.connect(og.gain); bl.start();
-        o.connect(og); og.connect(filt);
-        o.start();
-        nodes.push(o, og, bl, blg);
-      });
-    });
-    // sub root for weight
-    const sub = ctx.createOscillator();
-    sub.type = 'sine'; sub.frequency.value = m.root / 2;
-    const subG = ctx.createGain(); subG.gain.value = 0.22;
-    sub.connect(subG); subG.connect(filt); sub.start();
-    nodes.push(sub, subG);
-
-    // filtered noise bed (tension/battle)
-    if (m.noise > 0) {
-      const len = ctx.sampleRate * 2;
-      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < len; i++) {   // brown-ish noise
-        last = (last + (Math.random() * 2 - 1) * 0.02) * 0.98;
-        d[i] = last * 3;
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = buf; src.loop = true;
-      const ng = ctx.createGain(); ng.gain.value = m.noise;
-      src.connect(ng); ng.connect(filt); src.start();
-      nodes.push(src, ng);
-    }
-    return { g, nodes, vol: m.vol };
-  }
-
-  function killMood(mood, after) {
-    if (!mood) return;
-    try {
-      mood.g.gain.linearRampToValueAtTime(0, ctx.currentTime + 2.2);
-      setTimeout(() => mood.nodes.forEach(n => { try { n.stop ? n.stop() : 0; n.disconnect(); } catch {} }), 2600);
-    } catch {}
-  }
-
-  function setMood(key) {
-    if (!key || key === curKey) return;
-    if (key === 'none') { stop(); return; }
-    if (!MOODS[key]) return;
-    curKey = key;
-    if (!enabled) return;
-    if (!ensureCtx()) return;
-    killMood(current);
-    current = buildMood(key);
-    current.g.gain.linearRampToValueAtTime(current.vol, ctx.currentTime + 3.0);
-  }
-
-  function stop() {
-    killMood(current);
-    current = null; curKey = null;
-  }
-
-  function toggle() {
-    enabled = !enabled;
-    localStorage.setItem('vn_bgm', enabled ? '1' : '0');
-    updateBtn();
-    if (!enabled) { const k = curKey; stop(); curKey = k; }
-    else if (curKey) { const k = curKey; curKey = null; setMood(k); }
-  }
-
-  function updateBtn() {
-    const b = document.getElementById('bgmBtn');
-    if (b) { b.style.opacity = enabled ? '1' : '0.55'; b.classList.toggle('on', !!enabled); }
-  }
-
-  // iOS requires a user gesture before audio — retry pending mood on first touch
-  document.addEventListener('touchend', () => {
-    if (enabled && curKey && !current) { const k = curKey; curKey = null; setMood(k); }
-  }, { passive: true });
-
-  setTimeout(updateBtn, 0);
-  return { setMood, stop, toggle };
+  // ★합성 무드음(oscillator BGM) 전면 제거(2026-07-21 유저 지시 "이상한 음 다 없애").
+  //   Suno로 만든 실제 보컬 곡을 무드별로 재생하도록 교체 예정 — 지금은 no-op(호출부 안전 유지).
+  return { setMood(){}, stop(){}, toggle(){} };
 })();
 
 // ===== SCREEN FX — shake & flash, paired with scene SFX for impact =====
@@ -5801,87 +5664,8 @@ const FX = (() => {
 
 // ===== SFX — tiny synthesized UI sounds (share the ♪ toggle with Ambient) =====
 const SFX = (() => {
-  let ctx = null;
-  function on() { return (localStorage.getItem('vn_bgm') ?? '1') === '1'; }
-  function ac() {
-    if (!ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-    }
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-    return ctx;
-  }
-  function tone(freq, dur, vol, type = 'sine', when = 0, slide = 0) {
-    const c = ac(); if (!c) return;
-    const t0 = c.currentTime + when;
-    const o = c.createOscillator();
-    const g = c.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, t0);
-    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t0 + dur);
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(vol, t0 + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g); g.connect(c.destination);
-    o.start(t0); o.stop(t0 + dur + 0.05);
-  }
-  // filtered noise burst — the backbone of most action sounds
-  function noise(dur, vol, fStart, fEnd, type = 'lowpass', when = 0, q = 0.8) {
-    const c = ac(); if (!c) return;
-    const t0 = c.currentTime + when;
-    const len = Math.ceil(c.sampleRate * dur);
-    const buf = c.createBuffer(1, len, c.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    const src = c.createBufferSource(); src.buffer = buf;
-    const f = c.createBiquadFilter(); f.type = type; f.Q.value = q;
-    f.frequency.setValueAtTime(fStart, t0);
-    f.frequency.exponentialRampToValueAtTime(Math.max(40, fEnd), t0 + dur);
-    const g = c.createGain();
-    g.gain.setValueAtTime(vol, t0);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    src.connect(f); f.connect(g); g.connect(c.destination);
-    src.start(t0); src.stop(t0 + dur + 0.05);
-  }
-  // --- real CC0 samples (sfx/ folder). Scene actions ONLY — no UI beeps. ---
-  const SAMPLES = {
-    sword: ['sword1', 'sword2', 'sword3'],
-    swing: ['swing1', 'swing2', 'swing3'],
-    draw:  ['draw1', 'draw2'],
-    gun: ['gun1', 'gun2'],
-    explosion: ['explosion1'],
-    punch: ['punch1', 'punch2', 'punch3'],
-    thunder: ['thunder1'],
-    magic: ['magic1', 'magic2'],
-    monster: ['monster1', 'monster2', 'monster3'],
-    door: ['door1', 'door2'],
-    crash: ['crash1', 'crash2', 'crash3']
-  };
-  const bufCache = {};
-  async function loadSample(name) {
-    if (bufCache[name]) return bufCache[name];
-    const c = ac(); if (!c) return null;
-    const res = await fetch('sfx/' + name + '.wav');
-    if (!res.ok) throw new Error('sfx ' + res.status);
-    return (bufCache[name] = await c.decodeAudioData(await res.arrayBuffer()));
-  }
-  function play(kind) {
-    if (!on()) return;
-    const list = SAMPLES[kind];
-    if (!list) return;   // UI beeps (tick/send/choice/ending) are gone — no synth
-    const name = list[Math.floor(Math.random() * list.length)];
-    loadSample(name).then(buf => {
-      const c = ac(); if (!c || !buf) return;
-      const src = c.createBufferSource();
-      src.buffer = buf;
-      src.playbackRate.value = 0.94 + Math.random() * 0.12;   // subtle variety
-      const g = c.createGain();
-      g.gain.value = kind === 'thunder' ? 0.55 : 0.72;
-      src.connect(g); g.connect(c.destination);
-      src.start();
-    }).catch(() => {});   // file missing → silence (no cheesy fallback)
-  }
-  return { play };
+  // ★합성 효과음(WebAudio) 제거(2026-07-21 유저 지시 "소리 다 없애") — Suno 곡으로 대체 예정. no-op.
+  return { play(){} };
 })();
 
 // Small utility LLM call (director/summary-grade side passes)
