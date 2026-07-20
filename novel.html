@@ -5627,9 +5627,46 @@ function buildMessages() {
 // matching pad: detuned chord oscillators + sub root + filtered noise +
 // slow LFO movement, crossfaded between moods.
 const Ambient = (() => {
-  // ★합성 무드음(oscillator BGM) 전면 제거(2026-07-21 유저 지시 "이상한 음 다 없애").
-  //   Suno로 만든 실제 보컬 곡을 무드별로 재생하도록 교체 예정 — 지금은 no-op(호출부 안전 유지).
-  return { setMood(){}, stop(){}, toggle(){} };
+  // ★실보컬 BGM 재생(2026-07-21): 합성음 제거 후 Suno 곡을 무드별로 R2에서 스트리밍 재생.
+  //   AI의 mood 필드 → 카테고리 → 그 카테고리 변형 중 랜덤 1곡, 무드 전환 시 크로스페이드.
+  //   곡 파일 규칙: bgm_<storyId>_<category>_<n>.mp3 (R2, 공개 — 토큰 불필요). lovediary만 곡 보유.
+  let enabled = (localStorage.getItem('vn_bgm') ?? '1') === '1';
+  let cur = null, curCat = null;
+  const VOL = 0.32;
+  const MOOD_MAP = { calm:'daily', none:'daily', romance:'romance', sad:'sad', mystery:'tension', tension:'tension', battle:'tension' };
+  const TRACKS = { lovediary: { daily:4, romance:2, sad:2, tension:2 } };   // 카테고리별 변형 수(R2 실물 기준)
+  const base = 'https://pandora-sync.pasokong99.workers.dev/img?name=';
+  function ramp(a, to, ms, done) {
+    if (!a) { done && done(); return; }
+    const from = a.volume, steps = 24, dt = Math.max(16, ms/steps); let i = 0;
+    clearInterval(a._rmp);
+    a._rmp = setInterval(() => { i++; try { a.volume = Math.max(0, Math.min(1, from + (to-from)*i/steps)); } catch {}
+      if (i >= steps) { clearInterval(a._rmp); done && done(); } }, dt);
+  }
+  function setMood(mood) {
+    if (!enabled || !mood) return;
+    const cat = MOOD_MAP[mood]; if (!cat) return;
+    const n = ((TRACKS[(typeof STORY!=='undefined'&&STORY&&STORY.id)||''] || {})[cat]) || 0;
+    if (!n) return;                              // 이 스토리·카테고리 곡 없음(다른 스토리) → 무음
+    if (cat === curCat && cur && !cur.paused) return;  // 같은 카테고리 유지(재추첨 안 함)
+    const pick = 1 + Math.floor(Math.random() * n);
+    const a = new Audio(base + encodeURIComponent(`bgm_${STORY.id}_${cat}_${pick}`));
+    a.loop = true; a.volume = 0; a.preload = 'auto';
+    a.play().then(() => ramp(a, VOL, 2500)).catch(() => {});   // 자동재생 차단 시 조용히 무시(터치 후 재시도)
+    const old = cur;
+    if (old) ramp(old, 0, 2200, () => { try { old.pause(); old.src = ''; } catch {} });
+    cur = a; curCat = cat;
+  }
+  function stop() { const old = cur; cur = null; curCat = null; if (old) ramp(old, 0, 1500, () => { try { old.pause(); old.src=''; } catch {} }); }
+  function toggle() {
+    enabled = !enabled; localStorage.setItem('vn_bgm', enabled ? '1' : '0');
+    if (!enabled) { const c = curCat; stop(); curCat = c; }   // 껐다 켤 때 같은 무드 복원
+    else if (curCat) { const c = curCat; curCat = null; setMood(Object.keys(MOOD_MAP).find(k => MOOD_MAP[k] === c) || 'calm'); }
+    const b = document.getElementById('bgmBtn'); if (b) b.classList.toggle('on', enabled);
+  }
+  // iOS/크롬 자동재생 정책: 첫 사용자 제스처 후 대기 중이던 무드 재생
+  document.addEventListener('pointerdown', () => { if (enabled && curCat && (!cur || cur.paused)) { const c = curCat; curCat = null; setMood(Object.keys(MOOD_MAP).find(k => MOOD_MAP[k] === c) || 'calm'); } }, { once:false, passive:true });
+  return { setMood, stop, toggle };
 })();
 
 // ===== SCREEN FX — shake & flash, paired with scene SFX for impact =====
