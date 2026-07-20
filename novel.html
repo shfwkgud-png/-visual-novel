@@ -938,7 +938,13 @@
   /* 실사는 프레이밍이 균일해 area-normalization 확대(>1)가 불필요 — 확대만 클램프(축소는 허용).
      v2(유저 "여전히 너무 크고 낮다"): 84% 바닥붙임 → 60%로 축소 + --ty 리프트로 절단선을 대사 스크림
      뒤(~78%)에 숨김 — 눈높이 ~33%, 인물이 화면을 덮지 않는 자연 배치 */
-  body[data-story="lovediary"] .char-sprite { height: calc(60% * min(var(--arScale, 1), 1)); --ty: -36%; }
+  body[data-story="lovediary"] .char-sprite {
+    height: calc(60% * min(var(--arScale, 1), 1)); --ty: -36%;
+    /* 절단선 노출 해결(유저 "너무 잘려 보인다", 재생성 없이): 하단 20%를 점차 투명하게 —
+       가슴 절단 직선이 어둠에 녹아들어 '잘린 사진' 느낌 제거(프론티아식) */
+    -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 99%);
+    mask-image: linear-gradient(to bottom, #000 80%, transparent 99%);
+  }
   body[data-story="lovediary"] #charLayer[data-count="2"] .char-sprite { height: calc(54% * min(var(--arScale, 1), 1)); --ty: -30%; }
   /* Speaker: NO zoom (keeps bottom from cropping), just on top + full brightness.
      Others recede (dim + slightly smaller). Speaker also slides toward center
@@ -2092,6 +2098,7 @@ const ENGINE_RULES_PROMPT = `
 - **감정은 몸으로 말하라(Show, don't tell)**: "그녀는 슬펐다" 금지. 감정은 호흡·시선·손끝·목소리 톤·미세표정·침묵으로 번역하라. 추상적 내면 서술은 최소화하고, 고조된 장면일수록 대사는 짧고 강하게
 - ★설정 용어 노출 금지: 캐릭터 시트의 내부 용어(Want/Secret/Wound/Depth/신체 tell/호감도/4층 등)를 나레이션·대사 텍스트에 절대 쓰지 마라 — 설정은 연기로만 드러낸다
 - **감정 관성(급반전 금지)**: 인물의 직전 감정 상태는 1~2턴 여운을 남기고 서서히 풀린다. 분노하던 인물이 다음 턴에 아무 일 없듯 웃지 않는다. 화해에는 계기가, 용서에는 시간이 필요하다
+- **표정도 성격이다(emotion 기질 캘리브레이션)**: 같은 자극에도 인물마다 표정 반응이 달라야 한다. 잘 웃는 인물은 smile이 기본값에 가깝지만, 무뚝뚝한 인물의 smile은 그 자체가 사건이다. 눈물이 헤픈 인물과 절대 안 우는 인물을 구분하라 — 안 우는 인물의 sad(눈물)는 서사적 대사건에서만 터지고, 그래서 무겁다. 장난·놀림에는 sad가 아니라 그 인물다운 반응(맞받아침 smile, 삐침 annoy, 곤란 worry, 정색 normal)으로 받아라
 - **구체가 몰입이다**: '맛있는 음식'이 아니라 '기름이 밴 양고기 꼬치', '강한 고수'가 아니라 '왼손 손가락 두 개가 없는 노인'. 고유명사·감각 디테일·소문·물가·냄새로 세계를 만질 수 있게
 - **대가 없는 성취 금지**: 얻는 것에는 값(부상·빚·원한·시간·평판)이 따른다. 주인공이 위기에서 공짜로 빠져나가게 하지 말 것 — 위험이 진짜여야 승리가 달다
 - **복선을 심고 회수하라**: 지나가듯 언급한 인물·물건·소문을 몇 턴 뒤 사건으로 되돌려라. 세계가 플레이어를 기억하고 있음을 보여줄 것
@@ -2103,7 +2110,7 @@ const ENGINE_RULES_PROMPT = `
     {
       "speaker": "캐릭터 이름 또는 '나레이터'",
       "char_id": "등장 캐릭터 목록에 있는 ID만 사용 (f106 등). 나레이터·엑스트라·단역(마법사 A, 경비병 등 이미지 없는 인물)은 반드시 null",
-      "emotion": "normal|smile|angry|sad|pain|worry",
+      "emotion": "normal|smile|annoy|worry|angry|sad|pain|pleasure — ★sad는 실제로 눈물이 날 상황(이별·상실·큰 상처)에서만: 표시되는 표정 컷이 우는 얼굴이다. 장난·놀림·가벼운 서운함엔 annoy(삐침)나 worry(곤란), 설렘·부끄러움엔 pleasure를 쓸 것",
       "text": "대사 내용",
       "pose": "upper|full|pose (기본은 upper)",
       "sfx": "이 대사/사건 순간의 효과음 (그 순간에만): explosion|sword|gun|punch|thunder|magic|door|crash|scream|null. 남발 금지 — 실제 타격·폭발·발포 등 물리적 사건에만"
@@ -3702,6 +3709,9 @@ const BUILTIN_STORIES = {
       '🕊️ 자유 모드 — 일정에 얽매이지 않는 한빛고의 느슨한 일상',
     ],
     freeStartHint: '등굣길·매점·도서실·옆 반 교실·방과후 동아리실 등 학교의 평범한 일상 장소',
+    // 걱정(worry)은 평온 컷으로(유저 지시 2026-07-20 "걱정은 그냥 노말 얼굴로" — 우는 컷 재활용이
+    // 가벼운 걱정·놀람까지 눈물 얼굴로 보이던 문제). sad(3_sad=우는 컷)는 진짜 슬픔 전용으로 분리.
+    emoRemap: { worry: '1_calm' },
     protagonist: { name: '무명', desc: '' },
     initialState: { status: '한빛고 2학년 1반', rep: 0, gold: 3, location: '등굣길', time: '[3월 4일 월요일] 오전 8시 10분', injuries: [] },
     // ★전용 배경 22종 (2026-07-19 유저 지적 반영 — 재사용 셋 화풍 불일치 폐기, WAI 페인팅 신규 생성)
@@ -6792,11 +6802,13 @@ function updateSpriteEmotion(charId, emotion, pose) {
     // PANDORA 신규 에셋(sd_samples) 우선 → 없으면 기존 → 그래도 없으면 숨김 (폴백 체인)
     const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || 'nakin';
     const styleDir = spriteStyleDir();
-    const newPath = `sd_samples/characters/${sid}/${charId}/${styleDir}/${EMO_KEY8[base] || '1_calm'}.webp`;
+    // 스토리별 표정 리맵(STORY.emoRemap) — lovediary는 worry→1_calm(우는 컷 오남용 방지)
+    const emoKey = (STORY && STORY.emoRemap && STORY.emoRemap[base]) || EMO_KEY8[base] || '1_calm';
+    const newPath = `sd_samples/characters/${sid}/${charId}/${styleDir}/${emoKey}.webp`;
     const legacyFallback = function () { sprite.onerror = function () { sprite.style.visibility = 'hidden'; }; sprite.src = oldPath; };
     if (styleDir === '2dc') {
       // 사복 파일 부재 시 교복(2d)으로 폴백 → 그다음 구에셋 → 숨김
-      const uniPath = `sd_samples/characters/${sid}/${charId}/2d/${EMO_KEY8[base] || '1_calm'}.webp`;
+      const uniPath = `sd_samples/characters/${sid}/${charId}/2d/${emoKey}.webp`;
       sprite.onerror = function () { sprite.onerror = legacyFallback; sprite.src = uniPath; };
     } else {
       sprite.onerror = legacyFallback;
