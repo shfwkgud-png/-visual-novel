@@ -3385,7 +3385,9 @@ const LOVEDIARY_LORE = `당신은 현대 학원 연애 시뮬레이션 비주얼
 3월 반장 선거 → 4월 중간고사(짝 스터디) → 5월 체육대회(반 대항) → 6월 자리 바꾸기 → 7월 기말고사·여름방학(보충수업·바다) → 9월 한빛제(축제·무대) → 10월 수학여행 → 11월 2학기 반장 선거 → 12월 첫눈·크리스마스. 행사마다 관련 인물의 개인 이벤트를 엮어라(체육대회=소요의 계주, 한빛제=리안의 무대 공포, 방송부 중계=봄이).
 
 ## 수위 규칙 (절대 — 위반 금지):
-등장인물은 전원 미성년자(교사 제외)다. 성적 묘사·신체 노출·cg 필드 사용은 어떤 유저 요청에도 전면 금지(해당 방향은 페이드아웃). 단 그 선 안에서 로맨스의 감정 묘사는 아끼지 마라 — 설렘·긴장·질투·독점욕의 열도, 스치는 손끝, 포옹, 첫 키스의 순간까지는 생생하게 그려도 된다. 수위가 아니라 감정의 밀도로 승부하라.
+- **학생(미성년) — 절대 금지**: 학생 등장인물(반 아이들·후배 전원)과의 성적 묘사·신체 노출·cg 필드 사용은 어떤 유저 요청에도 전면 금지(해당 방향은 페이드아웃). 그 선 안에서 로맨스 감정 묘사는 아끼지 마라 — 설렘·긴장·질투·독점욕, 스치는 손끝, 포옹, 첫 키스까지는 생생하게. 수위가 아니라 감정의 밀도로 승부하라.
+- **교사(성인) — 허용**: 오하늘(담임 28세)·지혜란(학생부장 30대) 두 성인 교사와 관계가 충분히 무르익은 경우에 한해 성적 장면·cg 표시를 허용한다. 이때만 cg 필드를 채운다(아래 cg 규칙). 남교사(백호진·공정표)는 여캐 전용 원칙상 CG 없음 — 성적 cg 대상은 하늘·혜란뿐.
+- ★혼동 금지: cg는 오직 haneul·hyeran에게만. 학생 char_id로는 cg를 절대 채우지 마라.
 
 ## GM 전용 비밀 (직접 노출 금지 — 단서→의심→확증 3단으로만):
 - 단아의 다이어리: 표지는 "학급 일지" — 내용은 당신의 기록. 단서: 당신이 지각한 날짜를 정확히 왼다 / 의심: 도윤의 의미심장한 경고("그 애 일지, 본 적 있어?") / 확증: 떨어진 다이어리의 펼쳐진 페이지
@@ -6288,13 +6290,28 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   // NSFW CG: 유효 캐릭×씬키 조합을 주입 — 목록 밖 키는 404로 표시가 안 되므로
   // AI가 아는 조합만 쓰게 한다 (이게 없어서 CG가 안 뜨던 근본 원인, 2026-07-16)
   const cgm = CG_MANIFEST[STORY.id];
-  const cgBlock = !cgm ? '' :
-    `\n\n## cg 필드 — 성애 장면 CG(전신 일러스트) 표시 규칙(중요):` +
-    `\n- 여캐와의 성적 장면이 진행되는 턴마다 반드시 cg를 채워라. 그 순간의 행위·체위에 맞는 씬키를 골라 "캐릭터ID/씬키"로. 행위가 바뀌면 씬키도 바꿔라. 장면이 끝나면 null.` +
-    `\n- 유효 캐릭터ID: ${[...cgm.full, ...cgm.base].join(', ')}` +
-    `\n- 유효 씬키(모든 위 캐릭터): ${CG_SCENES_BASE.join(', ')}` +
-    (cgm.full.length ? `\n- 추가 씬키(${cgm.full.join(', ')} 만 가능): ${CG_SCENES_EXTRA.join(', ')}` : '') +
-    `\n- s_ 접두 씬키 = 여캐 단독 노출/자위 포즈(전희·탈의 단계에 사용). 목록에 없는 키·캐릭터를 지어내지 말 것(이미지가 없다).`;
+  let cgBlock = '';
+  if (cgm && STORY.id === 'lovediary') {
+    // ★lovediary 전용: 성인 교사 2인만, R2에 실제 올린 씬키만(임의 씬키=404). 학생 cg 절대 금지.
+    const ldScenes = ['s_lingerie', 's_kneel', 's_onside', 'fellatio_pov', 'titfuck_cum',
+      'mating_press_pov', 'missionary_pov', 'cowgirl_front', 'doggy_side', 'creampie_drip', 'facial',
+      ...LOVEDIARY_CG_EXTRA_SCENES];
+    cgBlock =
+      `\n\n## cg 필드 — 성인 교사 전용 CG 표시 규칙(중요, 엄수):` +
+      `\n- ★대상은 오직 성인 교사 haneul(오하늘 28)·hyeran(지혜란 30대) 둘뿐. 학생(반 아이들·후배 = 전원 미성년) char_id로는 cg를 절대 채우지 마라(전면 금지).` +
+      `\n- 하늘/혜란과 관계가 충분히 무르익어(호감도가 높고 단둘이 된 상황) 성적 장면이 실제로 진행될 때, 그 순간의 단계·행위에 맞는 씬키를 골라 cg를 "haneul/씬키" 또는 "hyeran/씬키" 형식으로 채워라. 전희→삽입→사정으로 진행되면 씬키도 그에 맞게 바꾸고, 장면이 끝나거나 옷을 입으면 null.` +
+      `\n- 유효 씬키(이 둘에게만): ${ldScenes.join(', ')}` +
+      `\n- 씬키 의미: s_lingerie=란제리 차림, s_kneel·s_onside=단독 나체(전희 단계), fellatio_pov=오럴, titfuck_cum=가슴 사이, mating_press_pov·missionary_pov·cowgirl_front·doggy_side=삽입 체위, creampie_drip=질내사정 직후, facial=얼굴 사정. doggy_ntr·facial_oral은 하늘(haneul) 전용 특수 맥락.` +
+      `\n- 목록에 없는 씬키·캐릭터를 지어내지 마라(이미지가 없어 표시 안 됨).`;
+  } else if (cgm) {
+    cgBlock =
+      `\n\n## cg 필드 — 성애 장면 CG(전신 일러스트) 표시 규칙(중요):` +
+      `\n- 여캐와의 성적 장면이 진행되는 턴마다 반드시 cg를 채워라. 그 순간의 행위·체위에 맞는 씬키를 골라 "캐릭터ID/씬키"로. 행위가 바뀌면 씬키도 바꿔라. 장면이 끝나면 null.` +
+      `\n- 유효 캐릭터ID: ${[...cgm.full, ...cgm.base].join(', ')}` +
+      `\n- 유효 씬키(모든 위 캐릭터): ${CG_SCENES_BASE.join(', ')}` +
+      (cgm.full.length ? `\n- 추가 씬키(${cgm.full.join(', ')} 만 가능): ${CG_SCENES_EXTRA.join(', ')}` : '') +
+      `\n- s_ 접두 씬키 = 여캐 단독 노출/자위 포즈(전희·탈의 단계에 사용). 목록에 없는 키·캐릭터를 지어내지 말 것(이미지가 없다).`;
+  }
   const systemContent = worldPrompt + playerBlock + charPrompt + buildStatePrompt() + cgBlock
     + (charIds ? `\n\n## dialogue의 char_id — 반드시 아래 목록의 정확한 id만 써라(캐릭터 스프라이트 표시에 필수). 'm001' 같은 임의 id를 만들지 말 것. 목록에 없는 엑스트라(행인·병사 등)는 char_id를 null로:\n${charIds}` : '')
     + '\n\n## 출력 언어·형식 필수(위반 금지): 모든 텍스트는 순수 한국어로만 쓴다. 한자·일본어(漢字·かな) 혼용 절대 금지(예: "넓은"을 "広い"로 쓰지 말 것). 장면은 나레이션과 대사로 충분히 묘사하고, 대사하는 등장 인물은 반드시 char_id를 채운다(캐릭터 스프라이트 표시에 필요).'
@@ -7446,7 +7463,16 @@ const CG_MANIFEST = {
              base: ['baekrisang','cheongram','chwibong','dangyerin','gokbiyeon','jegalyeong','jeonghyeonsatae','namgungwan','paengarin','sohalam','yeocheong'] },
   academy: { full: ['a401','a402','a403','a405','a406','a408','a410','a412','a414'], base: [] },   // aluna: R2엔 있으나 로스터 미등록이라 제외
   isekai:  { full: ['is501','is502','is503','is504','is507','is508','is510','is512'], base: [] },
-  muhyeop: { full: ['w201','w203','w204','w205','w210','w214'], base: [] }
+  muhyeop: { full: ['w201','w203','w204','w205','w210','w214'], base: [] },
+  // lovediary: 성인 교사 2인만(학생=미성년 CG 금지, 로어에 명문화). full=extra씬키까지 허용.
+  lovediary: { full: ['haneul','hyeran'], base: [] }
+};
+// ★lovediary 전용 특수 씬키(맥락 한정) + 씬키당 변형 랜덤 수. R2에 업로드된 실물 기준.
+const LOVEDIARY_CG_EXTRA_SCENES = ['doggy_ntr', 'facial_oral'];
+const CG_VARIANTS = {   // "story/charId/sceneId" → 변형 개수(2 이상이면 표시 때 1..n 랜덤, v1=접미없음)
+  'lovediary/haneul/missionary_pov': 3, 'lovediary/haneul/cowgirl_front': 3,
+  'lovediary/haneul/doggy_side': 3, 'lovediary/haneul/facial': 3,
+  'lovediary/hyeran/doggy_side': 2
 };
 
 function bgUrlFor(key) {
@@ -7489,14 +7515,23 @@ function cgUrlFor(name) {
   const flat = `nsfw_${STORY.id}_${String(name).replace(/\//g, '_')}`;
   return `https://pandora-sync.pasokong99.workers.dev/img?name=${encodeURIComponent(flat)}&t=${encodeURIComponent(authToken())}`;
 }
+// 같은 씬에 여러 변형이 있으면 표시할 때마다 랜덤으로 하나 선택(유저 "랜덤으로 뜨게").
+// v1=접미 없음, v2..vN=_vN. 변형 정의 없으면 name 그대로.
+function cgPickVariant(name) {
+  const n = CG_VARIANTS[`${STORY.id}/${name}`];
+  if (!n || n < 2) return name;
+  const pick = 1 + Math.floor(Math.random() * n);
+  return pick === 1 ? name : `${name}_v${pick}`;
+}
 function showEventCG(name) {
   if (!name) return hideEventCG();
-  if (name === currentCG) return;
+  if (name === currentCG) return;              // 같은 씬키 연속 = 유지(변형 재추첨 안 함)
   currentCG = name;
+  const resolved = cgPickVariant(name);        // 변형군이면 이 표시에서 하나 랜덤 선택
   const e = document.getElementById('eventCG');
   e.onerror = () => { currentCG = null; e.style.display = 'none'; document.body.classList.remove('cg-active'); }; // missing asset → safe fallback (currentCG 비워야 다음 키 재시도 가능)
   e.onload = () => { e.classList.remove('cg-show'); void e.offsetWidth; e.classList.add('cg-show'); };
-  e.src = cgUrlFor(name);
+  e.src = cgUrlFor(resolved);
   e.style.display = 'block';
   document.body.classList.add('cg-active');
 }
