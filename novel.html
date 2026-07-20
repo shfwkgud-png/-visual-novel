@@ -3455,7 +3455,8 @@ function getCharPrompt(charIds, onScreenIds) {
   // ★현재 장소에 있는 인물만 풀 카드 — 이 자리의 인물은 유저의 행동을 목격하고 각자 반응한다.
   let prompt = '\n## 지금 이 장면(현재 장소)에 함께 있는 인물 — 반드시 각자답게 연기하라:\n'
     + '- ★이들은 지금 이 자리에 같이 있다. 유저가 특정 한 명만 상대해도, 같은 자리의 다른 인물들은 그 상황을 목격하고 각자 성격·관계대로 반응한다(호감 있는 인물=질투·서운함, 무관한 인물=놀림·황당·말림). 말 없는 인물도 시선·표정으로 존재를 보여라.\n'
-    + '- ★이 목록에 없는 인물(다른 장소에 있음)은 이 장면에 등장·목격시키지 마라 — 그들은 이 사건을 지금 모른다(나중에 소문으로 알 수는 있음). 단둘의 사적 장면이면 그 둘만 있는 것이다.\n';
+    + '- ★이 목록에 없는 인물(다른 장소에 있음)은 이 장면에 등장·목격시키지 마라 — 그들은 이 사건을 지금 모른다(나중에 소문으로 알 수는 있음). 단둘의 사적 장면이면 그 둘만 있는 것이다.\n'
+    + '- ★인원이 많아도 전원을 말하게 하지 마라 — 지금 상황에 관련된 2~4명에 초점을 두고, 나머지는 배경 반응(시선·수군거림·한마디)으로만 살아있게. 매 턴 화자가 바뀌어도 된다.\n';
   charIds.forEach(id => {
     const c = CHARACTERS[id];
     if (c) {
@@ -3466,17 +3467,63 @@ function getCharPrompt(charIds, onScreenIds) {
   });
   return prompt;
 }
-// 지금 장면에 실제로 있는 인물 = 최근 언급 인물 + 현재 장소(location)에 위치가 일치하는 인물
+// ── 등장인물 존재(present) 판정 — 위치를 매턴 추적 안 하고 '장소(배경키)+시간+소속'으로 자동 추론 ──
+//   (2026-07-21 유저 설계 검토: 시간 흐름·이동·공개/사적·미등장·결석/동행 전부 커버)
+const LD_CLASS_STUDENTS = ['danah','soyo','rian','doyun','hayeon','dahee','seulgi','jiho','taepung','beom','woon','mugang','manbok']; // 2학년 1반 학생 13
+const LD_PLACE_GROUPS = {
+  // 우리 반 교실: 반 전원 + 담임(조회·수업). scope=school → 평일 학교시간에만 그룹 활성
+  classroom:        { grp: LD_CLASS_STUDENTS.concat(['haneul']), scope: 'school' },
+  classroom_sunset: { grp: LD_CLASS_STUDENTS.slice(),            scope: 'school' }, // 방과후: 반 애들 잔류(담임 상시X)
+  // 학교 공용: 반이 함께 이동
+  cafeteria:   { grp: LD_CLASS_STUDENTS.slice(), scope: 'school' },
+  hallway:     { grp: LD_CLASS_STUDENTS.slice(), scope: 'school' },
+  school_gate: { grp: LD_CLASS_STUDENTS.slice(), scope: 'school' },
+  stairwell:   { grp: LD_CLASS_STUDENTS.slice(), scope: 'school' },
+  school_road: { grp: LD_CLASS_STUDENTS.slice(), scope: 'school' }, // 등굣길: 반 애들 마주침
+  // 특정실: 그 방 소속만(상시)
+  broadcast_room:  { grp: ['bomi'], scope: 'room' },
+  library:         { grp: ['seulgi'], scope: 'room' },
+  gym:             { grp: ['taepung','hojin'], scope: 'room' },
+  teachers_office: { grp: ['haneul','hyeran','hojin','jungpyo'], scope: 'room' },
+  infirmary:       { grp: [], scope: 'room' },
+  // 이벤트: 전교
+  festival_stage:  { grp: LD_CLASS_STUDENTS.concat(['bomi']), scope: 'event' },
+  // 나머지(rooftop, cafe, conv_store, snack_bar, my_room, home_alley, hangang_park, night_street, snow_street) = 사적 → 그룹 없음(동행/추적/언급만)
+};
+function ldSchoolTimeActive() {
+  // gameState.time 예: "[3월 4일 월요일] 오전 8시 45분" — 평일 & 대략 학교시간(8~18시)인가
+  const t = (typeof gameState !== 'undefined' && gameState && gameState.time) || '';
+  if (/토요일|일요일/.test(t)) return false;                  // 주말=학교 그룹 없음
+  const m = t.match(/(오전|오후)\s*(\d{1,2})\s*시/);
+  if (!m) return true;                                        // 시간 파싱 실패 → 관대(빈 교실 방지)
+  let h = parseInt(m[2], 10); if (m[1] === '오후' && h < 12) h += 12; if (m[1] === '오전' && h === 12) h = 0;
+  return h >= 8 && h < 18;
+}
 function presentCharIds(activeCharIds) {
-  const present = new Set(activeCharIds || []);
-  try {
-    const loc = (gameState && gameState.location) || '';
-    const mc = (gameState && gameState.metChars) || {};
-    if (loc) for (const id in mc) {
-      const cl = (mc[id] && mc[id].location) || '';
-      if (cl && (cl === loc || cl.includes(loc) || loc.includes(cl))) present.add(id);
+  const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || '';
+  const mc = (typeof gameState !== 'undefined' && gameState && gameState.metChars) || {};
+  const loc = (typeof gameState !== 'undefined' && gameState && gameState.location) || '';
+  const bg = (typeof currentBgFile !== 'undefined' && currentBgFile) || '';
+  const present = new Set();
+  const locMatch = (cl) => !!(cl && loc && (cl === loc || cl.includes(loc) || loc.includes(cl)));
+  const trackedElsewhere = (id) => { const cl = mc[id] && mc[id].location; return !!(cl && !locMatch(cl)); }; // 명시적으로 다른 곳
+
+  // 1) AI가 현재 장소로 옮겨 놓은 인물(동행·방문) — 항상 present
+  for (const id in mc) if (locMatch(mc[id] && mc[id].location)) present.add(id);
+
+  // 2) 장소 그룹(정적 소속) — lovediary만. 명시적으로 다른 곳에 있는 인물(결석·조퇴)은 제외
+  if (sid === 'lovediary') {
+    const pg = LD_PLACE_GROUPS[bg];
+    if (pg) {
+      const active = pg.scope === 'event' ? true : pg.scope === 'room' ? true : ldSchoolTimeActive();
+      if (active) pg.grp.forEach(id => { if (!trackedElsewhere(id)) present.add(id); });
     }
-  } catch {}
+  }
+
+  // 3) 최근 언급 인물 — 단 '다른 곳에 추적된' 인물은 제외(옥상에 혼자 갔는데 아까 교실 언급 인물이 딸려오는 것 방지)
+  (activeCharIds || []).forEach(id => { if (!trackedElsewhere(id)) present.add(id); });
+
+  present.delete(undefined);
   return [...present];
 }
 
