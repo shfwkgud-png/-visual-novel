@@ -6283,11 +6283,19 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       (cgm.full.length ? `\n- 추가 씬키(${cgm.full.join(', ')} 만 가능): ${CG_SCENES_EXTRA.join(', ')}` : '') +
       `\n- s_ 접두 씬키 = 여캐 단독 노출/자위 포즈(전희·탈의 단계에 사용). 목록에 없는 키·캐릭터를 지어내지 말 것(이미지가 없다).`;
   }
-  const systemContent = worldPrompt + playerBlock + charPrompt + buildStatePrompt() + cgBlock
-    + (charIds ? `\n\n## 이 세계 등장인물 전원 (참고용 명단 — id=이름(역할)). ★실제로 이번 장면에 등장·반응시킬 인물은 위 '지금 이 장면에 있는 인물'만이다(이 명단은 누가 존재하는지·char_id가 뭔지 참고용). 각자의 역할·관계를 지켜라(교사만 조회·출석·수업 진행). 목록에 없는 이름을 지어내지 말 것. dialogue의 char_id는 반드시 이 id만(임의 'm001' 금지), 목록에 없는 엑스트라(행인 등)는 char_id=null:\n${charRoster}` : '')
+  // ★프롬프트 캐싱 구조(2026-07-21 리서치: static-first, dynamic-last). 매 턴 동일한 '월드/규칙/명단'은
+  //   시스템에 고정 프리픽스로 두어 implicit caching(Gemini 2.5+ 무료 자동, 최대 75%↓·지연↓)이 걸리게 하고,
+  //   매 턴 바뀌는 '상태·등장인물 카드'는 systemContent에서 빼 messages 끝(유저 입력 앞)으로 옮긴다.
+  const systemContent = worldPrompt + playerBlock + cgBlock
+    + (charIds ? `\n\n## 이 세계 등장인물 전원 (참고용 명단 — id=이름(역할)). ★실제로 이번 장면에 등장·반응시킬 인물은 아래 '지금 이 장면에 있는 인물'만이다(이 명단은 누가 존재하는지·char_id가 뭔지 참고용). 각자의 역할·관계를 지켜라(교사만 조회·출석·수업 진행). 목록에 없는 이름을 지어내지 말 것. dialogue의 char_id는 반드시 이 id만(임의 'm001' 금지), 목록에 없는 엑스트라(행인 등)는 char_id=null:\n${charRoster}` : '')
     + '\n\n## 출력 언어·형식 필수(위반 금지): 모든 텍스트는 순수 한국어로만 쓴다. 한자·일본어(漢字·かな) 혼용 절대 금지(예: "넓은"을 "広い"로 쓰지 말 것). 장면은 나레이션과 대사로 충분히 묘사하고, 대사하는 등장 인물은 반드시 char_id를 채운다(캐릭터 스프라이트 표시에 필요).'
     + (bgKeys ? `\n\n## background 필드 — 장소가 바뀌면 반드시 갱신하되, 아래 이 스토리의 배경 키 목록에서만 정확히 골라라(목록에 없는 이름을 쓰면 배경이 안 바뀐다). 저잣거리=market_street, 객잔/주막=inn_hall, 나루터=river_ferry, 마을=herb_village 등:\n${bgKeys}` : '');
+  // 매 턴 바뀌는 동적 컨텍스트(등장인물 카드 + 현재 상태) — 마지막 유저 입력 앞에 붙여 프리픽스 안정화(원본 히스토리는 불변)
+  const dynamicCtx = charPrompt + buildStatePrompt();
   const messages = buildMessages();
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') { messages[i] = { ...messages[i], content: dynamicCtx + '\n\n' + messages[i].content }; break; }
+  }
 
   // STREAMING PLAYBACK: begin showing narration/dialogue while the model is
   // still writing. State (bg/mood/state_update/choices) applies at completion.
