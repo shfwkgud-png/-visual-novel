@@ -1793,11 +1793,11 @@
     <input type="password" id="apiKeyInput" placeholder="AIza...">
     <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
     <select id="nimModelSel" style="display:none">
-      <option value="nvidia/nemotron-3-ultra-550b-a55b">Nemotron 3 Ultra 550B (추천 · 한국어·서사 최상)</option>
-      <option value="mistralai/mistral-medium-3.5-128b">Mistral Medium 3.5 128B (빠름 · 외국어 혼입 주의)</option>
-      <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B (한국어 개선 · 속도 편차)</option>
-      <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B (약함 · 폴백용)</option>
-      <option value="deepseek-ai/deepseek-v4-pro">DeepSeek V4 Pro (NVIDIA 복구 시)</option>
+      <option value="qwen/qwen3-next-80b-a3b-instruct">Qwen3-Next 80B (추천 · 빠름 ~8s · 한국어 깨끗 · MoE)</option>
+      <option value="nvidia/nemotron-3-ultra-550b-a55b">Nemotron 3 Ultra 550B (품질 최상 · 느림 15~20s)</option>
+      <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B (한국어 무난 · 속도 편차)</option>
+      <option value="z-ai/glm-5.2">GLM-5.2 (한국어 좋음 · 느림)</option>
+      <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B (폴백용)</option>
     </select>
 
     <button class="start-btn" onclick="saveSettings()">저장</button>
@@ -1958,9 +1958,9 @@ let playerName = '카이든';
 let playerDesc = '';
 let PROVIDER = 'gemini';   // 'gemini' | 'nim'
 let NIM_URL = 'https://aichat.pasokong99.workers.dev';
-let NIM_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b';   // 기본=추천(2026-07-21 실측: 한국어 유창·서사 우수·스트리밍OK. deepseek-v4-pro가 NVIDIA DEGRADED 다운돼 교체). 폴백 없음
+let NIM_MODEL = 'qwen/qwen3-next-80b-a3b-instruct';   // ★기본=Qwen3-Next 80B(MoE 활성3B). 2026-07-21 실측: 8.3s(nemotron 15~20s의 절반↓)·한국어 깨끗(한자·일본어 혼입0)·JSON스키마 준수. 속도·한국어 균형 최적
 // 구 기본값·수명종료(EOL)·다운 모델이 localStorage에 남은 유저를 새 추천 기본으로 자동 승격(의도적 선택 아닌 잔존값)
-const NIM_MODEL_OLD_DEFAULTS = ['meta/llama-3.1-70b-instruct', 'deepseek-ai/deepseek-v4-pro', 'qwen/qwen3.5-122b-a10b'];
+const NIM_MODEL_OLD_DEFAULTS = ['meta/llama-3.1-70b-instruct', 'deepseek-ai/deepseek-v4-pro', 'qwen/qwen3.5-122b-a10b', 'nvidia/nemotron-3-ultra-550b-a55b', 'mistralai/mistral-medium-3.5-128b', 'moonshotai/kimi-k2-instruct'];   // ★느린/EOL 구기본 → 새 기본(qwen3-next)으로 자동 승격
 
 const SUMMARY_INTERVAL = 8;
 const CONTEXT_RECENT = 8;
