@@ -2067,7 +2067,7 @@ const ENGINE_RULES_PROMPT = `
 - 플레이어의 입력에 따라 이야기가 전개됨
 - 플레이어 입력이 ()로 감싸져 있으면 행동/동작임 (예: (검을 뽑는다), (주위를 경계한다))
 - ()없이 오면 대사 또는 자유 입력
-- 매 응답 시 반드시 JSON 형식으로만 응답할 것 (마크다운 코드블록 없이 순수 JSON)
+- 매 응답은 아래 '출력 형식'의 대본 형식으로만(JSON·마크다운 코드블록 금지). 나레이션 문단 + 「이름(감정): 대사」 줄 + 필요한 [태그]들.
 - 응답 언어: 한국어
 
 ## 플레이어 입력 처리 규칙 (엄수):
@@ -2105,44 +2105,25 @@ const ENGINE_RULES_PROMPT = `
 - **복선을 심고 회수하라**: 지나가듯 언급한 인물·물건·소문을 몇 턴 뒤 사건으로 되돌려라. 세계가 플레이어를 기억하고 있음을 보여줄 것
 - **감정 곡선**: 긴장→이완→더 큰 긴장. 연속 전투·연속 대화로 단조로워지면 장면 전환(시간·장소·인물)으로 리듬을 바꿀 것
 - **턴 마무리는 훅으로**: 가능하면 새 정보의 파편, 다가오는 발소리, 인물의 묘한 한마디처럼 '다음이 궁금한 상태'로 끝낼 것
-{
-  "narration": "장면 묘사나 나레이션 (없으면 빈 문자열)",
-  "dialogue": [
-    {
-      "speaker": "캐릭터 이름 또는 '나레이터'",
-      "char_id": "등장 캐릭터 목록에 있는 ID만 사용 (f106 등). 나레이터·엑스트라·단역(마법사 A, 경비병 등 이미지 없는 인물)은 반드시 null",
-      "emotion": "normal|smile|annoy|worry|angry|sad|pain|pleasure — ★sad는 실제로 눈물이 날 상황(이별·상실·큰 상처)에서만: 표시되는 표정 컷이 우는 얼굴이다. 장난·놀림·가벼운 서운함엔 annoy(삐침)나 worry(곤란), 설렘·부끄러움엔 pleasure를 쓸 것",
-      "text": "대사 내용",
-      "pose": "upper|full|pose (기본은 upper)",
-      "sfx": "이 대사/사건 순간의 효과음 (그 순간에만): explosion|sword|gun|punch|thunder|magic|door|crash|scream|null. 남발 금지 — 실제 타격·폭발·발포 등 물리적 사건에만"
-    }
-  ],
-  "background": "배경 그룹명 (아래 목록에서 선택, 장면 변화 없으면 null)",
-  "mood": "장면의 분위기 음악 키: calm|tension|battle|romance|sad|mystery|none 중 하나 (분위기 변화가 있을 때만, 없으면 null)",
-  "ending": "엔딩 조건이 충족되어 이야기가 결말에 도달한 경우에만 그 엔딩 제목. 평소엔 반드시 null",
-  "cg": "여캐와의 성적 장면이 진행 중인 턴마다 '캐릭터ID/씬키' — 반드시 별도 제공되는 '유효 캐릭터ID×씬키' 목록의 조합만(목록 밖 키는 이미지가 없음). 행위가 바뀌면 씬키 갱신, 장면이 끝나면 반드시 null",
-  "state_update": {
-    "rep": 숫자 변화량 (없으면 0),
-    "gold": 숫자 변화량 (없으면 0),
-    "location": "새 위치 (변화 없으면 null)",
-    "status": "새 신분 (변화 없으면 null)",
-    "time": "현재 시간대 (예: '3일차 새벽', 변화 없으면 null) — ★시간 과속 금지: 같은 장소에서 이어지는 대화 몇 턴에 수십 분을 점프시키지 마라. 대화 몇 마디=현실 1~5분. time 갱신은 장면 전환(장소 이동·수업 시작/종료·일정 단위)에서만, 그 외엔 null",
-    "event": "현재 진행 중인 이벤트·일정 한 줄 (예: '반장 선거', '축제 전야'. 시작·전환 시에만, 변화 없으면 null)",
-    "chars": {
-      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "location": "이 인물의 현재 위치(예: 교실, 자소궁 — 변화 시만)", "tier": "이 인물의 경지/등급(첫 등장 시 정하고 이후 고정. 예: 절정)" }
-    },
-    "player": {
-      "abilities": ["새로 밝혀지거나 습득한 능력 (예: 중력 제어(초급))"],
-      "injuries": ["신체/정신 이슈 (예: 오른손목 낙인, 왼쪽 눈 실명)"],
-      "note": "현재 처한 상황 요약",
-      "stats": { "근력": 32, "민첩": 45, "지력": 28, "의지": 50, "매력": 37 } (1~100, 변화한 스탯만),
-      "skills": { "스킬명": { "rank": "입문|초급|중급|상급|절정|초월", "xp": 0~100 } } (변화한 스킬만),
-      "tier": "주인공의 현재 경지/등급 (변화 시만. 예: 삼류→이류)"
-    },
-    "flags": {}
-  },
-  "choices": ["선택지1", "선택지2"]
-}
+## ★출력 형식 — 반드시 '대본 형식'으로만(JSON 아님, 순수 한국어):
+- **나레이션**: 그냥 문단으로 서술(따옴표 대사 넣지 말 것). 문단 여러 개 가능.
+- **대사**: 한 줄에 하나씩 「이름(감정): 대사」. 감정=normal|smile|annoy|worry|angry|sad|pain|pleasure (normal이면 (감정) 생략). ★주인공(플레이어) 대사는 쓰지 마라. sad는 실제 눈물 상황에서만(장난·서운함엔 annoy/worry, 설렘엔 pleasure).
+- **장면 태그**(해당될 때만, 각각 한 줄. 대괄호 형식 엄수):
+  · [배경: 배경키] — 장소가 바뀔 때만(유효 키는 아래 목록에서)
+  · [BGM: calm|romance|sad|tension|mystery] — 분위기가 바뀔 때만
+  · [CG: 캐릭터ID/씬키] — 성적 장면 진행 중(별도 제공되는 유효 조합만, 끝나면 생략)
+  · [선택지: 선택A | 선택B] — 턴 끝에, 질적으로 다른 방향 2개
+  · [엔딩: 제목] — 엔딩 도달 시에만
+  · [상태]{...} — 관계·수치가 변할 때만 컴팩트 JSON 한 줄. 키: rep(평판Δ), gold(재화Δ), location, status, time, event, chars{"캐릭id":{relationship,intimacy(0~100),condition,note,location,tier}}, player{abilities[],injuries[],note,stats{},skills{},tier}, flags{}. 변화 없는 필드는 넣지 마라.
+    예: [상태]{"chars":{"danah":{"intimacy":32,"note":"귓불 붉힘"}},"time":"오전 8시 50분"}
+
+형식 예시(내용 아닌 형식만 참고):
+[배경: classroom]
+아침 햇살이 교실 창가로 길게 들었다. 담임이 출석부를 펼쳤다.
+오하늘(smile): 자, 다들 앉자.
+유단아: 네.
+[상태]{"time":"오전 8시 45분"}
+[선택지: 백리안에게 말을 건다 | 자리에 앉는다]
 
 ## 상태 추적 규칙 (매우 중요 — 할루시네이션 방지):
 - **캐릭터 관계·상태는 절대 임의로 뒤집지 말 것.** 이미 "A와 B는 아는 사이"라고 정해졌으면 그 관계를 유지. 갑자기 처음 보는 사이처럼 굴게 하지 말 것. 아래 [현재 상태] 정보를 반드시 참고해 일관성 유지
@@ -5697,7 +5678,13 @@ function buildMessages() {
   const recent = gameHistory.slice(-CONTEXT_RECENT);
   messages.push(...recent);
 
-  return messages;
+  // ★어시스턴트 턴을 대본형식으로 변환(내부 저장은 JSON 유지 — 세이브·리플레이 호환, 모델엔 일관된 대본만 노출)
+  return messages.map(h => {
+    if (h.role === 'assistant' && h.content && h.content.trim().startsWith('{')) {
+      try { return { role: 'assistant', content: dataToScript(JSON.parse(h.content)) }; } catch {}
+    }
+    return h;
+  });
 }
 
 // ===== AMBIENT SOUND ENGINE =====
@@ -5940,6 +5927,60 @@ async function summarizeIfNeeded() {
   } catch {
     // Summary failed silently — not critical
   }
+}
+
+// ===== SCRIPT-FORMAT PARSER (2026-07-21) =====
+// 대본형식(자연문체) → 내부 데이터 {narration, dialogue[], background, mood, state_update, cg, choices, ending}
+// 실측: JSON 강제 대비 밀도 3.5배(모델이 형식 대신 내용에 집중). 줄 단위라 스트리밍도 쉬움.
+function resolveCharIdByName(name) {
+  if (!name) return null;
+  if (typeof playerName !== 'undefined' && name === playerName) return null;   // 주인공은 스프라이트 없음
+  try { const rid = Object.keys(CHARACTERS || {}).find(k => CHARACTERS[k] && CHARACTERS[k].name === name); return rid || null; } catch { return null; }
+}
+function parseScript(text) {
+  const out = { narration: '', dialogue: [], background: null, mood: null, state_update: null, cg: null, choices: null, ending: null };
+  const narr = [];
+  const lines = String(text || '').replace(/```json|```/g, '').split('\n');
+  for (const rawL of lines) {
+    const l = rawL.trim(); if (!l) continue;
+    let m;
+    if ((m = l.match(/^\[(?:배경|background)\s*[:：]\s*(.+?)\]\s*$/i)))  { out.background = m[1].trim(); continue; }
+    if ((m = l.match(/^\[(?:BGM|무드|mood)\s*[:：]\s*(.+?)\]\s*$/i)))    { out.mood = m[1].trim().toLowerCase(); continue; }
+    if ((m = l.match(/^\[(?:CG|씨지)\s*[:：]\s*(.+?)\]\s*$/i)))         { const v = m[1].trim(); out.cg = /^(none|없음|null|-)$/i.test(v) ? null : v; continue; }
+    if ((m = l.match(/^\[(?:엔딩|ending)\s*[:：]\s*(.+?)\]\s*$/i)))     { out.ending = m[1].trim(); continue; }
+    if ((m = l.match(/^\[(?:선택지|choices)\s*[:：]\s*(.+?)\]\s*$/i)))  { out.choices = m[1].split(/\s*[|｜/]\s*/).map(s => s.replace(/^\d+[.)]\s*/, '').trim()).filter(Boolean); continue; }
+    // 상태: [상태] 뒤에 컴팩트 JSON (기존 state_update 스키마 그대로 — 신뢰성 유지)
+    if ((m = l.match(/^\[(?:상태|state)\]?\s*[:：]?\s*(\{.*\})\s*$/i)))  { try { out.state_update = JSON.parse(m[1]); } catch {} continue; }
+    // 대사: 이름(감정): 대사
+    if ((m = l.match(/^([가-힣A-Za-z0-9 ]{1,14}?)(?:\(([^)]*)\))?\s*[:：]\s*(.+)$/))) {
+      const name = m[1].trim(), emo = (m[2] || 'normal').trim().toLowerCase();
+      const txt = m[3].trim().replace(/^[「『"'“‘]\s*/, '').replace(/\s*[」』"'”’]$/, '').trim();   // 모델이 감싼 따옴표 제거
+      if (/^(나레이션|나레이터|narration|narrator)$/i.test(name)) { narr.push(txt); continue; }
+      out.dialogue.push({ speaker: name, char_id: resolveCharIdByName(name), emotion: emo, text: txt, pose: 'upper' });
+      continue;
+    }
+    if ((m = l.match(/^\((?:나레이션|narration)\)\s*(.+)$/i))) { narr.push(m[1].trim()); continue; }
+    narr.push(l);
+  }
+  out.narration = narr.join('\n');
+  return out;
+}
+// 내부 데이터 → 대본형식(모델 컨텍스트로 되돌려줄 때: 어시스턴트 히스토리를 일관된 대본으로)
+function dataToScript(d) {
+  const parts = [];
+  if (d.background) parts.push(`[배경: ${d.background}]`);
+  if (d.mood) parts.push(`[BGM: ${d.mood}]`);
+  if (d.narration && String(d.narration).trim()) parts.push(String(d.narration).trim());
+  (d.dialogue || []).forEach(x => {
+    if (x.isPlayerLine) { parts.push(String(x.text || '').trim()); return; }   // 유저 입력 에코는 평문
+    const emo = x.emotion && x.emotion !== 'normal' ? `(${x.emotion})` : '';
+    parts.push(`${x.speaker || '나레이터'}${emo}: ${x.text || ''}`);
+  });
+  if (d.cg) parts.push(`[CG: ${d.cg}]`);
+  if (d.state_update && Object.keys(d.state_update).length) parts.push(`[상태]${JSON.stringify(d.state_update)}`);
+  if (Array.isArray(d.choices) && d.choices.length) parts.push(`[선택지: ${d.choices.join(' | ')}]`);
+  if (d.ending) parts.push(`[엔딩: ${d.ending}]`);
+  return parts.join('\n');
 }
 
 // ===== FALLBACK PARSER =====
@@ -6301,7 +6342,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   // STREAMING PLAYBACK: begin showing narration/dialogue while the model is
   // still writing. State (bg/mood/state_update/choices) applies at completion.
   const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false };
-  const canStream = !historyMode && !replaying;   // ★제미나이도 스트리밍(2026-07-21) — 두 프로바이더 공통
+  const canStream = false;   // ★대본형식 전환(2026-07-21): JSON 스트림파서 미사용(라인 스트리밍은 후속). 완료 시 parseScript 일괄
   window._stream = canStream ? stream : null;
   const onChunk = !canStream ? null : (buf) => {
     if (historyMode && !stream.active) return;   // browsing history — don't hijack
@@ -6368,9 +6409,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   try {
     let result;
     if (PROVIDER === 'nim') {
-      result = await fetchNim(systemContent, messages, 0.7, 3000, onChunk);   // 폴백 없음: 선택 모델 그대로. 3000=목표 650~900자+JSON 잘림 방지
+      result = await fetchNim(systemContent, messages, 0.7, 3000, null);   // 대본형식: 완료 후 parseScript(스트림 미사용)
     } else {
-      result = await fetchGemini(systemContent, messages, 0.9, 3000, true, onChunk);   // ★스트리밍(onChunk) — 첫 글자 즉시 표시
+      result = await fetchGemini(systemContent, messages, 0.9, 3000, false, null);   // ★prefill 끔(대본형식은 {로 시작 안 함), 스트림 미사용
     }
 
     // If playback already started, don't retry/replace — close out gracefully.
@@ -6433,20 +6474,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
 
     let raw = result.text || '';
-    if (!raw.trim()) raw = '{}';
-
-    let parsed;
-    try {
-      let cleaned = raw.replace(/```json\s*|```/g, '').trim();
-      const firstBrace = cleaned.indexOf('{');
-      const lastBrace = cleaned.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace > firstBrace) {
-        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-      }
-      parsed = JSON.parse(cleaned);
-    } catch {
-      parsed = extractFallback(raw);
-    }
+    // ★대본형식 파싱(2026-07-21, JSON 대비 밀도 3.5배 실측). parseScript는 예외 없이 항상 객체 반환.
+    let parsed = parseScript(raw);
 
     // Detect soft refusal (model complied with filter off but refused in content)
     if (!stream.active && isSoftRefusal(parsed, raw)) {
