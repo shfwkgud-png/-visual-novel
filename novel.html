@@ -4625,14 +4625,17 @@ async function restoreAll() {
 
 // Auto-backup: piggybacks on autoSave, debounced so bursts of turns coalesce
 let _syncTimer = null;
+let _lastSyncStories = null, _lastSyncUploads = null;
 function scheduleAutoBackup() {
   if (!hasSyncAuth()) return;
   clearTimeout(_syncTimer);
+  // ★KV 쓰기 절약(2026-07-21 유저 KV 사용량 메일): 세이브는 매번(턴마다 변함), stories·uploads는
+  //   실제로 바뀌었을 때만 쓴다(거의 안 변하는데 매 백업마다 3개씩 쓰던 낭비 제거). 디바운스 5→20초로 합침.
   _syncTimer = setTimeout(() => {
     syncPut('save:' + STORY.id, localStorage.getItem(saveKeyFor(STORY.id)) || '{}').catch(() => {});
-    syncPut('stories', getLocalStories()).catch(() => {});
-    syncPut('uploads', getUploads()).catch(() => {});
-  }, 5000);
+    try { const st = JSON.stringify(getLocalStories()); if (st !== _lastSyncStories) { _lastSyncStories = st; syncPut('stories', st).catch(() => {}); } } catch {}
+    try { const up = JSON.stringify(getUploads());     if (up !== _lastSyncUploads) { _lastSyncUploads = up; syncPut('uploads', up).catch(() => {}); } } catch {}
+  }, 20000);
 }
 
 // ===== IMAGE UPLOADS (KV-backed store on the sync worker) =====
