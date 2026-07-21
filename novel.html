@@ -6001,18 +6001,20 @@ function isSoftRefusal(parsed, raw) {
 
 // ===== LLM PROVIDERS =====
 // Each returns { text } on success, { error:{code,message} }, or { blocked:true }
-async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, prefill = true) {
+async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, prefill = true, onChunk = null) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 90000);
   const apiContents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }]
   }));
-  // Prefill: force model to start with the game JSON body (skip for other
-  // schemas like the episode draft, where it would corrupt the output)
-  if (prefill) apiContents.push({ role: 'model', parts: [{ text: '{"narration":"' }] });
+  // Prefill: force model to start with the game JSON body (skip for other schemas)
+  const prefHead = prefill ? '{"narration":"' : '';
+  if (prefill) apiContents.push({ role: 'model', parts: [{ text: prefHead }] });
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`, {
+    // ★스트리밍 전환(2026-07-21 유저 "제미나이도 느리다"): 전체 응답 완성까지 기다리던 blocking
+    //   generateContent → streamGenerateContent(SSE). 첫 글자가 즉시 떠 체감 지연 급감(프론티아식).
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -6029,13 +6031,37 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
         ]
       })
     });
-    const data = await res.json();
-    if (data.error) return { error: data.error };
-    if (data.promptFeedback?.blockReason || !data.candidates?.length) return { blocked: true };
-    const fr = data.candidates[0]?.finishReason;
-    if (fr === 'SAFETY' || fr === 'RECITATION') return { blocked: true };
-    let raw = data.candidates[0]?.content?.parts?.[0]?.text || '';
-    if (prefill && !raw.trimStart().startsWith('{') && !raw.includes('```')) raw = '{"narration":"' + raw;
+    if (!res.ok) {
+      let msg = 'HTTP ' + res.status, code = res.status;
+      try { const j = await res.json(); msg = j.error?.message || msg; code = j.error?.code || code; } catch {}
+      return { error: { code, message: msg } };
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '', body = '', blocked = false;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t.startsWith('data:')) continue;
+        const payload = t.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const j = JSON.parse(payload);
+          const cand = j.candidates?.[0];
+          const fr = cand?.finishReason;
+          if (j.promptFeedback?.blockReason || fr === 'SAFETY' || fr === 'RECITATION') blocked = true;
+          const dc = cand?.content?.parts?.[0]?.text;
+          if (dc) { body += dc; if (onChunk) { try { onChunk(prefHead + body); } catch {} } }
+        } catch {}
+      }
+    }
+    if (!body.trim() && blocked) return { blocked: true };
+    let raw = prefHead + body;
+    if (prefill && !raw.trimStart().startsWith('{') && !raw.includes('```')) raw = '{"narration":"' + body;
     return { text: raw };
   } catch (e) {
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
@@ -6252,7 +6278,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   // STREAMING PLAYBACK: begin showing narration/dialogue while the model is
   // still writing. State (bg/mood/state_update/choices) applies at completion.
   const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false };
-  const canStream = PROVIDER === 'nim' && !historyMode && !replaying;
+  const canStream = !historyMode && !replaying;   // ★제미나이도 스트리밍(2026-07-21) — 두 프로바이더 공통
   window._stream = canStream ? stream : null;
   const onChunk = !canStream ? null : (buf) => {
     if (historyMode && !stream.active) return;   // browsing history — don't hijack
@@ -6321,7 +6347,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     if (PROVIDER === 'nim') {
       result = await fetchNim(systemContent, messages, 0.7, 3000, onChunk);   // 폴백 없음: 선택 모델 그대로. 3000=목표 650~900자+JSON 잘림 방지
     } else {
-      result = await fetchGemini(systemContent, messages, 0.9, 3000);          // 목표 분량 상향에 맞춰 상한 확대(잘림 방지)
+      result = await fetchGemini(systemContent, messages, 0.9, 3000, true, onChunk);   // ★스트리밍(onChunk) — 첫 글자 즉시 표시
     }
 
     // If playback already started, don't retry/replace — close out gracefully.
