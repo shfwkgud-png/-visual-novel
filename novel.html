@@ -5919,7 +5919,7 @@ async function summarizeIfNeeded() {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: sysText }] },
           contents: [{ role: 'user', parts: [{ text: userText }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 600 }
+          generationConfig: { temperature: 0.3, maxOutputTokens: 600, thinkingConfig: { thinkingBudget: 0 } }
         })
       });
       const data = await res.json();
@@ -6014,23 +6014,31 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
   try {
     // ★스트리밍 전환(2026-07-21 유저 "제미나이도 느리다"): 전체 응답 완성까지 기다리던 blocking
     //   generateContent → streamGenerateContent(SSE). 첫 글자가 즉시 떠 체감 지연 급감(프론티아식).
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
+    const GEM_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${API_KEY}`;
+    const SAFETY = [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
+    ];
+    // ★thinking 끔(2026-07-21): flash 기본 '사고' 단계가 응답 전 수초 지연 유발. 단 모델이 thinkingConfig
+    //   미지원이면 400 → 그땐 끄고 재시도(세션 내내 미포함). 제미나이가 안 깨지게 안전 폴백.
+    const post = (think) => fetch(GEM_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
       body: JSON.stringify({
         system_instruction: { parts: [{ text: systemContent }] },
         contents: apiContents,
-        generationConfig: { temperature: temp, maxOutputTokens: maxTok },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'OFF' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'OFF' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'OFF' },
-          { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
-        ]
+        generationConfig: { temperature: temp, maxOutputTokens: maxTok, ...(think ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+        safetySettings: SAFETY
       })
     });
+    let res = await post(window._gemNoThink !== false);
+    if (!res.ok && window._gemNoThink !== false) {
+      let etxt = ''; try { etxt = await res.text(); } catch {}
+      if (res.status === 400 && /think/i.test(etxt)) { window._gemNoThink = false; res = await post(false); }
+      else { let msg = 'HTTP ' + res.status, code = res.status; try { const j = JSON.parse(etxt); msg = j.error?.message || msg; code = j.error?.code || code; } catch {}; return { error: { code, message: msg } }; }
+    }
     if (!res.ok) {
       let msg = 'HTTP ' + res.status, code = res.status;
       try { const j = await res.json(); msg = j.error?.message || msg; code = j.error?.code || code; } catch {}
