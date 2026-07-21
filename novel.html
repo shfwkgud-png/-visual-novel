@@ -932,6 +932,8 @@
     min-width: 0;
   }
   .char-sprite.visible { opacity: 1; }
+  /* 히스토리 좌우 넘김 = 책장 넘기듯 즉시 전환(캐릭터가 슬라이드로 '날아오는' 연출 제거). 평소 플레이 연출은 그대로. */
+  body.history-mode .char-sprite { transition: none; }
   /* ★실사 chest-up 트랙(lovediary): 구 2D는 카우보이샷이라 바닥 정렬로도 얼굴이 상단에 왔지만,
      chest-up은 세로가 짧아 얼굴이 55%(대사 61% 직전)까지 내려와 "아래 짱박힌" 구도가 됨(2026-07-20 폰 스샷).
      인물을 키워 얼굴을 상단 1/3로 — 하단은 대사 스크림 뒤로(프론티아식 인물 지배). 2D 트랙 기준값(v53)은 불변. */
@@ -5539,7 +5541,7 @@ function startGame(isContinue) {
     window._modeChosen = false; window._freeMode = false; window._startPhase = null;   // 시작 플로우 상태 초기화
     // ★스토리 전환 잔재 완전 청소(이전 작품 대사/스프라이트/CG가 새 작품에 뜨던 버그)
     dialogueQueue = []; window._pendingDialogues = null; window._pendingChoices = null;
-    window._pendingPlayerLine = null; window._present = null; historyMode = false;
+    window._pendingPlayerLine = null; window._present = null; historyMode = false; document.body.classList.remove('history-mode');
     window._genText = ''; window._fateRoll = null;   // ★이전 스토리의 생성 pill 텍스트/주사위 잔재 제거(다른 작품에 이전 대화 뜨던 버그)
     charLayer.innerHTML = ''; shownSprites = []; charLayer.dataset.count = '0';
     hideEventCG(); currentBgFile = null;
@@ -6891,6 +6893,9 @@ function showNextDialogue() {
   }
 
   const d = dialogueQueue.shift();
+  // ★빈 텍스트 항목(모델이 text="" 뱉거나 청크 분할 부산물)은 표시·기록 없이 건너뛴다.
+  //   이게 기록에 '빈 페이지'로 남던 원인(기록 52 공백). sfx만 있으면 재생은 하고 넘긴다.
+  if (!String(d.text || '').trim()) { if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); } return showNextDialogue(); }
   if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); }
   isShowing = true;
   waitingForTap = false;
@@ -7168,6 +7173,7 @@ function historyBack() {
 
   if (!historyMode) {
     historyMode = true;
+    document.body.classList.add('history-mode');   // 스프라이트 슬라이드 애니 끔(날아옴 제거)
     historyPos = dialogueLog.length - 1;       // present line = last log entry
     const cb = document.getElementById('choiceBox');
     window._present = {
@@ -7185,7 +7191,9 @@ function historyBack() {
     resetDialogueLift();
   }
   if (historyPos > 0) {
-    historyPos--;
+    let np = historyPos - 1;
+    while (np > 0 && !String((dialogueLog[np] || {}).text || '').trim()) np--;   // 빈 기록(구세이브 잔존분) 건너뛰기
+    historyPos = np;
     renderHistoryEntry();
   }
 }
@@ -7193,7 +7201,9 @@ function historyBack() {
 function historyForward() {
   if (!historyMode) return;
   if (historyPos < dialogueLog.length - 1) {
-    historyPos++;
+    let np = historyPos + 1;
+    while (np < dialogueLog.length - 1 && !String((dialogueLog[np] || {}).text || '').trim()) np++;   // 빈 기록 건너뛰기
+    historyPos = np;
     renderHistoryEntry();
   } else {
     exitHistory();
@@ -7219,6 +7229,7 @@ function renderHistoryEntry() {
 
 function exitHistory() {
   historyMode = false;
+  document.body.classList.remove('history-mode');
   // A response arrived while browsing history — play it now instead of
   // restoring the stale pre-generation screen.
   if (window._pendingDialogues) {
