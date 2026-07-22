@@ -1882,7 +1882,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v97</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v98</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -6896,6 +6896,10 @@ function showNextDialogue() {
   // ★빈 텍스트 항목(모델이 text="" 뱉거나 청크 분할 부산물)은 표시·기록 없이 건너뛴다.
   //   이게 기록에 '빈 페이지'로 남던 원인(기록 52 공백). sfx만 있으면 재생은 하고 넘긴다.
   if (!String(d.text || '').trim()) { if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); } return showNextDialogue(); }
+  // ★모델이 유저의 직전 입력을 자기 dialogue(speaker=주인공)로 되뱉는 에코 차단(2026-07-22 유저 스샷:
+  //   기록 9=입력 시 정상 기록, 기록 14=모델 에코로 같은 대사 중복). 입력 기록(isPlayerLine)은 통과.
+  if (!d.isPlayerLine && playerName && String(d.speaker || '').trim() === playerName &&
+      String(d.text || '').replace(/\s+/g, '') === String(window._genText || '').replace(/\s+/g, '')) return showNextDialogue();
   if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); }
   isShowing = true;
   waitingForTap = false;
