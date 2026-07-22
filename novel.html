@@ -6809,6 +6809,11 @@ function rebuildSprites(charIds, speakingId, emotion, pose) {
     ensureSprite(cid);
     const sp = document.getElementById('sprite_' + cid);
     if (sp) sp.classList.add('visible');
+    // ★비발화자도 즉시 올바른 스프라이트 경로로(2026-07-22 영상 검증: ensureSprite의 초기 src는
+    //   구경로(character/25_upper)라 PANDORA 스토리에선 404 → 2연속 404 후 removeBrokenSprite가
+    //   제거하며 data-count가 줄어 남은 캐릭터가 0.2~0.4초 뒤 리사이즈 '튐'. 발화자만
+    //   highlightSpeaker서 경로 교정되던 것을 전원 교정으로)
+    if (cid !== speakingId) updateSpriteEmotion(cid, 'normal', 'upper');
   });
   highlightSpeaker(speakingId, emotion, pose);
 }
@@ -6867,6 +6872,10 @@ function updateSpriteEmotion(charId, emotion, pose) {
 // ===== DIALOGUE SYSTEM =====
 function showNextDialogue() {
   if (dialogueQueue.length === 0) {
+    // ★공백 복구 불변식(2026-07-22 유저 영상: 출력 중 대사창이 비고 뒤로 갔다 와야 복원):
+    //   대기 상태로 전환되는 이 지점에서 화면이 비어 있으면 현재 줄 전문(_typeFull)을 되살린다
+    //   (타이핑 타이머가 iOS 스로틀·레이스로 죽어 0글자에 멈춘 경우의 안전망 — 기록은 정상이라 로그 무관)
+    if (!isShowing && window._typeFull && !dialogueText.textContent) dialogueText.textContent = window._typeFull;
     // stream still writing — keep the last line on screen and wait quietly.
     // (기존: 대사를 회색 ···로 갈아치움 → 마지막 대사 증발 + 빈 화면 혼란)
     if (window._stream && window._stream.active) {
@@ -6974,6 +6983,17 @@ function typeText(text, callback) {
   window._typeTimer = timer;
   window._typeCallback = callback;
   window._typeFull = text;
+  // ★타이핑 워치독(2026-07-22): iOS 타이머 스로틀·레이스로 interval이 죽어 대사창이 공백/반토막으로
+  //   멈추는 현상 방어 — 예상 소요시간+3초가 지나도 이 타이머가 여전히 현역인데 미완이면 즉시 완성 처리
+  setTimeout(() => {
+    if (window._typeTimer === timer && i < text.length) {
+      clearInterval(timer);
+      dialogueText.textContent = text;
+      hint.textContent = '▼ 탭하여 계속';
+      hint.style.display = 'block';
+      callback();
+    }
+  }, text.length * speed + 3000);
 }
 
 // ===== INPUT HANDLERS (tap + swipe history) =====
