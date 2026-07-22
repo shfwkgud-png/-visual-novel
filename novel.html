@@ -3786,6 +3786,7 @@ const BUILTIN_STORIES = {
     worldLore: LOVEDIARY_LORE.split('\n').slice(1).join('\n').trim(),
     genre: '현대 학원 로맨스',
     characters: LOVEDIARY_CHARACTERS,
+    maxSprites: 2,   // ★실사 chest-up 트랙: 동시 표시 2인 캡(3인부터 작아짐 — 말하는 순서 롤링, 2026-07-22 유저)
     // ★모드 재정의(2026-07-20 유저 지적 "이 작품에 모드가 왜 있나") — 정해진 서사가 없는 일상 시뮬이라
     //   기본 라벨이 무의미했음. 스토리=학사 캘린더 이벤트가 적극 발동하는 행사 중심 플레이,
     //   자유=일정 압박 없는 순수 일상. 해석 규칙은 LOVEDIARY_LORE [모드 규칙]에.
@@ -6721,6 +6722,15 @@ function ensureSprite(charId) {
   // Extras / unregistered ids (마법사 A etc.) have NO sprite — never create a
   // layout slot for them, or the scene spaces itself as if they were present.
   if (!CHARACTERS[charId]) return;
+  // ★동시 표시 인원 캡(2026-07-22 유저: "3명부터 너무 작아짐 — 말하는 순서대로 2명만"):
+  //   STORY.maxSprites(lovediary=2) 초과 시 가장 오래 안 말한 캐릭 퇴장(롤링 2인 무대).
+  //   shownSprites는 highlightSpeaker가 발화 시마다 recency 순으로 재정렬 — [0]=가장 오래 침묵.
+  const _cap = (typeof STORY !== 'undefined' && STORY && STORY.maxSprites) || 4;
+  while (shownSprites.length >= _cap) {
+    const oldId = shownSprites.shift();
+    const oldImg = document.getElementById('sprite_' + oldId);
+    if (oldImg) oldImg.remove();
+  }
   shownSprites.push(charId);
   const img = document.createElement('img');
   img.className = 'char-sprite';
@@ -6793,6 +6803,9 @@ function removeBrokenSprite(charId, img) {
 // Apply speaker highlight (bright speaker, dim others)
 function highlightSpeaker(charId, emotion, pose) {
   if (charId) {
+    // 발화 recency 갱신 — shownSprites 끝=최근 발화자(인원 캡 퇴장은 [0]=가장 오래 침묵한 캐릭부터)
+    const _ri = shownSprites.indexOf(charId);
+    if (_ri !== -1) { shownSprites.splice(_ri, 1); shownSprites.push(charId); }
     document.querySelectorAll('.char-sprite').forEach(s => { s.classList.remove('speaking'); s.classList.add('silent'); });
     const sp = document.getElementById('sprite_' + charId);
     if (sp) { sp.classList.remove('silent'); sp.classList.add('speaking'); updateSpriteEmotion(charId, emotion || 'normal', pose || 'upper'); }
@@ -6805,7 +6818,10 @@ function highlightSpeaker(charId, emotion, pose) {
 function rebuildSprites(charIds, speakingId, emotion, pose) {
   charLayer.innerHTML = '';
   shownSprites = [];
-  (charIds || []).forEach(cid => {
+  // 인원 캡(maxSprites) 적용 시 발화자가 퇴장당하지 않게 마지막에 생성(캡은 [0]부터 퇴장)
+  const _ids = [...(charIds || [])];
+  if (speakingId) { const _si = _ids.indexOf(speakingId); if (_si !== -1) { _ids.splice(_si, 1); _ids.push(speakingId); } }
+  _ids.forEach(cid => {
     ensureSprite(cid);
     const sp = document.getElementById('sprite_' + cid);
     if (sp) sp.classList.add('visible');
