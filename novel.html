@@ -5590,6 +5590,15 @@ function restoreAndReplay(save, checkTimeflow) {
   }
   updateStatusUI();
   if (lastBg) setBg(lastBg);
+  // ★이어하기 BGM 복원(2026-07-23 유저 "음악 안 나옴"): setMood는 새로하기(beginStory)에만 있고
+  //   이어하기엔 없어 curCat=null → 모델이 mood를 다시 보낼 때까지 무음(프롬프트가 "유지 시 null"이라 장기 무음).
+  //   히스토리에서 마지막 기록된 mood를 역스캔해 복원(없으면 calm). 자동재생 차단 시 첫 터치에서 재시도됨.
+  let _lastMood = 'calm';
+  for (let _mi = gameHistory.length - 1; _mi >= 0; _mi--) {
+    if (gameHistory[_mi].role !== 'assistant') continue;
+    try { const _md = JSON.parse(gameHistory[_mi].content).mood; if (_md) { _lastMood = _md; break; } } catch {}
+  }
+  Ambient.setMood(_lastMood);
   const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
   if (lastAssistant) {
     try {
