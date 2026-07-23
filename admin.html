@@ -375,12 +375,26 @@ function tokInit() {
   const leftTurns = perTurn > 0 ? Math.floor(left / perTurn) : null;
   h = `<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;gap:22px;flex-wrap:wrap;align-items:center;font-size:0.9rem">` +
     `<span>💰 예산 $<input id="tokBudget" value="${budget}" style="width:70px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px" onchange="localStorage.setItem('vn_budget', this.value); tokInit();"></span>` +
-    `<span>사용 <b>$${totC.toFixed(4)}</b></span>` +
-    `<span>남음 <b style="color:var(--gold,#d4af37)">$${left.toFixed(2)}</b></span>` +
+    `<span id="tokServer" style="color:var(--dim)">서버 집계 조회중…</span>` +
+    `<span>이 기기 사용 <b>$${totC.toFixed(4)}</b></span>` +
     `<span>턴당 평균 <b>${perTurn ? '$' + perTurn.toFixed(4) : '—'}</b></span>` +
-    `<span>예상 남은 입출력 <b style="color:var(--gold,#d4af37)">${leftTurns != null ? n(leftTurns) + '턴' : '— (비용 기록 쌓이면 계산)'}</b></span>` +
-    `</div><p class="hint">비용=API가 돌려준 실청구액 누적(OpenRouter BYOK는 $300 크레딧 실소진액, 캐싱 할인 반영). 이 브라우저에서 쓴 분량만 집계 — 다른 기기·용도 사용분은 미포함이니 정확한 잔액은 Google Cloud 콘솔 참조. Gemini 직결(무료키)·NIM은 $0.</p>` + h;
+    `</div><p class="hint">서버 집계=OpenRouter가 기록한 BYOK($300 크레딧) 실소진 총액 — 전 기기 합산·캐싱 할인 반영(구글 무료크레딧 잔액은 공개 API가 없어 이걸로 연결). 키는 novel.html AI설정에 저장된 것을 사용. Gemini 직결(무료키)·NIM은 $0.</p>` + h;
   el.innerHTML = h;
+  // ── OpenRouter 서버 집계(전 기기 BYOK 실소진액) — novel.html에 저장된 키로 조회 ──
+  (async () => {
+    const sp = document.getElementById('tokServer');
+    try {
+      const cfg = JSON.parse(localStorage.getItem('vn_cfg') || '{}');
+      if (!cfg.orKey) { sp.textContent = '서버 집계: 키 없음 (novel.html AI설정에서 OpenRouter 키 저장 시 표시)'; return; }
+      const r = await fetch('https://openrouter.ai/api/v1/key', { headers: { Authorization: 'Bearer ' + cfg.orKey } });
+      const j = await r.json();
+      const used = Number(j.data && j.data.byok_usage) || 0;
+      const sLeft = budget - used;
+      const sTurns = perTurn > 0 ? Math.floor(sLeft / perTurn) : null;
+      sp.style.color = '';
+      sp.innerHTML = `총 사용(전 기기) <b>$${used.toFixed(4)}</b> · 남음 <b style="color:var(--gold,#d4af37)">$${sLeft.toFixed(2)}</b> · 예상 남은 입출력 <b style="color:var(--gold,#d4af37)">${sTurns != null ? sTurns.toLocaleString('ko-KR') + '턴' : '—'}</b>`;
+    } catch (e) { sp.textContent = '서버 집계 조회 실패(네트워크/키 확인)'; }
+  })();
 }
 
 // ===== SD 프롬프트 생성기 (WAI-illustrious) =====
