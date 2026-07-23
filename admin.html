@@ -97,6 +97,7 @@
   <button id="tabImgs" class="on" onclick="showTab('imgs')">이미지</button>
   <button id="tabData" onclick="showTab('data')">데이터 (스토리·세이브)</button>
   <button id="tabGen" onclick="showTab('gen')">SD 프롬프트</button>
+  <button id="tabTok" onclick="showTab('tok')">토큰</button>
   <button id="tabInfo" onclick="showTab('info')">현황</button>
   <button id="tabUsers" onclick="showTab('users')" style="display:none">사용자 (관리자)</button>
 </nav>
@@ -119,6 +120,14 @@
       </div>
       <textarea id="viewerTa" spellcheck="false"></textarea>
     </div>
+  </div>
+  <div id="pageTok" style="display:none">
+    <p class="hint">스토리별 AI 토큰 사용량 (이 브라우저에서 플레이한 기록 — novel.html과 같은 도메인의 localStorage 공유). v103부터 누적 시작.</p>
+    <div style="margin-bottom:12px">
+      <button onclick="tokInit()">새로고침</button>
+      <button onclick="if(confirm('토큰 기록을 전부 초기화할까요?')){localStorage.removeItem('vn_tokens');tokInit();}" style="color:#e05555">기록 초기화</button>
+    </div>
+    <div id="tokTable"></div>
   </div>
   <div id="pageUsers" style="display:none">
     <p class="hint">아이디/비밀번호 회원가입은 초대코드가 있어야 가능합니다 (1회용). 구글 로그인은 초대코드 없이 가입됩니다.</p>
@@ -330,11 +339,35 @@ async function onGoogle(resp) {
 }
 
 function showTab(t) {
-  ['Imgs','Data','Gen','Info','Users'].forEach(x => {
+  ['Imgs','Data','Gen','Tok','Info','Users'].forEach(x => {
     document.getElementById('page' + x).style.display = x.toLowerCase() === t ? 'block' : 'none';
     document.getElementById('tab' + x).classList.toggle('on', x.toLowerCase() === t);
   });
   if (t === 'gen') genInit();
+  if (t === 'tok') tokInit();
+}
+
+// ===== 토큰 사용량 (novel.html의 recTokens가 localStorage vn_tokens에 적재) =====
+function tokInit() {
+  const el = document.getElementById('tokTable');
+  let all = {};
+  try { all = JSON.parse(localStorage.getItem('vn_tokens') || '{}'); } catch {}
+  const rows = Object.entries(all);
+  if (!rows.length) { el.innerHTML = '<p class="hint">아직 기록이 없습니다. novel.html에서 플레이하면 쌓입니다 (v103+, 같은 브라우저·도메인).</p>'; return; }
+  const n = v => (Number(v) || 0).toLocaleString('ko-KR');
+  let totI = 0, totO = 0;
+  let h = '<table style="width:100%;border-collapse:collapse;font-size:0.88rem">' +
+    '<tr style="color:var(--dim);text-align:right"><th style="text-align:left;padding:8px 10px">스토리</th><th style="padding:8px 10px">총 사용</th><th style="padding:8px 10px">입력</th><th style="padding:8px 10px">출력</th><th style="padding:8px 10px">턴 수</th><th style="padding:8px 10px">턴당 예상 (입력/출력)</th></tr>';
+  rows.sort((a, b) => ((b[1].in||0)+(b[1].out||0)) - ((a[1].in||0)+(a[1].out||0))).forEach(([sid, r]) => {
+    const i = r.in || 0, o = r.out || 0, t = r.turns || 0;
+    totI += i; totO += o;
+    h += `<tr style="border-top:1px solid var(--border);text-align:right"><td style="text-align:left;padding:8px 10px">${r.title || sid}</td>` +
+      `<td style="padding:8px 10px"><b>${n(i + o)}</b></td><td style="padding:8px 10px">${n(i)}</td><td style="padding:8px 10px">${n(o)}</td>` +
+      `<td style="padding:8px 10px">${n(t)}</td><td style="padding:8px 10px">${t ? n(Math.round(i / t)) + ' / ' + n(Math.round(o / t)) : '—'}</td></tr>`;
+  });
+  h += `<tr style="border-top:2px solid var(--border);text-align:right;color:var(--gold,#d4af37)"><td style="text-align:left;padding:8px 10px"><b>전체</b></td>` +
+    `<td style="padding:8px 10px"><b>${n(totI + totO)}</b></td><td style="padding:8px 10px">${n(totI)}</td><td style="padding:8px 10px">${n(totO)}</td><td colspan="2"></td></tr></table>`;
+  el.innerHTML = h;
 }
 
 // ===== SD 프롬프트 생성기 (WAI-illustrious) =====
