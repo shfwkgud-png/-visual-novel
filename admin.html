@@ -355,18 +355,31 @@ function tokInit() {
   const rows = Object.entries(all);
   if (!rows.length) { el.innerHTML = '<p class="hint">아직 기록이 없습니다. novel.html에서 플레이하면 쌓입니다 (v103+, 같은 브라우저·도메인).</p>'; return; }
   const n = v => (Number(v) || 0).toLocaleString('ko-KR');
-  let totI = 0, totO = 0;
+  let totI = 0, totO = 0, totC = 0, totT = 0;
   let h = '<table style="width:100%;border-collapse:collapse;font-size:0.88rem">' +
-    '<tr style="color:var(--dim);text-align:right"><th style="text-align:left;padding:8px 10px">스토리</th><th style="padding:8px 10px">총 사용</th><th style="padding:8px 10px">입력</th><th style="padding:8px 10px">출력</th><th style="padding:8px 10px">턴 수</th><th style="padding:8px 10px">턴당 예상 (입력/출력)</th></tr>';
+    '<tr style="color:var(--dim);text-align:right"><th style="text-align:left;padding:8px 10px">스토리</th><th style="padding:8px 10px">총 사용</th><th style="padding:8px 10px">입력</th><th style="padding:8px 10px">출력</th><th style="padding:8px 10px">턴 수</th><th style="padding:8px 10px">턴당 예상 (입력/출력)</th><th style="padding:8px 10px">비용($)</th></tr>';
   rows.sort((a, b) => ((b[1].in||0)+(b[1].out||0)) - ((a[1].in||0)+(a[1].out||0))).forEach(([sid, r]) => {
-    const i = r.in || 0, o = r.out || 0, t = r.turns || 0;
-    totI += i; totO += o;
+    const i = r.in || 0, o = r.out || 0, t = r.turns || 0, c = r.cost || 0;
+    totI += i; totO += o; totC += c; totT += t;
     h += `<tr style="border-top:1px solid var(--border);text-align:right"><td style="text-align:left;padding:8px 10px">${r.title || sid}</td>` +
       `<td style="padding:8px 10px"><b>${n(i + o)}</b></td><td style="padding:8px 10px">${n(i)}</td><td style="padding:8px 10px">${n(o)}</td>` +
-      `<td style="padding:8px 10px">${n(t)}</td><td style="padding:8px 10px">${t ? n(Math.round(i / t)) + ' / ' + n(Math.round(o / t)) : '—'}</td></tr>`;
+      `<td style="padding:8px 10px">${n(t)}</td><td style="padding:8px 10px">${t ? n(Math.round(i / t)) + ' / ' + n(Math.round(o / t)) : '—'}</td>` +
+      `<td style="padding:8px 10px">${c ? '$' + c.toFixed(4) : '—'}</td></tr>`;
   });
   h += `<tr style="border-top:2px solid var(--border);text-align:right;color:var(--gold,#d4af37)"><td style="text-align:left;padding:8px 10px"><b>전체</b></td>` +
-    `<td style="padding:8px 10px"><b>${n(totI + totO)}</b></td><td style="padding:8px 10px">${n(totI)}</td><td style="padding:8px 10px">${n(totO)}</td><td colspan="2"></td></tr></table>`;
+    `<td style="padding:8px 10px"><b>${n(totI + totO)}</b></td><td style="padding:8px 10px">${n(totI)}</td><td style="padding:8px 10px">${n(totO)}</td><td style="padding:8px 10px">${n(totT)}</td><td></td><td style="padding:8px 10px"><b>${totC ? '$' + totC.toFixed(4) : '—'}</b></td></tr></table>`;
+  // ── 예산·잔액·남은 턴 (실청구액 기반 — OpenRouter BYOK upstream 비용 누적) ──
+  const budget = Number(localStorage.getItem('vn_budget') || 300);
+  const left = budget - totC;
+  const perTurn = totT > 0 && totC > 0 ? totC / totT : 0;
+  const leftTurns = perTurn > 0 ? Math.floor(left / perTurn) : null;
+  h = `<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;gap:22px;flex-wrap:wrap;align-items:center;font-size:0.9rem">` +
+    `<span>💰 예산 $<input id="tokBudget" value="${budget}" style="width:70px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px" onchange="localStorage.setItem('vn_budget', this.value); tokInit();"></span>` +
+    `<span>사용 <b>$${totC.toFixed(4)}</b></span>` +
+    `<span>남음 <b style="color:var(--gold,#d4af37)">$${left.toFixed(2)}</b></span>` +
+    `<span>턴당 평균 <b>${perTurn ? '$' + perTurn.toFixed(4) : '—'}</b></span>` +
+    `<span>예상 남은 입출력 <b style="color:var(--gold,#d4af37)">${leftTurns != null ? n(leftTurns) + '턴' : '— (비용 기록 쌓이면 계산)'}</b></span>` +
+    `</div><p class="hint">비용=API가 돌려준 실청구액 누적(OpenRouter BYOK는 $300 크레딧 실소진액, 캐싱 할인 반영). 이 브라우저에서 쓴 분량만 집계 — 다른 기기·용도 사용분은 미포함이니 정확한 잔액은 Google Cloud 콘솔 참조. Gemini 직결(무료키)·NIM은 $0.</p>` + h;
   el.innerHTML = h;
 }
 
