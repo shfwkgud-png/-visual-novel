@@ -1882,7 +1882,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v100</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v101</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -3376,6 +3376,9 @@ const LOVEDIARY_LORE = `당신은 현대 학원 연애 시뮬레이션 비주얼
 - 복도 분단(앞→뒤): [강태풍·차무강] → (빈 책상들)
 - ★주인공의 짝 = 백리안(전학 첫날 담임이 주인공 옆 빈자리를 지정 — 고정, 변경 금지). 주인공 바로 앞=소요·다희, 바로 뒤=도범·만복. 단아는 교탁 앞 가운데 분단(반장후보답게).
 - 자리 바꾸기는 6월 학사 이벤트에서만 일어난다 — 그 전에 자리를 옮기거나 새로 정하지 마라.
+- ★★시야·인지 리얼리즘(엄수): 인물은 자기 자리에서 물리적으로 보이는 것만 안다. **앞자리 인물은 등 뒤(뒷줄)의 은밀한 행동(쪽지·귓속말·손짓)을 볼 수 없다** — 소요·다희는 주인공↔리안의 쪽지를 직접 볼 수 없고, 알아채려면 구체적 경로(종이 부스럭 소리에 돌아봄, 쪽지 전달 실수, 뒷자리 도범의 폭로, 수업 중 교사 적발)가 필요하다. 은밀한 행동을 전지적으로 알아채게 하지 마라. 질투 반응도 '목격 가능했을 때'만.
+- ★★공개 사건 = 반 전체의 사건(무반응 금지): 교실에서 벌어지는 공개 사건(교사에게 걸려 혼남·소란·고백·싸움)에는 **반드시 주변 반 인물 1~2명의 실제 dialogue 반응 + 익명 급우들의 나레이션 반응(수군거림·웃음·시선)**을 같이 연출하라. 반 전체가 보고 있는데 아무도 반응하지 않는 장면은 실패다.
+- ★인물 로테이션: 단아·소요·리안만 반복 등장시키지 마라. 교시·쉬는시간이 바뀔 때마다 아직 대사가 없던 반 인물(슬기·지호·태풍·하연·지운·무강·만복·다희·도범 등)을 최소 1명씩 배경 사건·한마디로라도 등장시켜 반이 살아있게 하라(전원 이 반에 실존하는 인물이다).
 
 ## ★연출 문법 (이 스토리의 심장 — 반드시 지켜라):
 - **한 비트 = 한 프레임 (단, 한 응답은 여러 비트)**: 개별 대사·나레이션은 짧고 리듬감 있게(대사 구어체 1~3문장, 늘어지는 설명 문단은 피함). ★그러나 '짧게'는 개별 문장 얘기지 응답 전체가 아니다 — 한 응답은 이런 짧은 비트를 **여러 개 이어 붙여**(여러 인물·여러 동작·여러 대사) 위 '목표 분량(650~900자)'을 채워라. 짧은 대사 한두 개로 응답을 끝내지 마라. 도발-강반응 루프 순간은 더 길게 몰아쳐라.
@@ -7055,6 +7058,19 @@ function typeText(text, callback) {
 // ===== INPUT HANDLERS (tap + swipe history) =====
 let touchStartX = 0, touchStartY = 0, lastHandledTime = 0;
 let historyMode = false, historyPos = 0;
+
+// ★전천후 공백 자가복구(2026-07-23 v100에도 iOS 잔존 보고): 원인 경로 불문 최종 안전망 —
+//   게임 화면에서 타이핑 중이 아닌데 대사창이 비어 있고 전문(_typeFull)이 있으면 1초 내 복원.
+//   (경로별 수정: 빈항목스킵·에코차단·rAF·워치독·스냅샷보정은 유지 — 이건 마지막 그물)
+setInterval(() => {
+  try {
+    if (document.getElementById('gameScreen').style.display === 'none') return;
+    if (historyMode || isShowing) return;
+    if (!dialogueText.textContent && window._typeFull && String(window._typeFull).trim()) {
+      dialogueText.textContent = window._typeFull;
+    }
+  } catch {}
+}, 1000);
 
 function isInteractive(el) {
   return el.closest && el.closest('button, textarea, input, #backlogPanel, #inputBar, #choiceBox, #topBar, #statusPanel');
