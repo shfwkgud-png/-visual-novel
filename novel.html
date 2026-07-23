@@ -3368,6 +3368,14 @@ const LOVEDIARY_LORE = `당신은 현대 학원 연애 시뮬레이션 비주얼
 - **백리안은 바로 오늘(개학 첫날) 전학 온 인물** — 전학생은 **담임(오하늘)이 반 앞에 세워 소개하고("이번에 전학 온 백리안입니다") 빈자리를 지정해 앉히는** 절차를 거친다. ★출석 명단에 원래 있던 학생처럼 호명에 "네"로 답하게 하지 마라(아직 이 반 명단·자리에 없다). 반 아이들·주인공과 서먹하고 서로 이름도 모른다 — 낯선 첫인사·수군거림·힐끔대는 시선으로 다뤄라.
 - **각 인물의 role·관계를 대사·행동에 실제로 반영하라**: 소꿉친구는 편하게(반말·옛일 언급), 전학생은 낯설고 거리감 있게, 후배는 선배 대하듯, 교사는 교사답게. 카드에 정의만 있고 아무 장면에도 안 쓰이면 실패다.
 
+## ★교실 좌석 배치도 (고정 — 위치·자리 언급은 반드시 이 배치 기준, 임의 재배치 절대 금지):
+- 구조: 칠판·교탁이 앞. 3개 분단, 각 분단은 2인 1책상(짝꿍) × 앞뒤 줄. "짝"=같은 책상 옆자리, "앞/뒷자리"=같은 분단의 바로 앞/뒤 책상만을 뜻한다(다른 분단과는 통로 건너 옆·대각선 — 앞뒤가 아니다).
+- 창가 분단(앞→뒤): [한소요·정다희] → [주인공·백리안] → [남도범·오만복]
+- 가운데 분단(앞→뒤): [유단아·문슬기] → [차도윤·유지호] → [서하연·서지운]
+- 복도 분단(앞→뒤): [강태풍·차무강] → (빈 책상들)
+- ★주인공의 짝 = 백리안(전학 첫날 담임이 주인공 옆 빈자리를 지정 — 고정, 변경 금지). 주인공 바로 앞=소요·다희, 바로 뒤=도범·만복. 단아는 교탁 앞 가운데 분단(반장후보답게).
+- 자리 바꾸기는 6월 학사 이벤트에서만 일어난다 — 그 전에 자리를 옮기거나 새로 정하지 마라.
+
 ## ★연출 문법 (이 스토리의 심장 — 반드시 지켜라):
 - **한 비트 = 한 프레임 (단, 한 응답은 여러 비트)**: 개별 대사·나레이션은 짧고 리듬감 있게(대사 구어체 1~3문장, 늘어지는 설명 문단은 피함). ★그러나 '짧게'는 개별 문장 얘기지 응답 전체가 아니다 — 한 응답은 이런 짧은 비트를 **여러 개 이어 붙여**(여러 인물·여러 동작·여러 대사) 위 '목표 분량(650~900자)'을 채워라. 짧은 대사 한두 개로 응답을 끝내지 마라. 도발-강반응 루프 순간은 더 길게 몰아쳐라.
 - **충격 비트는 단문**: 인물이 흔들리는 순간엔 짧은 한마디만("...뭐?"). 그 프레임엔 다른 말을 붙이지 마라.
@@ -6407,7 +6415,17 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       if (!_isNarrDup(u.dialogues[k])) dlgToChunks(u.dialogues[k]).forEach(c => { dialogueQueue.push(c); pushed++; });
     }
     stream.dlgCount = Math.max(stream.dlgCount, u.dialogues.length);
-    if (pushed > 0 && stream.waiting && !historyMode) { stream.waiting = false; showNextDialogue(); }
+    // ★수동 모드 존중(2026-07-23 유저 승인): 대기('···') 중 새 대사가 도착해도 AUTO일 때만 자동 재생.
+    //   수동이면 "▼ 탭하여 계속"으로 유저 탭을 기다린다(읽던 문장을 지멋대로 안 넘김).
+    if (pushed > 0 && stream.waiting && !historyMode) {
+      stream.waiting = false;
+      if (autoPlay) { showNextDialogue(); }
+      else {
+        waitingForTap = true;
+        const _h = document.getElementById('continueHint');
+        _h.textContent = '▼ 탭하여 계속'; _h.style.display = 'block';
+      }
+    }
   };
 
   try {
@@ -6660,7 +6678,16 @@ function processResponse(data, activeCharIds, streamed) {
     window._pendingChoices = data.choices || null;
     window._activeCharIds = activeCharIds;
     window._stream = null;
-    if (streamed.waiting) { streamed.waiting = false; showNextDialogue(); }
+    // 완료 시 잔여분도 동일: AUTO만 자동 재생, 수동은 탭 대기(2026-07-23)
+    if (streamed.waiting) {
+      streamed.waiting = false;
+      if (autoPlay || dialogueQueue.length === 0) { showNextDialogue(); }
+      else {
+        waitingForTap = true;
+        const _h = document.getElementById('continueHint');
+        _h.textContent = '▼ 탭하여 계속'; _h.style.display = 'block';
+      }
+    }
     return;
   }
 
@@ -6985,40 +7012,42 @@ function showNextDialogue() {
 
 function typeText(text, callback) {
   text = (text == null) ? '' : String(text);   // ★undefined/null 가드(text[i] 크래시 방지 2026-07-21)
-  clearInterval(window._typeTimer);   // 이전 타이머 생존 시 글자 섞임/중복 출력 방지
+  clearInterval(window._typeTimer);   // 구 interval 경로 잔재 정리(외부 콜러 호환)
+  // ★rAF 기반 타이핑(2026-07-23 유저 승인 — "문장이 잘리지 않게"): setInterval은 스트리밍 파싱으로
+  //   메인스레드가 바쁘면 iOS가 굶기거나 죽여 공백/반토막 정지가 났음. rAF+경과시간 방식은
+  //   프레임이 밀리면 그만큼 글자를 한꺼번에 채울 뿐 절대 죽지 않는다(공백 근본 제거).
+  window._typeGen = (window._typeGen || 0) + 1;
+  const myGen = window._typeGen;
   dialogueText.textContent = '';
   const hint = document.getElementById('continueHint');
   hint.style.display = 'none';
   window._typeFull = text;
+  window._typeCallback = callback;
   if (!text.length) {                 // 빈 텍스트 → 타이핑 없이 즉시 완료(무한 undefined 방지)
     hint.textContent = '▼ 탭하여 계속'; hint.style.display = 'block';
-    window._typeCallback = callback; callback(); return;
+    callback(); return;
   }
-  let i = 0;
   const speed = 30;
-  const timer = setInterval(() => {
-    dialogueText.textContent += text[i];
-    i++;
-    if (i >= text.length) {
-      clearInterval(timer);
-      hint.textContent = '▼ 탭하여 계속';
-      hint.style.display = 'block';
-      callback();
-    }
-  }, speed);
-  window._typeTimer = timer;
-  window._typeCallback = callback;
-  window._typeFull = text;
-  // ★타이핑 워치독(2026-07-22): iOS 타이머 스로틀·레이스로 interval이 죽어 대사창이 공백/반토막으로
-  //   멈추는 현상 방어 — 예상 소요시간+3초가 지나도 이 타이머가 여전히 현역인데 미완이면 즉시 완성 처리
+  const t0 = performance.now();
+  let done = false;
+  const finish = () => {
+    if (done) return; done = true;
+    dialogueText.textContent = text;
+    hint.textContent = '▼ 탭하여 계속';
+    hint.style.display = 'block';
+    callback();
+  };
+  const step = (now) => {
+    if (window._typeGen !== myGen) return;   // 새 대사가 시작됨 → 이 루프 종료
+    if (!isShowing) return;                  // 탭 등 외부에서 이미 완료 처리됨 → 종료(상태는 외부가 정리)
+    dialogueText.textContent = text.slice(0, Math.min(text.length, 1 + Math.floor((now - t0) / speed)));
+    if (dialogueText.textContent.length >= text.length) { finish(); return; }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  // 워치독(보험): 웹뷰 프리즈 등 rAF조차 멎는 극단 상황 — 예상시간+3초 미완이면 즉시 전문 표시
   setTimeout(() => {
-    if (window._typeTimer === timer && i < text.length) {
-      clearInterval(timer);
-      dialogueText.textContent = text;
-      hint.textContent = '▼ 탭하여 계속';
-      hint.style.display = 'block';
-      callback();
-    }
+    if (window._typeGen === myGen && isShowing && dialogueText.textContent.length < text.length) finish();
   }, text.length * speed + 3000);
 }
 
