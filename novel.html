@@ -1882,7 +1882,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v99</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v100</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -7258,7 +7258,9 @@ function historyBack() {
     const cb = document.getElementById('choiceBox');
     window._present = {
       speaker: speakerNameEl.textContent,
-      text: dialogueText.textContent,
+      // ★공백 스냅샷 방지(2026-07-23 스샷 확증): 대사창이 빈 순간(타이핑 직전 등)에 히스토리 진입하면
+      //   빈 present가 박제돼 앞으로 올 때마다 공백 화면이 복원되던 진범 — 전문(_typeFull)로 보정
+      text: dialogueText.textContent || window._typeFull || '',
       charId: currentSpeakerCharId,
       emotion: currentEmotion, pose: currentPose,
       bgFile: currentBgFile, sprites: [...shownSprites],
@@ -7321,6 +7323,14 @@ function exitHistory() {
     return;
   }
   const p = window._present || {};
+  // ★공백 화석 방어 2겹째: present 텍스트가 비어 있으면(과거에 빈 순간이 스냅샷된 경우)
+  //   마지막 기록(dialogueLog 끝)의 대사·화자로 대체 — "앞으로 오면 공백" 재발 원천 차단
+  if (!String(p.text || '').trim() && dialogueLog.length) {
+    const _last = dialogueLog[dialogueLog.length - 1];
+    p.text = _last.text || '';
+    if (!p.speaker) p.speaker = _last.isPlayer ? (_last.speaker || playerName) : _last.speaker;
+    if (p.charId == null) p.charId = _last.char_id || null;
+  }
   if (p.bgFile) setBgFile(p.bgFile);
   if (p.sprites) rebuildSprites(p.sprites, p.charId, p.emotion, p.pose);
   setNameplate(p.speaker || '', p.charId);
