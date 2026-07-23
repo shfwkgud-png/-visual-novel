@@ -1882,7 +1882,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v101</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v102</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -6966,6 +6966,11 @@ function showNextDialogue() {
   //   기록 9=입력 시 정상 기록, 기록 14=모델 에코로 같은 대사 중복). 입력 기록(isPlayerLine)은 통과.
   if (!d.isPlayerLine && playerName && String(d.speaker || '').trim() === playerName &&
       String(d.text || '').replace(/\s+/g, '') === String(window._genText || '').replace(/\s+/g, '')) return showNextDialogue();
+  // ★연속 중복 차단(2026-07-23 유저 "가끔 대화 두 번"): 스트림 카운트와 완료 보정 슬라이스가 어긋나면
+  //   같은 대사가 이중 푸시됨 — 소스 불문, 직전 표시줄과 화자+내용이 동일하면 표시·기록 없이 스킵
+  const _dupKey = String(d.speaker || '') + '|' + String(d.text || '').replace(/\s+/g, ' ').trim();
+  if (_dupKey === window._lastShownKey) return showNextDialogue();
+  window._lastShownKey = _dupKey;
   if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); }
   isShowing = true;
   waitingForTap = false;
