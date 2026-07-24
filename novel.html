@@ -2219,10 +2219,19 @@ const ENGINE_MOD_CG = `
 
 ## 아이돌 육성 sim 필드 (스토리 「무대 뒤 3분」 전용 — 다른 스토리에선 절대 쓰지 마라):
 - 플레이어가 **이번 주 일정 한 칸을 쓰는 행동**을 골랐을 때만 'sim' 필드를 채워라. 잡담·질문·관계 대화엔 넣지 마라(일정 소모 안 됨).
-- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험" }'
+- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장", "offer": 0 }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
   - 'concept' = 곡작업일 때만
+  - ★'kind' = **행사일 때만** 종류를 골라라. 무대(음방)에 못 서는 주에도 팀은 굴러가야 한다:
+    · 축제 = 지방·대학 축제, 언제나 가능한 생계 (돈↑ 코어팬 소폭)
+    · 버스킹 = 돈은 안 되지만 SNS가 돈다 (라이트팬↑↑ SNS↑) — 자금 바닥일 때의 반격 카드
+    · 팬사인회 = **활동기·음반 있을 때만** (코어팬↑↑ 멘탈↑) — 소예가 빛나는 자리
+    · 기업행사 = 인지도 25+ (돈↑↑, 멘탈 소모)
+    · 팬콘 = 코어팬 500+ (돈↑ 코어팬↑↑ 멘탈↑↑) — 팀이 회복되는 서사 정점
+    조건 미달이면 앱이 거절하고 이유를 알려준다. 상태창의 「가능한 행사」 목록 밖은 고르지 마라.
+  - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장)
+  - 브랜드 계약은 **매주 자금이 들어오는 공백기 생존줄**이다. 단 개인 앰버서더 계약은 그 멤버만 뜨고 **나머지 멤버 신뢰가 매주 깎인다** — 대표가 그 균열을 어떻게 다루는지가 이야기가 된다. 진정성 콘텐츠를 과하게 팔면 이미지가 떨어져 대형 제안이 끊기고 계약이 파기될 수 있다.
   - 곡이 완성돼 **발매(컴백)** 하기로 했으면 '"release": true, "title": "곡 제목"' 추가
 - ★**숫자는 절대 네가 만들지 마라.** 팬 수·자금·점수는 앱이 계산해서 다음 턴 상태로 알려준다. 너는 주입된 「소속사 상태」를 장면으로 번역만 해라.
 - choices에는 항상 **다음에 무슨 일정을 쓸지**가 자연스럽게 담기게 하되, 관계 대화 선택지도 섞어라(일정 소모 없이 팀과 가까워지는 길).
@@ -3723,9 +3732,25 @@ const IDOL_SIM = {
   K: { music: 56000, album: 25000, sns: 3500, vote: 8000 },
   AXIS: { seowoo:'sns', miyu:'music', haram:'vote', soye:'album', siah:'tv' },
   MUL:  { seowoo:1.9, miyu:1.0, haram:1.5, soye:1.7, siah:1.6 },
+  // 행사 5종 — 무대(음방)에 못 서는 주에도 굴러가는 생계·팬접점 축.
+  //   money/core/light = [최소,최대] 랜덤, cond/mind = 멤버 소모·회복, fame = 인지도 증분
+  //   need: 'active'=활동기 한정 / needFame·needCore = 게이트
+  EVENTS: {
+    '축제':     { money:[2000000,5000000], core:[60,150],  light:[40,100],   fame:0.25, cond:-12, mind:0,   axis:'album', desc:'지방·대학 축제 (언제나 가능한 생계)' },
+    '버스킹':   { cost:100000, money:[0,0], core:[10,30],  light:[300,900],  fame:0.4,  cond:-8,  mind:0,   axis:'sns',   sns:[6,14], desc:'게릴라 버스킹 (돈은 안 되지만 SNS가 돈다)' },
+    '팬사인회': { need:'active', money:[500000,1500000], core:[120,260], light:[30,80], fame:0.3, cond:-10, mind:5, axis:'album', image:1, desc:'팬사인회 (활동기·음반 필요, 코어팬 결집)' },
+    '기업행사': { needFame:25, money:[5000000,9000000], core:[20,60], light:[20,60],   fame:0.4,  cond:-14, mind:-2, axis:'album', desc:'기업 행사 (인지도 25+, 돈이 된다)' },
+    '팬콘':     { needCore:500, money:[3000000,7000000], core:[150,350], light:[200,600], fame:0.8, cond:-18, mind:12, axis:'album', image:2, desc:'팬미팅·팬콘 (코어팬 500+, 팀이 회복된다)' },
+  },
+  // 브랜드 티어 — 인지도·이미지로 제안이 들어오고, 계약하면 매주 자금이 들어온다(공백기 생존줄).
+  BRAND_TIERS: [
+    { tier:1, label:'로컬',   gate:20, image:0,  weekly:500000,  weeks:8,  pool:['오하루 음료','스텝온 슈즈','데일리핏'] },
+    { tier:2, label:'중견',   gate:40, image:55, weekly:1500000, weeks:12, pool:['코스메 뮤즈','클리어톡','루체 주얼리'] },
+    { tier:3, label:'대형',   gate:65, image:70, weekly:4000000, weeks:16, pool:['라비앙 코스메틱','한빛카드','NEXA 스포츠'] },
+  ],
   init() {
-    return { week:1, slots:3, money:8000000, fame:12, loan:120000000,
-      core:300, light:2000, sns:0,
+    return { week:1, slots:3, money:8000000, fame:12, loan:120000000, loanWeek:40,
+      core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false,
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0 },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -3746,6 +3771,56 @@ const IDOL_SIM = {
   },
   score(d, show){ const ax=IDOL_SIM.axes(d), w=IDOL_SIM.SHOWS[show].w;
     return Object.keys(w).reduce((a,k)=>a+ax[k]*w[k],0); },
+  // ───── 라이벌 (idol_sim.js 검증본 이식) — 순위는 '남들과의 비교'라야 의미가 있다
+  //   고정 3팀은 각자 다른 축으로 이긴다 = 공략법이 다르고, 자기 컴백 사이클(주기)을 돈다.
+  RIVALS: [
+    { id:'luminous',  name:'루미나스',   강점:'음원', base:{ music:92, album:70, sns:55, tv:80, vote:72 }, cycle:14, start:3 },
+    { id:'veronica',  name:'베로니카',   강점:'팬덤', base:{ music:62, album:95, sns:50, tv:75, vote:96 }, cycle:12, start:8 },
+    { id:'halflight', name:'하프라이트', 강점:'거울', base:{ music:30, album:28, sns:34, tv:40, vote:30 }, cycle:11, start:5 },
+  ],
+  rivalActive(r, week){ return ((week - r.start) % r.cycle + r.cycle) % r.cycle < 4; },
+  // 다음 컴백까지 남은 주(실장이 소문으로 흘리는 정보)
+  rivalIn(r, week){ const p=((week - r.start) % r.cycle + r.cycle) % r.cycle; return p<4 ? 0 : r.cycle - p; },
+  rng(seed){ let t = seed >>> 0; return () => { t += 0x6D2B79F5;
+    let x = Math.imul(t ^ (t >>> 15), 1 | t); x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; },
+  // 배경 팀의 성향 — 이게 없으면 모든 방송에서 같은 팀이 1위가 되어 "방송별 공략"이 무의미해진다.
+  //   축 배분(합=5.0)이라 팀마다 강한 방송이 다르다: 음원형은 뮤뱅, SNS형은 인기가요에서 세다.
+  PROFILES: [
+    { k:'음원형', w:{ music:1.55, album:0.95, sns:0.55, tv:1.05, vote:0.90 } },
+    { k:'팬덤형', w:{ music:0.75, album:1.55, sns:0.60, tv:0.90, vote:1.60 } },
+    { k:'SNS형',  w:{ music:0.85, album:0.65, sns:1.85, tv:0.95, vote:0.70 } },
+    { k:'방송형', w:{ music:0.95, album:0.85, sns:0.85, tv:1.60, vote:0.75 } },
+  ],
+  // 차트를 채우는 배경 팀 — 이름은 음절 조합, 서사 없음(순위표에만 뜬다). 주차 시드라 같은 주엔 같은 표.
+  autoTeams(week){
+    const S=IDOL_SIM, R=S.rng(week*7919), out=[];
+    const s1='루노베시아엘하미레', s2='나아엘온이라시', s3=['스','즈','','아','틴'];
+    // [최소,최대,최저점,최고점,티어] — S(대형 컴백)는 분기 1~2회 감각으로 8%만
+    [[0,0,82,98,'S'],[0,2,55,78,'A'],[3,6,25,52,'B'],[4,8,6,25,'C']].forEach(([lo,hi,mn,mx,t])=>{
+      let n = t==='S' ? (R()<0.08?1:0) : lo+Math.floor(R()*(hi-lo+1));
+      for(let i=0;i<n;i++){
+        const nm = s1[Math.floor(R()*s1.length)] + s2[Math.floor(R()*s2.length)] + s3[Math.floor(R()*s3.length)];
+        const target = mn + R()*(mx-mn);
+        const p = S.PROFILES[Math.floor(R()*S.PROFILES.length)];
+        const base = {}; Object.keys(p.w).forEach(k=>{ base[k] = Math.min(100, target*p.w[k]); });
+        out.push({ name:nm, tier:t, profile:p.k, base });
+      }
+    });
+    return out;
+  },
+  showScoreOf(base, show){ const w=IDOL_SIM.SHOWS[show].w;
+    return Object.keys(w).reduce((a,k)=>a+(base[k]||0)*w[k],0); },
+  // 그 주 그 방송의 순위표 (우리 + 활동 중인 고정 라이벌 + 배경 팀)
+  chart(d, show){
+    const S=IDOL_SIM, rows=[];
+    if (S.canEnter(d, show)) rows.push({ name:'엔코어', me:true, score:S.score(d, show) });
+    S.RIVALS.forEach(r=>{ if(S.rivalActive(r, d.week)) rows.push({ name:r.name, rival:true, score:S.showScoreOf(r.base, show) }); });
+    S.autoTeams(d.week).forEach(t=>rows.push({ name:t.name, tier:t.tier, score:S.showScoreOf(t.base, show) }));
+    rows.sort((a,b)=>b.score-a.score);
+    rows.forEach((r,i)=>r.rank=i+1);
+    return rows;
+  },
   canEnter(d, show){ return d.fame >= IDOL_SIM.SHOWS[show].gate; },
   openShows(d){ return Object.keys(IDOL_SIM.SHOWS).filter(s=>IDOL_SIM.canEnter(d,s)); },
   // 행동 적용 — sim = { action, members[], intensity, authenticity, concept }
@@ -3754,7 +3829,7 @@ const IDOL_SIM = {
     const mem=(sim.members&&sim.members.length?sim.members:Object.keys(d.mem)).filter(i=>d.mem[i]);
     const list = mem.length?mem:Object.keys(d.mem);
     const dt={light:0,core:0,money:0,fame:0,sns:0,note:''};
-    const cost={ '연습':300000,'콘텐츠':200000,'음방':1000000,'행사':0,'휴식':0,'곡작업':100000 }[sim.action];
+    const cost={ '연습':300000,'콘텐츠':200000,'음방':1000000,'행사':0,'휴식':0,'곡작업':100000,'미팅':0 }[sim.action];
     if (cost === undefined) return null;
     if (cost > d.money) return { ok:false, reason:'자금부족' };
     dt.money = -cost;
@@ -3775,6 +3850,7 @@ const IDOL_SIM = {
       dt.fame += viral?6:0.3;
       list.forEach(i=>{const m=d.mem[i]; m.cond=S.clamp(m.cond-5,0,100);
         m.mind=S.clamp(m.mind-auth*4,0,100); if(auth>=3) m.trust=S.clamp(m.trust-2,0,100);});
+      if (auth>=3) d.image=S.clamp((d.image===undefined?70:d.image)-2.5,0,100);  // 사생활 소진 = 브랜드 이미지 하락
       if (viral) dt.note='🔥바이럴';
     } else if (sim.action==='음방'){
       if(!S.active(d)) return { ok:false, reason:'활동기아님' };
@@ -3783,12 +3859,49 @@ const IDOL_SIM = {
       dt.light += Math.round(d.fame*8*bMul); dt.core += Math.round(d.light*0.005); dt.fame += 1.2;
       list.forEach(i=>{d.mem[i].cond=S.clamp(d.mem[i].cond-15,0,100);});
     } else if (sim.action==='행사'){
-      const cMul=list.reduce((a,i)=>a+(S.AXIS[i]==='album'?S.MUL[i]:1),0)/list.length;
+      // 종류 미지정이면 '축제'(구 세이브 호환 — 기존 '행사'는 축제와 동일 계수)
+      const kind = S.EVENTS[sim.kind] ? sim.kind : '축제';
+      const E = S.EVENTS[kind];
+      if (E.need==='active' && !S.active(d)) return { ok:false, reason:'활동기·음반 필요' };
+      if (E.needFame && d.fame < E.needFame) return { ok:false, reason:`인지도 ${E.needFame} 필요` };
+      if (E.needCore && d.core < E.needCore) return { ok:false, reason:`코어팬 ${E.needCore}명 필요` };
+      if (E.cost && E.cost > d.money) return { ok:false, reason:'자금부족' };
+      const rng=([lo,hi])=>lo+R()*(hi-lo);
+      const aMul=list.reduce((a,i)=>a+(S.AXIS[i]===E.axis?S.MUL[i]:1),0)/list.length;
       const tr=list.reduce((a,i)=>a+d.mem[i].trust,0)/list.length;
-      dt.core += Math.round((60+R()*90)*cMul*(1+d.fame/55)*(0.6+tr/160));
-      dt.light += Math.round((40+R()*60)*(1+d.fame/70));
-      dt.fame += 0.25; dt.money += Math.round(2000000+R()*3000000);
-      list.forEach(i=>{d.mem[i].cond=S.clamp(d.mem[i].cond-12,0,100);});
+      dt.money -= (E.cost||0);
+      dt.core += Math.round(rng(E.core)*aMul*(1+d.fame/55)*(0.6+tr/160));
+      dt.light += Math.round(rng(E.light)*aMul*(1+d.fame/70));
+      if (E.sns) dt.sns += Math.round(rng(E.sns)*aMul);
+      dt.fame += E.fame; dt.money += Math.round(rng(E.money)*(1+d.fame/90));
+      if (E.image) d.image = S.clamp(d.image + E.image, 0, 100);
+      list.forEach(i=>{const m=d.mem[i];
+        m.cond=S.clamp(m.cond+E.cond,0,100); if(E.mind) m.mind=S.clamp(m.mind+E.mind,0,100);});
+      dt.note = kind;
+    } else if (sim.action==='미팅'){
+      // 일정 1칸 = 경영 행동(브랜드 계약·투자 유치·대출 연장). 멤버 소모 없음.
+      const t = sim.target || '브랜드';
+      if (t==='브랜드'){
+        const idx = Math.max(0, Math.min((sim.offer|0), d.offers.length-1));
+        const o = d.offers[idx];
+        if (!o) return { ok:false, reason:'들어온 제안 없음' };
+        d.offers.splice(idx,1);
+        d.brands.push({ ...o, left:o.weeks });
+        dt.money += o.weekly*2;            // 계약금 = 2주치 선지급
+        dt.fame += o.tier*0.4;
+        if (o.member) { const m=d.mem[o.member]; if(m) m.trust=S.clamp(m.trust+4,0,100); }
+        dt.note = `${o.name} 계약${o.member?`(${(IDOL_CHARACTERS[o.member]||{}).name} 개인)`:''}`;
+      } else if (t==='투자'){
+        if (d.invested) return { ok:false, reason:'이미 유치함' };
+        if (d.fame < 30) return { ok:false, reason:'인지도 30 필요' };
+        d.invested = true;
+        dt.money += Math.round(15000000+R()*10000000);
+        dt.note = '투자 유치';
+      } else if (t==='대출연장'){
+        if (d.loanExt) return { ok:false, reason:'이미 연장함' };
+        d.loanExt = true; d.loanWeek += 12;
+        dt.note = '대출 만기 12주 연장';
+      } else return { ok:false, reason:'미팅 대상 불명' };
     } else if (sim.action==='휴식'){
       list.forEach(i=>{const m=d.mem[i]; m.cond=S.clamp(m.cond+25,0,100); m.mind=S.clamp(m.mind+10,0,100);});
     } else if (sim.action==='곡작업'){
@@ -3807,13 +3920,44 @@ const IDOL_SIM = {
     d.fame=IDOL_SIM.clamp(d.fame+4+p*14,0,100); return p; },
   chartResult(d, rank){ const g=rank===1?9:rank<=3?5.5:rank<=10?2:0.5;
     d.fame=IDOL_SIM.clamp(d.fame+g,0,100);
-    if(rank<=3) d.light+=Math.round(d.light*0.06+800); return g; },
-  endWeek(d){ const S=IDOL_SIM, act=S.active(d);
+    if(rank<=3){ d.light+=Math.round(d.light*0.06+800);
+      d.image=IDOL_SIM.clamp((d.image===undefined?70:d.image)+2,0,100); }   // 성적이 곧 브랜드 가치
+    return g; },
+  endWeek(d){ const S=IDOL_SIM, act=S.active(d), R=Math.random;
     d.light=Math.round(d.light*(1-(act?0.02:0.05)));
     d.core=Math.round(d.core*(1-0.004));
     const tr=Object.values(d.mem).reduce((a,m)=>a+m.trust,0)/5;
     d.core+=Math.round(d.light*0.02*(tr/100));
     d.sns=Math.round(d.sns*0.94);
+    // ─ 브랜드: 주급 유입 · 계약 만료 · 개인 앰버서더 부작용 · 이미지 미달 시 파기
+    if (d.image === undefined) d.image = 70;                 // 구 세이브 승계
+    d.brands = d.brands || []; d.offers = d.offers || [];
+    d.brands = d.brands.filter(b => {
+      d.money += b.weekly;
+      if (b.member) {                                        // 개인 앰버서더 = 그 멤버만 뜬다
+        d.light += Math.round(120*(1+d.fame/60));
+        Object.keys(d.mem).forEach(i=>{ if(i!==b.member) d.mem[i].trust=S.clamp(d.mem[i].trust-0.6,0,100); });
+      }
+      if (d.image < 40 && R() < 0.12) return false;          // 이미지 붕괴 → 계약 파기
+      return (--b.left) > 0;
+    });
+    // 제안 만료 — 안 잡으면 4주 뒤 사라진다(낡은 제안이 슬롯을 막아 상위 티어가 안 들어오던 버그)
+    d.offers = d.offers.filter(o => (o.life = (o.life===undefined?4:o.life) - 1) > 0);
+    // 제안 생성: 인지도·이미지 게이트를 통과한 최상위 티어에서 확률적으로
+    if (d.offers.length < 3 && R() < 0.10 + d.fame/320) {
+      const ok = S.BRAND_TIERS.filter(t => d.fame>=t.gate && d.image>=t.image);
+      if (ok.length) {
+        const t = ok[ok.length-1];
+        const name = t.pool[Math.floor(R()*t.pool.length)];
+        if (!d.brands.some(b=>b.name===name) && !d.offers.some(o=>o.name===name)) {
+          // 대형은 40% 확률로 개인 앰버서더 제안(팀 균열의 씨앗)
+          const solo = t.tier===3 && R()<0.4 ? ['seowoo','siah','haram'][Math.floor(R()*3)] : null;
+          d.offers.push({ name, tier:t.tier, label:t.label, weekly:t.weekly, weeks:t.weeks, member:solo, life:4 });
+        }
+      }
+    }
+    d.image = S.clamp(d.image + 0.3, 0, 100);                // 별일 없으면 서서히 회복
+    if (d.loanWeek) d.loanWeek = Math.max(0, d.loanWeek - 1);
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
     if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; }
     d.album.tvThisWeek=0; d.week+=1; d.slots=3; },
@@ -3830,6 +3974,26 @@ const IDOL_SIM = {
     s += `곡: ${d.album.quality?`완성도 ${Math.round(d.album.quality)} 대중성 ${Math.round(d.album.appeal)}`:'없음(곡작업 필요)'}`;
     s += IDOL_SIM.active(d)? ` | ★활동기 ${d.album.actWeek}/4주차 (이번 주 음방 ${d.album.tvThisWeek}회)\n` : ` | 공백기\n`;
     s += `출연 가능 음방(인지도 ${Math.round(d.fame)}): ${open.length?open.join(', '):'없음'}\n`;
+    // 행사(무대 못 서는 주의 생계·팬접점) — 지금 가능한 것만
+    const evOk = Object.entries(IDOL_SIM.EVENTS).filter(([,E]) =>
+      (!E.need || IDOL_SIM.active(d)) && (!E.needFame || d.fame>=E.needFame) && (!E.needCore || d.core>=E.needCore));
+    s += `가능한 행사: ${evOk.map(([k])=>k).join(', ')||'없음'}\n`;
+    // 브랜드/이미지 — 공백기 생존줄이자 팀 균열의 씨앗
+    if (d.image !== undefined) s += `브랜드 이미지 ${Math.round(d.image)}`;
+    if (d.brands && d.brands.length) s += ` | 계약중: ` + d.brands.map(b=>
+      `${b.name}(주 ${Math.round(b.weekly/10000)}만·${b.left}주 남음${b.member?`·${(IDOL_CHARACTERS[b.member]||{}).name} 개인 앰버서더`:''})`).join(', ');
+    if (d.image !== undefined) s += `\n`;
+    if (d.offers && d.offers.length) s += `★들어온 광고 제안: ` + d.offers.map((o,i)=>
+      `[${i}] ${o.name}(${o.label}·주 ${Math.round(o.weekly/10000)}만·${o.weeks}주${o.member?`·${(IDOL_CHARACTERS[o.member]||{}).name} 개인 앰버서더`:'·팀 전체'}, ${o.life||1}주 안에 답 줘야 함)`).join(' / ') + ` — 실장이 보고할 것\n`;
+    if (d.loanWeek !== undefined) s += d.loanWeek>0 ? `대출 만기까지 ${d.loanWeek}주\n`
+      : `★★대출 만기 도래 — 상환하거나 연장하지 못하면 회사가 넘어간다. 실장은 이 얘기를 피하지 못한다.\n`;
+    // 라이벌 판세 — 실장이 업계 소문으로 흘리는 정보(컴백 시기 전략의 근거)
+    const now = IDOL_SIM.RIVALS.filter(r=>IDOL_SIM.rivalActive(r,d.week));
+    const soon = IDOL_SIM.RIVALS.filter(r=>{const k=IDOL_SIM.rivalIn(r,d.week); return k>0&&k<=3;})
+      .map(r=>`${r.name} ${IDOL_SIM.rivalIn(r,d.week)}주 뒤`);
+    s += `라이벌: ${now.length?`활동 중 — ${now.map(r=>`${r.name}(${r.강점})`).join(', ')}`:'전부 공백기(빈 주 = 기회)'}`;
+    s += soon.length? ` | 컴백 예정: ${soon.join(', ')}\n` : `\n`;
+    if (gameState && gameState.flags && gameState.flags.직전순위표) s += `직전 순위표: ${gameState.flags.직전순위표}\n`;
     s += `멤버: ` + Object.entries(d.mem).map(([i,m])=>`${(IDOL_CHARACTERS[i]||{}).name||i} 컨디션${Math.round(m.cond)}/멘탈${Math.round(m.mind)}/신뢰${Math.round(m.trust)}`).join(' · ') + `\n`;
     if (warn.length) s += `★경고: ${warn.join(', ')} — 대표가 알아채야 한다\n`;
     return s;
@@ -3877,12 +4041,16 @@ const IDOL_LORE = `
 - **숫자를 대사에 그대로 읊지 마라**("라이트팬 1,240명 증가" 금지). 실장의 브리핑에서만 대략의 감각으로 언급 가능("이번 주 조회수가 좀 붙었어요").
 
 ### 1주 = 3페이즈 리듬
-① **월요일 회의**: 실장 브리핑(잔고·만기까지 남은 주·나갈 수 있는 음방·라이벌 소문·컨디션 경고) + 멤버 발언. 대표가 질문하면 실장이 업계 실무로 답한다.
+① **월요일 회의**: 실장 브리핑(잔고·만기까지 남은 주·나갈 수 있는 음방·**들어온 광고 제안**·라이벌 소문·컨디션 경고) + 멤버 발언. 대표가 질문하면 실장이 업계 실무로 답한다.
 ② **주중 3슬롯**: 대표가 무엇에 시간을 쓸지 고른다. 각 슬롯마다 장면 하나.
 ③ **주말 결산**: 그 주의 결과와 다음 주 예고. 활동기면 음방 순위 발표 연출.
 
-### ★행동 태그 (choices에 넣을 때 반드시 이 6종 중 하나로 유도)
-연습 / 콘텐츠 / 음방 / 행사 / 휴식 / 곡작업
+### ★행동 태그 (choices에 넣을 때 반드시 이 7종 중 하나로 유도)
+연습 / 콘텐츠 / 음방 / **행사(축제·버스킹·팬사인회·기업행사·팬콘)** / 휴식 / 곡작업 / **미팅(브랜드 계약·투자 유치·대출 연장)**
+- **무대에 못 서는 주가 대부분이다** — 공백기·인지도 미달로 음방을 못 나가면 팀은 행사로 먹고산다. 지방 축제 합판 무대, 대학 축제 30분, 기업 창립기념식 축가. 시아가 "제대로 된 무대에서 춤추고 싶다"고 한 게 이 얘기다.
+- **팬사인회**는 활동기·음반이 있어야 열린다(음반을 사야 응모가 되니까). 소예가 300명 이름을 다 외우는 자리가 여기다.
+- **팬콘**은 코어팬 500명이 모여야 성립한다 — 처음 열리는 순간이 이 팀의 분기점이다.
+- **브랜드/광고**: 인지도와 이미지가 오르면 제안이 들어온다(로컬 → 중견 → 대형·앰버서더). 계약하면 **매주 자금이 들어와 공백기를 버틴다.** ★단 **개인 앰버서더**는 그 멤버만 화제가 되고 나머지 넷의 신뢰가 매주 깎인다 — "미안해서 생기는 갈등"의 도화선. 진정성 콘텐츠를 과하게 팔면 이미지가 떨어져 제안이 끊기고 계약이 파기된다.
 - **곡작업은 대표 전용** — 컨셉(대중·팬덤·실험), 킬링파트 배분(소예=코어팬↑, 미유=음원↑), 작사 방향(팀의 실제 상황을 가사에 넣으면 화제성↑ 대신 그 멤버가 무너질 수 있음).
 - **콘텐츠**엔 「진정성 수위」가 있다 — 사생활·약한 모습을 얼마나 팔 것인가. 높이면 터질 확률이 오르지만 그 멤버의 멘탈·신뢰가 깎인다. **이 게임의 핵심 딜레마다.** 실장은 과한 수위에 정색한다.
 - 자유 대화(멤버에게 말 걸기·연습실 들르기)는 일정을 소모하지 않는다 — 관계는 여기서 쌓인다.
@@ -6931,19 +7099,20 @@ function processResponse(data, activeCharIds, streamed) {
         // 3슬롯 소진 → 주간 마감 + 활동기면 차트 판정
         if (d.slots <= 0) {
           if (IDOL_SIM.active(d) && d.album.tvThisWeek > 0) {
+            // ★실제 순위표: 우리 + 활동 중인 고정 라이벌 + 배경 팀을 그 방송 가중치로 겨룬다.
+            //   출연 가능한 방송 중 '우리 순위가 가장 높은' 곳을 그 주의 성적으로 잡는다.
             let best = null;
             IDOL_SIM.openShows(d).forEach(sh => {
-              const sc = IDOL_SIM.score(d, sh);
-              if (!best || sc > best.sc) best = { sh, sc };
+              const rows = IDOL_SIM.chart(d, sh), me = rows.find(r => r.me);
+              if (me && (!best || me.rank < best.me.rank)) best = { sh, rows, me };
             });
             if (best) {
-              // 라이벌·자동팀 대비 순위(간이): 총점 구간으로 환산
-              const rank = best.sc >= 78 ? 1 : best.sc >= 62 ? 2 : best.sc >= 50 ? 3
-                         : best.sc >= 38 ? 5 : best.sc >= 25 ? 9 : 14;
-              IDOL_SIM.chartResult(d, rank);
-              showStatToast(`📺 ${best.sh} ${rank}위 (${best.sc.toFixed(1)}점)`, rank > 5);
+              IDOL_SIM.chartResult(d, best.me.rank);
+              const top = best.rows[0];
+              showStatToast(`📺 ${best.sh} ${best.me.rank}위 (${best.me.score.toFixed(1)}점)${best.me.rank===1?' 🏆':` · 1위 ${top.name}`}`, best.me.rank > 5);
               gameState.flags = gameState.flags || {};
-              gameState.flags.직전차트 = `${best.sh} ${rank}위`;
+              gameState.flags.직전차트 = `${best.sh} ${best.me.rank}위` + (best.me.rank===1?'(1위!)':` / 1위 ${top.name}`);
+              gameState.flags.직전순위표 = best.rows.slice(0,5).map(r=>`${r.rank}. ${r.name}${r.me?'(우리)':''}`).join(' · ');
             }
           }
           IDOL_SIM.endWeek(d);
