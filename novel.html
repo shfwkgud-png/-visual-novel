@@ -1882,7 +1882,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v106</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v107</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2887,7 +2887,7 @@ const LOVEISLAND_CHARACTERS = {
   lv103: { name: '유리', role: '요가 강사', personality: '나른한 고양이상, 27세. 스킨십 거리감이 제로라 오해를 몰고 다님. 속내를 안 보여주는 게 무기' },
   lv104: { name: '문소은', role: '대학원생', personality: '뇌과학 석사과정, 24세. 촌스러운 안경 뒤 반전 미모. 데이터로 사랑을 분석하려다 본인이 표본이 됨' },
   lv105: { name: '백하진', role: '셰프', personality: '파인다이닝 오너셰프, 29세. 털털한 웃음과 손맛으로 승부. 요리해주는 상대는 이미 마음에 둔 상대' },
-  lv106: { name: '김나연', role: '환승 게스트(X)', personality: '★5일차 투입되는 주인공의 전 연인, 27세. 이별의 이유를 아직 말하지 않았다. 웃는 얼굴이 아픈 사람' },
+  lv107: { name: '김나연', role: '환승 게스트(X)', personality: '★5일차 투입되는 주인공의 전 연인, 27세. 이별의 이유를 아직 말하지 않았다. 웃는 얼굴이 아픈 사람' },
   lv107: { name: '강태오', role: '인플루언서', personality: '팔로워 90만 관종, 28세. 방송용 어그로와 진심을 스스로도 구분 못 하는 중. 주인공의 최대 라이벌' },
   lv108: { name: '서준혁', role: '소방관', personality: '과묵한 소방관, 30세. 몸으로 하는 배려가 몸에 뱄지만 말은 서툼. 조용히 표를 쓸어감' },
   lv109: { name: '이현빈', role: '재벌 3세', personality: '유통가 3세, 27세. 돈 자랑이 습관이라 미움받지만 실은 애정결핍. 진심을 사는 법을 모름' },
@@ -7649,8 +7649,12 @@ const LOVEDIARY_CG_EXTRA_SCENES = ['doggy_ntr', 'facial_oral'];
 const CG_VARIANTS = {   // "story/charId/sceneId" → 변형 개수(2 이상이면 표시 때 1..n 랜덤, v1=접미없음)
   'lovediary/haneul/missionary_pov': 3, 'lovediary/haneul/cowgirl_front': 3,
   'lovediary/haneul/doggy_side': 3, 'lovediary/haneul/facial': 3,
-  'lovediary/hyeran/doggy_side': 2
+  'lovediary/hyeran/doggy_side': 2,
+  'lovediary/sera/cowgirl_front': 3, 'lovediary/sera/doggy_side': 4,
+  'lovediary/sera/fellatio_pov': 2
 };
+// 세라는 mating_press_pov 미보유(유저 판정으로 제외) — 해당 씬키 발화 시 대체 씬키로 폴백
+const CG_SCENE_BLOCK = { 'lovediary/sera/mating_press_pov': 'sera/missionary_pov' };
 
 function bgUrlFor(key) {
   if (STORY.customBgs && STORY.customBgs[key]) return STORY.customBgs[key].url;
@@ -7695,6 +7699,8 @@ function cgUrlFor(name) {
 // 같은 씬에 여러 변형이 있으면 표시할 때마다 랜덤으로 하나 선택(유저 "랜덤으로 뜨게").
 // v1=접미 없음, v2..vN=_vN. 변형 정의 없으면 name 그대로.
 function cgPickVariant(name) {
+  const rep = CG_SCENE_BLOCK[`${STORY.id}/${name}`];   // 미보유 씬키 → 대체 씬키(404 방지)
+  if (rep) name = rep;
   const n = CG_VARIANTS[`${STORY.id}/${name}`];
   if (!n || n < 2) return name;
   const pick = 1 + Math.floor(Math.random() * n);
