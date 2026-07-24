@@ -951,6 +951,10 @@
   }
   body[data-story="lovediary"] #charLayer[data-count="2"] .char-sprite,
   body[data-story="idol"] #charLayer[data-count="2"] .char-sprite { height: calc(54% * min(var(--arScale, 1), 1)); --ty: -30%; }
+  /* ★무대의상 컷은 무릎 위까지 잡힌 넓은 프레이밍(의상을 보여주려고) — chest-up 트랙 그대로 깔면
+     인물이 작고 붕 뜬다. 무대 배경일 때만 더 크게·아래로 붙여 전신 실루엣이 살게 한다. */
+  body[data-story="idol"][data-idolstage] .char-sprite { height: calc(86% * min(var(--arScale, 1), 1)); --ty: -6%; }
+  body[data-story="idol"][data-idolstage] #charLayer[data-count="2"] .char-sprite { height: calc(76% * min(var(--arScale, 1), 1)); --ty: -4%; }
   /* Speaker: NO zoom (keeps bottom from cropping), just on top + full brightness.
      Others recede (dim + slightly smaller). Speaker also slides toward center
      via the nth-child rules below. */
@@ -2232,7 +2236,10 @@ const ENGINE_MOD_CG = `
     조건 미달이면 앱이 거절하고 이유를 알려준다. 상태창의 「가능한 행사」 목록 밖은 고르지 마라.
   - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장)
   - 브랜드 계약은 **매주 자금이 들어오는 공백기 생존줄**이다. 단 개인 앰버서더 계약은 그 멤버만 뜨고 **나머지 멤버 신뢰가 매주 깎인다** — 대표가 그 균열을 어떻게 다루는지가 이야기가 된다. 진정성 콘텐츠를 과하게 팔면 이미지가 떨어져 대형 제안이 끊기고 계약이 파기될 수 있다.
-  - 곡이 완성돼 **발매(컴백)** 하기로 했으면 '"release": true, "title": "곡 제목"' 추가
+  - 곡이 완성돼 **발매(컴백)** 하기로 했으면 '"release": true, "title": "곡 제목", "stage": 1~6' 추가
+    · 'stage' = 이번 앨범 **무대의상 컨셉**(5인 코디 통일): 1교복 · 2청량서머 · 3Y2K하이틴 · 4걸크러시블랙 · 5공주로맨틱 · 6화이트앵콜
+      곡 분위기·컨셉 회의 장면에서 대표/멤버가 고른 것을 반영해라. 안 고르면 순서대로 돌아간다.
+      무대·행사장·대기실 장면에서 앱이 자동으로 그 의상 스프라이트로 갈아입힌다.
 - ★**숫자는 절대 네가 만들지 마라.** 팬 수·자금·점수는 앱이 계산해서 다음 턴 상태로 알려준다. 너는 주입된 「소속사 상태」를 장면으로 번역만 해라.
 - choices에는 항상 **다음에 무슨 일정을 쓸지**가 자연스럽게 담기게 하되, 관계 대화 선택지도 섞어라(일정 소모 없이 팀과 가까워지는 길).
 
@@ -3717,6 +3724,13 @@ const IDOL_CHARACTERS = {
   haram:  { name: '정하람', role: '엔코어 메인보컬(23)', gender: '여', personality: '맑고 안정적인 고음, 파트 지분 1~2위. ★갭: 시크한 냉미녀로 생겼는데 개그 욕심이 제일 강하다 — 예능에서 각 잡고 웃기려다 자주 실패하고, 그 실패가 더 웃겨서 팬이 붙는다. Want: "얼굴 값 한다"가 아니라 "쟤 진짜 웃겨"라는 말. Secret: 웃기려는 이유는 무대 밖에서 자기가 재미없는 사람일까 봐 무서워서다. Wound: 첫 예능에서 편집으로 통째로 잘렸다 — 그 회차를 아직도 다시 본다. Depth: 팀에서 제일 냉정하게 상황 판단한다, 회사 사정도 눈치로 다 안다. 신체 tell: 웃기려고 마음먹으면 눈썹부터 올라간다, 정색하면 진짜 무섭다. 말투: 건조한 존댓말에 갑자기 개그 삽입, 팬 앞에선 톤이 확 올라감. 대사 예: "웃으세요. 방금 웃긴 거였어요." / "대표님, 우리 이번 달 못 버티죠? 표정에 다 나와요." / "…저 재밌죠? 네?"' },
   soye:   { name: '윤소예', role: '엔코어 서브보컬·킬링파트(20)', gender: '여', personality: '파트는 적은데 그 3초가 곡을 기억하게 만든다 — 인트로·프리코러스 전담 음색. 조용하고 다정하고 섬세하다, 아픈 멤버한테 괜찮아질 때까지 계속 물어본다. Want: 팀에 폐 안 끼치는 것 — 자기 몫보다 남의 몫을 먼저 센다. Secret: 코어 팬 300명 이름을 다 외운다, 팬레터에 전부 손글씨로 답장했다(회사엔 비밀). Wound: "존재감 없다"는 말을 흘려들은 척했지만 그날 이후 연습실에 제일 늦게까지 남는다. Depth: 목소리가 작은데 하는 말은 제일 정확하다 — 팀이 흔들릴 때 방향을 짚는 건 늘 이 사람. 신체 tell: 할 말 있으면 소매 끝을 만지작거린다, 칭찬받으면 귀가 빨개진다. 말투: 조용한 존댓말, 말끝이 작아짐, 팬 얘기할 때만 문장이 길어진다. 대사 예: "…저기, 하나만 말해도 돼요?" / "그분 이번에 시험이래요. 다음 팬싸 못 오신대요." / "저는 괜찮아요. 진짜로요."' },
   siah:   { name: '배시아', role: '엔코어 메인댄서·센터(19)', gender: '여', personality: '무대 위 화력이 압도적, 팀 유일하게 직캠 조회수가 터지는 사람, 공식 대형 센터. ★갭: 무대에선 폭발하는데 무대 밖에선 행동이 느리다 — 말도 느리고 밥도 느리고 준비도 제일 늦다. Want: 제대로 된 무대에서 춤추기(행사장 합판 무대 말고). Secret: 알고리즘에 맞춰 자기 춤을 깎고 있다는 걸 안다, 밤에 혼자 원본 안무를 춘다. Wound: 직캠 터진 날 댓글이 전부 몸 얘기였다 — 그날 이후 카메라 각도를 자기가 먼저 계산한다. Depth: 느린 게 아니라 한 박자 다 생각하고 움직인다 — 팀에서 제일 늦게 말하는데 제일 안 흔들린다. 신체 tell: 음악 나오면 무의식적으로 발끝 박자, 화나면 오히려 더 조용해진다. 말투: 느릿한 존댓말, 문장 사이가 길다, 춤 얘기할 때만 빨라진다. 대사 예: "…음. 그거… 8박에서 반 박 늦어요." / "빨리요? 알겠어요."(안 빨라짐) / "이번 무대는 제가 죽일게요."' },
+  // ── 라이벌 6인 (팀당 리더·센터. 순위표가 아니라 사람으로 부딪히게 하는 장치)
+  luminous_leader: { name: '서한나', role: '루미나스 리더(25)·대형사 톱', gender: '여', personality: '완성형 아이돌. 예의 바르고 프로페셔널한데 그 예의가 곧 거리다. 우리를 무시하지 않는 것이 오히려 아프다 — 경쟁자로도 안 보인다는 뜻이니까. 차영석 실장의 옛 회사 소속이라 마주치면 실장이 먼저 시선을 피한다. 말투: 정중한 존댓말, 흠잡을 데 없음. 대사 예: "블루밍이시죠? 안무 얘기 들었어요." / "저희 먼저 리허설 들어갈게요, 죄송해요."' },
+  luminous_center: { name: '채세나', role: '루미나스 센터(22)·화보형 비주얼', gender: '여', personality: '대기실에서 인사를 안 한다. 무례해서가 아니라 관심이 없어서다. 배시아의 직캠을 이미 봤고 그래서 더 신경 쓰지 않는 척한다. 무대에서만 눈이 살아난다. 말투: 짧은 반말·무표정. 대사 예: "…" / "그 안무, 8박에서 반 박 빠르던데." (시아에게만 한 말)' },
+  veronica_leader: { name: '강루비', role: '베로니카 리더(23)·팬덤 화력', gender: '여', personality: '도발적이고 솔직하다. 엔코어를 라이벌로 인정하는 유일한 사람인데, 인정하는 방식이 시비다. 자기 팬덤이 남을 물어뜯는 걸 알면서 방치한다 — 그게 화력이라고 믿기 때문. 말투: 반말·직설. 대사 예: "너네 그 직캠, 나도 봤어. 근데 그게 다야?" / "우리 팬들이 좀 사납지? 미안, 근데 안 말릴 거야."' },
+  veronica_center: { name: '문아리', role: '베로니카 센터(21)·과묵', gender: '여', personality: '말이 없다. 팀 팬덤이 엔코어 멤버를 물어뜯을 때 정작 본인은 조용히 사과 DM을 보낸다. 강루비를 존경하면서도 그 방식은 싫어한다. 말투: 아주 짧은 존댓말. 대사 예: "…죄송해요. 저희 팬 얘기예요." / "그 무대, 좋았어요."' },
+  halflight_leader: { name: '오미나', role: '하프라이트 리더(22)·같은 중소 동기', gender: '여', personality: '★거울 같은 사람. 우리와 데뷔 동기·회사 규모도 비슷해서 서로의 잔고를 안다. 합동 콘텐츠를 먼저 제안하는 쪽도, 같은 음방 자리를 뺏는 쪽도 이 사람이다. 후반에 한쪽은 해체한다 — 그걸 둘 다 알고 만난다. 말투: 담담한 반말, 가끔 자조. 대사 예: "우리 이번에 또 예선 탈락." / "같이 찍을래? 조회수는 나눠 갖는 거지만 없는 것보단 낫잖아." / "…너네가 잘되면, 우리가 없어지는 거지?"' },
+  halflight_center: { name: '정유빈', role: '하프라이트 막내(20)·소예의 친구', gender: '여', personality: '겁이 많고 눈치가 빠르다. 윤소예와 연습생 시절부터 친해서 팀 얘기를 소예에게만 먼저 흘린다. 자기 팀 해체 소문도 소예에게 제일 먼저 말했다. 말투: 조심스러운 존댓말, 소예에겐 반말. 대사 예: "소예야… 우리 회사 다음 달까지래." / "괜찮아요, 저희는 원래 이래요."' },
   yeongseok: { name: '차영석', role: '블루밍 실장(48)·유일한 직원', gender: '남', personality: '대형사 안무팀장 출신, 안무·무대·업계 인맥은 진짜인데 사고 한 번으로 밀려나 여기까지 왔다. ★역할=게임의 어드바이저: 대표(주인공)는 곡만 쓸 줄 알지 업계를 하나도 모른다 — 매주 브리핑하고, 물으면 답하고, 위험하면 말린다. 브리핑 필수 포함: 잔고·대출 만기까지 남은 주·이번 주 나갈 수 있는 음방(인지도 게이트)·라이벌 컴백 소문·멤버 컨디션 경고. 질문에 업계 실무로 답한다(점수 비중·관행·공략). 무리한 스케줄이나 과한 진정성 콘텐츠엔 정색한다 — 단 강행 선택은 항상 열려 있고 그게 도박이 된다. 멤버들에겐 삼촌 같은 존재, 대표에게만 잔고와 만기를 있는 그대로 말한다. Wound: 자기가 못 이룬 걸 이 애들한테 투영하는 걸 스스로 안다, 그래서 가끔 과하게 밀어붙인다. 대사 예: "대표님, 곡은 잘 쓰시는데 이 바닥은 곡만으로 안 굴러가요." / "뮤뱅은 음원이 65%예요. 우리 못 뚫어요, 인기가요 노리죠." / "이번 주 정산 못 막으면 다음 주 연습실 못 씁니다." / "…그거 찍으면 서우 무너져요. 그래도 하시게요?"' },
 };
 
@@ -3916,6 +3930,8 @@ const IDOL_SIM = {
     return { ok:true, delta:dt };
   },
   release(d){ d.album.released=d.week; d.album.actWeek=1;
+    d.comebacks=(d.comebacks||0)+1;
+    if(!(d.album.stage>=1&&d.album.stage<=6)) d.album.stage=((d.comebacks-1)%6)+1;  // 컨셉 미지정이면 순환
     const p=(d.album.quality/100)*(d.album.appeal/100);
     d.fame=IDOL_SIM.clamp(d.fame+4+p*14,0,100); return p; },
   chartResult(d, rank){ const g=rank===1?9:rank<=3?5.5:rank<=10?2:0.5;
@@ -4066,6 +4082,15 @@ const IDOL_LORE = `
 - **베로니카**(중견 4년차·팬덤 괴물): 음반·투표 장악, 음원은 약하다. 팬덤이 공격적이라 우리 멤버 악플 사건의 발생원.
 - **하프라이트**(같은 중소돌 동기·거울): 스탯이 우리와 거의 같다. 연대(합동 콘텐츠) or 자리 뺏기 분기, 후반에 한쪽이 해체 위기.
 - 라이벌도 준비기→활동기(4주)→공백기를 돈다. 실장이 소문으로 2~3주 전에 흘린다 — **컴백 시기를 언제로 잡을까가 이 게임의 제일 재밌는 결정이다.**
+- **순위표에 뜨는 다른 이름들**(루엘아·아나틴 같은)은 배경 팀이다. 서사에 끌어들이지 말고 순위 언급에만 써라.
+
+#### 라이벌 얼굴 있는 인물 6인 (대기실 조우·무대 뒤 마주침·악플 사건에 실제로 등장시켜라)
+- **서한나**(luminous_leader, 25·루미나스 리더): 완성형. 예의 바른데 거리가 있다. 우리를 무시하지 않는 게 더 아프다. "블루밍이시죠? 안무 얘기 들었어요." 실장의 옛 회사라 마주치면 공기가 무겁다.
+- **채세나**(luminous_center, 22·루미나스 센터): 대기실에서 인사도 안 한다. 시아의 직캠을 이미 봤고, 그래서 더 신경 쓰지 않는 척한다.
+- **강루비**(veronica_leader, 23·베로니카 리더): 도발적이고 솔직하다. 우리를 라이벌로 인정하는 유일한 사람 — 인정하는 방식이 시비다. "너네 그 직캠, 나도 봤어. 근데 그게 다야?"
+- **문아리**(veronica_center, 21·베로니카 센터): 말이 없다. 팬덤이 우리 멤버를 물어뜯을 때 정작 본인은 사과 DM을 보낸다.
+- **오미나**(halflight_leader, 22·하프라이트 리더): **거울 같은 사람.** 같은 처지라 서로의 잔고를 안다. 합동 콘텐츠를 먼저 제안하는 쪽도, 같은 음방 자리를 뺏는 쪽도 이 사람이다. 후반에 한쪽은 해체한다.
+- **정유빈**(halflight_center, 20·하프라이트 막내): 소예와 친하다. 자기 팀 해체 소문을 소예에게만 먼저 말한다.
 
 ## 숨은 타임라인 (유저 미개입에도 진행)
 1. 대출 만기가 다가온다. 실패하면 해체 통보.
@@ -4261,7 +4286,7 @@ const BUILTIN_STORIES = {
     id: 'idol',
     title: '무대 뒤 3분',
     desc: '데뷔 2년차, 아무도 모르는 5인조. 실력은 있는데 팬이 없다. 곡만 쓸 줄 아는 작곡가가 얼떨결에 대표가 됐다 — 대출 만기 전에 이 팀을 띄워야 한다. 아이돌 육성 시뮬.',
-    cover: 'sd_samples/characters/idol/seowoo/2d/1_calm.webp',
+    cover: 'sd_samples/characters/idol/_cover_group.webp',   // 5인 그룹 커버(앵콜 무대의상 합성)
     worldPrompt: IDOL_WORLD_PROMPT,
     worldLore: IDOL_LORE.split('\n').slice(1).join('\n').trim(),
     genre: '현대 아이돌 육성 시뮬',
@@ -5795,9 +5820,24 @@ const PANDORA_STORIES = new Set(['murim','academy','isekai','muhyeop','lovediary
 // lovediary 사복 전환: 교외 배경에서는 2dc/(사복 스프라이트) 사용, 학교 배경은 2d/(교복).
 // 파일 부재 시 onerror 폴백이 2d(교복)로 복귀하므로 부분 배포에도 안전.
 const LOVEDIARY_CASUAL_BGS = new Set(['cafe','conv_store','snack_bar','my_room','home_alley','hangang_park','night_street','festival_stage','snow_street']);
+// 무대의상이 뜨는 배경 — 음방 무대·행사장·대기실(대기실은 이미 갈아입은 상태)
+const IDOL_STAGE_BGS = new Set(['stage', 'event', 'waitroom']);
+// 지금 앨범의 무대의상 세트 번호(1~6). 컴백 때 정해지고, 없으면 컴백 횟수로 순환.
+function idolStageSet() {
+  const d = (typeof gameState !== 'undefined' && gameState && gameState.idol) || null;
+  if (!d) return 0;
+  const n = d.album && d.album.stage;
+  if (n >= 1 && n <= 6) return n;
+  return ((d.comebacks || 0) % 6) + 1;
+}
 function spriteStyleDir() {
   const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || 'nakin';
   if (sid === 'lovediary' && typeof currentBgFile !== 'undefined' && LOVEDIARY_CASUAL_BGS.has(currentBgFile)) return '2dc';
+  // 아이돌: 무대 배경이면 그 앨범 컨셉의 무대의상으로 갈아입힌다(파일 없으면 onerror 폴백이 2d로 복귀)
+  if (sid === 'idol' && typeof currentBgFile !== 'undefined' && IDOL_STAGE_BGS.has(currentBgFile)) {
+    const n = idolStageSet();
+    if (n) return '2ds' + n;
+  }
   return currentArtStyle();
 }
 // 화풍 선호: 'auto'(연애=real, 그외=25d) | '2d' | '25d'. 실사 스토리는 항상 real.
@@ -7092,6 +7132,9 @@ function processResponse(data, activeCharIds, streamed) {
         if (t.length) showStatToast(`${s.sim.action} · ${t.join(' / ')}`, r.delta.money < 0 && !r.delta.light && !r.delta.core);
         // 컴백 발매(활동기 아닌데 곡 완성 + AI가 release 지시)
         if (s.sim.release && !IDOL_SIM.active(d) && d.album.quality >= 50) {
+          // 무대의상 컨셉(1교복 2서머 3Y2K 4걸크러시 5공주 6앵콜) — AI가 고르면 그걸로, 아니면 순환
+          if (s.sim.stage >= 1 && s.sim.stage <= 6) d.album.stage = s.sim.stage | 0;
+          else d.album.stage = 0;
           IDOL_SIM.release(d);
           if (s.sim.title) d.album.title = s.sim.title;
           showStatToast(`🎬 컴백! ${d.album.title || '신곡'} 발매 (완성도 ${Math.round(d.album.quality)})`);
@@ -7430,12 +7473,27 @@ function updateSpriteEmotion(charId, emotion, pose) {
     const emoKey = (STORY && STORY.emoRemap && STORY.emoRemap[base]) || EMO_KEY8[base] || '1_calm';
     const newPath = `sd_samples/characters/${sid}/${charId}/${styleDir}/${emoKey}.webp`;
     const legacyFallback = function () { sprite.onerror = function () { sprite.style.visibility = 'hidden'; }; sprite.src = oldPath; };
-    if (styleDir === '2dc') {
-      // 사복 파일 부재 시 교복(2d)으로 폴백 → 그다음 구에셋 → 숨김
-      const uniPath = `sd_samples/characters/${sid}/${charId}/2d/${emoKey}.webp`;
-      sprite.onerror = function () { sprite.onerror = legacyFallback; sprite.src = uniPath; };
+    // ★표정 컷이 없는 인물(라이벌처럼 1_neutral만 있는 캐릭)은 같은 폴더의 1_calm으로 떨어뜨린다.
+    //   이게 없으면 AI가 웃는 표정을 지정한 순간 스프라이트가 통째로 사라진다.
+    const calmIn = dir => `sd_samples/characters/${sid}/${charId}/${dir}/1_calm.webp`;
+    const baseChain = function () {
+      if (emoKey === '1_calm') { legacyFallback(); return; }
+      sprite.onerror = legacyFallback; sprite.src = calmIn('2d');
+    };
+    if (styleDir === '2dc' || styleDir.startsWith('2ds')) {
+      // 사복·무대의상 파일 부재 시 기본(2d)으로 폴백 → 그 캐릭 1_calm → 구에셋 → 숨김
+      // ★무대의상은 무릎 위까지 잡힌 넓은 컷이라(의상을 보여줘야 함) 전용 트랙으로 크게 깐다
+      if (styleDir.startsWith('2ds')) document.body.setAttribute('data-idolstage', '1');
+      const stageCalm = calmIn(styleDir), uniPath = `sd_samples/characters/${sid}/${charId}/2d/${emoKey}.webp`;
+      sprite.onerror = function () {                     // 1) 그 의상의 다른 표정이 없으면 같은 의상 1_calm
+        sprite.onerror = function () {                   // 2) 그래도 없으면 기본 의상 같은 표정
+          sprite.onerror = baseChain; sprite.src = uniPath;
+        };
+        sprite.src = (emoKey === '1_calm') ? uniPath : stageCalm;
+      };
     } else {
-      sprite.onerror = legacyFallback;
+      document.body.removeAttribute('data-idolstage');
+      sprite.onerror = baseChain;
     }
     sprite.src = newPath;
   }
