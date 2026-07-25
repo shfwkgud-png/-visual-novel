@@ -1940,7 +1940,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v118</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v119</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2289,6 +2289,8 @@ const ENGINE_MOD_CG = `
     · 팬콘 = 코어팬 500+ (돈↑ 코어팬↑↑ 멘탈↑↑) — 팀이 회복되는 서사 정점
     조건 미달이면 앱이 거절하고 이유를 알려준다. 상태창의 「가능한 행사」 목록 밖은 고르지 마라.
   - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장) / **고용·해고**('staff'=vocal|dance|manager|pd|stylist|choreo) / **외주프로듀서**(2천만, 곡 완성도 급상승 대신 대표 자존심·멤버 신뢰 소폭 하락)
+  - ★'target' 개인 재산: **담보대출**(asset=home|car, 대표 개인 현금 유입·만기 못 지키면 **압류**) / **담보상환**(asset=…) / **사재출연**(개인→회사, 멤버 신뢰↑) / **대표급여**(회사→개인, 안 가져가면 대표 개인 통장이 마른다)
+    · ★**회사 자금과 대표 개인 현금은 완전히 다른 돈이다.** 회사가 망해도 개인 돈은 남고, 개인이 집을 걸어 회사를 살릴 수도 있다. 이 선택을 가볍게 넘기지 마라 — 집을 담보로 잡는 장면은 대표 혼자 서명하는 장면이어야 한다.
   - ★'facility' = 미팅 target=시설일 때. practice(연습실) / van(밴). 등급을 올리면 연습 효율·컨디션 소모가 영구히 좋아진다 — **성공할수록 돈 쓸 곳**이 생긴다.
   - ★'fandom' = 팬덤 이름을 정하는 장면에서만. 멤버들이 후보를 내고 대표가 고르는 장면을 만들고 확정된 이름을 실어라(한 번뿐).
   - ★**연중 캘린더는 고정이다**(상태창 「달력」). 신년 컴백 대전(차트 문턱↑)·대학 축제 시즌(행사비 1.6배)·여름 페스티벌/음원 성수기·가을 축제·행사 비수기·연말 시상식. 실장은 **다음 시즌을 미리 알려주고**, 컴백 시기를 그 리듬에 맞춰 제안한다.
@@ -3893,6 +3895,69 @@ const IDOL_SIM = {
     choreo:  { name:'안무 디렉터',   hire:25000000, pay:2200000, gate:25, desc:'음방 방송점수 +35%' },
   },
   hasStaff(d, k){ return !!(d && d.staff && d.staff.indexOf(k) >= 0); },
+  // ───── 대표 개인 재산 (회사 자금과 분리) ─────
+  //   "회사를 살리려고 내 집을 건다" — 이 게임에서 제일 무거운 선택. 못 갚으면 진짜로 잃는다.
+  PERSONAL: {
+    home: { name:'변두리 소형 아파트', value:320000000, ltv:0.60, weeks:26, rate:0.0015 },
+    car:  { name:'10년 된 중고 세단',   value:12000000,  ltv:0.50, weeks:12, rate:0.0020 },
+  },
+  LIVING: 400000,                                   // 대표 생활비(주) — 개인 현금이 마른다
+  owns(d, k){ return !!(d.personal && d.personal.own && d.personal.own[k]); },
+  assetLoan(d, k){ return (d.personal && d.personal.loans || []).find(l => l.asset === k) || null; },
+  // 담보 대출 실행
+  takeLoan(d, k){
+    const S = IDOL_SIM, A = S.PERSONAL[k];
+    if (!A) return { ok:false, reason:'담보 없음' };
+    if (!S.owns(d, k)) return { ok:false, reason:`${A.name}은(는) 이미 잃었다` };
+    if (S.assetLoan(d, k)) return { ok:false, reason:'이미 담보로 잡혀 있다' };
+    const amt = Math.round(A.value * A.ltv);
+    d.personal.loans.push({ asset:k, amount:amt, due:d.week + A.weeks, rate:A.rate });
+    d.personal.cash += amt;
+    return { ok:true, amount:amt, name:A.name };
+  },
+  repayLoan(d, k){
+    const S = IDOL_SIM, l = S.assetLoan(d, k);
+    if (!l) return { ok:false, reason:'그 담보 대출이 없다' };
+    if (d.personal.cash < l.amount) return { ok:false, reason:`개인 현금 ${Math.round(l.amount/10000).toLocaleString()}만 필요` };
+    d.personal.cash -= l.amount;
+    d.personal.loans = d.personal.loans.filter(x => x !== l);
+    return { ok:true, amount:l.amount, name:S.PERSONAL[k].name };
+  },
+  // 개인 ↔ 회사 자금 이동
+  injectFunds(d, amt){                              // 사재 출연
+    amt = Math.min(Math.max(0, Math.round(amt)), d.personal.cash);
+    if (amt <= 0) return { ok:false, reason:'개인 현금이 없다' };
+    d.personal.cash -= amt; d.money += amt;
+    Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = IDOL_SIM.clamp(d.mem[i].trust + 2.5, 0, 100); });
+    return { ok:true, amount:amt };
+  },
+  drawSalary(d, amt){                               // 대표 급여
+    amt = Math.min(Math.max(0, Math.round(amt)), d.money);
+    if (amt <= 0) return { ok:false, reason:'회사 자금이 없다' };
+    d.money -= amt; d.personal.cash += amt;
+    return { ok:true, amount:amt };
+  },
+  // 주간 처리 — 생활비·이자·만기 압류
+  personalWeek(d){
+    const S = IDOL_SIM, P = d.personal; if (!P) return null;
+    P.cash -= S.LIVING;
+    let lost = null;
+    P.loans = P.loans.filter(l => {
+      P.cash -= Math.round(l.amount * l.rate);      // 이자
+      if (d.week >= l.due) {
+        if (P.cash >= l.amount) { P.cash -= l.amount; return false; }   // 만기 상환
+        P.own[l.asset] = false;                                          // ★압류
+        lost = S.PERSONAL[l.asset].name;
+        return false;
+      }
+      return true;
+    });
+    if (P.cash < 0) {                               // 개인 파산 방지 — 차부터 처분
+      if (S.owns(d, 'car')) { P.own.car = false; P.cash += Math.round(S.PERSONAL.car.value * 0.6); lost = lost || S.PERSONAL.car.name + '(급처분)'; }
+      else P.cash = 0;
+    }
+    return lost;
+  },
   // ───── 월간 편성 → 주간 실행 (2026-07-26 유저 설계) ─────
   //   매월 1주차 스태프 회의에서 **그 달 4주치 일정을 한 번에 편성**하고,
   //   각 주는 대표가 "현장에 같이 갈지 / 회사에 남을지"를 고른다. 곡작업은 편성표에 없다 —
@@ -4075,6 +4140,7 @@ const IDOL_SIM = {
   init() {
     return { week:1, slots:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
       plan:[], planMonth:0, weekDone:false,
+      personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
       fac:{ practice:0, van:0 }, fandom:null, awards:[],
@@ -4283,6 +4349,25 @@ const IDOL_SIM = {
         dt.money -= nx.cost; d.fac[k] = (d.fac[k]||0)+1;
         Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=S.clamp(d.mem[i].mind+6,0,100); });   // 애들이 좋아한다
         dt.note = `${F.name} → ${nx.label}`;
+      } else if (t==='담보대출'){
+        const r2 = S.takeLoan(d, sim.asset);
+        if (!r2.ok) return { ok:false, reason:r2.reason };
+        dt.note = `${r2.name} 담보 대출 ${Math.round(r2.amount/100000000*100)/100}억(개인)`;
+      } else if (t==='담보상환'){
+        const r2 = S.repayLoan(d, sim.asset);
+        if (!r2.ok) return { ok:false, reason:r2.reason };
+        dt.note = `${r2.name} 담보 상환`;
+      } else if (t==='사재출연'){
+        const r2 = S.injectFunds(d, sim.amount || d.personal.cash);
+        if (!r2.ok) return { ok:false, reason:r2.reason };
+        dt.money += r2.amount;                       // 표시용(실제 이동은 injectFunds가 처리)
+        d.money -= r2.amount;
+        dt.note = `사재 출연 ${Math.round(r2.amount/10000).toLocaleString()}만 — 애들이 안다`;
+      } else if (t==='대표급여'){
+        const r2 = S.drawSalary(d, sim.amount || 3000000);
+        if (!r2.ok) return { ok:false, reason:r2.reason };
+        dt.money -= r2.amount; d.money += r2.amount; // 표시용 보정
+        dt.note = `대표 급여 ${Math.round(r2.amount/10000).toLocaleString()}만 수령`;
       } else if (t==='외주프로듀서'){
         // 대표(작곡가)의 자존심 vs 실리 — 곡을 남에게 맡긴다
         if (d.money < 80000000) return { ok:false, reason:'외주비 8천만 부족' };
@@ -4390,9 +4475,17 @@ const IDOL_SIM = {
       if (S.hasStaff(d,'stylist')) d.image = S.clamp(d.image + 0.8, 0, 100);
     }
     d.image = S.clamp(d.image + 0.3, 0, 100);                // 별일 없으면 서서히 회복
+    // ─ 대표 개인 재산: 생활비·이자·만기(압류)
+    const lostAsset = S.personalWeek(d);
     // ─ 고정 이벤트(팬덤명·시상식)는 개인 서사보다 먼저 — 놓치면 안 되는 분기다
     let fixed = null;
-    if (!d.fandom && d.core >= 1000) {
+    if (lostAsset) {
+      Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust + 3, 0, 100);
+                                      d.mem[i].mind = S.clamp(d.mem[i].mind - 5, 0, 100); });
+      fixed = { kind:'seizure', text:`★★대표가 담보로 잡았던 **${lostAsset}**이(가) 넘어갔다. 애들은 몰랐다 — 알게 되는 장면을 만들어라. 고마움과 죄책감이 같이 온다.` };
+    }
+    if (fixed) { /* 압류가 최우선 — 다른 고정 이벤트가 덮어쓰지 않게(2026-07-26 격리로 발견) */ }
+    else if (!d.fandom && d.core >= 1000) {
       fixed = { kind:'fandom', text:'★코어팬이 1,000명을 넘었다. 팬카페에서 "우리 이름 좀 정해달라"는 글이 올라왔다 — **팬덤 이름을 정하는 장면**을 만들어라. 멤버들이 후보를 내고 대표가 고른다. 정해지면 sim에 "fandom":"이름" 을 실어라.' };
     } else if (S.season(d.week).some(c=>c.award) && d.fame >= 50 && !(d.awards||[]).includes(S.yearWeek(d.week))) {
       const grade = d.chart.peak===1 ? '대상 후보' : d.chart.peak<=10 ? '본상' : '신인상';
@@ -4491,6 +4584,18 @@ const IDOL_SIM = {
 `;
     s += `시설: ${IDOL_SIM.facCur(d,'practice').label} / ${IDOL_SIM.facCur(d,'van').label}
 `;
+    // 대표 개인 재산 — 회사 자금과 별개다. 여기가 마르면 대표 개인이 무너진다.
+    if (d.personal) {
+      const P = d.personal, won = n => Math.round(n/10000).toLocaleString()+'만';
+      s += `대표 개인: 현금 ${won(P.cash)}`;
+      s += ` · 보유 ${['home','car'].filter(k=>P.own[k]).map(k=>IDOL_SIM.PERSONAL[k].name).join(', ') || '없음(전부 잃었다)'}`;
+      const ls = P.loans || [];
+      if (ls.length) s += ` · 담보대출 ${ls.map(l=>`${IDOL_SIM.PERSONAL[l.asset].name} ${won(l.amount)}(만기 ${Math.max(0,l.due-d.week)}주)`).join(', ')}`;
+      s += `
+`;
+      if (P.cash < 3000000) s += `★대표 개인 통장이 비어간다(생활비 주 40만). 급여를 가져가거나 담보를 잡거나 — 선택해야 한다.
+`;
+    }
     // 스태프 — 대표+실장 둘로 시작해서, 돈이 생기는 만큼 사람을 붙인다
     const stf = d.staff || [];
     const payW = stf.reduce((a,k)=>a+(IDOL_SIM.STAFF[k]?IDOL_SIM.STAFF[k].pay:0),0);
@@ -8924,6 +9029,25 @@ function idolBoardCards() {
     d.invested ? '이미 유치함' : (d.fame < 30 ? '인지도 30 필요' : null), '미팅:투자');
   add('미팅', '대출 연장', 0, '1회 한정 · 만기 12주 연장', d.loanExt ? '이미 연장함' : null, '미팅:대출연장',
     d.loanWeek > 0 && d.loanWeek <= 6);
+  // ── 개인 재산(대표 본인 돈) — 회사 자금과 분리
+  const P = d.personal;
+  if (P) {
+    const wonP = n => Math.round(n/10000).toLocaleString() + '만';
+    ['home','car'].forEach(k => {
+      const A = S.PERSONAL[k], l = S.assetLoan(d, k);
+      if (!S.owns(d, k)) { add('개인 재산', `${A.name} — 잃음`, 0, '담보로 넘어갔다', '이미 잃음', `미팅:담보대출:${k}`); return; }
+      if (l) add('개인 재산', `${A.name} 담보 상환`, l.amount,
+        `만기 ${Math.max(0, l.due - d.week)}주 남음 · 못 갚으면 압류된다`,
+        P.cash < l.amount ? `개인 현금 ${wonP(l.amount)} 필요` : null, `미팅:담보상환:${k}`, l.due - d.week <= 4);
+      else add('개인 재산', `${A.name} 담보 대출`, 0,
+        `개인 현금 +${wonP(A.value * A.ltv)} · 만기 ${A.weeks}주 · 주 이자 ${(A.rate*100).toFixed(2)}% — 못 갚으면 잃는다`,
+        null, `미팅:담보대출:${k}`, d.money < 20000000);
+    });
+    add('개인 재산', '사재 출연 (개인 → 회사)', 0, `개인 현금 ${wonP(P.cash)} 전액 투입 · 애들이 알면 신뢰↑`,
+      P.cash <= 0 ? '개인 현금 없음' : null, '미팅:사재출연');
+    add('개인 재산', '대표 급여 수령 (회사 → 개인)', 0, '300만 · 안 가져가면 개인 통장이 마른다',
+      d.money < 3000000 ? '회사 자금 부족' : null, '미팅:대표급여', P.cash < 3000000);
+  }
   ['practice','van'].forEach(k => {
     const F = S.FACILITY[k], lv = S.facLv(d,k), nx = F.levels[lv+1];
     if (!nx) { add('시설', `${F.name} — ${F.levels[lv].label}`, 0, '이미 최고 등급', '최고 등급', `미팅:시설:${k}`); return; }
@@ -9025,6 +9149,31 @@ function confirmIdolPlan() {
   inputMode = false; inputBar.style.display = 'none';
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
   window._genText = txt; handlePlayerInput(txt);
+}
+// 자유 행동(미팅·시설·개인 재산) — 일정 칸을 쓰지 않는다
+function pickIdolAction(i) {
+  const c = (window._ibCards || [])[i]; if (!c || c.req) return;
+  closeIdolBoard();
+  const d = gameState.idol;
+  const [act, a, b] = String(c.pick).split(':');
+  const sim = { action: act };
+  if (act === '콘텐츠' || act === '행사') sim.kind = a;
+  else if (act === '미팅') {
+    sim.target = a;
+    if (a === '브랜드') sim.offer = parseInt(b, 10) || 0;
+    else if (a === '담보대출' || a === '담보상환') sim.asset = b;
+    else if (a === '시설') sim.facility = b;
+    else if (a === '고용' || a === '해고') sim.staff = b;
+  } else if (act === '연습') sim.intensity = 2;
+  const before = d.slots;
+  const r = runIdolSim(sim);
+  if (!r || !r.ok) return;
+  if (act === '미팅') d.slots = before;          // 미팅은 일정 칸을 소모하지 않는다
+  d._skipSim = true;
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  window._genText = c.name; handlePlayerInput(`${c.name} — 이건 일정 밖에서 처리한다.`);
 }
 function runWeekPlan(accompany) {
   const d = gameState.idol, p = IDOL_SIM.weekPlan(d);
