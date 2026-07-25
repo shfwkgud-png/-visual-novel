@@ -1449,6 +1449,29 @@
   #sceneBanner .tapHint { color: rgba(232,230,227,0.5); font-size: 10.5px; }
   /* ★일정 보드 — 원안(idol_story_draft §턴구조②)의 "앱이 행동 메뉴를 고정 제시 + 효과 미리보기".
      AI 선택지 3개로는 게임에 뭐가 있는지 유저가 영영 모른다. */
+  #rewindBox {
+    position: absolute; inset: 0; z-index: 70; display: none;
+    background: rgba(6,6,10,0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    overflow-y: auto; padding: calc(16px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom));
+  }
+  #rewindBox.on { display: block; }
+  #rewindBox .rw-head {
+    position: relative; font-size: 15px; font-weight: 700; color: #f2c14e; margin: 0 4px 12px; padding-right: 40px;
+  }
+  #rewindBox .rw-sub { display: block; font-size: 11.5px; font-weight: 400; color: rgba(232,230,227,0.55); margin-top: 3px; }
+  #rewindBox .rw-close {
+    position: absolute; top: -4px; right: 0; width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: #e8e6e3; font-size: 15px; cursor: pointer;
+  }
+  #rewindBox .rw-item {
+    display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left;
+    margin-bottom: 6px; padding: 9px 11px; border-radius: 10px; cursor: pointer; font-family: inherit;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); color: #e8e6e3;
+  }
+  #rewindBox .rw-item:active { background: rgba(255,255,255,0.11); }
+  #rewindBox .rw-turn { flex-shrink: 0; font-size: 11px; font-weight: 700; color: #f2c14e; min-width: 38px; }
+  #rewindBox .rw-label { flex: 1; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #rewindBox .rw-ago { flex-shrink: 0; font-size: 10.5px; color: rgba(232,230,227,0.45); }
   #idolBoard {
     position: absolute; inset: 0; z-index: 60; display: none;
     background: rgba(6,6,10,0.86); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -1964,7 +1987,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v120</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v121</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -1978,6 +2001,7 @@
 
   <!-- 상시 피드백: 시간·현재 이벤트 캡슐 + 호감도 델타 토스트 (2026-07-20 UX) -->
   <div id="sceneBanner" onclick="openIdolBoard()"></div>
+  <div id="rewindBox"></div>
   <div id="idolBoard"><button class="ib-close" onclick="closeIdolBoard()">✕</button><div id="ibBody"></div></div>
   <div id="statToasts"></div>
 
@@ -2004,6 +2028,7 @@
     <div id="redoBar">
       <button class="redo-btn" onclick="regenerate()">↺ 다시 답변</button>
       <button class="redo-btn" onclick="undoInput()">↩ 되돌리기</button>
+      <button class="redo-btn" onclick="openRewind()">⏪ 시점 되감기</button>
     </div>
     <div id="inputRow">
       <!-- contenteditable (not textarea): iOS attaches its form-assistant bar
@@ -6751,6 +6776,7 @@ function startGame(isContinue) {
 // Used by 이어하기 and by save-slot loading.
 function restoreAndReplay(save, checkTimeflow) {
   window._startPhase = 'playing';   // 이어하기는 본편 진행 중 — 시작 플로우 상태머신 스킵
+  loadSnaps();                      // 되감기 스냅샷 복원
   gameHistory = save.gameHistory || [];
   gameState = save.gameState || gameState;
   window._freeMode = !!(gameState && gameState.freeMode);   // 자유모드 복원(이름 치환 판단)
@@ -8664,6 +8690,7 @@ async function sendMessage() {
 }
 
 async function handlePlayerInput(text) {
+  captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
   // ★시작 플로우(prologue 정의 스토리): 프롤로그·모드선택·설정요청은 앱이 고정 처리(AI 호출 X).
   if (window._startPhase === 'mode') {
     dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
@@ -9623,6 +9650,105 @@ async function regenerate() {
   const recentHistory = gameHistory.slice(-6);
   const mentionedChars = detectActiveChars(recentHistory);
   await callGemini(mentionedChars);
+}
+
+// ═══ 시점 되감기(스냅샷) ═══
+// 기존 undoInput()은 **직전 한 턴**만, 그것도 채팅 기록만 되돌렸다 — 아이돌 수치(팬·자금·주차)는
+// 그대로 남아 되돌린 뒤에도 상태가 어긋났다(2026-07-26 유저 지적). 매 입력 직전 상태를 통째로
+// 스냅샷으로 떠서, 아무 시점으로나 되감을 수 있게 한다.
+const SNAP_MAX = 40;                 // 보관 개수
+const SNAP_BYTES = 1500000;          // localStorage 보관 상한(초과분은 오래된 것부터 버림)
+let turnSnaps = [];
+
+function snapKeyFor(id) { return 'vn_snaps_' + id; }
+
+function captureSnap(label) {
+  try {
+    const snap = {
+      t: Date.now(),
+      turn: turnCount,
+      label: String(label || '').replace(/\s+/g, ' ').slice(0, 40),
+      s: JSON.stringify({
+        gameHistory, gameState, storySummary, summaryIndex, lastBg, turnCount,
+        dialogueLog, playerName, playerDesc,
+        currentBgFile: (typeof currentBgFile !== 'undefined' ? currentBgFile : null),
+        shownSprites: (typeof shownSprites !== 'undefined' ? [...shownSprites] : []),
+      })
+    };
+    turnSnaps.push(snap);
+    if (turnSnaps.length > SNAP_MAX) turnSnaps.shift();
+    persistSnaps();
+  } catch {}
+}
+
+function persistSnaps() {
+  try {
+    let arr = turnSnaps.slice();
+    let json = JSON.stringify(arr);
+    while (json.length > SNAP_BYTES && arr.length > 3) { arr = arr.slice(1); json = JSON.stringify(arr); }
+    localStorage.setItem(snapKeyFor(STORY.id), json);
+  } catch {}   // 용량 초과 등은 조용히 무시(스냅샷은 부가 기능)
+}
+
+function loadSnaps() {
+  try { turnSnaps = JSON.parse(localStorage.getItem(snapKeyFor(STORY.id)) || '[]') || []; }
+  catch { turnSnaps = []; }
+}
+
+function openRewind() {
+  if (!turnSnaps.length) { showStatToast('되돌릴 시점이 아직 없다', true); return; }
+  const box = document.getElementById('rewindBox');
+  const rows = turnSnaps.slice().reverse().map((sn, ri) => {
+    const i = turnSnaps.length - 1 - ri;
+    const ago = Math.max(0, Math.round((Date.now() - sn.t) / 60000));
+    return `<button class="rw-item" onclick="restoreSnap(${i})">
+      <span class="rw-turn">${sn.turn}턴</span>
+      <span class="rw-label">${sn.label ? esc(sn.label) : '(시작)'}</span>
+      <span class="rw-ago">${ago < 1 ? '방금' : ago < 60 ? ago + '분 전' : Math.round(ago / 60) + '시간 전'}</span>
+    </button>`;
+  }).join('');
+  box.innerHTML = `<div class="rw-head">⏪ 어디로 되돌릴까
+      <span class="rw-sub">그 입력을 하기 직전으로 돌아간다 · 최근 ${turnSnaps.length}개</span>
+      <button class="rw-close" onclick="closeRewind()">✕</button></div>${rows}`;
+  box.classList.add('on');
+}
+function closeRewind() { document.getElementById('rewindBox').classList.remove('on'); }
+
+function restoreSnap(i) {
+  const sn = turnSnaps[i]; if (!sn) return;
+  let d;
+  try { d = JSON.parse(sn.s); } catch { showStatToast('스냅샷을 읽지 못했다', true); return; }
+  closeRewind();
+  if (typeof historyMode !== 'undefined' && historyMode) exitHistory();
+  // 상태 통째 복원 — 아이돌 수치(gameState.idol)도 함께 돌아간다
+  gameHistory = d.gameHistory || [];
+  gameState = d.gameState || gameState;
+  storySummary = d.storySummary || '';
+  summaryIndex = d.summaryIndex || 0;
+  lastBg = d.lastBg || null;
+  turnCount = d.turnCount || 0;
+  dialogueLog = d.dialogueLog || [];
+  playerName = d.playerName || playerName;
+  playerDesc = d.playerDesc || playerDesc;
+  turnSnaps = turnSnaps.slice(0, i);          // 되돌린 지점 이후 스냅샷은 버린다
+  persistSnaps();
+  // 화면 재구성
+  try { if (lastBg) setBg(lastBg); } catch {}
+  try { updateStatusUI(); } catch {}
+  try { updateSceneBanner(); } catch {}
+  // 마지막 장면 다시 그리기
+  try {
+    const last = [...dialogueLog].reverse().find(e => !e.isPlayer && e.text);
+    dialogueQueue = [];
+    if (last) {
+      if (last.bgFile) setBg(last.bgFile);
+      rebuildSprites(last.sprites || [], last.char_id || null, 'normal', 'upper');
+      showDialogue([{ speaker: last.speaker, text: last.text, char_id: last.char_id || null }]);
+    } else resetSprites();
+  } catch {}
+  autoSave();
+  showStatToast(`⏪ ${sn.turn}턴 시점으로 되돌렸다`);
+  enterInputMode();
 }
 
 async function undoInput() {
