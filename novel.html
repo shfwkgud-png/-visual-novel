@@ -1940,7 +1940,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v117</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v118</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -5374,7 +5374,7 @@ function saveSettings() {
     NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
     NIM_MODEL = document.getElementById('nimModelSel').value || NIM_MODEL;
   }
-  try { localStorage.setItem('vn_cfg', JSON.stringify({ provider: PROVIDER, nimUrl: NIM_URL, nimModel: NIM_MODEL, apiKey: API_KEY, orKey: OPENROUTER_KEY, orModel: OPENROUTER_MODEL })); } catch {}
+  persistCfg();
   closeSettings();
 }
 
@@ -5648,9 +5648,11 @@ async function restoreAll() {
     const cfg = await syncGet('cfg');
     if (cfg) {
       localStorage.setItem('vn_cfg', typeof cfg === 'string' ? cfg : JSON.stringify(cfg));
-      if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
-      if (cfg.orKey) OPENROUTER_KEY = cfg.orKey;
-      if (cfg.orModel) OPENROUTER_MODEL = cfg.orModel;
+      if (cfg.apiKey) { API_KEY = cfg.apiKey; document.getElementById('apiKeyInput').value = cfg.apiKey; }
+      if (cfg.orKey) { OPENROUTER_KEY = cfg.orKey;
+        const ork = document.getElementById('orKeyInput'); if (ork) ork.value = cfg.orKey; }   // 입력창에도 복원(저장돼 있음을 눈으로 확인)
+      if (cfg.orModel) { OPENROUTER_MODEL = cfg.orModel;
+        const orm = document.getElementById('orModelSel'); if (orm) orm.value = cfg.orModel; }
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
       if (cfg.nimModel) NIM_MODEL = NIM_MODEL_OLD_DEFAULTS.includes(cfg.nimModel) ? NIM_MODEL : cfg.nimModel;   // 구기본/EOL/다운 모델은 새 추천으로 승격
       if (cfg.provider) setProvider(cfg.provider);
@@ -6459,7 +6461,8 @@ function autoSave() {
   };
   localStorage.setItem(saveKeyFor(STORY.id), JSON.stringify(save));
   // provider config is shared across stories
-  try { localStorage.setItem('vn_cfg', JSON.stringify({ provider: PROVIDER, nimUrl: NIM_URL, apiKey: API_KEY })); } catch {}
+  persistCfg();   // ★기존엔 여기서 vn_cfg를 통째로 덮어써 orKey/orModel/nimModel이 날아갔다
+                  //   (매 턴 자동저장 → 새로고침하면 OpenRouter 키를 다시 입력해야 했던 원인, 2026-07-26)
   // cloud backup (debounced; no-op until a sync passphrase is set)
   try { scheduleAutoBackup(); } catch {}
 }
@@ -6474,6 +6477,17 @@ function loadSave() {
 
 function deleteSave() {
   localStorage.removeItem(saveKeyFor(STORY.id));
+}
+
+// 설정 영속화 — **항상 병합 저장**. 어떤 경로로 저장해도 다른 키가 지워지지 않는다.
+function persistCfg() {
+  try {
+    const prev = JSON.parse(localStorage.getItem('vn_cfg') || '{}') || {};
+    localStorage.setItem('vn_cfg', JSON.stringify(Object.assign(prev, {
+      provider: PROVIDER, nimUrl: NIM_URL, nimModel: NIM_MODEL,
+      apiKey: API_KEY, orKey: OPENROUTER_KEY, orModel: OPENROUTER_MODEL
+    })));
+  } catch {}
 }
 
 // Boot: restore shared provider config, then show the story select screen
