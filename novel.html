@@ -1987,7 +1987,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v122</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v123</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -8638,6 +8638,7 @@ function exitHistory() {
 
 // ===== CHOICES =====
 function showChoices(choices) {
+  window._lastChoices = choices;   // ★되감기 복원용 — 그 시점에 떠 있던 선택지
   inputMode = true;
   clearTimeout(autoTimer);
   document.getElementById('continueHint').style.display = 'none';
@@ -9752,6 +9753,7 @@ function captureSnap(label) {
         dialogueLog, playerName, playerDesc,
         currentBgFile: (typeof currentBgFile !== 'undefined' ? currentBgFile : null),
         shownSprites: (typeof shownSprites !== 'undefined' ? [...shownSprites] : []),
+        choices: (window._lastChoices || null),
       })
     };
     turnSnaps.push(snap);
@@ -9825,9 +9827,12 @@ function restoreSnap(i) {
       showDialogue([{ speaker: last.speaker, text: last.text, char_id: last.char_id || null }]);
     } else resetSprites();
   } catch {}
+  // ★화면에 남아 있던 '되감기 전' 선택지를 반드시 지운다(2026-07-26 유저 스샷)
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
   autoSave();
   showStatToast(`⏪ ${sn.turn}턴 시점으로 되돌렸다`);
-  enterInputMode();
+  if (d.choices && d.choices.length) { window._lastChoices = d.choices; showChoices(d.choices); }
+  else { window._lastChoices = null; enterInputMode(); }
 }
 
 async function undoInput() {
