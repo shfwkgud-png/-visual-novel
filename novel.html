@@ -1924,7 +1924,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v107</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v115</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -4517,7 +4517,8 @@ const IDOL_LORE = `
 - **곡작업은 대표 전용** — 컨셉(대중·팬덤·실험), 킬링파트 배분(소예=코어팬↑, 미유=음원↑), 작사 방향(팀의 실제 상황을 가사에 넣으면 화제성↑ 대신 그 멤버가 무너질 수 있음).
 - **콘텐츠**엔 「진정성 수위」가 있다 — 사생활·약한 모습을 얼마나 팔 것인가. 높이면 터질 확률이 오르지만 그 멤버의 멘탈·신뢰가 깎인다. **이 게임의 핵심 딜레마다.** 실장은 과한 수위에 정색한다.
 - 자유 대화(멤버에게 말 걸기·연습실 들르기)는 일정을 소모하지 않는다 — 관계는 여기서 쌓인다.
-- ★유저가 **일정 보드**(상단 💰 배너 탭)에서 카드를 고르면 "이번 일정은 …으로 한다 (sim.action=…, kind=…)" 형식으로 입력이 들어온다. **그 지정을 그대로 sim에 실어라**(다른 행동으로 바꾸지 마라). 괄호 안 표기는 장면 서술에 쓰지 말 것.
+- ★유저가 **일정 보드**(상단 💰 배너 탭)에서 카드를 고르면 "이번 주 일정 하나는 …로 잡는다" 같은 평범한 문장이 들어온다. 그때는 **앱이 이미 수치를 반영했으니 sim을 싣지 말고 장면만 써라.**
+- ★★**choices·나레이션·대사에 시스템 표기를 절대 쓰지 마라** — "sim.action=", "kind=", "(수치 +3)" 같은 내부 문법이 화면에 보이면 안 된다. 선택지는 사람이 하는 말·행동으로만 써라(예: "안정적으로 갑시다. 축제로 잡죠." / "홍대로 나가서 버스킹 해보죠").
 
 ### 음방 공략 (실장이 설명해줄 내용)
 - 1위는 5개 축의 합: 음원(45~65%)·음반·SNS(10~30%)·방송·투표.
@@ -7576,53 +7577,9 @@ function processResponse(data, activeCharIds, streamed) {
     // Merge character relationship/status updates
     // ★아이돌 시뮬: AI는 "무슨 행동을 했는지"만 뱉고, 수치 계산은 여기서(결정론)
     if (!replaying && STORY.id === 'idol' && gameState.idol && s.sim && s.sim.action) {
-      const d = gameState.idol, r = IDOL_SIM.apply(d, s.sim);
-      if (r && r.ok) {
-        const t = [];
-        if (r.delta.light) t.push(`라이트팬 ${r.delta.light > 0 ? '+' : ''}${r.delta.light.toLocaleString()}`);
-        if (r.delta.core)  t.push(`코어팬 ${r.delta.core > 0 ? '+' : ''}${r.delta.core.toLocaleString()}`);
-        if (r.delta.money) t.push(`자금 ${r.delta.money > 0 ? '+' : ''}${Math.round(r.delta.money / 10000).toLocaleString()}만`);
-        if (r.delta.note)  t.unshift(r.delta.note);
-        if (t.length) showStatToast(`${s.sim.action} · ${t.join(' / ')}`, r.delta.money < 0 && !r.delta.light && !r.delta.core);
-        // 컴백 발매(활동기 아닌데 곡 완성 + AI가 release 지시)
-        if (s.sim.fandom && !d.fandom) {                       // 팬덤 이름 확정
-          d.fandom = String(s.sim.fandom).slice(0, 20);
-          d.core += Math.round(d.core * 0.06 + 60);
-          showStatToast(`💗 팬덤 이름 「${d.fandom}」 확정`);
-        }
-        if (s.sim.release && !IDOL_SIM.active(d) && d.album.quality >= 50) {
-          // 무대의상 컨셉(1교복 2서머 3Y2K 4걸크러시 5공주 6앵콜) — AI가 고르면 그걸로, 아니면 순환
-          if (s.sim.stage >= 1 && s.sim.stage <= 6) d.album.stage = s.sim.stage | 0;
-          else d.album.stage = 0;
-          IDOL_SIM.release(d);
-          if (s.sim.title) d.album.title = s.sim.title;
-          showStatToast(`🎬 컴백! ${d.album.title || '신곡'} 발매 (완성도 ${Math.round(d.album.quality)})`);
-        }
-        // 3슬롯 소진 → 주간 마감 + 활동기면 차트 판정
-        if (d.slots <= 0) {
-          if (IDOL_SIM.active(d) && d.album.tvThisWeek > 0) {
-            // ★실제 순위표: 우리 + 활동 중인 고정 라이벌 + 배경 팀을 그 방송 가중치로 겨룬다.
-            //   출연 가능한 방송 중 '우리 순위가 가장 높은' 곳을 그 주의 성적으로 잡는다.
-            let best = null;
-            IDOL_SIM.openShows(d).forEach(sh => {
-              const rows = IDOL_SIM.chart(d, sh), me = rows.find(r => r.me);
-              if (me && (!best || me.rank < best.me.rank)) best = { sh, rows, me };
-            });
-            if (best) {
-              IDOL_SIM.chartResult(d, best.me.rank);
-              const top = best.rows[0];
-              showStatToast(`📺 ${best.sh} ${best.me.rank}위 (${best.me.score.toFixed(1)}점)${best.me.rank===1?' 🏆':` · 1위 ${top.name}`}`, best.me.rank > 5);
-              gameState.flags = gameState.flags || {};
-              gameState.flags.직전차트 = `${best.sh} ${best.me.rank}위` + (best.me.rank===1?'(1위!)':` / 1위 ${top.name}`);
-              gameState.flags.직전순위표 = best.rows.slice(0,5).map(r=>`${r.rank}. ${r.name}${r.me?'(우리)':''}`).join(' · ');
-            }
-          }
-          IDOL_SIM.endWeek(d);
-          showStatToast(`🗓 ${d.week}주차 시작 · 일정 3칸`);
-        }
-      } else if (r && !r.ok) {
-        showStatToast(`실패: ${r.reason}`, true);
-      }
+      // ★일정 보드로 이미 적용한 턴이면 모델이 sim을 또 실어도 무시(이중 적용 방지)
+      if (gameState.idol._skipSim) { delete gameState.idol._skipSim; }
+      else runIdolSim(s.sim);
     }
     if (s.chars && typeof s.chars === 'object') {
       for (const id in s.chars) {
@@ -8774,6 +8731,50 @@ function updateSceneBanner() {
   el.innerHTML = [biz, t ? `🕐 ${t}` : '', ev ? `<span class="ev">📌 ${ev}</span>` : ''].filter(Boolean).join(' · ');
   el.style.display = 'block';
 }
+// 아이돌 시뮬 적용 — AI의 sim 필드와 일정 보드가 **같은 경로**를 쓴다(계산 일원화)
+function runIdolSim(sim) {
+  const d = gameState.idol; if (!d) return null;
+  const r = IDOL_SIM.apply(d, sim);
+  if (r && r.ok) {
+    const t = [];
+    if (r.delta.light) t.push(`라이트팬 ${r.delta.light > 0 ? '+' : ''}${r.delta.light.toLocaleString()}`);
+    if (r.delta.core)  t.push(`코어팬 ${r.delta.core > 0 ? '+' : ''}${r.delta.core.toLocaleString()}`);
+    if (r.delta.money) t.push(`자금 ${r.delta.money > 0 ? '+' : ''}${Math.round(r.delta.money / 10000).toLocaleString()}만`);
+    if (r.delta.note)  t.unshift(r.delta.note);
+    if (t.length) showStatToast(`${sim.action} · ${t.join(' / ')}`, r.delta.money < 0 && !r.delta.light && !r.delta.core);
+    if (sim.fandom && !d.fandom) {                       // 팬덤 이름 확정
+      d.fandom = String(sim.fandom).slice(0, 20);
+      d.core += Math.round(d.core * 0.06 + 60);
+      showStatToast(`💗 팬덤 이름 「${d.fandom}」 확정`);
+    }
+    if (sim.release && !IDOL_SIM.active(d) && d.album.quality >= 50) {
+      if (sim.stage >= 1 && sim.stage <= 6) d.album.stage = sim.stage | 0; else d.album.stage = 0;
+      IDOL_SIM.release(d);
+      if (sim.title) d.album.title = sim.title;
+      showStatToast(`🎬 컴백! ${d.album.title || '신곡'} 발매 (완성도 ${Math.round(d.album.quality)})`);
+    }
+    if (d.slots <= 0) {                                   // 3슬롯 소진 → 주간 마감 + 차트 판정
+      if (IDOL_SIM.active(d) && d.album.tvThisWeek > 0) {
+        let best = null;
+        IDOL_SIM.openShows(d).forEach(sh => {
+          const rows = IDOL_SIM.chart(d, sh), me = rows.find(x => x.me);
+          if (me && (!best || me.rank < best.me.rank)) best = { sh, rows, me };
+        });
+        if (best) {
+          IDOL_SIM.chartResult(d, best.me.rank);
+          const top = best.rows[0];
+          showStatToast(`📺 ${best.sh} ${best.me.rank}위 (${best.me.score.toFixed(1)}점)${best.me.rank===1?' 🏆':` · 1위 ${top.name}`}`, best.me.rank > 5);
+          gameState.flags = gameState.flags || {};
+          gameState.flags.직전차트 = `${best.sh} ${best.me.rank}위` + (best.me.rank===1?'(1위!)':` / 1위 ${top.name}`);
+          gameState.flags.직전순위표 = best.rows.slice(0,5).map(x=>`${x.rank}. ${x.name}${x.me?'(우리)':''}`).join(' · ');
+        }
+      }
+      IDOL_SIM.endWeek(d);
+      showStatToast(`🗓 ${d.week}주차 시작 · 일정 3칸`);
+    }
+  } else if (r && !r.ok) showStatToast(`실패: ${r.reason}`, true);
+  return r;
+}
 // ═══ 일정 보드 — 가능한 모든 행동을 조건·비용·효과와 함께 보여준다(원안 §턴구조② 구현) ═══
 function idolBoardCards() {
   const d = gameState && gameState.idol; if (!d) return [];
@@ -8851,13 +8852,32 @@ function closeIdolBoard() { document.getElementById('idolBoard').classList.remov
 function pickIdolAction(i) {
   const c = (window._ibCards || [])[i]; if (!c) return;
   closeIdolBoard();
+  const d = gameState.idol;
   const [act, a, b] = String(c.pick).split(':');
-  let txt;
-  if (act === '콘텐츠') txt = `이번 일정은 콘텐츠 촬영으로 한다 — 「${a}」. (sim.action=콘텐츠, kind=${a})`;
-  else if (act === '행사') txt = `이번 일정은 행사로 한다 — 「${a}」. (sim.action=행사, kind=${a})`;
-  else if (act === '미팅') { const key = a === '브랜드' ? 'offer' : a === '시설' ? 'facility' : 'staff';
-    txt = `이번 일정은 미팅으로 한다 — ${c.name}. (sim.action=미팅, target=${a}${b !== undefined ? `, ${key}=${b}` : ''})`; }
-  else txt = `이번 일정은 「${act}」으로 한다. (sim.action=${act})`;
+  // ★계산은 앱이 직접 한다 — 모델에게 sim 문법을 보내면 그게 대화 기록에 남아
+  //   모델이 자기 choices에도 "(sim.action=행사, kind=축제)"를 복사한다(2026-07-26 유저 스샷).
+  const sim = { action: act };
+  if (act === '콘텐츠' || act === '행사') sim.kind = a;
+  else if (act === '미팅') {
+    sim.target = a;
+    if (a === '브랜드') sim.offer = parseInt(b, 10) || 0;
+    else if (a === '시설') sim.facility = b;
+    else if (a === '고용' || a === '해고') sim.staff = b;
+  } else if (act === '연습') sim.intensity = 2;
+  const r = runIdolSim(sim);
+  if (r && !r.ok) return;                       // 조건 미달이면 토스트만 띄우고 턴 소모 없음
+  d._skipSim = true;                            // 이번 턴 모델의 sim은 무시
+  // 모델에게는 **평범한 한국어 문장만** 간다
+  const label = (act === '콘텐츠') ? `${a} 촬영`
+    : (act === '행사') ? `${a}`
+    : (act === '미팅') ? c.name.replace(/^영입 — |^광고 계약 — /, m => m)
+    : act;
+  // 조사 처리 — 받침 있으면 '으로', 없거나 ㄹ받침이면 '로'
+  const josaRo = w => { const ch = w.charCodeAt(w.length - 1) - 0xAC00;
+    if (ch < 0 || ch > 11171) return '로';
+    const jong = ch % 28; return (jong === 0 || jong === 8) ? '로' : '으로'; };
+  const txt = (act === '미팅') ? `${c.name}. 이걸로 이번 주 일정 하나를 쓴다.`
+                               : `이번 주 일정 하나는 ${label}${josaRo(label)} 잡는다.`;
   SFX.play('choice');
   inputMode = false; inputBar.style.display = 'none';
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
