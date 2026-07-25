@@ -1987,7 +1987,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v121</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v122</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2340,7 +2340,7 @@ const ENGINE_MOD_CG = `
   - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장) / **고용·해고**('staff'=vocal|dance|manager|pd|stylist|choreo) / **외주프로듀서**(2천만, 곡 완성도 급상승 대신 대표 자존심·멤버 신뢰 소폭 하락)
   - ★'target' 개인 재산: **담보대출**(asset=home|car, 대표 개인 현금 유입·만기 못 지키면 **압류**) / **담보상환**(asset=…) / **사재출연**(개인→회사, 멤버 신뢰↑) / **대표급여**(회사→개인, 안 가져가면 대표 개인 통장이 마른다)
     · ★**회사 자금과 대표 개인 현금은 완전히 다른 돈이다.** 회사가 망해도 개인 돈은 남고, 개인이 집을 걸어 회사를 살릴 수도 있다. 이 선택을 가볍게 넘기지 마라 — 집을 담보로 잡는 장면은 대표 혼자 서명하는 장면이어야 한다.
-  - ★'facility' = 미팅 target=시설일 때. practice(연습실) / van(밴). 등급을 올리면 연습 효율·컨디션 소모가 영구히 좋아진다 — **성공할수록 돈 쓸 곳**이 생긴다.
+  - ★'facility' = 미팅 target=시설일 때. office(사옥)·dorm(숙소)·practice(연습실)·van(밴)은 회사 자금, home(내 집)·car(내 차)는 대표 개인 현금으로 산다. **등급을 올리면 그 장소의 배경이 실제로 바뀐다** — 사옥·숙소가 좋아지면 애들 표정도 달라진다. 등급을 올리면 연습 효율·컨디션 소모가 영구히 좋아진다 — **성공할수록 돈 쓸 곳**이 생긴다.
   - ★'fandom' = 팬덤 이름을 정하는 장면에서만. 멤버들이 후보를 내고 대표가 고르는 장면을 만들고 확정된 이름을 실어라(한 번뿐).
   - ★**연중 캘린더는 고정이다**(상태창 「달력」). 신년 컴백 대전(차트 문턱↑)·대학 축제 시즌(행사비 1.6배)·여름 페스티벌/음원 성수기·가을 축제·행사 비수기·연말 시상식. 실장은 **다음 시즌을 미리 알려주고**, 컴백 시기를 그 리듬에 맞춰 제안한다.
   - ★**스태프**: 시작 인원은 대표·차영석 실장·**로드 매니저 윤재이** 셋뿐이다(재이는 데뷔 때부터 있던 사람 — 고용 대상이 아니다). 보컬/댄스 트레이너를 붙이면 연습 효율이 1.8배, 로드 매니저가 있으면 컨디션 소모가 30% 준다. 영상 PD는 콘텐츠 화력, 스타일리스트·안무 디렉터는 무대를 올린다. **급여는 매주 나가고 못 주면 제일 비싼 사람부터 나간다** — 그걸 멤버들이 본다(신뢰 하락). 상태창의 「고용 가능」 목록 밖은 고르지 마라.
@@ -3893,16 +3893,38 @@ const IDOL_SIM = {
     return best;
   },
   // ───── 시설 (성공할수록 돈 쓸 곳이 있어야 한다) ─────
+  // ───── 샵: 회사 자산(회사 자금) / 개인 자산(대표 개인 현금) ─────
+  //   등급을 올리면 **배경이 실제로 바뀐다**(bgKey + 등급 → office2.webp 같은 파일).
   FACILITY: {
-    practice: { name:'연습실', levels:[
+    practice: { name:'연습실', who:'corp', bg:'practice', levels:[
       { label:'지하 연습실', cost:0,        desc:'거울 깨져 있고 여름엔 에어컨을 아껴 튼다' },
       { label:'방음·바닥 보강', cost:100000000, desc:'연습 효율 +25% · 컨디션 소모 −10%', trainM:1.25, cond:0.9 },
       { label:'자체 스튜디오', cost:300000000, desc:'연습 효율 +50% · 콘텐츠 촬영 효과 +20%', trainM:1.5, cond:0.85, contentM:1.2 },
     ]},
-    van: { name:'밴', levels:[
+    van: { name:'밴', who:'corp', bg:'van', levels:[
       { label:'12년 된 스타렉스', cost:0,     desc:'고속도로에서 가끔 선다' },
       { label:'중고 카니발', cost:40000000,   desc:'이동 피로 −15% · 밴 고장 사고 없음', cond:0.85, noBreak:true },
       { label:'신형 스타리아', cost:75000000, desc:'이동 피로 −25% · 이동 중 컨디션 소폭 회복', cond:0.75, noBreak:true, rest:2 },
+    ]},
+    office: { name:'사옥', who:'corp', bg:'office', levels:[
+      { label:'상가 3층 두 개 층', cost:0, desc:'엘리베이터 없고 여름엔 덥다' },
+      { label:'중형 오피스', cost:200000000, desc:'광고 제안 확률 +40% · 회사가 번듯해 보인다', offerM:1.4, image:1 },
+      { label:'자체 사옥', cost:800000000, desc:'광고 제안 확률 +90% · 대형 티어 진입선 완화 · 이미지↑', offerM:1.9, image:3, gateEase:8 },
+    ]},
+    dorm: { name:'숙소', who:'corp', bg:'dorm', levels:[
+      { label:'다세대 투룸(5인)', cost:0, desc:'다섯이 방 두 개에 낀다. 잠을 못 잔다' },
+      { label:'아파트 3룸', cost:150000000, desc:'휴식 회복 +40% · 멘탈 회복 +3', restM:1.4, mind:3 },
+      { label:'신축 빌라(1인 1실)', cost:500000000, desc:'휴식 회복 +80% · 멘탈 회복 +6 · 숙소 갈등 사건 감소', restM:1.8, mind:6, calm:true },
+    ]},
+    home: { name:'내 집', who:'self', bg:'home', levels:[
+      { label:'변두리 소형 아파트', cost:0, desc:'시가 3.2억 · 담보 한도 1.92억' },
+      { label:'신축 아파트', cost:600000000, desc:'시가 9억 · 담보 한도 5.4억 · 대표 멘탈 안정', value:900000000 },
+      { label:'한강뷰 펜트하우스', cost:2000000000, desc:'시가 28억 · 담보 한도 16.8억 · 업계에서 보는 눈이 달라진다', value:2800000000, image:4 },
+    ]},
+    car: { name:'내 차', who:'self', bg:'car', levels:[
+      { label:'10년 된 중고 세단', cost:0, desc:'시가 1,200만' },
+      { label:'준중형 신차', cost:35000000, desc:'시가 3,500만 · 미팅 자리에서 꿀리지 않는다', value:35000000 },
+      { label:'수입 세단', cost:120000000, desc:'시가 1.2억 · 대표 이미지↑(양날: 애들이 본다)', value:120000000, image:2, envy:true },
     ]},
   },
   facLv(d, k){ return (d.fac && d.fac[k]) || 0; },
@@ -4139,7 +4161,7 @@ const IDOL_SIM = {
                d.mem[who].mind=IDOL_SIM.clamp(d.mem[who].mind-9,0,100); d.image=IDOL_SIM.clamp(d.image-2,0,100); } },
     { id:'inear',  w:(d)=>IDOL_SIM.active(d)?2:0, text:'생방 중 인이어가 나갔다. 미유가 표정 하나 안 바꾸고 끝까지 불렀고, 그 클립이 돌았다.',
       eff:d=>{ d.light+=Math.round(d.light*0.03+600); d.sns+=12; d.mem.miyu.cond=IDOL_SIM.clamp(d.mem.miyu.cond-5,0,100); } },
-    { id:'dorm',   w:(d)=>{const t=Object.values(d.mem).reduce((a,m)=>a+m.trust,0)/5; return t<55?3:1;},
+    { id:'dorm',   w:(d)=>{ if (IDOL_SIM.facCur(d,'dorm').calm) return 0; const t=Object.values(d.mem).reduce((a,m)=>a+m.trust,0)/5; return t<55?3:1;},
       text:'숙소에서 사소한 일로 부딪혔다. 미워서가 아니라 미안해서 나온 말들이었다.',
       eff:d=>{ Object.keys(d.mem).forEach(i=>{ d.mem[i].trust=IDOL_SIM.clamp(d.mem[i].trust-3,0,100); }); } },
     { id:'senior', w:()=>1, text:'선배 그룹 하나가 우리 무대를 보고 SNS에 한 줄 올려줬다. 그게 하루 종일 회자됐다.',
@@ -4402,13 +4424,19 @@ const IDOL_SIM = {
         dt.note = `${S.STAFF[k].name} 계약 종료`;
       } else if (t==='시설'){
         const k = sim.facility, F = S.FACILITY[k];
-        if (!F) return { ok:false, reason:'그런 시설 없음' };
-        d.fac = d.fac || { practice:0, van:0 };
+        if (!F) return { ok:false, reason:'그런 자산 없음' };
+        d.fac = d.fac || {};
         const nx = F.levels[(d.fac[k]||0)+1];
         if (!nx) return { ok:false, reason:'이미 최고 등급' };
-        if (nx.cost > d.money) return { ok:false, reason:`${Math.round(nx.cost/10000).toLocaleString()}만 필요` };
-        dt.money -= nx.cost; d.fac[k] = (d.fac[k]||0)+1;
-        Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=S.clamp(d.mem[i].mind+6,0,100); });   // 애들이 좋아한다
+        const self = F.who === 'self';
+        const wallet = self ? d.personal.cash : d.money;
+        if (nx.cost > wallet) return { ok:false, reason:`${self?'개인 현금':'회사 자금'} ${Math.round(nx.cost/10000).toLocaleString()}만 필요` };
+        if (self) d.personal.cash -= nx.cost; else dt.money -= nx.cost;
+        d.fac[k] = (d.fac[k]||0)+1;
+        if (nx.value && S.PERSONAL[k]) S.PERSONAL[k].value = nx.value;      // 담보 한도도 함께 오른다
+        if (nx.image) d.image = S.clamp(d.image + nx.image, 0, 100);
+        if (!self) Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=S.clamp(d.mem[i].mind+6,0,100); });   // 회사 자산은 애들이 좋아한다
+        if (nx.envy) Object.keys(d.mem).forEach(i=>{ d.mem[i].trust=S.clamp(d.mem[i].trust-2,0,100); }); // 대표만 좋은 차 = 눈치
         dt.note = `${F.name} → ${nx.label}`;
       } else if (t==='담보대출'){
         const r2 = S.takeLoan(d, sim.asset, sim.amount);
@@ -4440,7 +4468,8 @@ const IDOL_SIM = {
         dt.note = '외주 프로듀서 곡 수령';
       } else return { ok:false, reason:'미팅 대상 불명' };
     } else if (sim.action==='휴식'){
-      list.forEach(i=>{const m=d.mem[i]; m.cond=S.clamp(m.cond+25,0,100); m.mind=S.clamp(m.mind+10,0,100);});
+      const rm = S.facCur(d,'dorm').restM || 1, dm = S.facCur(d,'dorm').mind || 0;   // 숙소 등급
+      list.forEach(i=>{const m=d.mem[i]; m.cond=S.clamp(m.cond+25*rm,0,100); m.mind=S.clamp(m.mind+10+dm,0,100);});
     } else if (sim.action==='곡작업'){
       const c=sim.concept||'대중';
       const q=4+avg('vocal')/7+avg('dance')/14+(c==='실험'?(R()<.5?10:-4):3);
@@ -4510,8 +4539,9 @@ const IDOL_SIM = {
     // 제안 만료 — 안 잡으면 4주 뒤 사라진다(낡은 제안이 슬롯을 막아 상위 티어가 안 들어오던 버그)
     d.offers = d.offers.filter(o => (o.life = (o.life===undefined?4:o.life) - 1) > 0);
     // 제안 생성: 인지도·이미지 게이트를 통과한 최상위 티어에서 확률적으로
-    if (d.offers.length < 3 && R() < 0.10 + d.fame/320) {
-      const ok = S.BRAND_TIERS.filter(t => d.fame>=t.gate && d.image>=t.image);
+    if (d.offers.length < 3 && R() < (0.10 + d.fame/320) * (S.facCur(d,'office').offerM || 1)) {
+      const ease = S.facCur(d,'office').gateEase || 0;                    // 사옥이 번듯하면 대형도 본다
+      const ok = S.BRAND_TIERS.filter(t => d.fame >= (t.gate - ease) && d.image >= t.image);
       if (ok.length) {
         const t = ok[ok.length-1];
         const name = t.pool[Math.floor(R()*t.pool.length)];
@@ -5001,6 +5031,7 @@ const BUILTIN_STORIES = {
       event:      { url: 'sd_samples/backgrounds/idol/event.webp',       label: '지방 행사장' },
       dorm:       { url: 'sd_samples/backgrounds/idol/dorm.webp',        label: '숙소 거실' },
       rooftop:    { url: 'sd_samples/backgrounds/idol/rooftop.webp',     label: '건물 옥상' },
+      home:       { url: 'sd_samples/backgrounds/idol/home.webp',       label: '대표의 집(작업실 겸)' },
       street:     { url: 'sd_samples/backgrounds/idol/street.webp',      label: '밤 골목(퇴근길)' },
     },
     startBg: 'practice',
@@ -8863,7 +8894,20 @@ const CG_VARIANTS = {   // "story/charId/sceneId" → 변형 개수(2 이상이�
 // 세라는 mating_press_pov 미보유(유저 판정으로 제외) — 해당 씬키 발화 시 대체 씬키로 폴백
 const CG_SCENE_BLOCK = { 'lovediary/sera/mating_press_pov': 'sera/missionary_pov' };
 
+// 아이돌: 자산 등급에 따라 같은 장소라도 다른 배경을 쓴다(office2.webp 등). 파일 없으면 기본으로 폴백.
+function idolBgTierKey(key) {
+  const d = (typeof gameState !== 'undefined' && gameState && gameState.idol) || null;
+  if (!d || !STORY || STORY.id !== 'idol') return key;
+  const F = Object.values(IDOL_SIM.FACILITY).find(f => f.bg === key);
+  if (!F) return key;
+  const lv = (d.fac && d.fac[Object.keys(IDOL_SIM.FACILITY).find(k => IDOL_SIM.FACILITY[k].bg === key)]) || 0;
+  return lv > 0 ? key + (lv + 1) : key;
+}
 function bgUrlFor(key) {
+  if (STORY && STORY.id === 'idol') {
+    const tk = idolBgTierKey(key);
+    if (tk !== key) return `sd_samples/backgrounds/idol/${tk}.webp`;
+  }
   if (STORY.customBgs && STORY.customBgs[key]) return STORY.customBgs[key].url;
   const sb = STORY_BG_FILES[STORY.id];
   if (sb && sb.includes(key)) return `sd_samples/backgrounds/${STORY.id}/${key}.webp`;
@@ -9093,17 +9137,51 @@ function idolBoardCards() {
     d.invested ? '이미 유치함' : (d.fame < 30 ? '인지도 30 필요' : null), '미팅:투자');
   add('미팅', '대출 연장', 0, '1회 한정 · 만기 12주 연장', d.loanExt ? '이미 연장함' : null, '미팅:대출연장',
     d.loanWeek > 0 && d.loanWeek <= 6);
-  ['practice','van'].forEach(k => {
-    const F = S.FACILITY[k], lv = S.facLv(d,k), nx = F.levels[lv+1];
-    if (!nx) { add('시설', `${F.name} — ${F.levels[lv].label}`, 0, '이미 최고 등급', '최고 등급', `미팅:시설:${k}`); return; }
-    add('시설', `${F.name} 업그레이드 — ${nx.label}`, nx.cost, nx.desc + ` (현재: ${F.levels[lv].label})`,
-      nx.cost > d.money ? `${Math.round(nx.cost/10000).toLocaleString()}만 필요` : null, `미팅:시설:${k}`,
-      d.money > nx.cost * 2);
-  });
   add('미팅', '외주 프로듀서', 80000000, '완성도 +26 · 대중성 +18 (대표 자존심·멤버 신뢰 소폭↓)',
     d.money < 80000000 ? '자금부족(8천만)' : null, '미팅:외주프로듀서');
   return cards;
 }
+// ── 🏢 샵: 회사 자산(회사 자금) / 개인 자산(대표 개인 현금). 사면 **배경이 바뀐다**.
+function idolShopHtml() {
+  const d = gameState.idol, S = IDOL_SIM;
+  const won = n => n >= 100000000 ? (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '억' : Math.round(n / 10000).toLocaleString() + '만';
+  let h = `<div class="ib-head"><span class="ib-title">🏢 샵</span>
+    <span class="ib-sub">회사 ${won(d.money)} · 개인 ${won(d.personal ? d.personal.cash : 0)}</span></div>`;
+  [['corp', '회사 자산 (회사 자금)'], ['self', '개인 자산 (대표 개인 현금)']].forEach(([who, title]) => {
+    h += `<div class="ib-group">${title}</div>`;
+    Object.entries(S.FACILITY).filter(([, F]) => F.who === who).forEach(([k, F]) => {
+      const lv = S.facLv(d, k), cur = F.levels[lv], nx = F.levels[lv + 1];
+      h += `<div class="ib-note" style="margin:2px 4px 4px">${F.name} — 현재 <b style="color:#f2c14e">${cur.label}</b></div>`;
+      if (!nx) { h += `<div class="ib-note" style="margin:0 4px 10px;opacity:.55">최고 등급이다.</div>`; return; }
+      const wallet = who === 'self' ? (d.personal ? d.personal.cash : 0) : d.money;
+      const lack = nx.cost > wallet;
+      h += `<button class="ib-card${lack ? ' off' : ''}" ${lack ? '' : `onclick="buyIdolAsset('${k}')"`}>
+        <span class="n">${nx.label}</span><span class="c">${won(nx.cost)}</span>
+        <span class="e">${lack ? `<span class="why">✕ ${who === 'self' ? '개인 현금' : '회사 자금'} 부족</span>` : nx.desc + ' · 🖼 배경이 바뀐다'}</span></button>`;
+    });
+  });
+  return h;
+}
+function buyIdolAsset(k) {
+  const d = gameState.idol, F = IDOL_SIM.FACILITY[k];
+  closeIdolBoard();
+  const before = d.slots;
+  const r = runIdolSim({ action: '미팅', target: '시설', facility: k });
+  d.slots = before;
+  if (!r || !r.ok) return;
+  d._skipSim = true;
+  try { if (lastBg) setBg(lastBg); } catch {}      // 산 즉시 배경 갱신
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  const lv = IDOL_SIM.facLv(d, k);
+  const josa = (w, a, b) => { const c = w.charCodeAt(w.length-1) - 0xAC00;
+    if (c < 0 || c > 11171) return a; const j = c % 28; return j ? a : b; };
+  const nm = F.name, lb = F.levels[lv].label;
+  const txt = `${nm}${josa(nm,'을','를')} ${lb}${josa(lb,'으로','로')} 옮긴다.`;
+  window._genText = txt; handlePlayerInput(txt);
+}
+
 // ── 개인 재산 탭: 일정 칸과 무관한 대표 본인의 돈 (빌릴 금액·갚을 금액을 직접 정한다)
 function idolPersonalHtml() {
   const d = gameState.idol, S = IDOL_SIM, P = d.personal;
@@ -9206,9 +9284,10 @@ function openIdolBoard(tab) {
   // 탭: 일정(스케줄 칸) / 개인(대표 본인 돈 — 일정 칸을 쓰지 않는다)
   let h = `<div class="ib-tabs">
     <button class="ib-tab${cur==='plan'?' on':''}" onclick="openIdolBoard('plan')">🗓 일정</button>
-    <button class="ib-tab${cur==='personal'?' on':''}" onclick="openIdolBoard('personal')">👤 개인 재산</button></div>`;
-  if (cur === 'personal') {
-    document.getElementById('ibBody').innerHTML = h + idolPersonalHtml();
+    <button class="ib-tab${cur==='shop'?' on':''}" onclick="openIdolBoard('shop')">🏢 샵</button>
+    <button class="ib-tab${cur==='personal'?' on':''}" onclick="openIdolBoard('personal')">👤 개인</button></div>`;
+  if (cur === 'personal' || cur === 'shop') {
+    document.getElementById('ibBody').innerHTML = h + (cur === 'shop' ? idolShopHtml() : idolPersonalHtml());
     document.getElementById('idolBoard').classList.add('on');
     return;
   }
@@ -9256,7 +9335,7 @@ function openIdolBoard(tab) {
           <span class="e">곡 완성도↑(대표 본업) · 멤버 신뢰 소폭↓ — 애들끼리 다녀온다</span></button>`;
     }
     // 자유 행동(일정 소모 없음)
-    const free = idolBoardCards().filter(c => c.grp === '미팅' || c.grp === '시설');   // 개인 재산은 👤 탭으로 분리
+    const free = idolBoardCards().filter(c => c.grp === '미팅');   // 시설=🏢샵 / 개인재산=👤 탭으로 분리
     let grp = '';
     free.forEach((c) => {
       if (c.grp !== grp) { grp = c.grp; h += `<div class="ib-group">${grp} (일정 소모 없음)</div>`; }
