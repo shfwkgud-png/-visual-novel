@@ -3783,9 +3783,157 @@ const IDOL_SIM = {
     choreo:  { name:'안무 디렉터',   hire:8000000, pay:1500000, gate:25, desc:'음방 방송점수 +35%' },
   },
   hasStaff(d, k){ return !!(d && d.staff && d.staff.indexOf(k) >= 0); },
+  // ───── 음원 차트 (이 게임의 컨셉이 '역주행'인데 정작 스밍·차트가 없었다) ─────
+  // 주간 스트리밍 = 팬 규모 × 곡 힘 × 활동 여부. 공백기에도 조금은 돈다(그게 역주행의 씨앗).
+  //   ★선형이면 후반에 주당 1,200만 스밍(실제 1위곡은 400~800만)까지 부풀어 경제가 터진다 → 포화 곡선.
+  weeklyStreams(d){
+    const q = (d.album.quality||0)/100, ap = 0.5 + (d.album.appeal||0)/200;
+    const raw = d.light*3.2 + d.core*9;
+    const sat = 8000000 * raw / (raw + 5000000);   // 상한 800만/주에 점근
+    return Math.round(sat * q * ap * (IDOL_SIM.active(d) ? 1.6 : 0.3));
+  },
+  // 일간 차트 진입선(절대 임계 · 라이벌 활동 주에는 경쟁이 세져 문턱이 올라간다)
+  CHART_TIERS: [[4000000,1],[2200000,3],[1300000,5],[800000,10],[420000,20],[190000,50],[80000,100]],
+  chartRank(d, streams){
+    const busy = IDOL_SIM.RIVALS.filter(r=>IDOL_SIM.rivalActive(r,d.week)).length;
+    const mul = 1 + busy*0.18;                       // 라이벌이 많이 활동할수록 진입이 어렵다
+    for (const [need, rank] of IDOL_SIM.CHART_TIERS) if (streams >= need*mul) return rank;
+    return null;                                     // 차트 아웃
+  },
+  // ───── 멤버 개인 서사 체인 ─────
+  // 각자의 Secret이 조건을 만나면 3단으로 터진다. 지금까지는 로어에만 있어서 AI 즉흥에 맡겨져 있었다.
+  //   fire되면 상태창에 "★이번 주 반드시 다뤄야 할 사건"으로 뜨고, 앱이 수치도 함께 움직인다.
+  ARCS: {
+    miyu: [
+      { when:(d,m)=> IDOL_SIM.active(d) && m.cond < 55,
+        text:'미유가 리허설 사이사이 자꾸 목을 만진다. 물을 계속 마시고, 고음 파트에서 한 번 소리가 갈라졌다가 웃어넘긴다.',
+        eff:d=>{ d.mem.miyu.mind = IDOL_SIM.clamp(d.mem.miyu.mind-4,0,100); } },
+      { when:(d,m)=> m.cond < 45,
+        text:'★미유가 연습 도중 소리를 못 냈다. "괜찮아요"라고 했지만 목을 잡고 화장실로 갔다. 팀 전원이 봤다. 대표가 지금 병원에 보내면 컴백이 밀리고, 안 보내면 무대에서 터진다.',
+        eff:d=>{ Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=IDOL_SIM.clamp(d.mem[i].mind-6,0,100); }); } },
+      { when:(d,m)=> m.cond < 35,
+        text:'★★성대결절 확진. 미유가 4주간 노래를 못 한다. 이 팀이 라이브에서 안 무너지던 이유가 빠진다 — 남은 넷이 그 몫을 나눠 진다.',
+        eff:d=>{ d.mem.miyu.cond=Math.max(d.mem.miyu.cond,55); d.mem.miyu.vocal=IDOL_SIM.clamp(d.mem.miyu.vocal-12,0,100);
+                 Object.keys(d.mem).forEach(i=>{ d.mem[i].trust=IDOL_SIM.clamp(d.mem[i].trust-4,0,100); }); } },
+    ],
+    seowoo: [
+      { when:(d)=> d.sns > 120,
+        text:'서우의 개인 유튜브 채널이 실장에게 걸렸다. 조회수 두 자리, 편집도 엉망인데 2년째 매주 올렸다.',
+        eff:d=>{ d.mem.seowoo.mind=IDOL_SIM.clamp(d.mem.seowoo.mind-5,0,100); } },
+      { when:(d)=> d.sns > 400,
+        text:'★서우 채널의 옛날 영상 하나가 알고리즘을 탔다. 회사 콘텐츠보다 그게 더 돈다 — 회사 계정으로 옮길 것인가, 서우 개인의 것으로 둘 것인가.',
+        eff:d=>{ d.light += Math.round(d.light*0.10 + 2500); d.sns += 40; } },
+      { when:(d)=> d.fame > 45,
+        text:'★★"엔코어 리더 브이로그"가 팀의 입구가 됐다. 유입의 절반이 서우 채널에서 온다 — 좋은 일인데, 나머지 넷은 그 사실을 안다.',
+        eff:d=>{ d.light += Math.round(d.light*0.06+2000);
+                 ['miyu','haram','soye','siah'].forEach(i=>{ d.mem[i].trust=IDOL_SIM.clamp(d.mem[i].trust-3,0,100); }); } },
+    ],
+    soye: [
+      { when:(d)=> d.core >= 600,
+        text:'소예가 팬레터에 전부 손글씨로 답장하고 있었다는 게 드러났다. 300장이 넘는다. 회사엔 비밀이었다.',
+        eff:d=>{ d.core += 120; d.mem.soye.cond=IDOL_SIM.clamp(d.mem.soye.cond-8,0,100); } },
+      { when:(d)=> d.core >= 2500,
+        text:'★답장을 받은 팬이 그걸 올렸고, 그게 퍼졌다. "이 그룹은 우리를 기억한다"가 팬덤의 자부심이 된다.',
+        eff:d=>{ d.core += Math.round(d.core*0.12+300); d.image=IDOL_SIM.clamp(d.image+4,0,100); } },
+      { when:(d,m)=> d.core >= 8000 && m.cond < 60,
+        text:'★★팬이 수천 명이 됐는데 소예는 아직도 전부 답장하려 한다. 손목이 나갔고 새벽에 울면서 쓴다 — 대표가 멈추라고 해야 한다.',
+        eff:d=>{ d.mem.soye.cond=IDOL_SIM.clamp(d.mem.soye.cond-15,0,100); d.mem.soye.mind=IDOL_SIM.clamp(d.mem.soye.mind-10,0,100); } },
+    ],
+    siah: [
+      { when:(d)=> d.album.tvThisWeek > 0 && d.light > 20000,
+        text:'시아 직캠이 터졌다. 조회수는 좋은데 댓글의 절반이 춤이 아니라 몸 얘기다.',
+        eff:d=>{ d.light += Math.round(d.light*0.05+1500); d.mem.siah.mind=IDOL_SIM.clamp(d.mem.siah.mind-8,0,100); } },
+      { when:(d,m)=> m.mind < 60,
+        text:'★시아가 카메라 각도를 자기가 먼저 계산하기 시작했다. 안전한 동작만 고른다 — 화력이 줄었다는 걸 다인(댄스 트레이너)이 제일 먼저 알아챈다.',
+        eff:d=>{ d.mem.siah.dance=IDOL_SIM.clamp(d.mem.siah.dance-6,0,100); } },
+      { when:(d,m)=> m.mind < 45,
+        text:'★★시아가 무대 직전에 "저 오늘 센터 안 하면 안 돼요?"라고 했다. 팀에서 제일 안 흔들리던 애가 처음 한 말이다.',
+        eff:d=>{ d.mem.siah.mind=IDOL_SIM.clamp(d.mem.siah.mind-6,0,100);
+                 Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=IDOL_SIM.clamp(d.mem[i].mind-3,0,100); }); } },
+    ],
+    haram: [
+      { when:(d)=> d.fame >= 22,
+        text:'하람이 처음 나간 예능에서 통편집됐다. 아무 말 없이 그 회차를 다시 보고 있다.',
+        eff:d=>{ d.mem.haram.mind=IDOL_SIM.clamp(d.mem.haram.mind-7,0,100); } },
+      { when:(d,m)=> d.fame >= 35 && m.fun >= 70,
+        text:'★하람이 찍어온 필름 사진들을 팬 계정에 올렸다. 멤버들 뒷모습, 대기실 천장, 새벽 밴 창문 — 그게 팬덤에서 돌기 시작한다.',
+        eff:d=>{ d.core += Math.round(d.core*0.08+150); d.sns += 25; } },
+      { when:(d)=> d.fame >= 55,
+        text:'★★하람의 예능 클립이 밈이 됐다. "쟤 진짜 웃겨"라는 말을 드디어 들었다 — 본인은 화장실에서 울었다.',
+        eff:d=>{ d.core += Math.round(d.core*0.10+400); d.mem.haram.mind=IDOL_SIM.clamp(d.mem.haram.mind+12,0,100); } },
+    ],
+  },
+  // ───── 주간 랜덤 사건 (개인 서사가 없는 주의 밀도) ─────
+  //   arc가 터진 주에는 안 뽑는다. 조건부라 상황에 맞는 것만 나온다.
+  RANDOM: [
+    { id:'akpl',   w:(d)=>d.fame>25?2:0, text:'베로니카 팬덤 쪽에서 시작된 악플이 우리 멤버 게시판을 덮었다.',
+      eff:d=>{ const who=['seowoo','miyu','haram','soye','siah'][Math.floor(Math.random()*5)];
+               d.mem[who].mind=IDOL_SIM.clamp(d.mem[who].mind-9,0,100); d.image=IDOL_SIM.clamp(d.image-2,0,100); } },
+    { id:'inear',  w:(d)=>IDOL_SIM.active(d)?2:0, text:'생방 중 인이어가 나갔다. 미유가 표정 하나 안 바꾸고 끝까지 불렀고, 그 클립이 돌았다.',
+      eff:d=>{ d.light+=Math.round(d.light*0.03+600); d.sns+=12; d.mem.miyu.cond=IDOL_SIM.clamp(d.mem.miyu.cond-5,0,100); } },
+    { id:'dorm',   w:(d)=>{const t=Object.values(d.mem).reduce((a,m)=>a+m.trust,0)/5; return t<55?3:1;},
+      text:'숙소에서 사소한 일로 부딪혔다. 미워서가 아니라 미안해서 나온 말들이었다.',
+      eff:d=>{ Object.keys(d.mem).forEach(i=>{ d.mem[i].trust=IDOL_SIM.clamp(d.mem[i].trust-3,0,100); }); } },
+    { id:'senior', w:()=>1, text:'선배 그룹 하나가 우리 무대를 보고 SNS에 한 줄 올려줬다. 그게 하루 종일 회자됐다.',
+      eff:d=>{ d.light+=Math.round(d.light*0.04+800); d.fame=IDOL_SIM.clamp(d.fame+0.8,0,100); } },
+    { id:'van',    w:(d)=>IDOL_SIM.hasStaff(d,'manager')?1:2, text:'밴이 고속도로에서 멈췄다. 재이가 갓길에서 정비소에 전화하는 동안 애들은 뒷좌석에서 잤다.',
+      eff:d=>{ d.money-=800000; Object.keys(d.mem).forEach(i=>{ d.mem[i].cond=IDOL_SIM.clamp(d.mem[i].cond-4,0,100); }); } },
+    { id:'halfjoin', w:(d)=>d.fame>=20&&d.fame<60?2:0, text:'하프라이트 오미나에게서 연락이 왔다 — 합동 콘텐츠 하자고. 조회수는 나눠 갖지만 없는 것보단 낫다.',
+      eff:d=>{ d.light+=Math.round(d.light*0.05+1000); d.sns+=18; } },
+    { id:'sajaegi', w:(d)=>d.chart&&d.chart.rank&&d.chart.rank<=50?1:0, text:'차트에 든 뒤로 "사재기 아니냐"는 글이 돌았다. 근거는 없는데 조회수는 많다.',
+      eff:d=>{ d.image=IDOL_SIM.clamp(d.image-3,0,100); d.light+=Math.round(d.light*0.02+300); } },
+    { id:'fancafe', w:(d)=>d.core>=1000?2:0, text:'팬카페에서 팬덤 이름 투표가 시작됐다. 애들이 밤새 후보를 보고 있다.',
+      eff:d=>{ d.core+=Math.round(d.core*0.04+80); Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=IDOL_SIM.clamp(d.mem[i].mind+4,0,100); }); } },
+    { id:'weather', w:(d)=>1, text:'야외 행사에서 비가 쏟아졌다. 우산 없이 끝까지 본 팬이 서른 명쯤 있었다.',
+      eff:d=>{ d.core+=Math.round(30+Math.random()*40); Object.keys(d.mem).forEach(i=>{ d.mem[i].cond=IDOL_SIM.clamp(d.mem[i].cond-6,0,100); }); } },
+    { id:'offer',  w:(d)=>d.fame>=45?2:0, text:'★멤버 한 명에게 다른 회사에서 개별 제안이 들어왔다는 소문이 실장 귀에 들어왔다.',
+      eff:d=>{ const who=['seowoo','haram','siah'][Math.floor(Math.random()*3)]; d.rumorWho=who;
+               d.mem[who].trust=IDOL_SIM.clamp(d.mem[who].trust-2,0,100); } },
+  ],
+  fireRandom(d){
+    // 최근 8주 안에 나온 사건은 제외(같은 사건이 반복되면 배경음이 된다)
+    d.recentEv = (d.recentEv || []).filter(o => d.week - o.w < 8);
+    const seen = new Set(d.recentEv.map(o => o.id));
+    const pool = IDOL_SIM.RANDOM.filter(e=>!seen.has(e.id)).map(e=>({e, w:e.w(d)})).filter(o=>o.w>0);
+    const tot = pool.reduce((a,o)=>a+o.w,0);
+    if (!tot || Math.random() > 0.45) return null;      // 매주 45%만 사건이 있다
+    let r = Math.random()*tot;
+    for (const o of pool) { if ((r -= o.w) <= 0) {
+      if (o.e.eff) o.e.eff(d);
+      d.recentEv.push({ id:o.e.id, w:d.week });
+      return { id:o.e.id, text:o.e.text };
+    } }
+    return null;
+  },
+  // 매주 1건만 발동(과밀 방지). 조건 충족한 것 중 단계가 낮은 순.
+  fireArc(d){
+    d.arc = d.arc || {};
+    // 개인 서사는 최소 3주 간격 — 몰아서 터지면 한 캐릭터의 3단이 한 달 만에 소모된다
+    if (d.lastArcWeek && d.week - d.lastArcWeek < 3) return null;
+    for (const who of Object.keys(IDOL_SIM.ARCS)) {
+      const stage = d.arc[who] || 0;
+      const nx = IDOL_SIM.ARCS[who][stage];
+      if (!nx) continue;
+      const m = d.mem[who];
+      if (!m) continue;
+      if (nx.when(d, m)) {
+        d.arc[who] = stage + 1;
+        d.lastArcWeek = d.week;
+        if (nx.eff) nx.eff(d);
+        return { who, stage: stage+1, text: nx.text };
+      }
+    }
+    return null;
+  },
+  // 정산: 실제 업계처럼 **두 달 뒤**에 들어온다(중소돌 자금난의 핵심 — 실장 대사와도 맞물림)
+  addPending(d, week, amount, memo){
+    if (amount <= 0) return;
+    (d.pending = d.pending || []).push({ week, amount: Math.round(amount), memo });
+  },
   init() {
     return { week:1, slots:3, money:8000000, fame:12, loan:120000000, loanWeek:40,
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
+      streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0 },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -3996,6 +4144,33 @@ const IDOL_SIM = {
     const tr=Object.values(d.mem).reduce((a,m)=>a+m.trust,0)/5;
     d.core+=Math.round(d.light*0.02*(tr/100));
     d.sns=Math.round(d.sns*0.94);
+    // ─ 음원: 스밍 → 일간 차트 → 역주행 판정 → 정산 예약(8주 뒤 입금)
+    if (!d.chart) d.chart = { rank:null, prev:null, peak:null, weeks:0, surge:0 };
+    const wk = S.weeklyStreams(d);
+    d.streams = (d.streams||0) + wk;
+    const rk = S.chartRank(d, wk);
+    d.chart.prev = d.chart.rank; d.chart.rank = rk;
+    if (rk){ d.chart.weeks++; d.chart.peak = d.chart.peak ? Math.min(d.chart.peak, rk) : rk; }
+    // ★역주행 = 차트에 없다가 진입했거나, 순위가 절반 이하로 급등한 주
+    d.chart.surge = 0;
+    if (rk && (!d.chart.prev || d.chart.prev > rk*2)) {
+      d.chart.surge = 1;
+      d.fame = S.clamp(d.fame + (rk<=10?7:rk<=50?3.5:1.5), 0, 100);
+      d.light += Math.round(d.light*0.08 + 1200);
+    }
+    S.addPending(d, d.week + 8, wk * 0.45, '음원 정산');      // 스트리밍 제작사 실수령 단가(원)
+    // 음반: 발매 첫 주 초동 — 코어팬이 산다(팬사인회 응모가 붙으면 더)
+    if (d.album.released === d.week && d.album.actWeek <= 1) {
+      const sold = Math.round(d.core * (0.9 + Math.random()*0.4) * (1 + d.image/300));
+      d.albumSold = sold;
+      S.addPending(d, d.week + 8, sold * 900, '음반 정산');    // 장당 실수령 마진(유통·제작비 제외)
+      d.lastSold = sold;
+    }
+    // 예약된 정산 입금
+    d.pending = (d.pending||[]).filter(p => {
+      if (p.week <= d.week) { d.money += p.amount; d.lastSettle = (d.lastSettle||0) + p.amount; return false; }
+      return true;
+    });
     // ─ 브랜드: 주급 유입 · 계약 만료 · 개인 앰버서더 부작용 · 이미지 미달 시 파기
     if (d.image === undefined) d.image = 70;                 // 구 세이브 승계
     d.brands = d.brands || []; d.offers = d.offers || [];
@@ -4038,7 +4213,27 @@ const IDOL_SIM = {
       if (S.hasStaff(d,'stylist')) d.image = S.clamp(d.image + 0.8, 0, 100);
     }
     d.image = S.clamp(d.image + 0.3, 0, 100);                // 별일 없으면 서서히 회복
+    // ─ 이번 주의 사건: 개인 서사 체인 우선, 없으면 랜덤 사건(둘 다 없는 주도 있다)
+    const arc = S.fireArc(d);
+    d.weekEvent = arc ? { kind:'arc', who:arc.who, stage:arc.stage, text:arc.text } : (() => {
+      const r = S.fireRandom(d); return r ? { kind:'random', id:r.id, text:r.text } : null; })();
     if (d.loanWeek) d.loanWeek = Math.max(0, d.loanWeek - 1);
+    // ─ 만기 판정 = 이 게임의 끝. 로어에만 있던 3엔딩을 코드가 실제로 가른다.
+    if (d.loanWeek === 0 && !d.ending) {
+      const won1 = (d.chart.peak && d.chart.peak === 1) || (d.bestRank === 1);
+      if (d.money >= d.loan) {                               // ① 상환 — 회사가 우리 것이 된다
+        d.money -= d.loan; d.loan = 0; d.loanWeek = 999;
+        d.ending = { type:'repay', week:d.week };
+      } else if (won1 || d.fame >= 60) {                     // ② 성적으로 연명 — 투자자가 붙는다
+        d.loanWeek = 24; d.loan = Math.round(d.loan * 0.8);
+        d.ending = { type:'rise', week:d.week };
+      } else if (d.money >= d.loan * 0.3) {                  // ③ 이자만 막고 연장 — 가장 현실적이고 가장 아픈 결말
+        d.money -= Math.round(d.loan * 0.3); d.loanWeek = 16;
+        d.ending = { type:'hold', week:d.week };
+      } else {                                               // ④ 해체 통보
+        d.ending = { type:'disband', week:d.week };
+      }
+    }
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
     if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; }
     d.album.tvThisWeek=0; d.week+=1; d.slots=3; },
@@ -4068,6 +4263,33 @@ const IDOL_SIM = {
       `[${i}] ${o.name}(${o.label}·주 ${Math.round(o.weekly/10000)}만·${o.weeks}주${o.member?`·${(IDOL_CHARACTERS[o.member]||{}).name} 개인 앰버서더`:'·팀 전체'}, ${o.life||1}주 안에 답 줘야 함)`).join(' / ') + ` — 실장이 보고할 것\n`;
     if (d.loanWeek !== undefined) s += d.loanWeek>0 ? `대출 만기까지 ${d.loanWeek}주\n`
       : `★★대출 만기 도래 — 상환하거나 연장하지 못하면 회사가 넘어간다. 실장은 이 얘기를 피하지 못한다.\n`;
+    // ★이번 주의 사건 — 최상단에. AI가 이걸 이번 주 장면의 중심으로 삼아야 한다.
+    if (d.weekEvent) {
+      const w = d.weekEvent;
+      s += `\n★★이번 주 사건${w.kind==='arc'?` (${(IDOL_CHARACTERS[w.who]||{}).name} 개인 서사 ${w.stage}단계)`:''}: ${w.text}\n`;
+      s += `— 이 사건을 이번 주 장면의 중심으로 다뤄라. 수치는 앱이 이미 반영했다(네가 또 만들지 마라). 대표가 어떻게 대응할지를 choices로 열어라.\n`;
+      if (w.id === 'offer' && d.rumorWho) s += `— 제안이 들어온 멤버: ${(IDOL_CHARACTERS[d.rumorWho]||{}).name}. 본인은 아직 말 안 했다.\n`;
+      delete d.weekEvent;
+    }
+    // 음원 성적 — 이 팀의 목표는 음방 1위지만, 거기 가는 계단은 음원 차트다
+    if (d.chart) {
+      const c = d.chart;
+      s += `음원: ${c.rank? `일간 ${c.rank}위`:'차트 밖'}${c.prev?` (지난주 ${c.prev}위)`:''}`;
+      s += c.peak? ` · 최고 ${c.peak}위 · 차트인 ${c.weeks}주` : '';
+      s += c.surge? ` · ★역주행 발생 — 이번 주 서사의 중심으로 다뤄라` : '';
+      s += `\n`;
+    }
+    if (d.lastSold) { s += `음반 초동 ${d.lastSold.toLocaleString()}장\n`; delete d.lastSold; }
+    if (d.lastSettle) { s += `정산 입금 ${Math.round(d.lastSettle/10000).toLocaleString()}만원(8주 전 활동분)\n`; delete d.lastSettle; }
+    const pend = (d.pending||[]).reduce((a,p)=>a+p.amount,0);
+    if (pend) s += `미수금 ${Math.round(pend/10000).toLocaleString()}만원(정산은 8주 뒤에 들어온다 — 지금 통장엔 없다)\n`;
+    if (d.ending) {
+      const E = { repay:'★대출 상환 완료 — 회사가 대표의 것이 됐다. 애들에게 이 말을 어떻게 할지가 이번 장면이다.',
+                  rise:'★만기 도래했지만 성적이 팀을 살렸다 — 투자자가 붙어 만기가 24주 연장되고 원금이 깎였다.',
+                  hold:'★이자만 막고 16주 연장 — 죽지도 살지도 않은 채 3년차로 간다. 가장 현실적이고 가장 아픈 결말.',
+                  disband:'★★대출 만기 도래·상환 실패 — 해체 통보다. 이 장면을 회피하지 마라. 다섯 명에게 각각 다른 방식으로 알려라.' }[d.ending.type];
+      s += `${E}\n`;
+    }
     // 스태프 — 대표+실장 둘로 시작해서, 돈이 생기는 만큼 사람을 붙인다
     const stf = d.staff || [];
     const payW = stf.reduce((a,k)=>a+(IDOL_SIM.STAFF[k]?IDOL_SIM.STAFF[k].pay:0),0);
