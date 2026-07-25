@@ -1522,12 +1522,16 @@
     background: var(--gold); border: none; color: #fff;
   }
   #idolBoard .ib-ask .row button.ghost { background: rgba(255,255,255,0.07); color: rgba(232,230,227,0.7); }
-  #idolBoard .ib-plan { display: flex; gap: 6px; margin: 4px 2px 10px; }
+  #idolBoard .ib-plan { display: flex; gap: 6px; margin: 4px 2px 6px; align-items: stretch; }
+  #idolBoard .ib-wk {
+    flex: 0 0 34px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: rgba(232,230,227,0.5);
+  }
+  #idolBoard .ib-wk.now { color: #f2c14e; }
   #idolBoard .ib-slot {
     flex: 1; padding: 7px 6px; border-radius: 9px; text-align: center; cursor: pointer;
     background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.16);
   }
-  #idolBoard .ib-slot b { display: block; font-size: 10.5px; color: rgba(232,230,227,0.5); margin-bottom: 2px; }
   #idolBoard .ib-slot span { font-size: 11px; color: rgba(232,230,227,0.75); word-break: keep-all; }
   #idolBoard .ib-slot.filled { border-style: solid; border-color: rgba(242,193,78,0.5); background: rgba(242,193,78,0.09); }
   #idolBoard .ib-slot.now { border-style: solid; border-color: var(--gold); background: rgba(225,29,72,0.12); }
@@ -1987,7 +1991,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v123</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v124</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -4047,31 +4051,51 @@ const IDOL_SIM = {
   //   회사에 남는 주에 대표가 자기 시간을 쪼개 쓴다.
   monthOf(w){ return Math.floor((w - 1) / 4) + 1; },
   weekInMonth(w){ return ((w - 1) % 4) + 1; },
+  PLAN_PER_WEEK: 2,                                 // ★주당 2건(월 8칸) — 실장이 주 2~3건을 잡는 게 현실
   needPlan(d){ return d.planMonth !== IDOL_SIM.monthOf(d.week) || !(d.plan || []).filter(Boolean).length; },
-  setPlan(d, arr){ d.plan = (arr || []).slice(0, 4); d.planMonth = IDOL_SIM.monthOf(d.week); },
-  weekPlan(d){ return (d.plan || [])[IDOL_SIM.weekInMonth(d.week) - 1] || null; },
+  setPlan(d, arr){ d.plan = (arr || []).slice(0, 4 * IDOL_SIM.PLAN_PER_WEEK); d.planMonth = IDOL_SIM.monthOf(d.week); },
+  // 그 주에 편성된 일정들(최대 2건)
+  weekPlans(d){
+    const n = IDOL_SIM.PLAN_PER_WEEK, i = (IDOL_SIM.weekInMonth(d.week) - 1) * n;
+    return (d.plan || []).slice(i, i + n).filter(Boolean);
+  },
+  weekPlan(d){ return IDOL_SIM.weekPlans(d)[0] || null; },   // 구 호출부 호환
   // 그 주 실행: accompany=true(현장 동행) / false(회사에 남아 곡작업·사무)
-  resolveWeek(d, accompany){
-    const S = IDOL_SIM, p = S.weekPlan(d);
-    if (!p) return { ok:false, reason:'이번 주 일정이 편성되지 않았다(월초 회의에서 편성)' };
+  // accIdx: 0/1 = 그 순번 일정에 동행 · 2 = 둘 다 동행 · -1 = 회사에 남아 곡작업
+  resolveWeek(d, accIdx){
+    const S = IDOL_SIM, ps = S.weekPlans(d);
+    if (!ps.length) return { ok:false, reason:'이번 주 일정이 편성되지 않았다(월초 회의에서 편성)' };
     if (d.weekDone) return { ok:false, reason:'이번 주는 이미 진행했다' };
-    const r = S.apply(d, p.sim);
-    if (!r || !r.ok) return r || { ok:false, reason:'실행 실패' };
-    if (accompany) {                                   // 현장 동행 — 애들 곁에 있는 값
-      Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust + 1.5, 0, 100); });
-      r.delta.light = Math.round(r.delta.light * 1.1); r.delta.core = Math.round(r.delta.core * 1.1);
-      d.light += Math.round(r.delta.light * 0.1 / 1.1); d.core += Math.round(r.delta.core * 0.1 / 1.1);
-      r.delta.note = (r.delta.note ? r.delta.note + ' · ' : '') + '대표 동행';
-    } else {                                           // 회사 — 곡이 나아가고 사람과는 멀어진다
+    const notes = [], total = { light:0, core:0, money:0, sns:0 };
+    let anyOk = false;
+    ps.forEach((p, idx) => {
+      const r = S.apply(d, p.sim);
+      if (!r || !r.ok) { notes.push(`${p.name} 무산(${(r&&r.reason)||'실패'})`); return; }
+      anyOk = true;
+      const acc = (accIdx === 2) || (accIdx === idx);
+      if (acc) {                                        // 현장 동행 — 애들 곁에 있는 값
+        Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust + 1.5, 0, 100); });
+        const addL = Math.round(r.delta.light * 0.1), addC = Math.round(r.delta.core * 0.1);
+        d.light += addL; d.core += addC;
+        r.delta.light += addL; r.delta.core += addC;
+      }
+      notes.push(`${p.name}${acc ? '(동행)' : ''}${r.delta.note ? ' ' + r.delta.note : ''}`);
+      total.light += r.delta.light; total.core += r.delta.core;
+      total.money += r.delta.money; total.sns += r.delta.sns;
+    });
+    if (!anyOk) return { ok:false, reason: notes.join(' / ') };
+    if (accIdx === -1) {                                // 회사 — 곡이 나아가고 사람과는 멀어진다
       const avg = k => Object.values(d.mem).reduce((a,m)=>a+m[k],0) / 5;
       const q = 4 + avg('vocal')/7 + avg('dance')/14 + 3;
       d.album.quality = S.clamp(d.album.quality + q, 0, 100);
       d.album.appeal  = S.clamp(d.album.appeal + 5, 0, 100);
       Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust - 0.5, 0, 100); });
-      r.delta.note = (r.delta.note ? r.delta.note + ' · ' : '') + `회사에서 곡작업(완성도 +${Math.round(q)})`;
+      notes.push(`회사에서 곡작업(완성도 +${Math.round(q)})`);
+    } else if (accIdx === 2 && ps.length > 1) {         // 둘 다 따라다니면 대표가 곡을 못 만진다
+      notes.push('대표는 하루도 회사에 못 앉았다');
     }
     d.weekDone = true;
-    return r;
+    return { ok:true, delta:{ ...total, note: notes.join(' · ') } };
   },
   // ───── 음원 차트 (이 게임의 컨셉이 '역주행'인데 정작 스밍·차트가 없었다) ─────
   // 주간 스트리밍 = 팬 규모 × 곡 힘 × 활동 여부. 공백기에도 조금은 돈다(그게 역주행의 씨앗).
@@ -4751,11 +4775,12 @@ const IDOL_LORE = `
 
 ### ★1개월 = 4주 (2026-07-26 구조 변경)
 ① **월초 스태프 회의**(매월 1주차): 실장·매니저·트레이너·멤버가 모여 **그 달 4주치 스케줄을 한 번에 편성**한다.
-   유저는 일정 보드에서 4칸을 채운다. 이 회의 장면에서 실장은 잔고·만기·라이벌 컴백·시즌(대학축제/페스티벌/시상식)을 브리핑하고, 멤버는 요청과 컨디션을 말한다.
-② **매주 실행**: 그 주 편성된 일정을 **실제로 하러 간다.** 매니저(윤재이)나 실장이 대표에게 묻는다 —
-   **"이번 건 같이 가시겠어요, 아니면 회사에 계실래요?"**
-   · **현장 동행** = 멤버 신뢰↑ · 성과 +10% · 현장 사건에 직접 개입
-   · **회사에 남음** = 대표 본업(곡 완성도↑) · 멤버 신뢰 소폭↓ — 애들끼리 다녀오고, 돌아와서 그날 얘기를 한다
+   유저는 일정 보드에서 **8칸(주당 2건 × 4주)**을 채운다. 이 회의 장면에서 실장은 잔고·만기·라이벌 컴백·시즌(대학축제/페스티벌/시상식)을 브리핑하고, 멤버는 요청과 컨디션을 말한다.
+② **매주 실행**: 그 주 편성된 **2건**을 실제로 하러 간다. 매니저(윤재이)나 실장이 묻는다 —
+   **"이번 주는 어디 붙으실래요?"**
+   · **한 건에 동행** = 그 현장에 대표가 붙는다(신뢰↑·그 일정 +10%), 나머지는 애들끼리
+   · **둘 다 동행** = 신뢰 최대·둘 다 +10%, 대신 대표는 그 주에 곡을 못 만진다
+   · **회사에 남음** = 대표 본업(곡 완성도↑) · 멤버 신뢰 소폭↓ — 애들끼리 다녀오고 돌아와 보고한다
 ③ **월말 결산**: 4주가 끝나면 그 달 성과(팬·차트·자금)를 정리하고 다음 달 편성으로 넘어간다.
 - ★**곡작업은 편성표에 없다.** 대표가 회사에 남는 주에, 혹은 자유 시간에 쪼개서 하는 일이다.
 - ★일정 소모 없는 것: 멤버와의 대화·연습실 들르기·미팅(브랜드 계약·영입·시설 투자).
@@ -8638,6 +8663,18 @@ function exitHistory() {
 
 // ===== CHOICES =====
 function showChoices(choices) {
+  // ★모델이 선택지를 문자열이 아니라 객체로 뱉는 경우가 있다({text:…}/{label:…}/{choice:…}) →
+  //   그대로 렌더하면 화면에 "[object Object]"가 뜬다(2026-07-26 유저 스샷). 여기서 정규화한다.
+  choices = (choices || []).map(c => {
+    if (typeof c === 'string') return c;
+    if (c && typeof c === 'object') {
+      const v = c.text || c.label || c.choice || c.content || c.option || c.title ||
+                c.action || c.value || Object.values(c).find(x => typeof x === 'string');
+      return String(v == null ? '' : v);
+    }
+    return String(c == null ? '' : c);
+  }).filter(t => t.trim());
+  if (!choices.length) { enterInputMode(); return; }
   window._lastChoices = choices;   // ★되감기 복원용 — 그 시점에 떠 있던 선택지
   inputMode = true;
   clearTimeout(autoTimer);
@@ -9298,13 +9335,15 @@ function openIdolBoard(tab) {
     const cards = idolBoardCards().filter(c => c.grp !== '미팅' && c.grp !== '시설' && c.name !== '곡작업 ★대표 전용');
     h += `<div class="ib-head"><span class="ib-title">🗓 ${S.monthOf(d.week)}월차 스케줄 편성</span>
       <span class="ib-sub">4주치를 한 번에 · 자금 ${money}</span></div>`;
-    h += `<div class="ib-plan">` + [0,1,2,3].map(i => {
-      const pk = window._ibPlan[i];
-      return `<div class="ib-slot${pk ? ' filled' : ''}" onclick="clearPlanSlot(${i})">
-        <b>${i+1}주</b><span>${pk ? pk.name : '비어 있음'}</span></div>`;
-    }).join('') + `</div>`;
-    h += `<button class="ib-confirm" ${window._ibPlan.filter(Boolean).length < 4 ? 'disabled' : ''}
-      onclick="confirmIdolPlan()">이 편성으로 확정 (${window._ibPlan.filter(Boolean).length}/4)</button>`;
+    const NEED = 4 * S.PLAN_PER_WEEK;
+    h += [0,1,2,3].map(w => `<div class="ib-plan">
+      <div class="ib-wk">${w+1}주</div>` + [0,1].map(j => {
+        const i = w*2+j, pk = window._ibPlan[i];
+        return `<div class="ib-slot${pk ? ' filled' : ''}" onclick="clearPlanSlot(${i})">
+          <span>${pk ? pk.name : '비어 있음'}</span></div>`;
+      }).join('') + `</div>`).join('');
+    h += `<button class="ib-confirm" ${window._ibPlan.filter(Boolean).length < NEED ? 'disabled' : ''}
+      onclick="confirmIdolPlan()">이 편성으로 확정 (${window._ibPlan.filter(Boolean).length}/${NEED})</button>`;
     let grp = '';
     cards.forEach((c, i) => {
       if (c.grp !== grp) { grp = c.grp; h += `<div class="ib-group">${grp}</div>`; }
@@ -9316,24 +9355,29 @@ function openIdolBoard(tab) {
     window._ibCards = cards;
   } else {
     // ── 주간 실행 모드: 편성된 일정 + 대표는 어디 있을 것인가
-    const p = S.weekPlan(d), wim = S.weekInMonth(d.week);
+    const ps = S.weekPlans(d), wim = S.weekInMonth(d.week);
     h += `<div class="ib-head"><span class="ib-title">📋 ${S.monthOf(d.week)}월차 ${wim}주</span>
       <span class="ib-sub">자금 ${money}</span></div>`;
-    h += `<div class="ib-plan">` + [0,1,2,3].map(i => {
-      const pk = (d.plan||[])[i];
-      return `<div class="ib-slot${i === wim-1 ? ' now' : ''}${i < wim-1 ? ' done' : ''}">
-        <b>${i+1}주</b><span>${pk ? pk.name : '-'}</span></div>`;
-    }).join('') + `</div>`;
+    h += [0,1,2,3].map(w => `<div class="ib-plan">
+      <div class="ib-wk${w === wim-1 ? ' now' : ''}">${w+1}주</div>` + [0,1].map(j => {
+        const pk = (d.plan||[])[w*2+j];
+        return `<div class="ib-slot${w === wim-1 ? ' now' : ''}${w < wim-1 ? ' done' : ''}">
+          <span>${pk ? pk.name : '-'}</span></div>`;
+      }).join('') + `</div>`).join('');
     if (d.weekDone) {
       h += `<div class="ib-note">이번 주 일정은 끝났다. 남은 시간은 자유 — 멤버에게 말을 걸거나, 미팅을 잡거나, 곡을 만진다.</div>`;
-    } else if (!p) {
+    } else if (!ps.length) {
       h += `<div class="ib-note">이번 주는 비어 있다. 다음 달 편성 때 채워라.</div>`;
     } else {
-      h += `<div class="ib-group">이번 주: ${p.name}</div>
-        <button class="ib-card" onclick="runWeekPlan(true)"><span class="n">현장에 같이 간다</span>
-          <span class="e">멤버 신뢰↑ · 성과 +10% · 현장에서 사건에 직접 개입한다</span></button>
-        <button class="ib-card" onclick="runWeekPlan(false)"><span class="n">회사에 남는다</span>
-          <span class="e">곡 완성도↑(대표 본업) · 멤버 신뢰 소폭↓ — 애들끼리 다녀온다</span></button>`;
+      h += `<div class="ib-group">이번 주 일정 ${ps.length}건 — 대표는 어디에 있을까</div>`;
+      ps.forEach((p, i) => {
+        h += `<button class="ib-card" onclick="runWeekPlan(${i})"><span class="n">「${p.name}」에 동행</span>
+          <span class="e">그 현장에 대표가 붙는다 · 멤버 신뢰↑ · 그 일정 성과 +10%${ps.length > 1 ? ' (나머지는 애들끼리)' : ''}</span></button>`;
+      });
+      if (ps.length > 1) h += `<button class="ib-card" onclick="runWeekPlan(2)"><span class="n">둘 다 따라간다</span>
+        <span class="e">신뢰 최대 · 두 일정 모두 +10% — 대신 대표는 곡을 못 만진다</span></button>`;
+      h += `<button class="ib-card" onclick="runWeekPlan(-1)"><span class="n">회사에 남는다</span>
+        <span class="e">곡 완성도↑(대표 본업) · 멤버 신뢰 소폭↓ — 애들끼리 다녀온다</span></button>`;
     }
     // 자유 행동(일정 소모 없음)
     const free = idolBoardCards().filter(c => c.grp === '미팅');   // 시설=🏢샵 / 개인재산=👤 탭으로 분리
@@ -9355,7 +9399,7 @@ function closeIdolBoard() { document.getElementById('idolBoard').classList.remov
 function addPlanSlot(i) {
   const c = (window._ibCards || [])[i]; if (!c || c.req) return;
   window._ibPlan = window._ibPlan || [];
-  if (window._ibPlan.filter(Boolean).length >= 4) return;
+  if (window._ibPlan.filter(Boolean).length >= 4 * IDOL_SIM.PLAN_PER_WEEK) return;   // 주당 2건 × 4주
   const [act, a] = String(c.pick).split(':');
   const sim = { action: act };
   if (act === '콘텐츠' || act === '행사') sim.kind = a;
@@ -9372,7 +9416,13 @@ function confirmIdolPlan() {
   if (plan.length < 4) return;
   IDOL_SIM.setPlan(d, plan); window._ibPlan = [];
   closeIdolBoard();
-  const txt = `이번 달 스케줄을 이렇게 잡는다. ${plan.map((p,i)=>`${i+1}주 ${p.name}`).join(' / ')}.`;
+  // 8칸 = 주당 2건 → "1주 연습·챌린지" 형태로 묶어서 말한다
+  const n = IDOL_SIM.PLAN_PER_WEEK;
+  const byWeek = [0,1,2,3].map(w => {
+    const items = plan.slice(w*n, w*n+n).filter(Boolean).map(p => p.name);
+    return items.length ? `${w+1}주 ${items.join('·')}` : '';
+  }).filter(Boolean);
+  const txt = `이번 달 스케줄을 이렇게 잡는다. ${byWeek.join(' / ')}.`;
   SFX.play('choice');
   inputMode = false; inputBar.style.display = 'none';
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
@@ -9403,20 +9453,27 @@ function pickIdolAction(i) {
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
   window._genText = c.name; handlePlayerInput(`${c.name} — 이건 일정 밖에서 처리한다.`);
 }
-function runWeekPlan(accompany) {
-  const d = gameState.idol, p = IDOL_SIM.weekPlan(d);
+function runWeekPlan(accIdx) {
+  const d = gameState.idol, ps = IDOL_SIM.weekPlans(d);
   closeIdolBoard();
-  const r = IDOL_SIM.resolveWeek(d, accompany);
+  const r = IDOL_SIM.resolveWeek(d, accIdx);
   if (!r || !r.ok) { showStatToast(`실패: ${(r && r.reason) || '실행 불가'}`, true); return; }
   const t = [];
   if (r.delta.note) t.push(r.delta.note);
   if (r.delta.light) t.push(`라이트팬 ${r.delta.light > 0 ? '+' : ''}${r.delta.light.toLocaleString()}`);
   if (r.delta.core)  t.push(`코어팬 ${r.delta.core > 0 ? '+' : ''}${r.delta.core.toLocaleString()}`);
   if (r.delta.money) t.push(`자금 ${r.delta.money > 0 ? '+' : ''}${Math.round(r.delta.money/10000).toLocaleString()}만`);
-  showStatToast(`${p.name} · ${t.join(' / ')}`);
+  showStatToast(t.join(' / '));
   idolWeekEnd();                                   // 차트 판정 + 주간 마감
   d._skipSim = true;
-  const txt = accompany ? `${p.name} — 나도 같이 간다.` : `${p.name} — 애들끼리 보내고 나는 회사에 남는다.`;
+  const jong = w => { const c = String(w).charCodeAt(String(w).length-1) - 0xAC00;
+    return (c >= 0 && c <= 11171) ? (c % 28) > 0 : false; };
+  const names = ps.length > 1
+    ? `「${ps[0].name}」${jong(ps[0].name) ? '과' : '와'} 「${ps[1].name}」`
+    : `「${ps[0].name}」`;
+  const txt = accIdx === -1 ? `${names} — 애들끼리 보내고 나는 회사에 남는다.`
+            : accIdx === 2  ? `${names} — 둘 다 따라간다.`
+            : `${names} 중 「${(ps[accIdx]||ps[0]).name}」에 같이 간다.`;
   SFX.play('choice');
   inputMode = false; inputBar.style.display = 'none';
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
