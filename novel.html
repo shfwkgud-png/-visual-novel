@@ -1475,6 +1475,30 @@
   #idolBoard .ib-card .e { display: block; color: rgba(232,230,227,0.62); font-size: 11.5px; margin-top: 2px; }
   #idolBoard .ib-card.off { opacity: 0.42; cursor: not-allowed; }
   #idolBoard .ib-card.off .why { color: #e0576b; font-size: 11px; }
+  #idolBoard .ib-tabs { display: flex; gap: 6px; margin: 0 2px 10px; }
+  #idolBoard .ib-tab {
+    flex: 1; padding: 8px; border-radius: 9px; font-family: inherit; font-size: 12.5px; font-weight: 700;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(232,230,227,0.6); cursor: pointer;
+  }
+  #idolBoard .ib-tab.on { background: rgba(242,193,78,0.14); border-color: rgba(242,193,78,0.5); color: #f2c14e; }
+  #idolBoard .ib-ask {
+    margin: 0 2px 12px; padding: 11px; border-radius: 11px;
+    background: rgba(242,193,78,0.08); border: 1px solid rgba(242,193,78,0.35);
+  }
+  #idolBoard .ib-ask .q { font-size: 13px; font-weight: 700; color: #f2c14e; margin-bottom: 3px; }
+  #idolBoard .ib-ask .sub { font-size: 11.5px; color: rgba(232,230,227,0.62); margin-bottom: 8px; }
+  #idolBoard .ib-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  #idolBoard .ib-chip {
+    padding: 6px 11px; border-radius: 999px; font-family: inherit; font-size: 12px; cursor: pointer;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13); color: #e8e6e3;
+  }
+  #idolBoard .ib-chip.sel { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 700; }
+  #idolBoard .ib-ask .row { display: flex; gap: 6px; }
+  #idolBoard .ib-ask .row button {
+    flex: 1; padding: 9px; border-radius: 9px; font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    background: var(--gold); border: none; color: #fff;
+  }
+  #idolBoard .ib-ask .row button.ghost { background: rgba(255,255,255,0.07); color: rgba(232,230,227,0.7); }
   #idolBoard .ib-plan { display: flex; gap: 6px; margin: 4px 2px 10px; }
   #idolBoard .ib-slot {
     flex: 1; padding: 7px 6px; border-radius: 9px; text-align: center; cursor: pointer;
@@ -1940,7 +1964,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v119</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v120</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -3905,23 +3929,35 @@ const IDOL_SIM = {
   owns(d, k){ return !!(d.personal && d.personal.own && d.personal.own[k]); },
   assetLoan(d, k){ return (d.personal && d.personal.loans || []).find(l => l.asset === k) || null; },
   // 담보 대출 실행
-  takeLoan(d, k){
+  loanRoom(d, k){                                   // 이 담보로 더 빌릴 수 있는 금액
+    const S = IDOL_SIM, A = S.PERSONAL[k]; if (!A || !S.owns(d, k)) return 0;
+    const l = S.assetLoan(d, k);
+    return Math.max(0, Math.round(A.value * A.ltv) - (l ? l.amount : 0));
+  },
+  // 부분 대출 — 얼마를 빌릴지 대표가 정한다(한도 안에서)
+  takeLoan(d, k, amount){
     const S = IDOL_SIM, A = S.PERSONAL[k];
     if (!A) return { ok:false, reason:'담보 없음' };
     if (!S.owns(d, k)) return { ok:false, reason:`${A.name}은(는) 이미 잃었다` };
-    if (S.assetLoan(d, k)) return { ok:false, reason:'이미 담보로 잡혀 있다' };
-    const amt = Math.round(A.value * A.ltv);
-    d.personal.loans.push({ asset:k, amount:amt, due:d.week + A.weeks, rate:A.rate });
+    const room = S.loanRoom(d, k);
+    if (room <= 0) return { ok:false, reason:'이 담보의 한도를 다 썼다' };
+    const amt = Math.min(Math.max(1000000, Math.round(amount || room)), room);
+    const l = S.assetLoan(d, k);
+    if (l) { l.amount += amt; }                     // 추가 인출(만기는 최초 그대로)
+    else d.personal.loans.push({ asset:k, amount:amt, due:d.week + A.weeks, rate:A.rate });
     d.personal.cash += amt;
-    return { ok:true, amount:amt, name:A.name };
+    return { ok:true, amount:amt, name:A.name, left:S.loanRoom(d, k) };
   },
-  repayLoan(d, k){
+  // 부분 상환 — 얼마를 갚을지도 정한다
+  repayLoan(d, k, amount){
     const S = IDOL_SIM, l = S.assetLoan(d, k);
     if (!l) return { ok:false, reason:'그 담보 대출이 없다' };
-    if (d.personal.cash < l.amount) return { ok:false, reason:`개인 현금 ${Math.round(l.amount/10000).toLocaleString()}만 필요` };
-    d.personal.cash -= l.amount;
-    d.personal.loans = d.personal.loans.filter(x => x !== l);
-    return { ok:true, amount:l.amount, name:S.PERSONAL[k].name };
+    const amt = Math.min(Math.max(0, Math.round(amount || l.amount)), l.amount, d.personal.cash);
+    if (amt <= 0) return { ok:false, reason:'개인 현금이 없다' };
+    d.personal.cash -= amt; l.amount -= amt;
+    const cleared = l.amount <= 0;
+    if (cleared) d.personal.loans = d.personal.loans.filter(x => x !== l);
+    return { ok:true, amount:amt, name:S.PERSONAL[k].name, cleared, rest:cleared ? 0 : l.amount };
   },
   // 개인 ↔ 회사 자금 이동
   injectFunds(d, amt){                              // 사재 출연
@@ -4350,13 +4386,14 @@ const IDOL_SIM = {
         Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=S.clamp(d.mem[i].mind+6,0,100); });   // 애들이 좋아한다
         dt.note = `${F.name} → ${nx.label}`;
       } else if (t==='담보대출'){
-        const r2 = S.takeLoan(d, sim.asset);
+        const r2 = S.takeLoan(d, sim.asset, sim.amount);
         if (!r2.ok) return { ok:false, reason:r2.reason };
-        dt.note = `${r2.name} 담보 대출 ${Math.round(r2.amount/100000000*100)/100}억(개인)`;
+        dt.note = `${r2.name} 담보 ${Math.round(r2.amount/10000).toLocaleString()}만 대출(개인, 잔여한도 ${Math.round(r2.left/10000).toLocaleString()}만)`;
       } else if (t==='담보상환'){
-        const r2 = S.repayLoan(d, sim.asset);
+        const r2 = S.repayLoan(d, sim.asset, sim.amount);
         if (!r2.ok) return { ok:false, reason:r2.reason };
-        dt.note = `${r2.name} 담보 상환`;
+        dt.note = r2.cleared ? `${r2.name} 담보 전액 상환 — 되찾았다`
+                             : `${r2.name} ${Math.round(r2.amount/10000).toLocaleString()}만 상환(잔액 ${Math.round(r2.rest/10000).toLocaleString()}만)`;
       } else if (t==='사재출연'){
         const r2 = S.injectFunds(d, sim.amount || d.personal.cash);
         if (!r2.ok) return { ok:false, reason:r2.reason };
@@ -4387,7 +4424,7 @@ const IDOL_SIM = {
     }
     d.money+=dt.money; d.fame=S.clamp(d.fame+dt.fame,0,100);
     d.light=Math.max(0,d.light+dt.light); d.core=Math.max(0,d.core+dt.core); d.sns+=dt.sns;
-    d.slots=Math.max(0,d.slots-1);
+    if (sim.action !== '미팅') d.slots=Math.max(0,d.slots-1);   // 미팅(브랜드·영입·시설·개인재산)은 일정 칸을 안 쓴다
     return { ok:true, delta:dt };
   },
   release(d){ d.album.released=d.week; d.album.actWeek=1;
@@ -8962,7 +8999,7 @@ function runIdolSim(sim) {
       if (sim.title) d.album.title = sim.title;
       showStatToast(`🎬 컴백! ${d.album.title || '신곡'} 발매 (완성도 ${Math.round(d.album.quality)})`);
     }
-    if (d.slots <= 0 && !IDOL_SIM.weekPlan(d)) {          // (구 경로) 편성이 없을 때만 슬롯으로 마감
+    if (sim.action !== '미팅' && d.slots <= 0 && !IDOL_SIM.weekPlan(d)) {   // 미팅·개인재산은 주를 넘기지 않는다
       if (IDOL_SIM.active(d) && d.album.tvThisWeek > 0) {
         let best = null;
         IDOL_SIM.openShows(d).forEach(sh => {
@@ -9029,25 +9066,6 @@ function idolBoardCards() {
     d.invested ? '이미 유치함' : (d.fame < 30 ? '인지도 30 필요' : null), '미팅:투자');
   add('미팅', '대출 연장', 0, '1회 한정 · 만기 12주 연장', d.loanExt ? '이미 연장함' : null, '미팅:대출연장',
     d.loanWeek > 0 && d.loanWeek <= 6);
-  // ── 개인 재산(대표 본인 돈) — 회사 자금과 분리
-  const P = d.personal;
-  if (P) {
-    const wonP = n => Math.round(n/10000).toLocaleString() + '만';
-    ['home','car'].forEach(k => {
-      const A = S.PERSONAL[k], l = S.assetLoan(d, k);
-      if (!S.owns(d, k)) { add('개인 재산', `${A.name} — 잃음`, 0, '담보로 넘어갔다', '이미 잃음', `미팅:담보대출:${k}`); return; }
-      if (l) add('개인 재산', `${A.name} 담보 상환`, l.amount,
-        `만기 ${Math.max(0, l.due - d.week)}주 남음 · 못 갚으면 압류된다`,
-        P.cash < l.amount ? `개인 현금 ${wonP(l.amount)} 필요` : null, `미팅:담보상환:${k}`, l.due - d.week <= 4);
-      else add('개인 재산', `${A.name} 담보 대출`, 0,
-        `개인 현금 +${wonP(A.value * A.ltv)} · 만기 ${A.weeks}주 · 주 이자 ${(A.rate*100).toFixed(2)}% — 못 갚으면 잃는다`,
-        null, `미팅:담보대출:${k}`, d.money < 20000000);
-    });
-    add('개인 재산', '사재 출연 (개인 → 회사)', 0, `개인 현금 ${wonP(P.cash)} 전액 투입 · 애들이 알면 신뢰↑`,
-      P.cash <= 0 ? '개인 현금 없음' : null, '미팅:사재출연');
-    add('개인 재산', '대표 급여 수령 (회사 → 개인)', 0, '300만 · 안 가져가면 개인 통장이 마른다',
-      d.money < 3000000 ? '회사 자금 부족' : null, '미팅:대표급여', P.cash < 3000000);
-  }
   ['practice','van'].forEach(k => {
     const F = S.FACILITY[k], lv = S.facLv(d,k), nx = F.levels[lv+1];
     if (!nx) { add('시설', `${F.name} — ${F.levels[lv].label}`, 0, '이미 최고 등급', '최고 등급', `미팅:시설:${k}`); return; }
@@ -9059,11 +9077,114 @@ function idolBoardCards() {
     d.money < 80000000 ? '자금부족(8천만)' : null, '미팅:외주프로듀서');
   return cards;
 }
-function openIdolBoard() {
+// ── 개인 재산 탭: 일정 칸과 무관한 대표 본인의 돈 (빌릴 금액·갚을 금액을 직접 정한다)
+function idolPersonalHtml() {
+  const d = gameState.idol, S = IDOL_SIM, P = d.personal;
+  const won = n => Math.round(n / 10000).toLocaleString() + '만';
+  if (!P) return '<div class="ib-note">개인 재산 데이터가 없다.</div>';
+  let h = `<div class="ib-head"><span class="ib-title">👤 대표 개인</span>
+    <span class="ib-sub">현금 ${won(P.cash)} · 생활비 주 ${won(S.LIVING)} · 회사 자금과 별개</span></div>`;
+  if (window._ibAsk) h += idolAskHtml();
+  ['home', 'car'].forEach(k => {
+    const A = S.PERSONAL[k], l = S.assetLoan(d, k), room = S.loanRoom(d, k);
+    h += `<div class="ib-group">${A.name} · 시가 ${won(A.value)}</div>`;
+    if (!S.owns(d, k)) { h += `<div class="ib-note">담보로 넘어갔다. 되찾을 수 없다.</div>`; return; }
+    if (l) h += `<div class="ib-note">대출 잔액 <b style="color:#f2c14e">${won(l.amount)}</b> · 만기 ${Math.max(0, l.due - d.week)}주 남음 · 주 이자 ${won(Math.round(l.amount * l.rate))}</div>`;
+    if (room > 0) h += `<button class="ib-card" onclick="idolAsk('loan','${k}')">
+      <span class="n">${l ? '추가 대출' : '담보 대출'}</span><span class="c">한도 ${won(room)}</span>
+      <span class="e">얼마나 빌릴지 정한다 · 만기 ${A.weeks}주 · 못 갚으면 ${A.name}을(를) 잃는다</span></button>`;
+    if (l) h += `<button class="ib-card${P.cash <= 0 ? ' off' : ''}" ${P.cash <= 0 ? '' : `onclick="idolAsk('repay','${k}')"`}>
+      <span class="n">상환</span><span class="e">${P.cash <= 0 ? '<span class="why">✕ 개인 현금 없음</span>' : '얼마나 갚을지 정한다 · 전액 갚으면 담보가 풀린다'}</span></button>`;
+  });
+  h += `<div class="ib-group">회사 ↔ 개인</div>`;
+  h += `<button class="ib-card${P.cash <= 0 ? ' off' : ''}" ${P.cash <= 0 ? '' : `onclick="idolAsk('inject')"`}>
+    <span class="n">사재 출연 (개인 → 회사)</span>
+    <span class="e">${P.cash <= 0 ? '<span class="why">✕ 개인 현금 없음</span>' : `개인 현금 ${won(P.cash)} 중 얼마를 넣을지 정한다 · 애들이 알면 신뢰↑`}</span></button>`;
+  h += `<button class="ib-card${d.money <= 0 ? ' off' : ''}" ${d.money <= 0 ? '' : `onclick="idolAsk('salary')"`}>
+    <span class="n">대표 급여 (회사 → 개인)</span>
+    <span class="e">${d.money <= 0 ? '<span class="why">✕ 회사 자금 없음</span>' : `회사 자금 ${won(d.money)} 중 얼마를 가져갈지 정한다`}</span></button>`;
+  return h;
+}
+// 금액 묻기 — 프리셋 칩 + 직접 입력
+function idolAsk(type, asset) {
+  const d = gameState.idol, S = IDOL_SIM, P = d.personal;
+  let max = 0, title = '', sub = '';
+  if (type === 'loan') {
+    max = S.loanRoom(d, asset);
+    title = `${S.PERSONAL[asset].name} 담보 — 얼마나 빌릴까`;
+    sub = `한도 ${Math.round(max / 10000).toLocaleString()}만 · 빌린 만큼 이자가 붙는다`;
+  }
+  if (type === 'repay') {
+    const l = S.assetLoan(d, asset);
+    max = Math.min(l ? l.amount : 0, P.cash);
+    title = `${S.PERSONAL[asset].name} 담보 — 얼마나 갚을까`;
+    sub = `잔액 ${Math.round((l ? l.amount : 0) / 10000).toLocaleString()}만 · 개인 현금 ${Math.round(P.cash / 10000).toLocaleString()}만`;
+  }
+  if (type === 'inject') { max = P.cash; title = '사재 출연 — 얼마를 회사에 넣을까'; sub = `개인 현금 ${Math.round(P.cash / 10000).toLocaleString()}만`; }
+  if (type === 'salary') { max = d.money; title = '대표 급여 — 얼마를 가져갈까'; sub = `회사 자금 ${Math.round(d.money / 10000).toLocaleString()}만`; }
+  if (max <= 0) return;
+  window._ibAsk = { type, asset, max, title, sub, val: Math.round(max / 2) };
+  openIdolBoard();
+}
+function idolAskHtml() {
+  const a = window._ibAsk, won = n => Math.round(n / 10000).toLocaleString() + '만';
+  const uniq = [...new Set([0.25, 0.5, 0.75, 1].map(r => Math.round(a.max * r)))].filter(v => v > 0);
+  return `<div class="ib-ask"><div class="q">${a.title}</div><div class="sub">${a.sub}</div>
+    <div class="ib-chips">${uniq.map(v => `<button class="ib-chip${v === a.val ? ' sel' : ''}" onclick="idolAskSet(${v})">${won(v)}${v === a.max ? ' (전액)' : ''}</button>`).join('')}</div>
+    <div class="ib-chips"><input type="number" inputmode="numeric" placeholder="직접 입력(만원)" value="${Math.round(a.val / 10000)}"
+      oninput="idolAskSet(this.value*10000)" style="flex:1;min-width:120px;padding:7px 10px;border-radius:9px;
+      background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:#e8e6e3;font-family:inherit;font-size:12px;"></div>
+    <div class="row"><button onclick="idolAskConfirm()">${won(a.val)} 확정</button>
+      <button class="ghost" onclick="idolAskCancel()">취소</button></div></div>`;
+}
+function idolAskSet(v) {
+  const a = window._ibAsk; if (!a) return;
+  a.val = Math.min(Math.max(0, Math.round(v)), a.max);
+  const box = document.querySelector('#idolBoard .ib-ask');
+  if (box) box.outerHTML = idolAskHtml();
+}
+function idolAskCancel() { window._ibAsk = null; openIdolBoard(); }
+function idolAskConfirm() {
+  const a = window._ibAsk; if (!a || a.val <= 0) return;
+  const d = gameState.idol;
+  const map = { loan: '담보대출', repay: '담보상환', inject: '사재출연', salary: '대표급여' };
+  const sim = { action: '미팅', target: map[a.type], amount: a.val };
+  if (a.asset) sim.asset = a.asset;
+  window._ibAsk = null;
+  closeIdolBoard();
+  const before = d.slots;
+  const r = runIdolSim(sim);
+  d.slots = before;                                  // 개인 재산은 일정 칸을 쓰지 않는다
+  if (!r || !r.ok) return;
+  d._skipSim = true;
+  const won = n => Math.round(n / 10000).toLocaleString() + '만원';
+  // ★객체 리터럴로 네 문장을 한꺼번에 만들면 asset 없는 사재출연·급여에서 터진다(2026-07-26) → 조건식
+  const an = a.asset ? IDOL_SIM.PERSONAL[a.asset].name : '';
+  const txt = a.type === 'loan'   ? `${an}을 담보로 ${won(a.val)}을 빌린다.`
+            : a.type === 'repay'  ? `${an} 담보 대출을 ${won(a.val)} 갚는다.`
+            : a.type === 'inject' ? `내 돈 ${won(a.val)}을 회사에 넣는다.`
+            :                       `회사에서 대표 급여 ${won(a.val)}을 가져간다.`;
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  window._genText = txt; handlePlayerInput(txt);
+}
+
+function openIdolBoard(tab) {
   if (!(typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' && gameState && gameState.idol)) return;
   const d = gameState.idol, S = IDOL_SIM;
+  if (tab) window._ibTab = tab;
+  const cur = window._ibTab || 'plan';
   const money = Math.round(d.money / 10000).toLocaleString() + '만원';
-  let h = '';
+  // 탭: 일정(스케줄 칸) / 개인(대표 본인 돈 — 일정 칸을 쓰지 않는다)
+  let h = `<div class="ib-tabs">
+    <button class="ib-tab${cur==='plan'?' on':''}" onclick="openIdolBoard('plan')">🗓 일정</button>
+    <button class="ib-tab${cur==='personal'?' on':''}" onclick="openIdolBoard('personal')">👤 개인 재산</button></div>`;
+  if (cur === 'personal') {
+    document.getElementById('ibBody').innerHTML = h + idolPersonalHtml();
+    document.getElementById('idolBoard').classList.add('on');
+    return;
+  }
   if (S.needPlan(d)) {
     // ── 월초 편성 모드: 그 달 4주치를 한 번에 짠다
     window._ibPlan = window._ibPlan || [];
@@ -9108,7 +9229,7 @@ function openIdolBoard() {
           <span class="e">곡 완성도↑(대표 본업) · 멤버 신뢰 소폭↓ — 애들끼리 다녀온다</span></button>`;
     }
     // 자유 행동(일정 소모 없음)
-    const free = idolBoardCards().filter(c => c.grp === '미팅' || c.grp === '시설');
+    const free = idolBoardCards().filter(c => c.grp === '미팅' || c.grp === '시설');   // 개인 재산은 👤 탭으로 분리
     let grp = '';
     free.forEach((c) => {
       if (c.grp !== grp) { grp = c.grp; h += `<div class="ib-group">${grp} (일정 소모 없음)</div>`; }
