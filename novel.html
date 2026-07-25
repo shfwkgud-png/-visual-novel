@@ -1444,6 +1444,7 @@
     pointer-events: none; z-index: 14; display: none;
   }
   #sceneBanner .ev { color: var(--accent); font-weight: 600; }
+  #sceneBanner .biz { color: #f2c14e; font-weight: 700; }   /* 아이돌: 회사 자금(경영 게임이라 상시 노출) */
   #statToasts {
     position: absolute; top: calc(76px + env(safe-area-inset-top)); right: 10px;
     display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
@@ -2234,7 +2235,8 @@ const ENGINE_MOD_CG = `
     · 기업행사 = 인지도 25+ (돈↑↑, 멘탈 소모)
     · 팬콘 = 코어팬 500+ (돈↑ 코어팬↑↑ 멘탈↑↑) — 팀이 회복되는 서사 정점
     조건 미달이면 앱이 거절하고 이유를 알려준다. 상태창의 「가능한 행사」 목록 밖은 고르지 마라.
-  - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장)
+  - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장) / **고용·해고**('staff'=vocal|dance|manager|pd|stylist|choreo) / **외주프로듀서**(2천만, 곡 완성도 급상승 대신 대표 자존심·멤버 신뢰 소폭 하락)
+  - ★**스태프**: 시작 인원은 대표·차영석 실장·**로드 매니저 윤재이** 셋뿐이다(재이는 데뷔 때부터 있던 사람 — 고용 대상이 아니다). 보컬/댄스 트레이너를 붙이면 연습 효율이 1.8배, 로드 매니저가 있으면 컨디션 소모가 30% 준다. 영상 PD는 콘텐츠 화력, 스타일리스트·안무 디렉터는 무대를 올린다. **급여는 매주 나가고 못 주면 제일 비싼 사람부터 나간다** — 그걸 멤버들이 본다(신뢰 하락). 상태창의 「고용 가능」 목록 밖은 고르지 마라.
   - 브랜드 계약은 **매주 자금이 들어오는 공백기 생존줄**이다. 단 개인 앰버서더 계약은 그 멤버만 뜨고 **나머지 멤버 신뢰가 매주 깎인다** — 대표가 그 균열을 어떻게 다루는지가 이야기가 된다. 진정성 콘텐츠를 과하게 팔면 이미지가 떨어져 대형 제안이 끊기고 계약이 파기될 수 있다.
   - 곡이 완성돼 **발매(컴백)** 하기로 했으면 '"release": true, "title": "곡 제목", "stage": 1~6' 추가
     · 'stage' = 이번 앨범 **무대의상 컨셉**(5인 코디 통일): 1교복 · 2청량서머 · 3Y2K하이틴 · 4걸크러시블랙 · 5공주로맨틱 · 6화이트앵콜
@@ -3719,11 +3721,17 @@ function pickBg(groupName) {
 // ===== IDOL SIM — 「무대 뒤 3분」 (아이돌 육성 시뮬) =====
 // ★설계: 계산은 JS(결정론), 서술은 AI. 검증본 = idol_sim.js (3루트 밸런스 실측 완료)
 const IDOL_CHARACTERS = {
-  seowoo: { name: '한서우', role: '엔코어 리더·비주얼(22)', gender: '여', personality: '무대 위에선 흠잡을 데 없는 팀의 얼굴, 내려오면 실없는 허당. 라이브 켜놓고 스포 해준다더니 갑자기 꺼버리는 부류. Want: 애들이 나 때문에 웃는 것 — 리더다워야 한다는 압박은 늘 반 박자 늦게 온다. Secret: 회사 몰래 개인 유튜브를 판다(조회수 두 자릿수인데 매주 올림). 이 채널이 나중에 팀을 살린다. Wound: "얼굴만 보고 뽑았다"는 말을 데뷔 때부터 들었다 — 웃으며 넘기는 법만 늘었다. Depth: 팀이 무너지려는 순간에만 갑자기 리더가 된다. 평소의 허당은 그 무게를 감추는 방식. 신체 tell: 곤란하면 앞머리를 만진다, 진짜 웃을 땐 눈이 사라진다. 말투: 텐션 높지만 대표에겐 존댓말(장난도 존댓말 안에서). 대사 예: "대표님 이거 봐요, 나 오늘 개웃김." / "…아, 진지한 얘기였어요? 다시 할게요." / "내가 리더잖아요. 내가 할게요."' },
-  miyu:   { name: '아사쿠라 미유', role: '엔코어 메인보컬·메인댄서(21)', gender: '여', personality: '보컬·댄스 둘 다 팀 최상위, 이 팀이 라이브에서 안 무너지는 이유. 한국 온 지 4년, 말은 유창한데 가끔 단어가 막힌다. Want: 여기서 인정받는 것 — 고향에 "잘하고 있다"고 말할 근거가 필요하다. Secret: 성대에 결절이 생겼다, 컴백 전까지 말 안 할 생각(자기가 빠지면 팀이 무너지니까). Wound: 데뷔 초 "일본인이라 발음이…"라는 댓글 하나를 아직 캡처해 갖고 있다. Depth: 정이 많고 눈물이 많다 — 팀 얘기만 나오면 먼저 운다. 그게 팀의 온도이자 무대 직전엔 리스크. 신체 tell: 감정 올라오면 코끝부터 빨개진다, 긴장하면 목을 만진다. 말투: 정중한 반말, 감탄사가 일본어로 샌다("에…", "혼토니?"), 대표에겐 깍듯. 대사 예: "한 번만 더 해도 돼요?" / "저 안 울어요. …아니 울 것 같아요." / "괜찮아요, 목 안 아파요."(거짓말)' },
-  haram:  { name: '정하람', role: '엔코어 메인보컬(23)', gender: '여', personality: '맑고 안정적인 고음, 파트 지분 1~2위. ★갭: 시크한 냉미녀로 생겼는데 개그 욕심이 제일 강하다 — 예능에서 각 잡고 웃기려다 자주 실패하고, 그 실패가 더 웃겨서 팬이 붙는다. Want: "얼굴 값 한다"가 아니라 "쟤 진짜 웃겨"라는 말. Secret: 웃기려는 이유는 무대 밖에서 자기가 재미없는 사람일까 봐 무서워서다. Wound: 첫 예능에서 편집으로 통째로 잘렸다 — 그 회차를 아직도 다시 본다. Depth: 팀에서 제일 냉정하게 상황 판단한다, 회사 사정도 눈치로 다 안다. 신체 tell: 웃기려고 마음먹으면 눈썹부터 올라간다, 정색하면 진짜 무섭다. 말투: 건조한 존댓말에 갑자기 개그 삽입, 팬 앞에선 톤이 확 올라감. 대사 예: "웃으세요. 방금 웃긴 거였어요." / "대표님, 우리 이번 달 못 버티죠? 표정에 다 나와요." / "…저 재밌죠? 네?"' },
-  soye:   { name: '윤소예', role: '엔코어 서브보컬·킬링파트(20)', gender: '여', personality: '파트는 적은데 그 3초가 곡을 기억하게 만든다 — 인트로·프리코러스 전담 음색. 조용하고 다정하고 섬세하다, 아픈 멤버한테 괜찮아질 때까지 계속 물어본다. Want: 팀에 폐 안 끼치는 것 — 자기 몫보다 남의 몫을 먼저 센다. Secret: 코어 팬 300명 이름을 다 외운다, 팬레터에 전부 손글씨로 답장했다(회사엔 비밀). Wound: "존재감 없다"는 말을 흘려들은 척했지만 그날 이후 연습실에 제일 늦게까지 남는다. Depth: 목소리가 작은데 하는 말은 제일 정확하다 — 팀이 흔들릴 때 방향을 짚는 건 늘 이 사람. 신체 tell: 할 말 있으면 소매 끝을 만지작거린다, 칭찬받으면 귀가 빨개진다. 말투: 조용한 존댓말, 말끝이 작아짐, 팬 얘기할 때만 문장이 길어진다. 대사 예: "…저기, 하나만 말해도 돼요?" / "그분 이번에 시험이래요. 다음 팬싸 못 오신대요." / "저는 괜찮아요. 진짜로요."' },
-  siah:   { name: '배시아', role: '엔코어 메인댄서·센터(19)', gender: '여', personality: '무대 위 화력이 압도적, 팀 유일하게 직캠 조회수가 터지는 사람, 공식 대형 센터. ★갭: 무대에선 폭발하는데 무대 밖에선 행동이 느리다 — 말도 느리고 밥도 느리고 준비도 제일 늦다. Want: 제대로 된 무대에서 춤추기(행사장 합판 무대 말고). Secret: 알고리즘에 맞춰 자기 춤을 깎고 있다는 걸 안다, 밤에 혼자 원본 안무를 춘다. Wound: 직캠 터진 날 댓글이 전부 몸 얘기였다 — 그날 이후 카메라 각도를 자기가 먼저 계산한다. Depth: 느린 게 아니라 한 박자 다 생각하고 움직인다 — 팀에서 제일 늦게 말하는데 제일 안 흔들린다. 신체 tell: 음악 나오면 무의식적으로 발끝 박자, 화나면 오히려 더 조용해진다. 말투: 느릿한 존댓말, 문장 사이가 길다, 춤 얘기할 때만 빨라진다. 대사 예: "…음. 그거… 8박에서 반 박 늦어요." / "빨리요? 알겠어요."(안 빨라짐) / "이번 무대는 제가 죽일게요."' },
+  // ★멤버 페르소나 = 리센느(RESCENE) 공개 프로필의 성격·포지션 결을 참고한 **창작 캐릭터**(실존 인물 아님).
+  //   이름·얼굴·서사는 우리 것. 나이 구조만 원본과 비슷하게(막내 20 — 2026-07-25 유저 지시).
+  seowoo: { name: '한서우', role: '엔코어 리더(22)', gender: '여', personality: '팀의 리더. ESFP — 텐션이 높고 예측이 안 된다. 갑자기 연습실 벽에 뭘 붙이고 있고, 갑자기 자고 있고, 새벽에 공포 영상을 보다가 무서워서 미유를 깨운다. ★반전: 시끄러운 데를 싫어한다 — 행사장 스피커 앞에선 조용해지고, 사람 많은 대기실에선 구석에 앉는다. 무대 위 텐션은 스위치를 켜는 것. Want: 애들이 나 때문에 웃는 것. Secret: 회사 몰래 개인 유튜브를 판다(조회수 두 자릿수인데 매주 올림) — 이 채널이 나중에 팀을 살린다. Wound: "얼굴만 보고 뽑았다"는 말을 데뷔 때부터 들었다, 웃으며 넘기는 법만 늘었다. Depth: 팀이 무너지려는 순간에만 갑자기 리더가 된다. 평소의 엉뚱함은 그 무게를 감추는 방식. 신체 tell: 곤란하면 앞머리를 만진다, 진짜 웃을 땐 눈이 사라진다. 말투: 텐션 높지만 대표에겐 존댓말(장난도 존댓말 안에서). 대사 예: "대표님 이거 봐요, 나 오늘 개웃김." / "…아, 진지한 얘기였어요? 다시 할게요." / "여기 너무 시끄러워요. 밖에 잠깐 있을게요." / "내가 리더잖아요. 내가 할게요."' },
+  miyu:   { name: '아사쿠라 미유', role: '엔코어 메인보컬·메인댄서(21)', gender: '여', personality: '보컬·댄스 둘 다 팀 최상위, 이 팀이 라이브에서 안 무너지는 이유. 일본에서 왔고 한국 온 지 4년. ENFP — 밝고 반응이 크고 낯을 안 가린다. ★갸루 스타일을 좋아한다(속눈썹·네일·튀는 액세서리). 회사에선 "무대 콘셉트랑 안 맞는다"고 말리지만 본인 SNS는 그 스타일로 밀고, 그게 오히려 밈이 된다. 취미는 서예 — 시끄러운 성격인데 붓 잡으면 30분을 조용히 앉아 있다. Want: 여기서 인정받는 것, 고향에 "잘하고 있다"고 말할 근거. Secret: 성대에 결절이 생겼다, 컴백 전까지 말 안 할 생각(자기가 빠지면 팀이 무너지니까). Wound: 데뷔 초 "일본인이라 발음이…"라는 댓글 하나를 아직 캡처해 갖고 있다. Depth: 정이 많고 눈물이 많다 — 팀 얘기만 나오면 먼저 운다. 신체 tell: 감정 올라오면 코끝부터 빨개진다, 긴장하면 목을 만진다. 말투: 밝은 반말에 일본어 감탄사가 샌다("에…", "혼토니?"), 대표에겐 깍듯. 대사 예: "대표님 이거 봐요! 이거 완전 유행이에요, 진짜로!" / "한 번만 더 해도 돼요?" / "괜찮아요, 목 안 아파요."(거짓말)' },
+  haram:  { name: '정하람', role: '엔코어 메인보컬(21)', gender: '여', personality: '맑고 안정적인 고음, 파트 지분 1~2위. ESFP — 몸으로 먼저 반응하는 타입이라 팀에서 제일 활동적이다. 운동신경이 좋아서 예능 체육대회에 나가면 사고를 친다(양궁을 처음 잡고 10점을 쏜다). ★취미가 사진이라 항상 필름카메라를 들고 다닌다 — 멤버들 뒷모습, 대기실 천장, 새벽 밴 창문. 그 사진들이 팬들에게 먹히기 시작한다. Want: "예쁘다" 말고 "쟤 진짜 재밌다·멋있다"는 말. Secret: 그 사진들 중 절반은 팀이 해체돼도 남기려고 찍는 것이다. Wound: 첫 예능에서 편집으로 통째로 잘렸다 — 그 회차를 아직도 다시 본다. Depth: 팀에서 제일 냉정하게 상황 판단한다, 회사 사정도 눈치로 다 안다. 신체 tell: 신나면 발부터 움직인다, 정색하면 진짜 무섭다. 말투: 활기찬 존댓말, 리액션이 크다. 대사 예: "대표님, 이거 찍어도 돼요? …이미 찍었어요." / "대표님, 우리 이번 달 못 버티죠? 표정에 다 나와요." / "제가 할게요. 몸 쓰는 건 제가 제일 빨라요."' },
+  soye:   { name: '윤소예', role: '엔코어 서브보컬·킬링파트(20)', gender: '여', personality: '파트는 적은데 그 3초가 곡을 기억하게 만든다 — 인트로·프리코러스 전담 음색. INTP — 처음 보는 사람 앞에선 거의 말을 안 하는데, 편해지면 갑자기 말이 많아진다(그 낙차를 팬들이 좋아한다). 머리로 판을 읽는 타입이라 마피아·추리 게임에선 팀 최강이고, 예능에서 그때만 눈빛이 변한다. ★독특한 스티커를 모은다 — 팬레터 답장에 하나씩 붙여 보낸다. Want: 팀에 폐 안 끼치는 것, 자기 몫보다 남의 몫을 먼저 센다. Secret: 코어 팬 300명 이름을 다 외운다, 답장은 전부 손글씨다(회사엔 비밀). Wound: "존재감 없다"는 말을 흘려들은 척했지만 그날 이후 연습실에 제일 늦게까지 남는다. Depth: 목소리가 작은데 하는 말은 제일 정확하다 — 팀이 흔들릴 때 방향을 짚는 건 늘 이 사람. 신체 tell: 할 말 있으면 소매 끝을 만지작거린다, 칭찬받으면 귀가 빨개진다. 말투: 조용한 존댓말, 말끝이 작아짐, 팬·게임 얘기할 때만 문장이 길어진다. 대사 예: "…저기, 하나만 말해도 돼요?" / "그분 이번에 시험이래요. 다음 팬싸 못 오신대요." / "아니요, 그건 아니에요. 이유는 세 갠데요—"(갑자기 길어짐)' },
+  siah:   { name: '배시아', role: '엔코어 비주얼·센터·막내(20)', gender: '여', personality: '무대 위 화력이 압도적, 팀 유일하게 직캠 조회수가 터지는 사람. 공식 비주얼이자 센터, 그리고 막내. INFP — 조용하고 속이 깊고 혼자 생각하는 시간이 길다. ★안무를 한 번 보면 외운다(그래서 신곡 안무는 늘 시아가 먼저 익혀 애들한테 알려준다). ★별명이 "공주" — 본인은 질색하는데 팬들이 밀어붙여서 굳었다. ★스포일러 요정: 라이브에서 하지 말라는 얘기를 꼭 한 마디씩 흘린다("아 그거 다음 주에… 아니다"). 의외의 취향으로 트로트를 좋아한다(밴에서 혼자 듣는다). Want: 제대로 된 무대에서 춤추기(행사장 합판 무대 말고). Secret: 알고리즘에 맞춰 자기 춤을 깎고 있다는 걸 안다, 밤에 혼자 원본 안무를 춘다. Wound: 직캠 터진 날 댓글이 전부 몸 얘기였다 — 그날 이후 카메라 각도를 자기가 먼저 계산한다. Depth: 말이 느린 게 아니라 한 박자 다 생각하고 움직인다 — 팀에서 제일 늦게 말하는데 제일 안 흔들린다. 신체 tell: 음악 나오면 무의식적으로 발끝 박자, 화나면 오히려 더 조용해진다. 말투: 느릿한 존댓말, 문장 사이가 길다, 춤 얘기할 때만 빨라진다. 대사 예: "…음. 그거… 8박에서 반 박 늦어요." / "공주 아니에요. 그렇게 부르지 마세요." / "이번 무대는 제가 죽일게요."' },
+  // ── 스태프 3인 (매니저는 처음부터 소속 / 트레이너 2인은 대표가 영입한다)
+  jaei: { name: '윤재이', role: '로드 매니저(29)·처음부터 있던 사람', gender: '여', personality: '밴을 몰고 스케줄을 짜고 김밥을 사 오고 대기실 바닥을 닦는 사람. 원래 다른 회사 매니저였는데 그쪽이 망했고, 이 팀 데뷔 때부터 붙어 있다. 애들의 컨디션·생리주기·알레르기까지 다 외운다. ★대표에게 유일하게 대드는 직원 — 실장이 업계 논리로 말한다면 재이는 "애들 몸"으로 말한다. 급여가 밀린 걸 알면서도 안 나가고, 그래서 대표가 더 미안하다. 담배는 끊었다고 하는데 밴 뒤에서 냄새가 난다. 말투: 무뚝뚝한 존댓말, 필요한 말만. 대사 예: "대표님. 시아 오늘 세 번째예요. 하나 빼요." / "제 월급은 다음 달에 주셔도 돼요. 애들 밥값이 먼저예요." / "…담배 안 폈어요."' },
+  sunhwa: { name: '차선화', role: '보컬 트레이너(33)·영입', gender: '여', personality: '前 걸그룹 메인보컬. 데뷔 3년 만에 팀이 해체됐고 그 뒤로 레슨으로 먹고산다. 노래는 여전히 이 방 안에서 제일 잘한다. 무섭게 가르치는데 무너진 애를 다루는 법도 안다 — 자기가 무너져봐서. ★미유의 목 상태를 제일 먼저 알아채는 사람. Want: 자기가 못 올라간 무대에 이 애들을 올리는 것(그걸 인정하기 싫어함). 말투: 낮고 건조한 존댓말, 레슨 중엔 반말. 대사 예: "다시. 숨 쉬는 데서 이미 틀렸어." / "…목 언제부터 그랬어?" / "대표님, 저 그 무대 서봤어요. 그래서 아는 건데 — 지금 무리시키면 못 돌아와요."' },
+  dain: { name: '홍다인', role: '댄스 트레이너·안무 보조(28)', gender: '여', personality: '댄서 출신. 대형사 백업댄서로 10년, 무대 뒤에서만 살았다. 몸으로 설명하는 사람이라 말보다 시범이 먼저 나간다. 텐션이 높고 웃기고, 연습실 공기를 바꿔놓는다. ★시아의 안무 암기력을 처음 알아보고 "쟤한테 먼저 알려주고 애들한테 전파시키자"고 판을 짠 사람. Want: 조명 받는 자리에 서보는 것 — 이제는 대신 이 애들을 세운다. 말투: 반말 섞인 편한 존댓말, 감탄사가 많다. 대사 예: "아 그거 아니고—(직접 춤춘다) 이거요, 이거." / "시아야 너 진짜 미친 거 알지?" / "대표님도 한번 해보실래요? …아 왜요, 재밌는데."' },
   // ── 라이벌 6인 (팀당 리더·센터. 순위표가 아니라 사람으로 부딪히게 하는 장치)
   luminous_leader: { name: '서한나', role: '루미나스 리더(25)·대형사 톱', gender: '여', personality: '완성형 아이돌. 예의 바르고 프로페셔널한데 그 예의가 곧 거리다. 우리를 무시하지 않는 것이 오히려 아프다 — 경쟁자로도 안 보인다는 뜻이니까. 차영석 실장의 옛 회사 소속이라 마주치면 실장이 먼저 시선을 피한다. 말투: 정중한 존댓말, 흠잡을 데 없음. 대사 예: "블루밍이시죠? 안무 얘기 들었어요." / "저희 먼저 리허설 들어갈게요, 죄송해요."' },
   luminous_center: { name: '채세나', role: '루미나스 센터(22)·화보형 비주얼', gender: '여', personality: '대기실에서 인사를 안 한다. 무례해서가 아니라 관심이 없어서다. 배시아의 직캠을 이미 봤고 그래서 더 신경 쓰지 않는 척한다. 무대에서만 눈이 살아난다. 말투: 짧은 반말·무표정. 대사 예: "…" / "그 안무, 8박에서 반 박 빠르던데." (시아에게만 한 말)' },
@@ -3762,9 +3770,22 @@ const IDOL_SIM = {
     { tier:2, label:'중견',   gate:40, image:55, weekly:1500000, weeks:12, pool:['코스메 뮤즈','클리어톡','루체 주얼리'] },
     { tier:3, label:'대형',   gate:65, image:70, weekly:4000000, weeks:16, pool:['라비앙 코스메틱','한빛카드','NEXA 스포츠'] },
   ],
+  // 스태프 — 대표+실장 둘이 5인조를 다 돌리는 게 시작 조건. 사람을 붙일수록 같은 일정의 효율이 오른다.
+  //   급여가 매주 나가므로 브랜드·행사 수입이 있어야 유지된다(경영 루프의 지출 축).
+  STAFF: {
+    vocal:   { name:'보컬 트레이너', hire:3000000, pay:800000,  desc:'연습 시 보컬 성장 +80%' },
+    dance:   { name:'댄스 트레이너', hire:3000000, pay:800000,  desc:'연습 시 댄스 성장 +80%' },
+    // ★로드 매니저(윤재이)는 처음부터 있는 사람 — 고용 대상이 아니라 소속 인원(유저 지시 2026-07-25).
+    //   급여는 똑같이 매주 나가고, 체불하면 이 사람도 나간다(그게 이 회사의 바닥이다).
+    manager: { name:'로드 매니저',   hire:2000000, pay:600000,  desc:'모든 일정 컨디션 소모 −30%' },
+    pd:      { name:'영상 PD',      hire:5000000, pay:1200000, desc:'콘텐츠 SNS·라이트팬 +50%' },
+    stylist: { name:'스타일리스트',  hire:4000000, pay:1000000, gate:20, desc:'이미지 +0.8/주, 음방 점수 +15%' },
+    choreo:  { name:'안무 디렉터',   hire:8000000, pay:1500000, gate:25, desc:'음방 방송점수 +35%' },
+  },
+  hasStaff(d, k){ return !!(d && d.staff && d.staff.indexOf(k) >= 0); },
   init() {
     return { week:1, slots:3, money:8000000, fame:12, loan:120000000, loanWeek:40,
-      core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false,
+      core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0 },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -3848,30 +3869,36 @@ const IDOL_SIM = {
     if (cost > d.money) return { ok:false, reason:'자금부족' };
     dt.money = -cost;
     const avg = k => list.reduce((a,i)=>a+d.mem[i][k],0)/list.length;
+    // 스태프 보정 — 사람을 붙이면 같은 일정의 효율이 오른다(급여는 endWeek에서 나간다)
+    const st = k => S.hasStaff(d, k);
+    const condMul = st('manager') ? 0.7 : 1;          // 로드 매니저: 이동·현장 피로 완화
     if (sim.action==='연습'){
+      const vMul = st('vocal') ? 1.8 : 1, dMul = st('dance') ? 1.8 : 1;
       list.forEach(i=>{const m=d.mem[i];
-        m.vocal=S.clamp(m.vocal+1.2*ints,0,100); m.dance=S.clamp(m.dance+1.2*ints,0,100);
-        m.cond=S.clamp(m.cond-4*ints,0,100);});
+        m.vocal=S.clamp(m.vocal+1.2*ints*vMul,0,100); m.dance=S.clamp(m.dance+1.2*ints*dMul,0,100);
+        m.cond=S.clamp(m.cond-4*ints*condMul,0,100);});
     } else if (sim.action==='콘텐츠'){
       const A=1+auth*0.4;
       const snsMul=list.reduce((a,i)=>a+(S.AXIS[i]==='sns'?S.MUL[i]:1),0)/list.length;
       const q=d.album.quality?(0.6+d.album.quality/250):0.7;
       const spread=1+Math.sqrt(Math.max(0,d.light))/150;
       const tr=list.reduce((a,i)=>a+(0.5+d.mem[i].trust/200),0)/list.length;
-      const roll=0.8+R()*0.8, viral=R()<0.07*A;
-      dt.light += Math.round(380*snsMul*A*q*roll*spread*tr*(viral?12:1)*(1+d.fame/40));
-      dt.sns  += Math.round(18*snsMul*A*roll*(viral?6:1));
+      const roll=0.8+R()*0.8, viral=R()<0.07*A*(st('pd')?1.3:1);
+      const pdMul = st('pd') ? 1.5 : 1;               // 영상 PD: 같은 소재도 더 잘 팔린다
+      dt.light += Math.round(380*snsMul*A*q*roll*spread*tr*pdMul*(viral?12:1)*(1+d.fame/40));
+      dt.sns  += Math.round(18*snsMul*A*roll*pdMul*(viral?6:1));
       dt.fame += viral?6:0.3;
-      list.forEach(i=>{const m=d.mem[i]; m.cond=S.clamp(m.cond-5,0,100);
+      list.forEach(i=>{const m=d.mem[i]; m.cond=S.clamp(m.cond-5*condMul,0,100);
         m.mind=S.clamp(m.mind-auth*4,0,100); if(auth>=3) m.trust=S.clamp(m.trust-2,0,100);});
       if (auth>=3) d.image=S.clamp((d.image===undefined?70:d.image)-2.5,0,100);  // 사생활 소진 = 브랜드 이미지 하락
       if (viral) dt.note='🔥바이럴';
     } else if (sim.action==='음방'){
       if(!S.active(d)) return { ok:false, reason:'활동기아님' };
-      const bMul=list.reduce((a,i)=>a+(S.AXIS[i]==='tv'?S.MUL[i]:1),0)/list.length;
+      const bMul=(list.reduce((a,i)=>a+(S.AXIS[i]==='tv'?S.MUL[i]:1),0)/list.length)
+                 * (st('choreo')?1.35:1) * (st('stylist')?1.15:1);   // 안무 디렉터·스타일리스트가 무대를 올린다
       d.album.tvThisWeek += 1;
       dt.light += Math.round(d.fame*8*bMul); dt.core += Math.round(d.light*0.005); dt.fame += 1.2;
-      list.forEach(i=>{d.mem[i].cond=S.clamp(d.mem[i].cond-15,0,100);});
+      list.forEach(i=>{d.mem[i].cond=S.clamp(d.mem[i].cond-15*condMul,0,100);});
     } else if (sim.action==='행사'){
       // 종류 미지정이면 '축제'(구 세이브 호환 — 기존 '행사'는 축제와 동일 계수)
       const kind = S.EVENTS[sim.kind] ? sim.kind : '축제';
@@ -3890,7 +3917,7 @@ const IDOL_SIM = {
       dt.fame += E.fame; dt.money += Math.round(rng(E.money)*(1+d.fame/90));
       if (E.image) d.image = S.clamp(d.image + E.image, 0, 100);
       list.forEach(i=>{const m=d.mem[i];
-        m.cond=S.clamp(m.cond+E.cond,0,100); if(E.mind) m.mind=S.clamp(m.mind+E.mind,0,100);});
+        m.cond=S.clamp(m.cond+E.cond*condMul,0,100); if(E.mind) m.mind=S.clamp(m.mind+E.mind,0,100);});
       dt.note = kind;
     } else if (sim.action==='미팅'){
       // 일정 1칸 = 경영 행동(브랜드 계약·투자 유치·대출 연장). 멤버 소모 없음.
@@ -3915,6 +3942,30 @@ const IDOL_SIM = {
         if (d.loanExt) return { ok:false, reason:'이미 연장함' };
         d.loanExt = true; d.loanWeek += 12;
         dt.note = '대출 만기 12주 연장';
+      } else if (t==='고용'){
+        const k = sim.staff, S2 = S.STAFF[k];
+        if (!S2) return { ok:false, reason:'그런 자리 없음' };
+        d.staff = d.staff || [];
+        if (d.staff.indexOf(k) >= 0) return { ok:false, reason:'이미 있는 사람' };
+        if (S2.gate && d.fame < S2.gate) return { ok:false, reason:`인지도 ${S2.gate} 필요(그 급은 우리를 안 봄)` };
+        if (S2.hire > d.money) return { ok:false, reason:'계약금 부족' };
+        d.staff.push(k); dt.money -= S2.hire;
+        dt.note = `${S2.name} 합류`;
+      } else if (t==='해고'){
+        const k = sim.staff; d.staff = d.staff || [];
+        const i = d.staff.indexOf(k);
+        if (i < 0) return { ok:false, reason:'없는 사람' };
+        d.staff.splice(i,1);
+        Object.keys(d.mem).forEach(id=>{ d.mem[id].trust=S.clamp(d.mem[id].trust-3,0,100); }); // 사람 자르는 걸 애들이 본다
+        dt.note = `${S.STAFF[k].name} 계약 종료`;
+      } else if (t==='외주프로듀서'){
+        // 대표(작곡가)의 자존심 vs 실리 — 곡을 남에게 맡긴다
+        if (d.money < 20000000) return { ok:false, reason:'외주비 2천만 부족' };
+        dt.money -= 20000000;
+        d.album.quality = S.clamp(d.album.quality + 26, 0, 100);
+        d.album.appeal  = S.clamp(d.album.appeal + 18, 0, 100);
+        Object.keys(d.mem).forEach(id=>{ d.mem[id].trust=S.clamp(d.mem[id].trust-1.5,0,100); }); // "대표님 곡은요?"
+        dt.note = '외주 프로듀서 곡 수령';
       } else return { ok:false, reason:'미팅 대상 불명' };
     } else if (sim.action==='휴식'){
       list.forEach(i=>{const m=d.mem[i]; m.cond=S.clamp(m.cond+25,0,100); m.mind=S.clamp(m.mind+10,0,100);});
@@ -3972,6 +4023,20 @@ const IDOL_SIM = {
         }
       }
     }
+    // ─ 스태프 급여: 매주 나간다. 못 주면 나간다(사람은 신뢰로 붙잡는 게 아니라 급여로 붙잡는다)
+    d.staff = d.staff || [];
+    if (d.staff.length) {
+      const pay = d.staff.reduce((a,k)=>a+(S.STAFF[k]?S.STAFF[k].pay:0),0);
+      if (d.money >= pay) { d.money -= pay; }
+      else {                                                  // 체불 → 제일 비싼 사람부터 이탈
+        const quit = d.staff.slice().sort((a,b)=>S.STAFF[b].pay-S.STAFF[a].pay)[0];
+        d.staff = d.staff.filter(k=>k!==quit);
+        d.money = Math.max(0, d.money - Math.round(pay*0.5)); // 밀린 급여 일부라도 정산
+        Object.keys(d.mem).forEach(i=>{ d.mem[i].trust=S.clamp(d.mem[i].trust-2,0,100); });
+        d.lastQuit = S.STAFF[quit].name;                      // 실장 브리핑에 뜬다
+      }
+      if (S.hasStaff(d,'stylist')) d.image = S.clamp(d.image + 0.8, 0, 100);
+    }
     d.image = S.clamp(d.image + 0.3, 0, 100);                // 별일 없으면 서서히 회복
     if (d.loanWeek) d.loanWeek = Math.max(0, d.loanWeek - 1);
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
@@ -4003,6 +4068,14 @@ const IDOL_SIM = {
       `[${i}] ${o.name}(${o.label}·주 ${Math.round(o.weekly/10000)}만·${o.weeks}주${o.member?`·${(IDOL_CHARACTERS[o.member]||{}).name} 개인 앰버서더`:'·팀 전체'}, ${o.life||1}주 안에 답 줘야 함)`).join(' / ') + ` — 실장이 보고할 것\n`;
     if (d.loanWeek !== undefined) s += d.loanWeek>0 ? `대출 만기까지 ${d.loanWeek}주\n`
       : `★★대출 만기 도래 — 상환하거나 연장하지 못하면 회사가 넘어간다. 실장은 이 얘기를 피하지 못한다.\n`;
+    // 스태프 — 대표+실장 둘로 시작해서, 돈이 생기는 만큼 사람을 붙인다
+    const stf = d.staff || [];
+    const payW = stf.reduce((a,k)=>a+(IDOL_SIM.STAFF[k]?IDOL_SIM.STAFF[k].pay:0),0);
+    s += `스태프: ${stf.length? stf.map(k=>IDOL_SIM.STAFF[k].name).join(', ')+` (주급 합계 ${Math.round(payW/10000)}만)` : '없음 — 대표와 실장 둘이 다 한다'}\n`;
+    const hirable = Object.entries(IDOL_SIM.STAFF).filter(([k,v])=>stf.indexOf(k)<0 && (!v.gate||d.fame>=v.gate))
+      .map(([k,v])=>`${v.name}(계약금 ${Math.round(v.hire/10000)}만·주급 ${Math.round(v.pay/10000)}만: ${v.desc})`);
+    if (hirable.length) s += `고용 가능: ${hirable.join(' / ')}\n`;
+    if (d.lastQuit) { s += `★지난주 ${d.lastQuit}이(가) 급여 체불로 그만뒀다 — 애들이 그걸 안다\n`; delete d.lastQuit; }
     // 라이벌 판세 — 실장이 업계 소문으로 흘리는 정보(컴백 시기 전략의 근거)
     const now = IDOL_SIM.RIVALS.filter(r=>IDOL_SIM.rivalActive(r,d.week));
     const soon = IDOL_SIM.RIVALS.filter(r=>{const k=IDOL_SIM.rivalIn(r,d.week); return k>0&&k<=3;})
@@ -4083,6 +4156,12 @@ const IDOL_LORE = `
 - **하프라이트**(같은 중소돌 동기·거울): 스탯이 우리와 거의 같다. 연대(합동 콘텐츠) or 자리 뺏기 분기, 후반에 한쪽이 해체 위기.
 - 라이벌도 준비기→활동기(4주)→공백기를 돈다. 실장이 소문으로 2~3주 전에 흘린다 — **컴백 시기를 언제로 잡을까가 이 게임의 제일 재밌는 결정이다.**
 - **순위표에 뜨는 다른 이름들**(루엘아·아나틴 같은)은 배경 팀이다. 서사에 끌어들이지 말고 순위 언급에만 써라.
+
+#### 스태프 (연습실·밴·대기실의 상시 인물)
+- **윤재이**(jaei, 29·로드 매니저): **처음부터 있는 사람.** 밴 운전·스케줄·김밥·대기실 청소가 다 이 사람 몫이다. 대표에게 유일하게 대드는 직원 — 실장이 업계 논리로 말하면 재이는 "애들 몸"으로 말한다. 급여가 밀린 걸 알면서 안 나간다.
+- **차선화**(sunhwa, 33·보컬 트레이너): 영입해야 온다(미팅→고용). 前 걸그룹 메인보컬, 3년 만에 해체당한 사람. 미유의 목 상태를 제일 먼저 알아챈다.
+- **홍다인**(dain, 28·댄스 트레이너): 영입해야 온다. 대형사 백업댄서 10년, 말보다 시범이 먼저 나간다. 시아의 안무 암기력을 처음 알아본 사람.
+- ★트레이너는 **고용하기 전엔 장면에 등장시키지 마라**(아직 우리 사람이 아니다). 상태창 「스태프」 목록에 있는 사람만 연습실에 세워라.
 
 #### 라이벌 얼굴 있는 인물 6인 (대기실 조우·무대 뒤 마주침·악플 사건에 실제로 등장시켜라)
 - **서한나**(luminous_leader, 25·루미나스 리더): 완성형. 예의 바른데 거리가 있다. 우리를 무시하지 않는 게 더 아프다. "블루밍이시죠? 안무 얘기 들었어요." 실장의 옛 회사라 마주치면 공기가 무겁다.
@@ -8304,8 +8383,15 @@ function updateSceneBanner() {
   if (!el) return;
   const t = (gameState && gameState.time) ? String(gameState.time).trim() : '';
   const ev = (gameState && gameState.event) ? String(gameState.event).trim() : '';
-  if (!t && !ev) { el.style.display = 'none'; return; }
-  el.innerHTML = [t ? `🕐 ${t}` : '', ev ? `<span class="ev">📌 ${ev}</span>` : ''].filter(Boolean).join(' · ');
+  // 아이돌: 경영 게임이라 자금·주차·남은 일정이 상시 보여야 한다(유저 지적 2026-07-25 — 화면에 자본이 없음)
+  let biz = '';
+  if (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' && gameState && gameState.idol) {
+    const d = gameState.idol;
+    const won = n => (n >= 100000000 ? (n / 100000000).toFixed(2) + '억' : Math.round(n / 10000).toLocaleString() + '만');
+    biz = `<span class="biz">💰 ${won(d.money)}</span> · ${d.week}주 ${'●'.repeat(d.slots)}${'○'.repeat(Math.max(0, 3 - d.slots))}`;
+  }
+  if (!t && !ev && !biz) { el.style.display = 'none'; return; }
+  el.innerHTML = [biz, t ? `🕐 ${t}` : '', ev ? `<span class="ev">📌 ${ev}</span>` : ''].filter(Boolean).join(' · ');
   el.style.display = 'block';
 }
 function showStatToast(text, isDown) {
@@ -8503,7 +8589,13 @@ function renderStatusPanel() {
   if (statusTab === 'situation') {
     const p = gameState.player || { abilities: [], injuries: [] };
     let h = '';
-    h += `<div class="sit-block"><div class="sit-label">기본 정보</div><div class="sit-val">${esc(gameState.name)}${p.tier ? ` · <b style="color:var(--gold)">${esc(p.tier)}</b>` : ''} · ${esc(gameState.status)} · 평판 ${gameState.rep} · <span style="color:var(--gold)">${gameState.gold}G</span></div></div>`;
+    // 아이돌은 개인 소지금(G)이 아니라 **회사 자금**이 돈 개념이다(유저 지시 2026-07-25)
+    const isIdol = (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' && gameState.idol);
+    const wonFmt = n => (n >= 100000000 ? (n / 100000000).toFixed(2) + '억' : Math.round(n / 10000).toLocaleString() + '만') + '원';
+    const moneyHtml = isIdol
+      ? `<span style="color:var(--gold)">자금 ${wonFmt(gameState.idol.money)}</span>`
+      : `<span style="color:var(--gold)">${gameState.gold}G</span>`;
+    h += `<div class="sit-block"><div class="sit-label">기본 정보</div><div class="sit-val">${esc(gameState.name)}${p.tier ? ` · <b style="color:var(--gold)">${esc(p.tier)}</b>` : ''} · ${esc(gameState.status)}${isIdol ? '' : ` · 평판 ${gameState.rep}`} · ${moneyHtml}</div></div>`;
     h += `<div class="sit-block"><div class="sit-label">시간 · 장소</div><div class="sit-val">${esc(gameState.time || '-')} · ${esc(gameState.location)}</div></div>`;
     if (gameState.event) h += `<div class="sit-block"><div class="sit-label">현재 이벤트</div><div class="sit-val" style="color:var(--gold)">${esc(gameState.event)}</div></div>`;
     // RPG: 스탯 5종 + 스킬 숙련도(xp 게이지)
