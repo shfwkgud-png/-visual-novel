@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v137</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v138</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -6961,8 +6961,29 @@ let autoPlay = false;
 let autoTimer = null;
 
 // ===== SAVE / LOAD =====
+// ───── 저장 용량 방어 (2026-07-27 사파리 "The quota has been exceeded") ─────
+//   localStorage는 오리진당 약 5MB(사파리)뿐인데 gameHistory에 상한이 없어 무한히 쌓였다.
+//   ★summaryIndex 이전 기록은 이미 storySummary에 들어가 있고 AI에게도 안 보내진다
+//     (프롬프트는 gameHistory.slice(-CONTEXT_RECENT)만 씀) → 잘라내도 맥락이 안 끊긴다.
+const HISTORY_MAX  = 400;    // 대화 원문 보관 상한(≈200턴). 넘으면 요약된 앞부분부터 버린다
+const DIALOG_MAX   = 600;    // 기록(백로그) 보관 상한
+
+function trimHistory(keep) {
+  // 요약이 끝난 구간(summaryIndex 이전)에서만 버린다 — 안 버리면 요약 인덱스가 깨진다
+  const over = gameHistory.length - keep;
+  const drop = Math.min(over, Math.max(0, summaryIndex));
+  if (drop <= 0) return 0;
+  gameHistory = gameHistory.slice(drop);
+  summaryIndex = Math.max(0, summaryIndex - drop);
+  return drop;
+}
+
 function autoSave() {
-  const save = {
+  // 평상시 상한 유지 — 여기서 미리 줄여두면 용량 초과 자체가 잘 안 난다
+  if (gameHistory.length > HISTORY_MAX) trimHistory(HISTORY_MAX);
+  if (dialogueLog.length > DIALOG_MAX) dialogueLog = dialogueLog.slice(-DIALOG_MAX);
+
+  const build = () => ({
     gameHistory,
     gameState,
     storySummary,
@@ -6976,8 +6997,27 @@ function autoSave() {
     nimUrl: NIM_URL,
     apiKey: API_KEY,
     savedAt: Date.now()
-  };
-  localStorage.setItem(saveKeyFor(STORY.id), JSON.stringify(save));
+  });
+  const put = () => localStorage.setItem(saveKeyFor(STORY.id), JSON.stringify(build()));
+
+  try {
+    put();
+  } catch (e) {
+    // ★여기서 그냥 터지면 그 턴 진행이 통째로 멈춘다. 단계적으로 공간을 확보하며 재시도.
+    let ok = false;
+    try { localStorage.removeItem(snapKeyFor(STORY.id)); turnSnaps = []; put(); ok = true; } catch {}
+    for (let i = 0; i < 8 && !ok; i++) {
+      const cut = Math.max(40, Math.floor(gameHistory.length * 0.6));
+      if (!trimHistory(cut) && dialogueLog.length <= 60) break;
+      if (dialogueLog.length > 60) dialogueLog = dialogueLog.slice(-Math.max(60, Math.floor(dialogueLog.length * 0.6)));
+      try { put(); ok = true; } catch {}
+    }
+    if (!ok) {
+      try { showStatToast('저장 공간이 가득 찼습니다 — 다른 스토리 세이브를 지워주세요', true); } catch {}
+      return;   // 저장은 실패해도 게임은 계속 진행된다
+    }
+    try { showStatToast('저장 공간 확보 — 오래된 기록을 정리했습니다(요약은 유지)'); } catch {}
+  }
   // provider config is shared across stories
   persistCfg();   // ★기존엔 여기서 vn_cfg를 통째로 덮어써 orKey/orModel/nimModel이 날아갔다
                   //   (매 턴 자동저장 → 새로고침하면 OpenRouter 키를 다시 입력해야 했던 원인, 2026-07-26)
