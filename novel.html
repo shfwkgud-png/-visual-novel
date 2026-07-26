@@ -1466,7 +1466,7 @@
   .char-meta { font-size: 0.74rem; color: var(--text-dim); }
   /* ── 상시 피드백 UI (2026-07-20 UX: 프론티아 벤치마킹 — 시간·이벤트 상시 + 호감도 델타 토스트) ── */
   #sceneBanner {
-    position: absolute; top: calc(44px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+    position: absolute; top: var(--bannerTop, calc(44px + env(safe-area-inset-top))); left: 50%; transform: translateX(-50%);
     max-width: 86%; padding: 3px 12px; border-radius: 999px;
     background: rgba(10,10,14,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(255,255,255,0.08);
@@ -2028,7 +2028,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v131</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v132</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -8903,13 +8903,14 @@ function showChoices(choices) {
   const choiceDiv = document.createElement('div');
   choiceDiv.id = 'choiceBox';
   choiceDiv.style.cssText = `
-    position:absolute; top:calc(50px + env(safe-area-inset-top)); left:0; right:0;
+    position:absolute; top:var(--choiceTop, calc(50px + env(safe-area-inset-top))); left:0; right:0;
     display:flex; flex-direction:column; align-items:center;
     gap:6px; z-index:18; padding:0 14px;
     max-height:55%; overflow-y:auto;
     pointer-events:none;
   `;
 
+  layoutTopStack();
   choices.forEach((choice, i) => {
     const btn = document.createElement('button');
     btn.innerHTML = `<span class="choice-num">${i + 1}</span><span>${choice}</span>`;
@@ -9290,6 +9291,23 @@ function syncTopMenu() {
   if (dot) dot.classList.toggle('on', on);
   if (lab) lab.textContent = on ? '배경음악 끄기' : '배경음악 켜기';
 }
+// ★상단 적층(상단바 → 배너 → 선택지)을 실측으로 쌓는다.
+//   하드코딩 px으로 두면 버튼이 줄바꿈되거나 배너가 뜰 때마다 서로를 덮는다
+//   (2026-07-26: 배너가 버튼을 덮음 → 배너가 1번 선택지를 덮음, 같은 원인 두 번).
+function layoutTopStack() {
+  try {
+    const root = document.documentElement;
+    const tb = document.getElementById('topBar');
+    const bn = document.getElementById('sceneBanner');
+    const tbH = tb ? tb.getBoundingClientRect().height : 44;
+    root.style.setProperty('--bannerTop', (tbH + 4) + 'px');
+    const bnH = (bn && getComputedStyle(bn).display !== 'none') ? bn.getBoundingClientRect().height : 0;
+    root.style.setProperty('--choiceTop', (tbH + 4 + (bnH ? bnH + 6 : 2)) + 'px');
+  } catch {}
+}
+window.addEventListener('resize', layoutTopStack);
+window.addEventListener('orientationchange', () => setTimeout(layoutTopStack, 220));
+
 function updateSceneBanner() {
   const el = document.getElementById('sceneBanner');
   if (!el) return;
@@ -9308,9 +9326,10 @@ function updateSceneBanner() {
     pb.style.display = on ? '' : 'none';
     if (on) pb.classList.toggle('need', IDOL_SIM.needPlan(gameState.idol));
   }
-  if (!t && !ev && !biz) { el.style.display = 'none'; return; }
+  if (!t && !ev && !biz) { el.style.display = 'none'; layoutTopStack(); return; }
   el.innerHTML = [biz, t ? `🕐 ${t}` : '', ev ? `<span class="ev">📌 ${ev}</span>` : ''].filter(Boolean).join(' · ');
   el.style.display = 'block';
+  layoutTopStack();
 }
 // 구 세이브 보정 — 시스템이 계속 붙다 보니 옛 세이브엔 없는 필드가 생긴다.
 //   진행 수치(자금·팬·주차)는 건드리지 않고 **빠진 구조만** 채운다.
