@@ -1992,7 +1992,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v126</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v127</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -6997,6 +6997,7 @@ function restoreAndReplay(save, checkTimeflow) {
   loadSnaps();                      // 되감기 스냅샷 복원
   gameHistory = save.gameHistory || [];
   gameState = save.gameState || gameState;
+  if (STORY.id === 'idol' && gameState.idol) migrateIdolSave(gameState.idol);   // 구 세이브 필드 보정
   window._freeMode = !!(gameState && gameState.freeMode);   // 자유모드 복원(이름 치환 판단)
   window._modeChosen = true;
   storySummary = save.storySummary || '';
@@ -9226,6 +9227,27 @@ function updateSceneBanner() {
   if (!t && !ev && !biz) { el.style.display = 'none'; return; }
   el.innerHTML = [biz, t ? `🕐 ${t}` : '', ev ? `<span class="ev">📌 ${ev}</span>` : ''].filter(Boolean).join(' · ');
   el.style.display = 'block';
+}
+// 구 세이브 보정 — 시스템이 계속 붙다 보니 옛 세이브엔 없는 필드가 생긴다.
+//   진행 수치(자금·팬·주차)는 건드리지 않고 **빠진 구조만** 채운다.
+function migrateIdolSave(d) {
+  if (!d) return d;
+  const base = IDOL_SIM.init();
+  ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv'].forEach(k => {
+    if (!Array.isArray(d[k])) d[k] = Array.isArray(base[k]) ? base[k].slice() : [];
+  });
+  if (typeof d.network !== 'number') d.network = base.network;
+  if (typeof d.image !== 'number') d.image = base.image;
+  if (typeof d.streams !== 'number') d.streams = 0;
+  if (typeof d.planMonth !== 'number') d.planMonth = 0;
+  if (typeof d.loanWeek !== 'number') d.loanWeek = base.loanWeek;
+  if (!d.chart) d.chart = { rank:null, prev:null, peak:null, weeks:0, surge:0 };
+  if (!d.fac) d.fac = { practice:0, van:0, office:0, dorm:0, home:0, car:0 };
+  if (!d.personal) d.personal = JSON.parse(JSON.stringify(base.personal));
+  if (!d.album) d.album = base.album;
+  ['jacket','mv','choreo','teaser'].forEach(k => { if (d.album[k] === undefined) d.album[k] = false; });
+  if (d.ending === undefined) d.ending = null;
+  return d;
 }
 // 주간 마감 — 차트 판정 + endWeek(월간 편성 루프의 종결부)
 function idolWeekEnd() {
