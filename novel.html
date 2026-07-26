@@ -1536,6 +1536,7 @@
   #idolBoard .ib-slot.filled { border-style: solid; border-color: rgba(242,193,78,0.5); background: rgba(242,193,78,0.09); }
   #idolBoard .ib-slot.now { border-style: solid; border-color: var(--gold); background: rgba(225,29,72,0.12); }
   #idolBoard .ib-slot.done { opacity: 0.4; }
+  #idolBoard .ib-slot.fixed { border-style: solid; border-color: rgba(96,165,250,0.6); background: rgba(96,165,250,0.12); }
   #idolBoard .ib-confirm {
     width: 100%; margin: 0 0 8px; padding: 11px; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 700;
     background: var(--gold); color: #fff; border: none; cursor: pointer;
@@ -1991,7 +1992,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v124</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v125</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -2346,6 +2347,9 @@ const ENGINE_MOD_CG = `
     · ★**회사 자금과 대표 개인 현금은 완전히 다른 돈이다.** 회사가 망해도 개인 돈은 남고, 개인이 집을 걸어 회사를 살릴 수도 있다. 이 선택을 가볍게 넘기지 마라 — 집을 담보로 잡는 장면은 대표 혼자 서명하는 장면이어야 한다.
   - ★'facility' = 미팅 target=시설일 때. office(사옥)·dorm(숙소)·practice(연습실)·van(밴)은 회사 자금, home(내 집)·car(내 차)는 대표 개인 현금으로 산다. **등급을 올리면 그 장소의 배경이 실제로 바뀐다** — 사옥·숙소가 좋아지면 애들 표정도 달라진다. 등급을 올리면 연습 효율·컨디션 소모가 영구히 좋아진다 — **성공할수록 돈 쓸 곳**이 생긴다.
   - ★'fandom' = 팬덤 이름을 정하는 장면에서만. 멤버들이 후보를 내고 대표가 고르는 장면을 만들고 확정된 이름을 실어라(한 번뿐).
+  - ★**섭외는 일정표에 박히는 고정 블록이다.** 대표가 방송국을 돌거나(대표 칸 '방송국') 인맥이 쌓이면
+    라디오·토크쇼·음방 섭외가 **특정 주차로 확정**되어 그 주 블록에 🔒로 자동 편성된다. 그 주가 꽉 차 있으면
+    **무엇을 뺄지 대표가 고른다**(앱이 물어본다). 장면에서는 PD와 날짜를 잡는 대화로 연출하라.
   - ★**연중 캘린더는 고정이다**(상태창 「달력」). 신년 컴백 대전(차트 문턱↑)·대학 축제 시즌(행사비 1.6배)·여름 페스티벌/음원 성수기·가을 축제·행사 비수기·연말 시상식. 실장은 **다음 시즌을 미리 알려주고**, 컴백 시기를 그 리듬에 맞춰 제안한다.
   - ★**스태프**: 시작 인원은 대표·차영석 실장·**로드 매니저 윤재이** 셋뿐이다(재이는 데뷔 때부터 있던 사람 — 고용 대상이 아니다). 보컬/댄스 트레이너를 붙이면 연습 효율이 1.8배, 로드 매니저가 있으면 컨디션 소모가 30% 준다. 영상 PD는 콘텐츠 화력, 스타일리스트·안무 디렉터는 무대를 올린다. **급여는 매주 나가고 못 주면 제일 비싼 사람부터 나간다** — 그걸 멤버들이 본다(신뢰 하락). 상태창의 「고용 가능」 목록 밖은 고르지 마라.
   - 브랜드 계약은 **매주 자금이 들어오는 공백기 생존줄**이다. 단 개인 앰버서더 계약은 그 멤버만 뜨고 **나머지 멤버 신뢰가 매주 깎인다** — 대표가 그 균열을 어떻게 다루는지가 이야기가 된다. 진정성 콘텐츠를 과하게 팔면 이미지가 떨어져 대형 제안이 끊기고 계약이 파기될 수 있다.
@@ -3843,6 +3847,11 @@ const IDOL_CHARACTERS = {
   jaei: { name: '윤재이', role: '로드 매니저(29)·처음부터 있던 사람', gender: '여', personality: '밴을 몰고 스케줄을 짜고 김밥을 사 오고 대기실 바닥을 닦는 사람. 원래 다른 회사 매니저였는데 그쪽이 망했고, 이 팀 데뷔 때부터 붙어 있다. 애들의 컨디션·생리주기·알레르기까지 다 외운다. ★대표에게 유일하게 대드는 직원 — 실장이 업계 논리로 말한다면 재이는 "애들 몸"으로 말한다. 급여가 밀린 걸 알면서도 안 나가고, 그래서 대표가 더 미안하다. 담배는 끊었다고 하는데 밴 뒤에서 냄새가 난다. 말투: 무뚝뚝한 존댓말, 필요한 말만. 대사 예: "대표님. 시아 오늘 세 번째예요. 하나 빼요." / "제 월급은 다음 달에 주셔도 돼요. 애들 밥값이 먼저예요." / "…담배 안 폈어요."' },
   sunhwa: { name: '차선화', role: '보컬 트레이너(33)·영입', gender: '여', personality: '前 걸그룹 메인보컬. 데뷔 3년 만에 팀이 해체됐고 그 뒤로 레슨으로 먹고산다. 노래는 여전히 이 방 안에서 제일 잘한다. 무섭게 가르치는데 무너진 애를 다루는 법도 안다 — 자기가 무너져봐서. ★미유의 목 상태를 제일 먼저 알아채는 사람. Want: 자기가 못 올라간 무대에 이 애들을 올리는 것(그걸 인정하기 싫어함). 말투: 낮고 건조한 존댓말, 레슨 중엔 반말. 대사 예: "다시. 숨 쉬는 데서 이미 틀렸어." / "…목 언제부터 그랬어?" / "대표님, 저 그 무대 서봤어요. 그래서 아는 건데 — 지금 무리시키면 못 돌아와요."' },
   dain: { name: '홍다인', role: '댄스 트레이너·안무 보조(28)', gender: '여', personality: '댄서 출신. 대형사 백업댄서로 10년, 무대 뒤에서만 살았다. 몸으로 설명하는 사람이라 말보다 시범이 먼저 나간다. 텐션이 높고 웃기고, 연습실 공기를 바꿔놓는다. ★시아의 안무 암기력을 처음 알아보고 "쟤한테 먼저 알려주고 애들한테 전파시키자"고 판을 짠 사람. Want: 조명 받는 자리에 서보는 것 — 이제는 대신 이 애들을 세운다. 말투: 반말 섞인 편한 존댓말, 감탄사가 많다. 대사 예: "아 그거 아니고—(직접 춤춘다) 이거요, 이거." / "시아야 너 진짜 미친 거 알지?" / "대표님도 한번 해보실래요? …아 왜요, 재밌는데."' },
+  // ── 업계 인물 (대표가 인맥을 쌓아야 만나지는 사람들)
+  jiwan: { name: '서지완', role: '한성그룹 차녀(31)·문화사업 투자', gender: '여', personality: '재벌 2세. 한성그룹 문화사업부를 맡고 있고, 엔터 투자로 자기 실적을 만들려 한다. 돈 얘기를 할 때 눈이 제일 살아나는 사람. 대표를 "작곡가님"이라고 부르는데 그게 존중인지 선긋기인지 알 수 없다. ★투자를 하되 반드시 지분과 개입을 요구한다 — 받으면 회사가 살고, 대신 대표의 결정권이 깎인다. Want: 아버지 회사에서 자기 이름으로 된 성공 하나. Secret: 이 팀에 투자하려는 진짜 이유는 실적이 아니라 자기가 못 이룬 데뷔(연습생 3년, 무릎 부상으로 접음)다. Wound: "너는 어차피 물려받잖아"는 말. 말투: 여유 있는 존댓말, 상대의 말을 끊지 않고 끝까지 듣고 정확히 반박한다. 대사 예: "작곡가님, 저는 곡을 사는 게 아니라 사람을 삽니다." / "얼마 필요하세요? 숫자로 말씀하세요." / "…저도 무대에 서고 싶었어요. 그건 아무한테도 말 안 했는데."' },
+  pdradio: { name: '오정한', role: 'FM 라디오 PD(45)', gender: '남', personality: '15년째 심야 음악방송을 만든다. 유행을 안 좇고 곡만 듣는 사람 — 그래서 중소돌에게 유일하게 열려 있는 문이다. 대표가 작곡가 출신이라는 걸 알고 흥미를 보인다. 섭외는 인맥이 아니라 곡이 좋으면 준다고 말하지만, 결국 얼굴을 아는 사람에게 먼저 전화한다. 말투: 무심한 반말 섞인 존댓말, 농담이 건조하다. 대사 예: "곡은 들었어요. 나쁘지 않던데." / "생방이라 사고 나면 그냥 나가는 겁니다. 감당되죠?" / "우리 방송 청취자 수 알아요? …그래도 듣는 사람은 끝까지 들어요."' },
+  pdmusic: { name: '한세영', role: '음악방송 PD(35)', gender: '여', personality: '음방 큐시트를 쥔 사람. 무대 순서·카메라 분량이 이 사람 손에서 정해진다. 냉정하고 빠르다 — 실력 없는 팀에 시간을 안 쓴다. 단 리허설에서 눈에 띄면 그 자리에서 분량을 바꿔준다. 시아의 직캠을 먼저 알아본 사람. 말투: 빠른 존댓말, 요점만. 대사 예: "리허설 3분 드릴게요. 그 안에 보여주세요." / "센터 카메라 한 번 더 잡을게요. 딱 한 번입니다." / "다음에 또 이런 무대면, 다음은 없어요."' },
+  mctalk: { name: '류지호', role: '토크쇼 MC(48)·예능 대부', gender: '남', personality: '20년차 국민 MC. 게스트를 살릴 줄도, 죽일 줄도 안다. 무명 그룹을 부르는 이유는 착해서가 아니라 그림이 되기 때문. 하람의 개그 욕심을 알아보고 판을 깔아준다 — 살리면 밈이 되고 못 살리면 통편집. 말투: 능글맞은 반말, 카메라 밖에선 존댓말로 돌아온다. 대사 예: "자 여기 앉아요. 긴장하지 말고. …아니 그렇게 긴장하지 말라니까?" / "정하람 씨, 웃기려고 왔죠? 얼굴에 써 있어." / (카메라 꺼진 뒤) "잘했어요. 편집 안 할게요."' },
   // ── 라이벌 6인 (팀당 리더·센터. 순위표가 아니라 사람으로 부딪히게 하는 장치)
   luminous_leader: { name: '서한나', role: '루미나스 리더(25)·대형사 톱', gender: '여', personality: '완성형 아이돌. 예의 바르고 프로페셔널한데 그 예의가 곧 거리다. 우리를 무시하지 않는 것이 오히려 아프다 — 경쟁자로도 안 보인다는 뜻이니까. 차영석 실장의 옛 회사 소속이라 마주치면 실장이 먼저 시선을 피한다. 말투: 정중한 존댓말, 흠잡을 데 없음. 대사 예: "블루밍이시죠? 안무 얘기 들었어요." / "저희 먼저 리허설 들어갈게요, 죄송해요."' },
   luminous_center: { name: '채세나', role: '루미나스 센터(22)·화보형 비주얼', gender: '여', personality: '대기실에서 인사를 안 한다. 무례해서가 아니라 관심이 없어서다. 배시아의 직캠을 이미 봤고 그래서 더 신경 쓰지 않는 척한다. 무대에서만 눈이 살아난다. 말투: 짧은 반말·무표정. 대사 예: "…" / "그 안무, 8박에서 반 박 빠르던데." (시아에게만 한 말)' },
@@ -3948,6 +3957,22 @@ const IDOL_SIM = {
                   desc:'팬 라이브 방송 — 코어팬·결집도↑, 멤버 멘탈 회복. 실언 사고 확률 있음' },
     '자체예능': { cost:1700000, axis:'vote',  lightM:0.85, snsM:0.7,  coreM:0.8,  mind:-2, flop:true,   fit:'haram', staff:'pd',
                   desc:'자체 예능(게임·먹방) — 예능 스탯·결집도↑. 실패하면 이미지 소폭 하락' },
+    '녹음':     { cost:4000000,  axis:'music', lightM:0.15, snsM:0.2,  coreM:0.2,  mind:-4, rec:true, fit:'miyu', staff:'vocal',
+                  desc:'보컬 레코딩 — 곡 완성도 직접 상승. 미유가 목을 갈아넣는 공정' },
+    '안무제작': { cost:12000000, axis:'tv',    lightM:0.2,  snsM:0.3,  coreM:0.2,  mind:-5, choreo:true, fit:'siah', staff:'choreo',
+                  desc:'안무 제작·합 맞추기 — 발매 후 방송 점수 +15%. 시아가 먼저 외워 애들에게 푼다' },
+    '티저공개': { cost:3000000,  axis:'sns',   lightM:1.4,  snsM:1.5,  coreM:0.4,  mind:-1, teaser:true, fit:'seowoo', staff:'pd',
+                  desc:'컴백 티저 공개 — 발매 전 화제성 폭발. 자켓이 있어야 그림이 나온다' },
+    '쇼케이스': { cost:15000000, axis:'album', lightM:0.6,  snsM:0.7,  coreM:1.9,  mind:+3, need:'active', fit:'soye', staff:'stylist',
+                  desc:'컴백 쇼케이스 — 활동기 전용. 코어팬 대폭·이미지↑ (팬 앞에서 처음 부르는 자리)' },
+    '자켓촬영': { cost:6000000, axis:'album', lightM:0.4,  snsM:0.5,  coreM:0.6,  mind:-3, jacket:true, fit:'seowoo', staff:'stylist',
+                  desc:'앨범 자켓 촬영 — 발매 때 음반 초동 +25%. 컴백 전에 해두는 일' },
+    '뮤비촬영': { cost:25000000, axis:'music', lightM:0.6, snsM:0.9,  coreM:0.5,  mind:-6, mv:true, fit:'siah', staff:'choreo',
+                  desc:'뮤직비디오 촬영 — 발매 때 음원·SNS 대폭 상승. 돈이 많이 든다' },
+    '라디오':   { cost:500000,  axis:'vote',  lightM:0.7,  snsM:0.5,  coreM:0.9,  mind:-2, invite:'radio', fit:'haram', staff:null,
+                  desc:'신곡 소개 라디오 — ★초청받아야 나간다(인맥). 코어팬·인지도' },
+    '토크쇼':   { cost:1500000, axis:'vote',  lightM:1.3,  snsM:0.9,  coreM:1.0,  mind:-4, invite:'talk', fit:'haram', staff:'pd',
+                  desc:'토크쇼 출연 — ★초청받아야 나간다(인맥 35+). 예능 스탯·팬 전방위 상승' },
     '비하인드': { cost:600000, axis:'tv',    lightM:1.2,  snsM:0.85, coreM:0.5,  mind:-3, need:'active', fit:'siah', staff:'choreo',
                   desc:'무대 비하인드·직캠 — 활동기 전용, 직캠이 터지면 라이트팬 폭증' },
   },
@@ -4051,9 +4076,77 @@ const IDOL_SIM = {
   //   회사에 남는 주에 대표가 자기 시간을 쪼개 쓴다.
   monthOf(w){ return Math.floor((w - 1) / 4) + 1; },
   weekInMonth(w){ return ((w - 1) % 4) + 1; },
+  // ───── 대표 전용 칸 (주 1칸) ─────
+  //   ★"동행할까 회사에 남을까"를 버튼으로 강제로 끼워넣으니 대화 맥락이 끊겼다(2026-07-26 유저 지적).
+  //   대표가 그 주에 **무엇을 하는 사람인지**를 편성으로 정하고, 실제 실랑이는 장면에서 대화로 푼다.
+  CEO_ACTS: {
+    '동행':     { desc:'애들 현장에 붙는다 — 그 주 팀 일정 성과 +10% · 전원 신뢰↑' },
+    '곡작업':   { desc:'회사에 남아 곡을 만진다 — 완성도·대중성↑ (대표의 본업)' },
+    '명함':     { desc:'업계에 얼굴을 판다 — 인맥↑ (행사·섭외가 들어오기 시작한다)', cost:2000000, net:[5,9] },
+    '방송국':   { desc:'라디오·음방 PD를 만난다 — 인맥↑↑ · 섭외 확률↑', cost:4000000, net:[8,14], media:true },
+    '투자유치': { desc:'투자처를 만난다 — 인맥 25+면 성사 가능(자금 대규모 유입)', cost:3000000, net:[3,6], invest:true },
+  },
+  // ★섭외는 티켓이 아니라 **일정표에 박히는 고정 블록**이다(2026-07-26 유저 설계):
+  //   "2주차에 PD를 만나 3주차 음방을 따내면 3주차 블록에 자동으로 박혀 있는" 방식.
+  BOOKABLE: {
+    radio:  { name:'라디오 출연', kind:'라디오', need:{ net:15, fame:15 } },
+    talk:   { name:'토크쇼 녹화', kind:'토크쇼', need:{ net:35, fame:35 } },
+    music:  { name:'음방 출연',   kind:'음방',   need:{ net:22, fame:10 }, activeOnly:true },
+  },
+  // 특정 주차에 고정 블록을 예약한다(그 달이 이미 편성됐으면 즉시 꽂고, 아니면 확정 때 꽂힌다)
+  book(d, key, weeksAhead){
+    const S = IDOL_SIM, B = S.BOOKABLE[key]; if (!B) return null;
+    const w = d.week + Math.max(1, weeksAhead|0);
+    d.booked = d.booked || [];
+    if (d.booked.some(b => b.week === w && b.key === key)) return null;
+    const item = { week:w, key, name:B.name,
+                   sim: B.kind === '음방' ? { action:'음방' } : { action:'콘텐츠', kind:B.kind } };
+    d.booked.push(item);
+    S.applyBooked(d);
+    return item;
+  },
+  // 예약된 블록을 현재 달 편성표에 반영(빈 칸 우선, 없으면 두 번째 칸을 대체)
+  applyBooked(d){
+    const S = IDOL_SIM, n = S.PLAN_PER_WEEK;
+    if (!d.plan || !d.plan.length) return;
+    (d.booked || []).forEach(b => {
+      if (S.monthOf(b.week) !== d.planMonth || b.placed) return;
+      const wi = S.weekInMonth(b.week) - 1, base = wi * n;
+      let slot = -1;
+      for (let j = 0; j < n; j++) if (!d.plan[base + j]) { slot = base + j; break; }
+      if (slot >= 0) {                                   // 빈 칸이 있으면 그냥 들어간다
+        d.plan[slot] = { name: b.name, sim: b.sim, fixed: true };
+        b.placed = true;
+        d.lastBooked = `${wi + 1}주차 ${b.name}`;
+      } else if (!d.pendingBook) {
+        // ★그 주가 꽉 찼다 — 무엇을 뺄지는 **대표가 정한다**(앱이 멋대로 덮어쓰지 않는다)
+        d.pendingBook = { week: b.week, wi, key: b.key, name: b.name, sim: b.sim,
+                          options: [0,1].map(j => ({ slot: base + j, name: (d.plan[base+j]||{}).name || '-' })) };
+      }
+    });
+    d.booked = (d.booked || []).filter(b => b.week >= d.week);
+  },
+  // 유저가 고른 일정을 빼고 그 자리에 섭외를 박는다
+  resolveBooking(d, slot){
+    const pb = d.pendingBook; if (!pb) return null;
+    const dropped = (d.plan[slot] || {}).name || '';
+    d.plan[slot] = { name: pb.name, sim: pb.sim, fixed: true };
+    const b = (d.booked || []).find(x => x.week === pb.week && x.key === pb.key);
+    if (b) b.placed = true;
+    d.lastBooked = `${pb.wi + 1}주차 ${pb.name}(「${dropped}」 취소)`;
+    delete d.pendingBook;
+    return { dropped, name: pb.name, week: pb.wi + 1 };
+  },
+  // 초청 — 라디오·토크쇼는 "불러줘야" 나간다. 인맥과 인지도로 확률이 붙는다.
+  INVITES: {
+    radio: { name:'신곡 소개 라디오', need:{ net:15, fame:15 }, weeks:4 },
+    talk:  { name:'토크쇼 출연',     need:{ net:35, fame:35 }, weeks:4 },
+  },
   PLAN_PER_WEEK: 2,                                 // ★주당 2건(월 8칸) — 실장이 주 2~3건을 잡는 게 현실
   needPlan(d){ return d.planMonth !== IDOL_SIM.monthOf(d.week) || !(d.plan || []).filter(Boolean).length; },
-  setPlan(d, arr){ d.plan = (arr || []).slice(0, 4 * IDOL_SIM.PLAN_PER_WEEK); d.planMonth = IDOL_SIM.monthOf(d.week); },
+  setPlan(d, arr){ d.plan = (arr || []).slice(0, 4 * IDOL_SIM.PLAN_PER_WEEK); d.planMonth = IDOL_SIM.monthOf(d.week);
+    (d.booked||[]).forEach(b => { if (IDOL_SIM.monthOf(b.week) === d.planMonth) b.placed = false; });
+    IDOL_SIM.applyBooked(d); },
   // 그 주에 편성된 일정들(최대 2건)
   weekPlans(d){
     const n = IDOL_SIM.PLAN_PER_WEEK, i = (IDOL_SIM.weekInMonth(d.week) - 1) * n;
@@ -4061,6 +4154,47 @@ const IDOL_SIM = {
   },
   weekPlan(d){ return IDOL_SIM.weekPlans(d)[0] || null; },   // 구 호출부 호환
   // 그 주 실행: accompany=true(현장 동행) / false(회사에 남아 곡작업·사무)
+  ceoPlanOf(d){ return (d.ceoPlan || [])[IDOL_SIM.weekInMonth(d.week) - 1] || null; },
+  // 대표 칸 실행 — 그 주 대표가 한 일
+  runCeo(d, act){
+    const S = IDOL_SIM, A = S.CEO_ACTS[act]; if (!A) return null;
+    const R = Math.random, rng = ([lo,hi]) => lo + R()*(hi-lo);
+    if (A.cost && A.cost > d.money) return { ok:false, reason:`대표 활동비 ${Math.round(A.cost/10000)}만 부족` };
+    if (A.cost) d.money -= A.cost;
+    const out = { ok:true, note:'' };
+    if (act === '곡작업') {
+      const avg = k => Object.values(d.mem).reduce((a,m)=>a+m[k],0) / 5;
+      const q = 4 + avg('vocal')/7 + avg('dance')/14 + 3;
+      d.album.quality = S.clamp(d.album.quality + q, 0, 100);
+      d.album.appeal  = S.clamp(d.album.appeal + 5, 0, 100);
+      out.note = `곡작업(완성도 +${Math.round(q)})`;
+    } else if (act === '명함' || act === '방송국') {
+      const n = Math.round(rng(A.net));
+      d.network = S.clamp((d.network||0) + n, 0, 100);
+      out.note = `${act === '명함' ? '업계에 명함을 돌렸다' : '방송국을 돌았다'}(인맥 +${n})`;
+      if (act === '방송국') {                              // ★PD를 직접 만나면 그 자리에서 날짜를 받는다
+        const cand = Object.entries(S.BOOKABLE).filter(([k, B]) =>
+          (d.network||0) >= B.need.net && d.fame >= B.need.fame &&
+          !(B.activeOnly && !S.active(d)) && !(d.booked||[]).some(b => b.key === k));
+        if (cand.length && R() < 0.55) {
+          const [key, B] = cand[Math.floor(R()*cand.length)];
+          const ahead = 1 + Math.floor(R()*3);
+          if (S.book(d, key, ahead)) out.note += ` · ★${B.name} ${ahead}주 뒤로 확정`;
+        }
+      }
+    } else if (act === '투자유치') {
+      const n = Math.round(rng(A.net));
+      d.network = S.clamp((d.network||0) + n, 0, 100);
+      if (d.invested) out.note = `투자 미팅(이미 유치함, 인맥 +${n})`;
+      else if (d.network >= 25) {
+        d.invested = true;
+        const amt = Math.round(100000000 + R()*200000000);
+        d.money += amt;
+        out.note = `★투자 유치 성사 — ${Math.round(amt/100000000*10)/10}억 유입(인맥 +${n})`;
+      } else out.note = `투자 미팅 불발 — 아직 우리를 안 본다(인맥 +${n}, 25 필요)`;
+    }
+    return out;
+  },
   // accIdx: 0/1 = 그 순번 일정에 동행 · 2 = 둘 다 동행 · -1 = 회사에 남아 곡작업
   resolveWeek(d, accIdx){
     const S = IDOL_SIM, ps = S.weekPlans(d);
@@ -4084,15 +4218,16 @@ const IDOL_SIM = {
       total.money += r.delta.money; total.sns += r.delta.sns;
     });
     if (!anyOk) return { ok:false, reason: notes.join(' / ') };
-    if (accIdx === -1) {                                // 회사 — 곡이 나아가고 사람과는 멀어진다
-      const avg = k => Object.values(d.mem).reduce((a,m)=>a+m[k],0) / 5;
-      const q = 4 + avg('vocal')/7 + avg('dance')/14 + 3;
-      d.album.quality = S.clamp(d.album.quality + q, 0, 100);
-      d.album.appeal  = S.clamp(d.album.appeal + 5, 0, 100);
+    // ── 대표 칸: 그 주 대표가 한 일(편성표의 대표 행)
+    const ceo = S.ceoPlanOf(d) || (accIdx === -1 ? '곡작업' : '동행');
+    if (ceo === '동행') {
+      Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust + 1.5, 0, 100); });
+      notes.push('대표 동행');
+    } else {
+      const cr = S.runCeo(d, ceo);
+      if (cr && cr.ok) notes.push(cr.note);
+      else if (cr) notes.push(`대표 일정 무산(${cr.reason})`);
       Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust - 0.5, 0, 100); });
-      notes.push(`회사에서 곡작업(완성도 +${Math.round(q)})`);
-    } else if (accIdx === 2 && ps.length > 1) {         // 둘 다 따라다니면 대표가 곡을 못 만진다
-      notes.push('대표는 하루도 회사에 못 앉았다');
     }
     d.weekDone = true;
     return { ok:true, delta:{ ...total, note: notes.join(' · ') } };
@@ -4246,12 +4381,12 @@ const IDOL_SIM = {
   },
   init() {
     return { week:1, slots:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
-      plan:[], planMonth:0, weekDone:false,
+      plan:[], planMonth:0, ceoPlan:[], weekDone:false, network:5, booked:[],
       personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
       fac:{ practice:0, van:0 }, fandom:null, awards:[],
-      album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0 },
+      album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, choreo:false, teaser:false },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
           fun: id==='haram'?65:(id==='seowoo'?60:45), cond:85, mind:80, trust:60 }])) };
@@ -4371,6 +4506,11 @@ const IDOL_SIM = {
         if(C.auth&&auth>=3) m.trust=S.clamp(m.trust-2,0,100);
         if(CK==='자체예능') m.fun=S.clamp(m.fun+2.5,0,100);});
       if (C.auth&&auth>=3) d.image=S.clamp((d.image===undefined?70:d.image)-2.5,0,100);  // 사생활 소진 = 이미지 하락
+      if (C.jacket) d.album.jacket = true;
+      if (C.rec) d.album.quality = S.clamp(d.album.quality + 9, 0, 100);
+      if (C.choreo) d.album.choreo = true;
+      if (C.teaser) { d.album.teaser = true; if (!d.album.jacket) { dt.light = Math.round(dt.light*0.5); dt.note='자켓 없이 티저(반쪽)'; } }
+      if (C.mv) { d.album.mv = true; d.album.appeal = S.clamp(d.album.appeal + 6, 0, 100); }
       dt.note = CK;
       // 종류별 고유 사고 — 캐릭터 서사와 물린다
       if (C.spoiler && R()<0.22){                     // 라이브: 시아의 '스포일러 요정'
@@ -4382,7 +4522,8 @@ const IDOL_SIM = {
     } else if (sim.action==='음방'){
       if(!S.active(d)) return { ok:false, reason:'활동기아님' };
       const bMul=(list.reduce((a,i)=>a+(S.AXIS[i]==='tv'?S.MUL[i]:1),0)/list.length)
-                 * (st('choreo')?1.35:1) * (st('stylist')?1.15:1);   // 안무 디렉터·스타일리스트가 무대를 올린다
+                 * (st('choreo')?1.35:1) * (st('stylist')?1.15:1)     // 안무 디렉터·스타일리스트가 무대를 올린다
+                 * (d.album.choreo?1.15:1);                            // 안무를 제대로 짜고 왔는가
       d.album.tvThisWeek += 1;
       dt.light += Math.round(d.fame*8*bMul); dt.core += Math.round(d.light*0.005); dt.fame += 1.2;
       list.forEach(i=>{d.mem[i].cond=S.clamp(d.mem[i].cond-15*condMul,0,100);});
@@ -4506,6 +4647,7 @@ const IDOL_SIM = {
     return { ok:true, delta:dt };
   },
   release(d){ d.album.released=d.week; d.album.actWeek=1;
+    if (d.album.mv) { d.album.appeal = IDOL_SIM.clamp(d.album.appeal + 8, 0, 100); d.sns += 60; }
     d.comebacks=(d.comebacks||0)+1;
     if(!(d.album.stage>=1&&d.album.stage<=6)) d.album.stage=((d.comebacks-1)%6)+1;  // 컨셉 미지정이면 순환
     const p=(d.album.quality/100)*(d.album.appeal/100);
@@ -4538,7 +4680,7 @@ const IDOL_SIM = {
     S.addPending(d, d.week + 8, wk * 1.0, '음원 정산');      // 스트리밍 제작사 실수령 단가(원)
     // 음반: 발매 첫 주 초동 — 코어팬이 산다(팬사인회 응모가 붙으면 더)
     if (d.album.released === d.week && d.album.actWeek <= 1) {
-      const sold = Math.round(d.core * (0.9 + Math.random()*0.4) * (1 + d.image/300));
+      const sold = Math.round(d.core * (0.9 + Math.random()*0.4) * (1 + d.image/300) * (d.album.jacket ? 1.25 : 1) * (d.album.teaser ? 1.15 : 1));
       d.albumSold = sold;
       S.addPending(d, d.week + 8, sold * 1400, '음반 정산');    // 장당 실수령 마진(유통·제작비 제외)
       d.lastSold = sold;
@@ -4591,6 +4733,19 @@ const IDOL_SIM = {
       if (S.hasStaff(d,'stylist')) d.image = S.clamp(d.image + 0.8, 0, 100);
     }
     d.image = S.clamp(d.image + 0.3, 0, 100);                // 별일 없으면 서서히 회복
+    // ─ 섭외(초청): 인맥·인지도가 붙으면 라디오·토크쇼에서 부른다. 4주 안에 안 쓰면 사라진다.
+    Object.entries(S.BOOKABLE).forEach(([key, B]) => {
+      const net = d.network || 0;
+      if (net < B.need.net || d.fame < B.need.fame) return;
+      if (B.activeOnly && !S.active(d)) return;
+      if ((d.booked||[]).some(b => b.key === key)) return;
+      const p = 0.05 + (net - B.need.net) / 300 + (S.active(d) ? 0.10 : 0);
+      if (Math.random() < p) {
+        const ahead = 1 + Math.floor(Math.random() * 3);       // 1~3주 뒤로 잡힌다
+        const it = S.book(d, key, ahead);
+        if (it) d.lastInvite = `${B.name}(${ahead}주 뒤)`;
+      }
+    });
     // ─ 대표 개인 재산: 생활비·이자·만기(압류)
     const lostAsset = S.personalWeek(d);
     // ─ 고정 이벤트(팬덤명·시상식)는 개인 서사보다 먼저 — 놓치면 안 되는 분기다
@@ -4634,7 +4789,7 @@ const IDOL_SIM = {
       }
     }
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
-    if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; }
+    if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; d.album.jacket=false; d.album.mv=false; d.album.choreo=false; d.album.teaser=false; }
     d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; },
   // AI 주입용 상태 요약
   stateLine(d){
@@ -4700,6 +4855,13 @@ const IDOL_SIM = {
 `;
     s += `시설: ${IDOL_SIM.facCur(d,'practice').label} / ${IDOL_SIM.facCur(d,'van').label}
 `;
+    s += `인맥 ${Math.round(d.network||0)}`;
+    const bk = (d.booked||[]).filter(b => b.week >= d.week);
+    if (bk.length) s += ` · ★확정된 섭외: ${bk.map(v=>`${v.week - d.week === 0 ? '이번 주' : (v.week - d.week) + '주 뒤'} ${v.name}`).join(', ')}`;
+    s += `\n`;
+    if (d.lastInvite) { s += `★섭외가 잡혔다: 「${d.lastInvite}」 — 실장이 흥분해서 알린다. 그 주 일정표에 자동으로 박힌다\n`; delete d.lastInvite; }
+    if (d.lastBooked) { s += `★일정표 고정: ${d.lastBooked}\n`; delete d.lastBooked; }
+    s += `앨범 준비: 자켓 ${d.album.jacket?'✓':'—'} · 뮤비 ${d.album.mv?'✓':'—'} · 안무 ${d.album.choreo?'✓':'—'} · 티저 ${d.album.teaser?'✓':'—'}\n`;
     // 대표 개인 재산 — 회사 자금과 별개다. 여기가 마르면 대표 개인이 무너진다.
     if (d.personal) {
       const P = d.personal, won = n => Math.round(n/10000).toLocaleString()+'만';
@@ -9342,8 +9504,16 @@ function openIdolBoard(tab) {
         return `<div class="ib-slot${pk ? ' filled' : ''}" onclick="clearPlanSlot(${i})">
           <span>${pk ? pk.name : '비어 있음'}</span></div>`;
       }).join('') + `</div>`).join('');
-    h += `<button class="ib-confirm" ${window._ibPlan.filter(Boolean).length < NEED ? 'disabled' : ''}
-      onclick="confirmIdolPlan()">이 편성으로 확정 (${window._ibPlan.filter(Boolean).length}/${NEED})</button>`;
+    // ★대표 전용 칸 — 애들 일정과 별개로 "대표는 그 주에 뭘 하는 사람인가"
+    window._ibCeo = window._ibCeo || [];
+    h += `<div class="ib-group">대표 일정 (주 1칸)</div>`;
+    h += [0,1,2,3].map(w => `<div class="ib-plan">
+      <div class="ib-wk">${w+1}주</div>
+      <div class="ib-slot${window._ibCeo[w] ? ' filled' : ''}" onclick="cycleCeoSlot(${w})">
+        <span>${window._ibCeo[w] || '탭해서 선택'}</span></div></div>`).join('');
+    const ceoDone = window._ibCeo.filter(Boolean).length;
+    h += `<button class="ib-confirm" ${(window._ibPlan.filter(Boolean).length < NEED || ceoDone < 4) ? 'disabled' : ''}
+      onclick="confirmIdolPlan()">이 편성으로 확정 (팀 ${window._ibPlan.filter(Boolean).length}/${NEED} · 대표 ${ceoDone}/4)</button>`;
     let grp = '';
     cards.forEach((c, i) => {
       if (c.grp !== grp) { grp = c.grp; h += `<div class="ib-group">${grp}</div>`; }
@@ -9358,26 +9528,32 @@ function openIdolBoard(tab) {
     const ps = S.weekPlans(d), wim = S.weekInMonth(d.week);
     h += `<div class="ib-head"><span class="ib-title">📋 ${S.monthOf(d.week)}월차 ${wim}주</span>
       <span class="ib-sub">자금 ${money}</span></div>`;
+    // ★섭외가 잡혔는데 그 주가 꽉 찬 경우 — 무엇을 뺄지 대표가 고른다
+    if (d.pendingBook) {
+      const pb = d.pendingBook;
+      h += `<div class="ib-ask"><div class="q">🔒 ${pb.wi + 1}주차 「${pb.name}」 확정</div>
+        <div class="sub">그 주가 이미 꽉 찼다. 무엇을 빼고 넣을까?</div>` +
+        pb.options.map(o => `<button class="ib-card" onclick="resolveIdolBooking(${o.slot})">
+          <span class="n">「${o.name}」를 취소한다</span>
+          <span class="e">그 자리에 ${pb.name}이(가) 들어간다</span></button>`).join('') + `</div>`;
+    }
     h += [0,1,2,3].map(w => `<div class="ib-plan">
       <div class="ib-wk${w === wim-1 ? ' now' : ''}">${w+1}주</div>` + [0,1].map(j => {
         const pk = (d.plan||[])[w*2+j];
-        return `<div class="ib-slot${w === wim-1 ? ' now' : ''}${w < wim-1 ? ' done' : ''}">
-          <span>${pk ? pk.name : '-'}</span></div>`;
+        return `<div class="ib-slot${w === wim-1 ? ' now' : ''}${w < wim-1 ? ' done' : ''}${pk && pk.fixed ? ' fixed' : ''}">
+          <span>${pk ? (pk.fixed ? '🔒 ' : '') + pk.name : '-'}</span></div>`;
       }).join('') + `</div>`).join('');
     if (d.weekDone) {
       h += `<div class="ib-note">이번 주 일정은 끝났다. 남은 시간은 자유 — 멤버에게 말을 걸거나, 미팅을 잡거나, 곡을 만진다.</div>`;
     } else if (!ps.length) {
       h += `<div class="ib-note">이번 주는 비어 있다. 다음 달 편성 때 채워라.</div>`;
     } else {
-      h += `<div class="ib-group">이번 주 일정 ${ps.length}건 — 대표는 어디에 있을까</div>`;
-      ps.forEach((p, i) => {
-        h += `<button class="ib-card" onclick="runWeekPlan(${i})"><span class="n">「${p.name}」에 동행</span>
-          <span class="e">그 현장에 대표가 붙는다 · 멤버 신뢰↑ · 그 일정 성과 +10%${ps.length > 1 ? ' (나머지는 애들끼리)' : ''}</span></button>`;
-      });
-      if (ps.length > 1) h += `<button class="ib-card" onclick="runWeekPlan(2)"><span class="n">둘 다 따라간다</span>
-        <span class="e">신뢰 최대 · 두 일정 모두 +10% — 대신 대표는 곡을 못 만진다</span></button>`;
-      h += `<button class="ib-card" onclick="runWeekPlan(-1)"><span class="n">회사에 남는다</span>
-        <span class="e">곡 완성도↑(대표 본업) · 멤버 신뢰 소폭↓ — 애들끼리 다녀온다</span></button>`;
+      const ceoAct = S.ceoPlanOf(d) || '동행';
+      h += `<div class="ib-group">이번 주 · 대표는 「${ceoAct}」</div>
+        <div class="ib-note">${(S.CEO_ACTS[ceoAct]||{}).desc || ''}</div>
+        <button class="ib-card" onclick="runWeekPlan(${ceoAct === '동행' ? 2 : -1})">
+          <span class="n">이번 주 진행</span>
+          <span class="e">편성된 ${ps.length}건을 소화한다 — 세부 상황은 장면에서 대화로 풀린다</span></button>`;
     }
     // 자유 행동(일정 소모 없음)
     const free = idolBoardCards().filter(c => c.grp === '미팅');   // 시설=🏢샵 / 개인재산=👤 탭으로 분리
@@ -9411,10 +9587,28 @@ function clearPlanSlot(i) {
   if (!window._ibPlan || !window._ibPlan[i]) return;
   window._ibPlan.splice(i, 1); openIdolBoard();
 }
+function resolveIdolBooking(slot) {
+  const d = gameState.idol;
+  const r = IDOL_SIM.resolveBooking(d, slot);
+  if (!r) return;
+  SFX.play('choice');
+  showStatToast(`🔒 ${r.week}주차 ${r.name} — 「${r.dropped}」 취소`);
+  openIdolBoard('plan');
+}
+function cycleCeoSlot(w) {
+  const acts = Object.keys(IDOL_SIM.CEO_ACTS);
+  window._ibCeo = window._ibCeo || [];
+  const cur = window._ibCeo[w];
+  const i = cur ? acts.indexOf(cur) : -1;
+  window._ibCeo[w] = acts[(i + 1) % acts.length];
+  SFX.play('choice'); openIdolBoard();
+}
 function confirmIdolPlan() {
   const d = gameState.idol, plan = (window._ibPlan || []).filter(Boolean);
-  if (plan.length < 4) return;
-  IDOL_SIM.setPlan(d, plan); window._ibPlan = [];
+  const ceo = (window._ibCeo || []).filter(Boolean);
+  if (plan.length < 4 * IDOL_SIM.PLAN_PER_WEEK || ceo.length < 4) return;
+  d.ceoPlan = ceo.slice(0, 4);
+  IDOL_SIM.setPlan(d, plan); window._ibPlan = []; window._ibCeo = [];
   closeIdolBoard();
   // 8칸 = 주당 2건 → "1주 연습·챌린지" 형태로 묶어서 말한다
   const n = IDOL_SIM.PLAN_PER_WEEK;
@@ -9422,7 +9616,7 @@ function confirmIdolPlan() {
     const items = plan.slice(w*n, w*n+n).filter(Boolean).map(p => p.name);
     return items.length ? `${w+1}주 ${items.join('·')}` : '';
   }).filter(Boolean);
-  const txt = `이번 달 스케줄을 이렇게 잡는다. ${byWeek.join(' / ')}.`;
+  const txt = `이번 달 스케줄을 이렇게 잡는다. ${byWeek.join(' / ')}. 대표는 ${ceo.map((c,i)=>`${i+1}주 ${c}`).join(', ')}.`;
   SFX.play('choice');
   inputMode = false; inputBar.style.display = 'none';
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
@@ -9471,9 +9665,9 @@ function runWeekPlan(accIdx) {
   const names = ps.length > 1
     ? `「${ps[0].name}」${jong(ps[0].name) ? '과' : '와'} 「${ps[1].name}」`
     : `「${ps[0].name}」`;
-  const txt = accIdx === -1 ? `${names} — 애들끼리 보내고 나는 회사에 남는다.`
-            : accIdx === 2  ? `${names} — 둘 다 따라간다.`
-            : `${names} 중 「${(ps[accIdx]||ps[0]).name}」에 같이 간다.`;
+  const ceoAct = IDOL_SIM.ceoPlanOf(d) || (accIdx === 2 ? '동행' : '곡작업');
+  const txt = ceoAct === '동행' ? `이번 주 ${names}. 나도 현장에 붙는다.`
+            : `이번 주 ${names}. 나는 ${ceoAct === '곡작업' ? '작업실에 틀어박힌다' : ceoAct === '명함' ? '업계에 명함을 돌리러 다닌다' : ceoAct === '방송국' ? '방송국을 돈다' : '투자처를 만나러 간다'}.`;
   SFX.play('choice');
   inputMode = false; inputBar.style.display = 'none';
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
