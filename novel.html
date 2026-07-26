@@ -1992,7 +1992,7 @@
 <div id="gameScreen">
 
   <div id="topBar">
-    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v127</span></span>
+    <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v128</span></span>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
       <button class="top-btn" onclick="toggleBacklog()">기록</button>
@@ -3969,10 +3969,10 @@ const IDOL_SIM = {
                   desc:'앨범 자켓 촬영 — 발매 때 음반 초동 +25%. 컴백 전에 해두는 일' },
     '뮤비촬영': { cost:25000000, axis:'music', lightM:0.6, snsM:0.9,  coreM:0.5,  mind:-6, mv:true, fit:'siah', staff:'choreo',
                   desc:'뮤직비디오 촬영 — 발매 때 음원·SNS 대폭 상승. 돈이 많이 든다' },
-    '라디오':   { cost:500000,  axis:'vote',  lightM:0.7,  snsM:0.5,  coreM:0.9,  mind:-2, invite:'radio', fit:'haram', staff:null,
-                  desc:'신곡 소개 라디오 — ★초청받아야 나간다(인맥). 코어팬·인지도' },
-    '토크쇼':   { cost:1500000, axis:'vote',  lightM:1.3,  snsM:0.9,  coreM:1.0,  mind:-4, invite:'talk', fit:'haram', staff:'pd',
-                  desc:'토크쇼 출연 — ★초청받아야 나간다(인맥 35+). 예능 스탯·팬 전방위 상승' },
+    '라디오':   { cost:500000,  pay:[400000,900000],   axis:'vote',  lightM:0.7,  snsM:0.5,  coreM:0.9,  mind:-2, bookOnly:true, fit:'haram', staff:null,
+                  desc:'신곡 소개 라디오 — ★섭외 전용. 출연료 40~90만 · 코어팬·인지도' },
+    '토크쇼':   { cost:1500000, pay:[4000000,9000000], axis:'vote',  lightM:1.3,  snsM:0.9,  coreM:1.0,  mind:-4, bookOnly:true, fit:'haram', staff:'pd',
+                  desc:'토크쇼 출연 — ★섭외 전용. 출연료 400~900만 · 예능 스탯·팬 전방위 상승' },
     '비하인드': { cost:600000, axis:'tv',    lightM:1.2,  snsM:0.85, coreM:0.5,  mind:-3, need:'active', fit:'siah', staff:'choreo',
                   desc:'무대 비하인드·직캠 — 활동기 전용, 직캠이 터지면 라이트팬 폭증' },
   },
@@ -4082,9 +4082,9 @@ const IDOL_SIM = {
   CEO_ACTS: {
     '동행':     { desc:'애들 현장에 붙는다 — 그 주 팀 일정 성과 +10% · 전원 신뢰↑' },
     '곡작업':   { desc:'회사에 남아 곡을 만진다 — 완성도·대중성↑ (대표의 본업)' },
-    '명함':     { desc:'업계에 얼굴을 판다 — 인맥↑ (행사·섭외가 들어오기 시작한다)', cost:2000000, net:[5,9] },
-    '방송국':   { desc:'라디오·음방 PD를 만난다 — 인맥↑↑ · 섭외 확률↑', cost:4000000, net:[8,14], media:true },
-    '투자유치': { desc:'투자처를 만난다 — 인맥 25+면 성사 가능(자금 대규모 유입)', cost:3000000, net:[3,6], invest:true },
+    '명함':     { desc:'행사 기획사·광고 대행사에 얼굴을 판다 — 업계인맥↑ (행사비·광고 제안이 오른다)', cost:2000000, biz:[5,9] },
+    '방송국':   { desc:'라디오·음방 PD를 만난다 — 방송인맥↑↑ · 그 자리에서 출연 날짜를 따낸다', cost:4000000, net:[8,14], media:true },
+    '투자유치': { desc:'투자처를 만난다 — 업계인맥 25+면 성사(1~3억 유입)', cost:3000000, biz:[3,6], invest:true },
   },
   // ★섭외는 티켓이 아니라 **일정표에 박히는 고정 블록**이다(2026-07-26 유저 설계):
   //   "2주차에 PD를 만나 3주차 음방을 따내면 3주차 블록에 자동으로 박혀 있는" 방식.
@@ -4168,11 +4168,15 @@ const IDOL_SIM = {
       d.album.quality = S.clamp(d.album.quality + q, 0, 100);
       d.album.appeal  = S.clamp(d.album.appeal + 5, 0, 100);
       out.note = `곡작업(완성도 +${Math.round(q)})`;
-    } else if (act === '명함' || act === '방송국') {
+    } else if (act === '명함') {
+      const n = Math.round(rng(A.biz));
+      d.biz = S.clamp((d.biz||0) + n, 0, 100);
+      out.note = `업계에 명함을 돌렸다(업계인맥 +${n})`;
+    } else if (act === '방송국') {
       const n = Math.round(rng(A.net));
       d.network = S.clamp((d.network||0) + n, 0, 100);
-      out.note = `${act === '명함' ? '업계에 명함을 돌렸다' : '방송국을 돌았다'}(인맥 +${n})`;
-      if (act === '방송국') {                              // ★PD를 직접 만나면 그 자리에서 날짜를 받는다
+      out.note = `방송국을 돌았다(방송인맥 +${n})`;
+      {                              // ★PD를 직접 만나면 그 자리에서 날짜를 받는다
         const cand = Object.entries(S.BOOKABLE).filter(([k, B]) =>
           (d.network||0) >= B.need.net && d.fame >= B.need.fame &&
           !(B.activeOnly && !S.active(d)) && !(d.booked||[]).some(b => b.key === k));
@@ -4183,15 +4187,15 @@ const IDOL_SIM = {
         }
       }
     } else if (act === '투자유치') {
-      const n = Math.round(rng(A.net));
-      d.network = S.clamp((d.network||0) + n, 0, 100);
-      if (d.invested) out.note = `투자 미팅(이미 유치함, 인맥 +${n})`;
-      else if (d.network >= 25) {
+      const n = Math.round(rng(A.biz));
+      d.biz = S.clamp((d.biz||0) + n, 0, 100);
+      if (d.invested) out.note = `투자 미팅(이미 유치함, 업계인맥 +${n})`;
+      else if ((d.biz||0) >= 25) {
         d.invested = true;
         const amt = Math.round(100000000 + R()*200000000);
         d.money += amt;
-        out.note = `★투자 유치 성사 — ${Math.round(amt/100000000*10)/10}억 유입(인맥 +${n})`;
-      } else out.note = `투자 미팅 불발 — 아직 우리를 안 본다(인맥 +${n}, 25 필요)`;
+        out.note = `★투자 유치 성사 — ${Math.round(amt/100000000*10)/10}억 유입(업계인맥 +${n})`;
+      } else out.note = `투자 미팅 불발 — 아직 우리를 안 본다(업계인맥 +${n}, 25 필요)`;
     }
     return out;
   },
@@ -4203,7 +4207,7 @@ const IDOL_SIM = {
     const notes = [], total = { light:0, core:0, money:0, sns:0 };
     let anyOk = false;
     ps.forEach((p, idx) => {
-      const r = S.apply(d, p.sim);
+      const r = S.apply(d, p.fixed ? { ...p.sim, booked: true } : p.sim);   // 🔒섭외 블록은 게이트를 넘는다
       if (!r || !r.ok) { notes.push(`${p.name} 무산(${(r&&r.reason)||'실패'})`); return; }
       anyOk = true;
       const acc = (accIdx === 2) || (accIdx === idx);
@@ -4381,7 +4385,7 @@ const IDOL_SIM = {
   },
   init() {
     return { week:1, slots:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
-      plan:[], planMonth:0, ceoPlan:[], weekDone:false, network:5, booked:[],
+      plan:[], planMonth:0, ceoPlan:[], weekDone:false, network:5, biz:5, booked:[],
       personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
@@ -4482,6 +4486,7 @@ const IDOL_SIM = {
       // ★콘텐츠 6종(sim.kind) — 종류마다 얻는 팬의 '종류'가 다르다. 미지정이면 브이로그(구 세이브 호환).
       const CK = S.CONTENT[sim.kind] ? sim.kind : '브이로그';
       const C = S.CONTENT[CK];
+      if (C.bookOnly && !sim.booked) return { ok:false, reason:'섭외를 받아야 나갈 수 있다(대표가 방송국을 돌아라)' };
       if (C.need==='active' && !S.active(d)) return { ok:false, reason:'활동기·무대 있어야 찍는다' };
       if (C.cost > d.money) return { ok:false, reason:'자금부족' };
       dt.money -= (C.cost - cost);                    // 종류별 실비로 교체(기본 콘텐츠 비용은 위에서 이미 차감)
@@ -4506,12 +4511,16 @@ const IDOL_SIM = {
         if(C.auth&&auth>=3) m.trust=S.clamp(m.trust-2,0,100);
         if(CK==='자체예능') m.fun=S.clamp(m.fun+2.5,0,100);});
       if (C.auth&&auth>=3) d.image=S.clamp((d.image===undefined?70:d.image)-2.5,0,100);  // 사생활 소진 = 이미지 하락
+      if (C.pay) {                                     // 방송 출연료 — 인지도가 높을수록 더 준다
+        const fee = Math.round((C.pay[0] + R()*(C.pay[1]-C.pay[0])) * (1 + d.fame/70));
+        dt.money += fee; dt._fee = `출연료 +${Math.round(fee/10000).toLocaleString()}만`;
+      }
       if (C.jacket) d.album.jacket = true;
       if (C.rec) d.album.quality = S.clamp(d.album.quality + 9, 0, 100);
       if (C.choreo) d.album.choreo = true;
       if (C.teaser) { d.album.teaser = true; if (!d.album.jacket) { dt.light = Math.round(dt.light*0.5); dt.note='자켓 없이 티저(반쪽)'; } }
       if (C.mv) { d.album.mv = true; d.album.appeal = S.clamp(d.album.appeal + 6, 0, 100); }
-      dt.note = CK;
+      dt.note = CK + (dt._fee ? ' · ' + dt._fee : '');
       // 종류별 고유 사고 — 캐릭터 서사와 물린다
       if (C.spoiler && R()<0.22){                     // 라이브: 시아의 '스포일러 요정'
         d.image=S.clamp(d.image-1.5,0,100); dt.note = CK+' · 😬실언';
@@ -4521,6 +4530,7 @@ const IDOL_SIM = {
       if (viral) dt.note=(dt.note?dt.note+' · ':'')+'🔥바이럴';
     } else if (sim.action==='음방'){
       if(!S.active(d)) return { ok:false, reason:'활동기아님' };
+      if(!sim.booked && !S.openShows(d).length) return { ok:false, reason:'인지도 미달 — 나갈 수 있는 음방이 없다' };
       const bMul=(list.reduce((a,i)=>a+(S.AXIS[i]==='tv'?S.MUL[i]:1),0)/list.length)
                  * (st('choreo')?1.35:1) * (st('stylist')?1.15:1)     // 안무 디렉터·스타일리스트가 무대를 올린다
                  * (d.album.choreo?1.15:1);                            // 안무를 제대로 짜고 왔는가
@@ -4542,7 +4552,7 @@ const IDOL_SIM = {
       dt.core += Math.round(rng(E.core)*aMul*(1+d.fame/55)*(0.6+tr/160));
       dt.light += Math.round(rng(E.light)*aMul*(1+d.fame/70));
       if (E.sns) dt.sns += Math.round(rng(E.sns)*aMul);
-      dt.fame += E.fame; dt.money += Math.round(rng(E.money)*(1+d.fame/90)*S.seasonMul(d.week,'fee'));
+      dt.fame += E.fame; dt.money += Math.round(rng(E.money)*(1+d.fame/90)*(1+(d.biz||0)/200)*S.seasonMul(d.week,'fee'));
       dt.core = Math.round(dt.core * S.seasonMul(d.week,'coreM'));
       if (E.image) d.image = S.clamp(d.image + E.image, 0, 100);
       list.forEach(i=>{const m=d.mem[i];
@@ -4705,7 +4715,7 @@ const IDOL_SIM = {
     // 제안 만료 — 안 잡으면 4주 뒤 사라진다(낡은 제안이 슬롯을 막아 상위 티어가 안 들어오던 버그)
     d.offers = d.offers.filter(o => (o.life = (o.life===undefined?4:o.life) - 1) > 0);
     // 제안 생성: 인지도·이미지 게이트를 통과한 최상위 티어에서 확률적으로
-    if (d.offers.length < 3 && R() < (0.10 + d.fame/320) * (S.facCur(d,'office').offerM || 1)) {
+    if (d.offers.length < 3 && R() < (0.10 + d.fame/320) * (S.facCur(d,'office').offerM || 1) * (1 + (d.biz||0)/150)) {
       const ease = S.facCur(d,'office').gateEase || 0;                    // 사옥이 번듯하면 대형도 본다
       const ok = S.BRAND_TIERS.filter(t => d.fame >= (t.gate - ease) && d.image >= t.image);
       if (ok.length) {
@@ -4855,7 +4865,7 @@ const IDOL_SIM = {
 `;
     s += `시설: ${IDOL_SIM.facCur(d,'practice').label} / ${IDOL_SIM.facCur(d,'van').label}
 `;
-    s += `인맥 ${Math.round(d.network||0)}`;
+    s += `인맥: 방송 ${Math.round(d.network||0)} · 업계 ${Math.round(d.biz||0)}`;
     const bk = (d.booked||[]).filter(b => b.week >= d.week);
     if (bk.length) s += ` · ★확정된 섭외: ${bk.map(v=>`${v.week - d.week === 0 ? '이번 주' : (v.week - d.week) + '주 뒤'} ${v.name}`).join(', ')}`;
     s += `\n`;
@@ -9237,6 +9247,7 @@ function migrateIdolSave(d) {
     if (!Array.isArray(d[k])) d[k] = Array.isArray(base[k]) ? base[k].slice() : [];
   });
   if (typeof d.network !== 'number') d.network = base.network;
+  if (typeof d.biz !== 'number') d.biz = base.biz;
   if (typeof d.image !== 'number') d.image = base.image;
   if (typeof d.streams !== 'number') d.streams = 0;
   if (typeof d.planMonth !== 'number') d.planMonth = 0;
@@ -9335,6 +9346,7 @@ function idolBoardCards() {
       '음방', S.active(d) && d.album.tvThisWeek < 1);
 
   Object.entries(S.CONTENT).forEach(([k, C]) => {
+    if (C.bookOnly) return;                        // ★라디오·토크쇼는 섭외로만 들어온다(직접 편성 불가)
     const why = (C.need === 'active' && !S.active(d)) ? '활동기·무대 필요' : (C.cost > d.money ? '자금부족' : null);
     add('콘텐츠 촬영', k, C.cost, C.desc + ` · 적임 ${(IDOL_CHARACTERS[C.fit]||{}).name}`, why, `콘텐츠:${k}`,
         k === '라이브' && lowCond);
@@ -9531,8 +9543,12 @@ function openIdolBoard(tab) {
     h += `<div class="ib-group">대표 일정 (주 1칸)</div>`;
     h += [0,1,2,3].map(w => `<div class="ib-plan">
       <div class="ib-wk">${w+1}주</div>
-      <div class="ib-slot${window._ibCeo[w] ? ' filled' : ''}" onclick="cycleCeoSlot(${w})">
-        <span>${window._ibCeo[w] || '탭해서 선택'}</span></div></div>`).join('');
+      <div class="ib-slot${window._ibCeo[w] ? ' filled' : ''}${window._ibCeoPick === w ? ' now' : ''}" onclick="openCeoPick(${w})">
+        <span>${window._ibCeo[w] || '탭해서 선택'}</span></div></div>` +
+      (window._ibCeoPick === w ? `<div class="ib-ask"><div class="q">${w+1}주 대표 일정</div>` +
+        Object.entries(S.CEO_ACTS).map(([k, A]) => `<button class="ib-card" onclick="setCeoSlot(${w},'${k}')">
+          <span class="n">${k}</span>${A.cost ? `<span class="c">${Math.round(A.cost/10000).toLocaleString()}만</span>` : ''}
+          <span class="e">${A.desc}</span></button>`).join('') + `</div>` : '')).join('');
     const ceoDone = window._ibCeo.filter(Boolean).length;
     h += `<button class="ib-confirm" ${(window._ibPlan.filter(Boolean).length < NEED || ceoDone < 4) ? 'disabled' : ''}
       onclick="confirmIdolPlan()">이 편성으로 확정 (팀 ${window._ibPlan.filter(Boolean).length}/${NEED} · 대표 ${ceoDone}/4)</button>`;
@@ -9617,12 +9633,11 @@ function resolveIdolBooking(slot) {
   showStatToast(`🔒 ${r.week}주차 ${r.name} — 「${r.dropped}」 취소`);
   openIdolBoard('plan');
 }
-function cycleCeoSlot(w) {
-  const acts = Object.keys(IDOL_SIM.CEO_ACTS);
+function openCeoPick(w) { window._ibCeoPick = (window._ibCeoPick === w ? null : w); openIdolBoard(); }
+function setCeoSlot(w, act) {
   window._ibCeo = window._ibCeo || [];
-  const cur = window._ibCeo[w];
-  const i = cur ? acts.indexOf(cur) : -1;
-  window._ibCeo[w] = acts[(i + 1) % acts.length];
+  window._ibCeo[w] = act;
+  window._ibCeoPick = null;
   SFX.play('choice'); openIdolBoard();
 }
 function confirmIdolPlan() {
