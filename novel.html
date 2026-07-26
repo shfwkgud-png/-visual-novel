@@ -1517,6 +1517,13 @@
     width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.14);
     background: rgba(255,255,255,0.06); color: #e8e6e3; font-size: 16px; line-height: 1; cursor: pointer;
   }
+  #idolBoard .ib-drow { display: flex; justify-content: space-between; gap: 10px;
+    padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+  #idolBoard .ib-drow .k { color: rgba(232,230,227,0.5); flex: none; }
+  #idolBoard .ib-drow .v { color: rgba(232,230,227,0.92); text-align: right; }
+  #idolBoard .ib-bar { display: inline-block; width: 54px; height: 5px; border-radius: 3px;
+    background: rgba(255,255,255,0.12); vertical-align: middle; margin-left: 4px; overflow: hidden; }
+  #idolBoard .ib-bar i { display: block; height: 100%; background: #f2c14e; }
   #idolBoard .ib-group { font-size: 11px; color: rgba(232,230,227,0.45); margin: 12px 6px 6px; letter-spacing: 0.06em; }
   #idolBoard .ib-card {
     width: 100%; text-align: left; margin-bottom: 7px; padding: 9px 11px; border-radius: 10px;
@@ -2028,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v133</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v134</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3926,14 +3933,17 @@ const IDOL_SIM = {
   },
   // ───── 연중 캘린더 (고정) ─────
   // 1주차 = 4월 1주. 실제 K-pop 씬의 1년 리듬이 주차에 박혀 있어야 "언제 컴백할까"가 전략이 된다.
-  yearWeek(w){ return ((w - 1 + 13) % 52) + 1; },        // 1 = 1월 1주
+  //   ★1년 = 48주(모든 달이 4주 — 2026-07-26 유저 지시). 1주차 = 4월 1주 = 연중 13주.
+  YEAR_WEEKS: 48,
+  yearWeek(w){ return ((w - 1 + 12) % 48) + 1; },        // 1 = 1월 1주
+  //   48주 기준(달 = 4주). from/to = 연중 주차. 1월1주=1 … 12월4주=48.
   CALENDAR: [
-    { from:1,  to:8,  name:'신년 컴백 대전', gate:1.25, desc:'대형사가 몰려 나온다 — 차트 문턱이 25% 올라간다. 피할지 부딪힐지.' },
-    { from:18, to:22, name:'대학 축제 시즌', fee:1.6, coreM:1.3, desc:'대학 축제 성수기 — 행사비 1.6배, 현장에서 코어팬이 붙는다.' },
-    { from:27, to:35, name:'여름 페스티벌·음원 성수기', stream:1.15, festival:true, desc:'스밍 15%↑ · 인지도 30+면 여름 페스티벌 무대(대형 노출).' },
-    { from:40, to:44, name:'가을 축제 시즌', fee:1.4, coreM:1.2, desc:'가을 축제 — 행사비 1.4배.' },
-    { from:45, to:48, name:'행사 비수기', fee:0.7, desc:'수능·연말 정산기 — 행사가 씨가 마른다. 자금 계획 필요.' },
-    { from:49, to:52, name:'연말 시상식 시즌', award:true, desc:'인지도 50+면 시상식에 초청된다 — 한 번의 무대로 판이 바뀐다.' },
+    { from:1,  to:8,  name:'신년 컴백 대전', gate:1.25, desc:'대형사가 몰려 나온다 — 차트 문턱이 25% 올라간다. 피할지 부딪힐지.' },   // 1~2월
+    { from:17, to:21, name:'대학 축제 시즌', fee:1.6, coreM:1.3, desc:'대학 축제 성수기 — 행사비 1.6배, 현장에서 코어팬이 붙는다.' },  // 5월~6월1주
+    { from:25, to:32, name:'여름 페스티벌·음원 성수기', stream:1.15, festival:true, desc:'스밍 15%↑ · 인지도 30+면 여름 페스티벌 무대(대형 노출).' },  // 7~8월
+    { from:37, to:41, name:'가을 축제 시즌', fee:1.4, coreM:1.2, desc:'가을 축제 — 행사비 1.4배.' },                                    // 10월~11월1주
+    { from:42, to:44, name:'행사 비수기', fee:0.7, desc:'수능·연말 정산기 — 행사가 씨가 마른다. 자금 계획 필요.' },                      // 11월 2~4주
+    { from:45, to:48, name:'연말 시상식 시즌', award:true, desc:'인지도 50+면 시상식에 초청된다 — 한 번의 무대로 판이 바뀐다.' },        // 12월
   ],
   season(w){ const y = IDOL_SIM.yearWeek(w); return IDOL_SIM.CALENDAR.filter(c=>y>=c.from&&y<=c.to); },
   seasonMul(w, key){ return IDOL_SIM.season(w).reduce((a,c)=>a*(c[key]||1), 1); },
@@ -3941,7 +3951,7 @@ const IDOL_SIM = {
   nextSeason(w){
     const y = IDOL_SIM.yearWeek(w);
     let best = null;
-    IDOL_SIM.CALENDAR.forEach(c=>{ let d = c.from - y; if (d <= 0) d += 52;
+    IDOL_SIM.CALENDAR.forEach(c=>{ let d = c.from - y; if (d <= 0) d += IDOL_SIM.YEAR_WEEKS;
       if (d > 0 && (!best || d < best.in)) best = { in:d, c }; });
     return best;
   },
@@ -4117,14 +4127,12 @@ const IDOL_SIM = {
   // ───── 날짜 (앱이 소유. AI가 임의로 하루씩 밀지 못하게) ─────
   //   한 주 = 월(회의) → 수(일정1) → 금(일정2) → 일(마감). 주가 끝나면 다음 주 월요일로 리셋.
   DOW_LABEL: ['월요일 오전', '수요일 오후', '금요일 저녁', '일요일 밤'],
-  //   달(月)은 **yearWeek(52주 년)** 에서 뽑는다 — 연중 캘린더(신년 대전·여름 페스티벌·연말
-  //   시상식)가 52주 기준이라, 4주=1달로 세면 1년마다 4주씩 밀려 "3월에 연말 시상식"이 된다.
-  //   보드의 "N월차 M주"(시작 후 경과, 4주 블록)와는 다른 축이라 겹치지 않는다.
+  //   ★요일은 **편성된 일정을 몇 건 소화했는가(wkIdx)** 에서만 나온다.
+  //   대화·AI가 뱉은 sim으로는 절대 안 흐른다(2026-07-26 유저 우려: "대화하다 하루가 가면 문제").
   dateLine(d){
-    const S = IDOL_SIM, MW = 52 / 12, yw = S.yearWeek(d.week || 1);
-    const m = Math.min(12, Math.floor((yw - 1) / MW) + 1);
-    const wk = Math.max(1, yw - Math.round((m - 1) * MW));
-    return `[${m}월 ${wk}주] ${S.DOW_LABEL[Math.min(3, d.day || 0)]}`;
+    const S = IDOL_SIM, yw = S.yearWeek(d.week || 1);
+    const m = Math.floor((yw - 1) / 4) + 1, wk = ((yw - 1) % 4) + 1;
+    return `[${m}월 ${wk}주] ${S.DOW_LABEL[Math.min(3, d.wkIdx || 0)]}`;
   },
   monthOf(w){ return Math.floor((w - 1) / 4) + 1; },
   weekInMonth(w){ return ((w - 1) % 4) + 1; },
@@ -4137,6 +4145,8 @@ const IDOL_SIM = {
     '명함':     { desc:'행사 기획사·광고 대행사에 얼굴을 판다 — 업계인맥↑ (행사비·광고 제안이 오른다)', cost:2000000, biz:[5,9] },
     '방송국':   { desc:'라디오·음방 PD를 만난다 — 방송인맥↑↑ · 그 자리에서 출연 날짜를 따낸다', cost:4000000, net:[8,14], media:true },
     '투자유치': { desc:'투자처를 만난다 — 업계인맥 25+면 성사(1~3억 유입)', cost:3000000, biz:[3,6], invest:true },
+    // ★"일주일 만에 끝내겠다" — 유저가 선언하면 되게 해준다(2026-07-26). 공짜는 아니다.
+    '속성작업': { desc:'밤을 새워 한 주 만에 곡을 끝낸다 — 완성도를 발매선(55)까지. 급조라 대중성 −8, 다음 주 대표는 뻗는다', cost:3000000, rush:true },
   },
   // ★섭외는 티켓이 아니라 **일정표에 박히는 고정 블록**이다(2026-07-26 유저 설계):
   //   "2주차에 PD를 만나 3주차 음방을 따내면 3주차 블록에 자동으로 박혀 있는" 방식.
@@ -4220,6 +4230,12 @@ const IDOL_SIM = {
       d.album.quality = S.clamp(d.album.quality + q, 0, 100);
       d.album.appeal  = S.clamp(d.album.appeal + 5, 0, 100);
       out.note = `곡작업(완성도 +${Math.round(q)})`;
+    } else if (act === '속성작업') {
+      const before = d.album.quality;
+      d.album.quality = S.clamp(Math.max(d.album.quality, 55), 0, 100);
+      d.album.appeal  = S.clamp(d.album.appeal - 8, 0, 100);
+      d.rushHang = true;                                 // 다음 주 대표 칸은 무효
+      out.note = `밤샘 속성 작업 — 완성도 ${Math.round(before)}→${Math.round(d.album.quality)} · 대중성 −8 (다음 주 대표는 뻗는다)`;
     } else if (act === '명함') {
       const n = Math.round(rng(A.biz));
       d.biz = S.clamp((d.biz||0) + n, 0, 100);
@@ -4252,6 +4268,47 @@ const IDOL_SIM = {
     return out;
   },
   // accIdx: 0/1 = 그 순번 일정에 동행 · 2 = 둘 다 동행 · -1 = 회사에 남아 곡작업
+  // ───── 일정 진행: 요일별로 하나씩(기본) / 남은 것 몰아치기(주 스킵) ─────
+  //   유저 지시(2026-07-26): "버튼 하나로 한 주가 통째로 지나가는 게 아니라,
+  //   시간별로 유저가 세팅한 스케줄이 돌아야 한다. 한 주 스킵은 따로."
+  nextPlan(d){ const ps = IDOL_SIM.weekPlans(d); return ps[d.wkIdx || 0] || null; },
+  resolveOne(d, acc){
+    const S = IDOL_SIM, ps = S.weekPlans(d), i = d.wkIdx || 0;
+    if (!ps.length) return { ok:false, reason:'이번 주 일정이 편성되지 않았다(월초 회의에서 편성)' };
+    if (i >= ps.length) return { ok:false, reason:'이번 주 일정은 다 소화했다 — 주간 마감을 하라' };
+    const p = ps[i];
+    const r = S.apply(d, p.fixed ? { ...p.sim, booked:true } : p.sim);
+    d.wkIdx = i + 1;                                    // 성공이든 무산이든 그 칸은 지나간다(요일이 흐른다)
+    if (!r || !r.ok) return { ok:false, reason:`${p.name} 무산(${(r&&r.reason)||'실패'})`, name:p.name, last: d.wkIdx >= ps.length };
+    if (acc) {                                          // 현장 동행 — 애들 곁에 있는 값
+      Object.keys(d.mem).forEach(k=>{ d.mem[k].trust = S.clamp(d.mem[k].trust + 1.5, 0, 100); });
+      const addL = Math.round(r.delta.light * 0.1), addC = Math.round(r.delta.core * 0.1);
+      d.light += addL; d.core += addC; r.delta.light += addL; r.delta.core += addC;
+    }
+    return { ok:true, delta:r.delta, name:p.name, acc:!!acc, last: d.wkIdx >= ps.length };
+  },
+  // 주간 마감 — 대표 칸 효과는 여기서 한 번만 발동한다
+  closeWeek(d, accIdx){
+    const S = IDOL_SIM, notes = [];
+    if (d.weekDone) return { ok:false, reason:'이번 주는 이미 마감했다' };
+    if (d.rushHang) {                                   // 속성 작업 후유증 — 대표는 한 주 뻗는다
+      delete d.rushHang;
+      notes.push('대표는 밤샘 후유증으로 한 주 내내 뻗어 있었다');
+    } else {
+      const ceo = S.ceoPlanOf(d) || (accIdx === -1 ? '곡작업' : '동행');
+      if (ceo === '동행') {
+        Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust + 1.5, 0, 100); });
+        notes.push('대표 동행');
+      } else {
+        const cr = S.runCeo(d, ceo);
+        if (cr && cr.ok) notes.push(cr.note);
+        else if (cr) notes.push(`대표 일정 무산(${cr.reason})`);
+        Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust - 0.5, 0, 100); });
+      }
+    }
+    d.weekDone = true;
+    return { ok:true, note: notes.join(' · ') };
+  },
   resolveWeek(d, accIdx){
     const S = IDOL_SIM, ps = S.weekPlans(d);
     if (!ps.length) return { ok:false, reason:'이번 주 일정이 편성되지 않았다(월초 회의에서 편성)' };
@@ -4259,6 +4316,7 @@ const IDOL_SIM = {
     const notes = [], total = { light:0, core:0, money:0, sns:0 };
     let anyOk = false;
     ps.forEach((p, idx) => {
+      if (idx < (d.wkIdx || 0)) return;                  // 이미 소화한 칸은 건너뛴다
       const r = S.apply(d, p.fixed ? { ...p.sim, booked: true } : p.sim);   // 🔒섭외 블록은 게이트를 넘는다
       if (!r || !r.ok) { notes.push(`${p.name} 무산(${(r&&r.reason)||'실패'})`); return; }
       anyOk = true;
@@ -4273,19 +4331,10 @@ const IDOL_SIM = {
       total.light += r.delta.light; total.core += r.delta.core;
       total.money += r.delta.money; total.sns += r.delta.sns;
     });
+    d.wkIdx = ps.length;                                 // 몰아쳤으니 그 주 칸은 전부 지나갔다
     if (!anyOk) return { ok:false, reason: notes.join(' / ') };
-    // ── 대표 칸: 그 주 대표가 한 일(편성표의 대표 행)
-    const ceo = S.ceoPlanOf(d) || (accIdx === -1 ? '곡작업' : '동행');
-    if (ceo === '동행') {
-      Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust + 1.5, 0, 100); });
-      notes.push('대표 동행');
-    } else {
-      const cr = S.runCeo(d, ceo);
-      if (cr && cr.ok) notes.push(cr.note);
-      else if (cr) notes.push(`대표 일정 무산(${cr.reason})`);
-      Object.keys(d.mem).forEach(i=>{ d.mem[i].trust = S.clamp(d.mem[i].trust - 0.5, 0, 100); });
-    }
-    d.weekDone = true;
+    const cw = S.closeWeek(d, accIdx);                   // 대표 칸은 여기서 한 번만
+    if (cw && cw.note) notes.push(cw.note);
     return { ok:true, delta:{ ...total, note: notes.join(' · ') } };
   },
   // ───── 음원 차트 (이 게임의 컨셉이 '역주행'인데 정작 스밍·차트가 없었다) ─────
@@ -4437,7 +4486,7 @@ const IDOL_SIM = {
   },
   init() {
     return { week:1, slots:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
-      plan:[], planMonth:0, ceoPlan:[], weekDone:false, network:5, biz:5, day:0, booked:[],
+      plan:[], planMonth:0, ceoPlan:[], weekDone:false, network:5, biz:5, day:0, wkIdx:0, booked:[],
       personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
@@ -4705,10 +4754,8 @@ const IDOL_SIM = {
     }
     d.money+=dt.money; d.fame=S.clamp(d.fame+dt.fame,0,100);
     d.light=Math.max(0,d.light+dt.light); d.core=Math.max(0,d.core+dt.core); d.sns+=dt.sns;
-    if (sim.action !== '미팅') {                                 // 미팅(브랜드·영입·시설·개인재산)은 일정 칸을 안 쓴다
-      d.slots=Math.max(0,d.slots-1);
-      d.day = Math.min(3, (d.day || 0) + 1);                     // 월 → 수 → 금 → 일
-    }
+    if (sim.action !== '미팅') d.slots=Math.max(0,d.slots-1);   // 미팅(브랜드·영입·시설·개인재산)은 일정 칸을 안 쓴다
+    // ※요일은 여기서 안 움직인다 — 편성된 일정을 소화하는 resolveOne()에서만 흐른다.
     return { ok:true, delta:dt };
   },
   release(d){ d.album.released=d.week; d.album.actWeek=1;
@@ -4855,7 +4902,7 @@ const IDOL_SIM = {
     }
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
     if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; d.album.jacket=false; d.album.mv=false; d.album.choreo=false; d.album.teaser=false; }
-    d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; d.day=0; },   // ★새 주는 월요일부터
+    d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; d.day=0; d.wkIdx=0; },   // ★새 주는 월요일부터
   // AI 주입용 상태 요약
   stateLine(d){
     if(!d) return '';
@@ -9360,6 +9407,7 @@ function migrateIdolSave(d) {
   if (typeof d.network !== 'number') d.network = base.network;
   if (typeof d.biz !== 'number') d.biz = base.biz;
   if (typeof d.day !== 'number') d.day = 0;
+  if (typeof d.wkIdx !== 'number') d.wkIdx = 0;
   if (typeof d.image !== 'number') d.image = base.image;
   if (typeof d.streams !== 'number') d.streams = 0;
   if (typeof d.planMonth !== 'number') d.planMonth = 0;
@@ -9498,6 +9546,49 @@ function idolBoardCards() {
   return cards;
 }
 // ── 🏢 샵: 회사 자산(회사 자금) / 개인 자산(대표 개인 현금). 사면 **배경이 바뀐다**.
+// 📊 현황 — 팬·앨범·차트·멤버·회사를 한 화면에(유저 지적: "대시보드가 없다")
+function idolDashHtml() {
+  const d = gameState.idol, S = IDOL_SIM;
+  const won = n => (n >= 100000000 ? (n/100000000).toFixed(2) + '억' : Math.round(n/10000).toLocaleString() + '만');
+  const row = (k, v) => `<div class="ib-drow"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  const bar = (v, max) => `<span class="ib-bar"><i style="width:${Math.max(0, Math.min(100, v/max*100))}%"></i></span>`;
+  const A = d.album, ch = d.chart || {};
+  let h = `<div class="ib-group">💗 팬 ${d.fandom ? `· 팬덤명 「${d.fandom}」` : '· 팬덤명 미정'}</div>`;
+  h += row('코어팬', `${d.core.toLocaleString()}명`) + row('라이트팬', `${d.light.toLocaleString()}명`);
+  h += row('결집도', `${Math.round(S.rally(d))} ${bar(S.rally(d), 100)}`) + row('인지도', `${Math.round(d.fame)} ${bar(d.fame, 100)}`);
+  h += row('SNS 화력', Math.round(d.sns).toLocaleString());
+
+  h += `<div class="ib-group">💿 앨범</div>`;
+  if (!A.quality) h += `<div class="ib-note">아직 곡이 없다 — 대표 칸 「곡작업」(또는 「속성작업」)으로 만든다.</div>`;
+  else {
+    h += row('제목', A.title || '(미정)');
+    h += row('완성도', `${Math.round(A.quality)} ${bar(A.quality, 100)}${A.quality >= 50 ? ' ✅발매가능' : ' (50 필요)'}`);
+    h += row('대중성', `${Math.round(A.appeal)} ${bar(A.appeal, 100)}`);
+  }
+  h += row('제작 공정', `자켓 ${A.jacket?'✓':'—'} · 뮤비 ${A.mv?'✓':'—'} · 안무 ${A.choreo?'✓':'—'} · 티저 ${A.teaser?'✓':'—'}`);
+  h += row('상태', S.active(d) ? `★활동기 ${A.actWeek}/4주차` : '공백기');
+
+  h += `<div class="ib-group">📈 음원</div>`;
+  h += row('주간 스밍', S.weeklyStreams(d).toLocaleString());
+  h += row('일간 차트', ch.rank ? `${ch.rank}위${ch.peak ? ` (최고 ${ch.peak}위)` : ''}${ch.surge ? ' 🔥역주행' : ''}` : '차트 밖');
+  h += row('진입 주차', ch.weeks ? `${ch.weeks}주째` : '—');
+
+  h += `<div class="ib-group">🏢 회사</div>`;
+  h += row('자금', won(d.money) + '원') + row('대출', won(d.loan) + '원');
+  h += row('인맥', `방송 ${Math.round(d.network||0)} · 업계 ${Math.round(d.biz||0)}`);
+  h += row('스태프', (d.staff||[]).length ? (d.staff||[]).map(k=>(S.STAFF[k]||{}).name||k).join(', ') : '없음');
+  h += row('브랜드', (d.brands||[]).length ? (d.brands||[]).map(b=>b.name||b).join(', ') : '없음');
+  const ns = S.nextSeason(d.week);
+  h += row('이번 시즌', (S.season(d.week).map(c=>c.name).join(', ') || '평시') + (ns ? ` · 다음 「${ns.c.name}」 ${ns.in}주 뒤` : ''));
+
+  h += `<div class="ib-group">🎤 멤버</div>`;
+  Object.entries(d.mem).forEach(([id, m]) => {
+    const nm = (IDOL_CHARACTERS[id] || {}).name || id;
+    h += `<div class="ib-drow"><span class="k">${nm}</span><span class="v">
+      보컬 ${Math.round(m.vocal)} · 댄스 ${Math.round(m.dance)} · 컨디션 ${Math.round(m.cond)}${m.cond<30?'⚠':''} · 멘탈 ${Math.round(m.mind)}${m.mind<30?'⚠':''} · 신뢰 ${Math.round(m.trust)}</span></div>`;
+  });
+  return h;
+}
 function idolShopHtml() {
   const d = gameState.idol, S = IDOL_SIM;
   const won = n => n >= 100000000 ? (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '억' : Math.round(n / 10000).toLocaleString() + '만';
@@ -9640,10 +9731,12 @@ function openIdolBoard(tab) {
   // 탭: 일정(스케줄 칸) / 개인(대표 본인 돈 — 일정 칸을 쓰지 않는다)
   let h = `<div class="ib-tabs">
     <button class="ib-tab${cur==='plan'?' on':''}" onclick="openIdolBoard('plan')">🗓 일정</button>
+    <button class="ib-tab${cur==='dash'?' on':''}" onclick="openIdolBoard('dash')">📊 현황</button>
     <button class="ib-tab${cur==='shop'?' on':''}" onclick="openIdolBoard('shop')">🏢 샵</button>
     <button class="ib-tab${cur==='personal'?' on':''}" onclick="openIdolBoard('personal')">👤 개인</button></div>`;
-  if (cur === 'personal' || cur === 'shop') {
-    document.getElementById('ibBody').innerHTML = h + (cur === 'shop' ? idolShopHtml() : idolPersonalHtml());
+  if (cur === 'personal' || cur === 'shop' || cur === 'dash') {
+    document.getElementById('ibBody').innerHTML = h +
+      (cur === 'shop' ? idolShopHtml() : cur === 'dash' ? idolDashHtml() : idolPersonalHtml());
     document.getElementById('idolBoard').classList.add('on');
     return;
   }
@@ -9709,11 +9802,21 @@ function openIdolBoard(tab) {
       h += `<div class="ib-note">이번 주는 비어 있다. 다음 달 편성 때 채워라.</div>`;
     } else {
       const ceoAct = S.ceoPlanOf(d) || '동행';
-      h += `<div class="ib-group">이번 주 · 대표는 「${ceoAct}」</div>
-        <div class="ib-note">${(S.CEO_ACTS[ceoAct]||{}).desc || ''}</div>
-        <button class="ib-card" onclick="runWeekPlan(${ceoAct === '동행' ? 2 : -1})">
-          <span class="n">이번 주 진행</span>
-          <span class="e">편성된 ${ps.length}건을 소화한다 — 세부 상황은 장면에서 대화로 풀린다</span></button>`;
+      const done = d.wkIdx || 0, nx = S.nextPlan(d), acc = (ceoAct === '동행');
+      h += `<div class="ib-group">이번 주 · 대표는 「${ceoAct}」 · 소화 ${done}/${ps.length}</div>
+        <div class="ib-note">${(S.CEO_ACTS[ceoAct]||{}).desc || ''}</div>`;
+      if (nx) {
+        h += `<button class="ib-card" onclick="runNextPlan()">
+            <span class="n">▶ ${S.DOW_LABEL[Math.min(3, done + 1)].replace(/ .*/,'')} — 「${nx.name}」 진행</span>
+            <span class="e">이 일정 하나만 소화한다${acc ? ' · 대표 동행(+10%)' : ''} — 장면에서 풀린다</span></button>
+          <button class="ib-card" onclick="runWeekPlan(${acc ? 2 : -1})">
+            <span class="n">⏩ 남은 ${ps.length - done}건 몰아치기 (주 스킵)</span>
+            <span class="e">한 주를 통째로 넘긴다 — 장면 없이 결과만</span></button>`;
+      } else {
+        h += `<button class="ib-card" onclick="closeIdolWeek()">
+            <span class="n">🗓 주간 마감</span>
+            <span class="e">대표 칸(${ceoAct}) 처리 · 차트·정산 판정 후 다음 주 월요일로</span></button>`;
+      }
     }
     // 자유 행동(일정 소모 없음)
     const free = idolBoardCards().filter(c => c.grp === '미팅');   // 시설=🏢샵 / 개인재산=👤 탭으로 분리
@@ -9805,6 +9908,45 @@ function pickIdolAction(i) {
   inputMode = false; inputBar.style.display = 'none';
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
   window._genText = c.name; handlePlayerInput(`${c.name} — 이건 일정 밖에서 처리한다.`);
+}
+// 다음 일정 하나만 — 요일이 한 칸 흐른다(월 → 수 → 금)
+function runNextPlan() {
+  const d = gameState.idol, S = IDOL_SIM;
+  const p = S.nextPlan(d); if (!p) return;
+  const acc = (S.ceoPlanOf(d) || '동행') === '동행';
+  closeIdolBoard();
+  const r = S.resolveOne(d, acc);
+  syncIdolTime();
+  if (!r || !r.ok) { showStatToast(`${(r && r.reason) || '실행 불가'}`, true); return; }
+  const t = [];
+  if (r.delta.note) t.push(r.delta.note);
+  if (r.delta.light) t.push(`라이트팬 ${r.delta.light > 0 ? '+' : ''}${r.delta.light.toLocaleString()}`);
+  if (r.delta.core)  t.push(`코어팬 ${r.delta.core > 0 ? '+' : ''}${r.delta.core.toLocaleString()}`);
+  if (r.delta.money) t.push(`자금 ${r.delta.money > 0 ? '+' : ''}${Math.round(r.delta.money/10000).toLocaleString()}만`);
+  showStatToast(`${p.name} · ${t.join(' / ')}`);
+  d._skipSim = true;
+  const day = String(gameState.time || '').replace(/^\[.+?\]\s*/, '');
+  const txt = `${day} — 「${p.name}」${acc ? '. 나도 현장에 붙는다.' : '. 애들끼리 보낸다.'}`;
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  window._genText = txt; handlePlayerInput(txt);
+}
+// 주간 마감 — 대표 칸 처리 + 차트·정산 + 다음 주 월요일
+function closeIdolWeek() {
+  const d = gameState.idol, S = IDOL_SIM;
+  closeIdolBoard();
+  const acc = (S.ceoPlanOf(d) || '동행') === '동행';
+  const cw = S.closeWeek(d, acc ? 2 : -1);
+  if (!cw || !cw.ok) { showStatToast(`${(cw && cw.reason) || '마감 불가'}`, true); return; }
+  if (cw.note) showStatToast(cw.note);
+  idolWeekEnd();
+  d._skipSim = true;
+  const txt = `한 주가 끝났다.${cw.note ? ' ' + cw.note + '.' : ''} 다음 주 월요일, 실장과 회의.`;
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  window._genText = txt; handlePlayerInput(txt);
 }
 function runWeekPlan(accIdx) {
   const d = gameState.idol, ps = IDOL_SIM.weekPlans(d);
