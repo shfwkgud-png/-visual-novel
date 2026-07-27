@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v150</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v151</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2375,7 +2375,16 @@ const ENGINE_MOD_RPG = `
 const ENGINE_MOD_CG = `
 
 ## 아이돌 육성 sim 필드 (스토리 「무대 뒤 3분」 전용 — 다른 스토리에선 절대 쓰지 마라):
-- 플레이어가 **이번 주 일정 한 칸을 쓰는 행동**을 골랐을 때만 'sim' 필드를 채워라. 잡담·질문·관계 대화엔 넣지 마라(일정 소모 안 됨).
+- ★★'sim'을 채워야 하는 경우는 **두 가지**다. 하나만 보고 판단하지 마라.
+  ① **일정 한 칸을 쓰는 행동**을 골랐을 때 → 'action'을 채운다(연습·콘텐츠·음방·행사·휴식).
+  ② **일정과 무관하지만 회사 상태가 바뀌는 결정**을 대화에서 했을 때 → 그 필드만 채운다.
+     예: 앨범 제목을 정했다 → 'title' / 곡 완성도·대중성을 말했다 → 'quality'·'appeal'
+        / 팬덤 이름을 정했다 → 'fandom' / 영입·계약·시설 구매를 정했다 → 'action':'미팅' + 'target'
+     ★이때는 'action'이 없어도 된다. **일정 칸을 소모하지 않는다.**
+  ★★대사로만 말하고 sim을 빼먹으면 **유저 화면의 숫자가 안 바뀐다.** 대표가 "앨범명은 PING,
+    완성도는 90"이라고 말했으면 그 턴의 sim에 반드시 {"title":"PING","quality":90}을 담아라.
+    이건 선택이 아니라 필수다.
+- 순수한 잡담·질문·감정 대화(수치가 안 변하는 것)에는 'sim'을 넣지 마라.
 - 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여", "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
@@ -8383,10 +8392,16 @@ function processResponse(data, activeCharIds, streamed) {
     if (s.flags) Object.assign(gameState.flags, s.flags);
     // Merge character relationship/status updates
     // ★아이돌 시뮬: AI는 "무슨 행동을 했는지"만 뱉고, 수치 계산은 여기서(결정론)
-    if (!replaying && STORY.id === 'idol' && gameState.idol && s.sim && s.sim.action) {
-      // ★일정 보드로 이미 적용한 턴이면 모델이 sim을 또 실어도 무시(이중 적용 방지)
-      if (gameState.idol._skipSim) { delete gameState.idol._skipSim; }
-      else runIdolSim(s.sim);
+    if (!replaying && STORY.id === 'idol' && gameState.idol && s.sim && typeof s.sim === 'object') {
+      // ★sim.action이 있을 때만 받던 게 버그였다(2026-07-27) — 제목·완성도·팬덤명은 일정과 무관하게
+      //   대화로 정하는 것이라 action이 없다. 그래서 「앨범명 PING」이 영영 안 박혔다.
+      const HAS_STATE = x => !!(x && (x.title || x.fandom || x.quality !== undefined || x.appeal !== undefined));
+      if (gameState.idol._skipSim) {
+        // 일정 보드로 이미 적용한 턴 — 일정(action)만 무시하고, 대화로 정한 상태값은 살린다
+        delete gameState.idol._skipSim;
+        if (HAS_STATE(s.sim)) { const { action, ...rest } = s.sim; runIdolSim(rest); }
+      }
+      else if (s.sim.action || HAS_STATE(s.sim)) runIdolSim(s.sim);
     }
     if (s.chars && typeof s.chars === 'object') {
       for (const id in s.chars) {
