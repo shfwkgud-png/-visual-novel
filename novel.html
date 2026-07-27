@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v149</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v150</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2376,7 +2376,7 @@ const ENGINE_MOD_CG = `
 
 ## 아이돌 육성 sim 필드 (스토리 「무대 뒤 3분」 전용 — 다른 스토리에선 절대 쓰지 마라):
 - 플레이어가 **이번 주 일정 한 칸을 쓰는 행동**을 골랐을 때만 'sim' 필드를 채워라. 잡담·질문·관계 대화엔 넣지 마라(일정 소모 안 됨).
-- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여", "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "fandom": "팬덤명", "release": false }'
+- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여", "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
   - 'concept' = 곡작업일 때만
@@ -2393,6 +2393,10 @@ const ENGINE_MOD_CG = `
     유저 화면에 반영되지 않는다(2026-07-27 유저 지적: 곡 제목을 정했는데 「미정」, 트레이너를
     영입했는데 영입 버튼이 그대로 살아 있었다).
     - 곡 제목을 정했다 → 'title' 에 제목 (발매 전에도 즉시 반영된다)
+    - ★대표가 곡을 완성했다·다듬었다고 서술했다 → 'quality' 에 완성도(0~100), 'appeal' 에 대중성(0~100).
+      말로 "거의 완성됐다"고 하고 수치를 안 주면 유저 화면은 그대로다. **반드시 숫자를 함께 내라.**
+      단 **보컬 녹음 전에는 완성도 90이 상한**이다(앱이 자동으로 깎는다) — 100을 쓰려면 녹음을 먼저 해야 한다.
+      수치는 올라가기만 한다. 내려가는 서술(곡을 망쳤다 등)은 앱에 반영되지 않으니 장면으로만 풀어라.
     - 트레이너·PD·스타일리스트를 영입하기로 했다 → 'action'=미팅, 'target'=고용, 'staff'=vocal 등
     - 팬덤 이름을 정했다 → 'fandom' 에 이름
     - 시설을 사기로 했다 → 'action'=미팅, 'target'=시설, 'facility'=practice 등
@@ -4532,7 +4536,7 @@ const IDOL_SIM = {
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
       fac:{ practice:0, van:0 }, fandom:null, awards:[],
-      album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, choreo:false, teaser:false },
+      album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, rec:false, choreo:false, teaser:false },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
           fun: id==='haram'?65:(id==='seowoo'?60:45), cond:85, mind:80, trust:60 }])) };
@@ -4659,7 +4663,7 @@ const IDOL_SIM = {
       }
       if (C.jacket) d.album.jacket = true;
       if (C.mvTier) d.album.mvTier = Math.max(d.album.mvTier || 0, C.mvTier);   // 더 좋은 등급만 남는다
-      if (C.rec) d.album.quality = S.clamp(d.album.quality + 9, 0, 100);
+      if (C.rec) { d.album.quality = S.clamp(d.album.quality + 9, 0, 100); d.album.rec = true; }
       if (C.choreo) d.album.choreo = true;
       if (C.teaser) { d.album.teaser = true; if (!d.album.jacket) { dt.light = Math.round(dt.light*0.5); dt.note='자켓 없이 티저(반쪽)'; } }
       if (C.mv) { d.album.mv = true; d.album.appeal = S.clamp(d.album.appeal + 6, 0, 100); }
@@ -4947,7 +4951,7 @@ const IDOL_SIM = {
       }
     }
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
-    if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; d.album.jacket=false; d.album.mv=false; d.album.mvTier=0; d.album.choreo=false; d.album.teaser=false; }
+    if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; d.album.jacket=false; d.album.mv=false; d.album.mvTier=0; d.album.rec=false; d.album.choreo=false; d.album.teaser=false; }
     d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; d.day=0; d.wkIdx=0; d.dow=0; d.dowTime=''; },   // ★새 주는 월요일부터
   // AI 주입용 상태 요약
   stateLine(d){
@@ -9680,6 +9684,28 @@ function runIdolSim(sim) {
     const _t = String(sim.title).trim().slice(0, 40);
     if (d.album.title !== _t) { d.album.title = _t; try { showStatToast('💿 곡 제목 「' + _t + '」'); } catch {} }
   }
+  // ★대화로 "완성도 100% 수준으로 곡을 뽑았다"고 하면 수치가 따라가야 한다(유저 지시 2026-07-27).
+  //   단 **보컬 녹음 전에는 90이 상한**이다 — 편곡이 완벽해도 목소리가 안 들어갔으면 곡이 아니다.
+  //   내려가지는 않는다(대화로 실수해서 수치가 깎이면 억울하다).
+  if (sim && (sim.quality !== undefined || sim.appeal !== undefined)) {
+    const capQ = d.album.rec ? 100 : 90;
+    if (sim.quality !== undefined) {
+      const q = Math.min(capQ, Math.max(0, Number(sim.quality) || 0));
+      if (q > d.album.quality) {
+        const was = Math.round(d.album.quality);
+        d.album.quality = q;
+        try { showStatToast(`🎵 곡 완성도 ${was} → ${q}` + (q === 90 && !d.album.rec ? ' (녹음 전 상한)' : '')); } catch {}
+      }
+    }
+    if (sim.appeal !== undefined) {
+      const a = Math.min(100, Math.max(0, Number(sim.appeal) || 0));
+      if (a > d.album.appeal) {
+        const was = Math.round(d.album.appeal);
+        d.album.appeal = a;
+        try { showStatToast(`🎧 대중성 ${was} → ${a}`); } catch {}
+      }
+    }
+  }
   if (sim && sim.fandom && !d.fandom) {                   // 팬덤 이름 확정(성공 여부 무관)
     d.fandom = String(sim.fandom).slice(0, 20);
     d.core += Math.round(d.core * 0.06 + 60);
@@ -9804,7 +9830,8 @@ function idolDashHtml() {
     h += row('완성도', `${Math.round(A.quality)} ${bar(A.quality, 100)}${A.quality >= 50 ? ' ✅발매가능' : ' (50 필요)'}`);
     h += row('대중성', `${Math.round(A.appeal)} ${bar(A.appeal, 100)}`);
   }
-  h += row('제작 공정', `자켓 ${A.jacket?'✓':'—'} · 뮤비 ${A.mv?['','저예산','중급','대형'][A.mvTier||1]:'—'} · 안무 ${A.choreo?'✓':'—'} · 티저 ${A.teaser?'✓':'—'}`);
+  h += row('제작 공정', `녹음 ${A.rec?'✓':'—'} · 자켓 ${A.jacket?'✓':'—'} · 뮤비 ${A.mv?['','저예산','중급','대형'][A.mvTier||1]:'—'} · 안무 ${A.choreo?'✓':'—'} · 티저 ${A.teaser?'✓':'—'}`);
+    if (!A.rec) h += row('', `<span style="color:rgba(232,230,227,0.5)">녹음 전이라 완성도 상한 90</span>`);
   h += row('상태', S.active(d) ? `★활동기 ${A.actWeek}/4주차` : '공백기');
 
   h += `<div class="ib-group">📈 음원</div>`;
