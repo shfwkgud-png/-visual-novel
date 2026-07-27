@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v139</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v140</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2376,7 +2376,7 @@ const ENGINE_MOD_CG = `
 
 ## 아이돌 육성 sim 필드 (스토리 「무대 뒤 3분」 전용 — 다른 스토리에선 절대 쓰지 마라):
 - 플레이어가 **이번 주 일정 한 칸을 쓰는 행동**을 골랐을 때만 'sim' 필드를 채워라. 잡담·질문·관계 대화엔 넣지 마라(일정 소모 안 됨).
-- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장", "offer": 0 }'
+- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여", "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "fandom": "팬덤명", "release": false }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
   - 'concept' = 곡작업일 때만
@@ -2389,6 +2389,15 @@ const ENGINE_MOD_CG = `
     · 기업행사 = 인지도 25+ (돈↑↑, 멘탈 소모)
     · 팬콘 = 코어팬 500+ (돈↑ 코어팬↑↑ 멘탈↑↑) — 팀이 회복되는 서사 정점
     조건 미달이면 앱이 거절하고 이유를 알려준다. 상태창의 「가능한 행사」 목록 밖은 고르지 마라.
+  - ★★**대화에서 정한 것은 반드시 sim으로 함께 내라.** 말로만 서술하면 앱 수치가 안 바뀌고
+    유저 화면에 반영되지 않는다(2026-07-27 유저 지적: 곡 제목을 정했는데 「미정」, 트레이너를
+    영입했는데 영입 버튼이 그대로 살아 있었다).
+    - 곡 제목을 정했다 → 'title' 에 제목 (발매 전에도 즉시 반영된다)
+    - 트레이너·PD·스타일리스트를 영입하기로 했다 → 'action'=미팅, 'target'=고용, 'staff'=vocal 등
+    - 팬덤 이름을 정했다 → 'fandom' 에 이름
+    - 시설을 사기로 했다 → 'action'=미팅, 'target'=시설, 'facility'=practice 등
+    ※조건 미달(계약금 부족·인지도 미달)이면 앱이 거절하고 이유를 토스트로 보여준다.
+      그럴 땐 장면에서도 "지금은 무리"로 풀어라.
   - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장) / **고용·해고**('staff'=vocal|dance|manager|pd|stylist|choreo) / **외주프로듀서**(2천만, 곡 완성도 급상승 대신 대표 자존심·멤버 신뢰 소폭 하락)
   - ★'target' 개인 재산: **담보대출**(asset=home|car, 대표 개인 현금 유입·만기 못 지키면 **압류**) / **담보상환**(asset=…) / **사재출연**(개인→회사, 멤버 신뢰↑) / **대표급여**(회사→개인, 안 가져가면 대표 개인 통장이 마른다)
     · ★**회사 자금과 대표 개인 현금은 완전히 다른 돈이다.** 회사가 망해도 개인 돈은 남고, 개인이 집을 걸어 회사를 살릴 수도 있다. 이 선택을 가볍게 넘기지 마라 — 집을 담보로 잡는 장면은 대표 혼자 서명하는 장면이어야 한다.
@@ -4943,6 +4952,10 @@ const IDOL_SIM = {
     s += `한 주의 리듬: 월(실장 회의) → 수(첫 일정) → 금(두 번째 일정) → 일(주간 마감). 주가 끝나면 다음 주 월요일로 넘어간다.\n`;
     s += `★주차가 막 바뀌었다면 앞 장면과 이어 쓰지 마라 — 주말이 지났고 장소는 사무실이다.
 `;
+    s += `★★아래 목록(스태프·브랜드·시설·앨범)이 **유일한 사실**이다. 목록에 없는 사람이 회사에 있는 것처럼 쓰지 마라.
+`;
+    s += `  대화에서 영입·구매를 정했더라도 목록에 없으면 아직 성사되지 않은 것이다 — 진행 중이거나 무산된 것으로 풀어라.
+`;
     s += `${d.week}주차 | 남은 일정 ${d.slots}/3 | 자금 ${won(d.money)}원 | 대출 ${won(d.loan)}원 | 인지도 ${Math.round(d.fame)}\n`;
     s += `팬: 코어 ${d.core.toLocaleString()}명 · 라이트 ${d.light.toLocaleString()}명 (결집도 ${Math.round(IDOL_SIM.rally(d))})\n`;
     s += `곡: ${d.album.quality?`완성도 ${Math.round(d.album.quality)} 대중성 ${Math.round(d.album.appeal)}`:'없음(곡작업 필요)'}`;
@@ -5021,6 +5034,13 @@ const IDOL_SIM = {
     // 스태프 — 대표+실장 둘로 시작해서, 돈이 생기는 만큼 사람을 붙인다
     const stf = d.staff || [];
     const payW = stf.reduce((a,k)=>a+(IDOL_SIM.STAFF[k]?IDOL_SIM.STAFF[k].pay:0),0);
+    if (d.lastReject) {
+      s += `★직전에 대표가 요청한 「${d.lastReject.what}」은 **성사되지 않았다** — 이유: ${d.lastReject.reason}
+`;
+      s += `  이 사실을 장면에 반영하라(실장이 안 된다고 알리거나, 상대가 거절하거나, 돈이 모자라 미룬다). 성사된 것처럼 쓰지 마라.
+`;
+      delete d.lastReject;
+    }
     s += `스태프: ${stf.length? stf.map(k=>IDOL_SIM.STAFF[k].name).join(', ')+` (주급 합계 ${Math.round(payW/10000)}만)` : '없음 — 대표와 실장 둘이 다 한다'}\n`;
     const hirable = Object.entries(IDOL_SIM.STAFF).filter(([k,v])=>stf.indexOf(k)<0 && (!v.gate||d.fame>=v.gate))
       .map(([k,v])=>`${v.name}(계약금 ${Math.round(v.hire/10000)}만·주급 ${Math.round(v.pay/10000)}만: ${v.desc})`);
@@ -9503,6 +9523,7 @@ function migrateIdolSave(d) {
   if (typeof d.day !== 'number') d.day = 0;
   if (typeof d.wkIdx !== 'number') d.wkIdx = 0;
   if (typeof d.dow !== 'number') d.dow = 0;
+  delete d.lastReject;
   if (typeof d.dowTime !== 'string') d.dowTime = '';
   delete d.dayLabel;
   if (typeof d.image !== 'number') d.image = base.image;
@@ -9549,6 +9570,18 @@ function syncIdolTime() {
 }
 function runIdolSim(sim) {
   const d = gameState.idol; if (!d) return null;
+  // ★제목·팬덤명은 일정 성공 여부와 무관하게 반영한다 — 대화로 정하는 것이고,
+  //   apply()가 실패하면(미팅 target 없음 등) 안 박히는 게 이전 버그였다(2026-07-27).
+  //   발매와도 분리 — 곡을 만들 때 정하는 것이지 발매 순간에 붙이는 게 아니다.
+  if (sim && sim.title && String(sim.title).trim()) {
+    const _t = String(sim.title).trim().slice(0, 40);
+    if (d.album.title !== _t) { d.album.title = _t; try { showStatToast('💿 곡 제목 「' + _t + '」'); } catch {} }
+  }
+  if (sim && sim.fandom && !d.fandom) {                   // 팬덤 이름 확정(성공 여부 무관)
+    d.fandom = String(sim.fandom).slice(0, 20);
+    d.core += Math.round(d.core * 0.06 + 60);
+    try { showStatToast('💗 팬덤 이름 「' + d.fandom + '」 확정'); } catch {}
+  }
   const r = IDOL_SIM.apply(d, sim);
   if (r && r.ok) {
     syncIdolTime();                                    // 요일이 흘렀다 — 배너·time 즉시 반영
@@ -9558,15 +9591,9 @@ function runIdolSim(sim) {
     if (r.delta.money) t.push(`자금 ${r.delta.money > 0 ? '+' : ''}${Math.round(r.delta.money / 10000).toLocaleString()}만`);
     if (r.delta.note)  t.unshift(r.delta.note);
     if (t.length) showStatToast(`${sim.action} · ${t.join(' / ')}`, r.delta.money < 0 && !r.delta.light && !r.delta.core);
-    if (sim.fandom && !d.fandom) {                       // 팬덤 이름 확정
-      d.fandom = String(sim.fandom).slice(0, 20);
-      d.core += Math.round(d.core * 0.06 + 60);
-      showStatToast(`💗 팬덤 이름 「${d.fandom}」 확정`);
-    }
     if (sim.release && !IDOL_SIM.active(d) && d.album.quality >= 50) {
       if (sim.stage >= 1 && sim.stage <= 6) d.album.stage = sim.stage | 0; else d.album.stage = 0;
       IDOL_SIM.release(d);
-      if (sim.title) d.album.title = sim.title;
       showStatToast(`🎬 컴백! ${d.album.title || '신곡'} 발매 (완성도 ${Math.round(d.album.quality)})`);
     }
     if (sim.action !== '미팅' && d.slots <= 0 && !IDOL_SIM.weekPlan(d)) {   // 미팅·개인재산은 주를 넘기지 않는다
@@ -9589,7 +9616,13 @@ function runIdolSim(sim) {
       syncIdolTime();                                 // ★새 주 = 월요일부터
       showStatToast(`🗓 ${d.week}주차 시작 · 일정 3칸`);
     }
-  } else if (r && !r.ok) showStatToast(`실패: ${r.reason}`, true);
+  } else if (r && !r.ok) {
+    showStatToast(`실패: ${r.reason}`, true);
+    // ★거절 사실을 AI에게 되돌려준다. 안 그러면 AI는 성공한 줄 알고 이야기를 굴려서
+    //   "대화에선 트레이너가 합류했는데 앱에는 없는" 어긋남이 생긴다(2026-07-27 유저 지적).
+    d.lastReject = { what: [sim.action, sim.target, sim.staff, sim.facility, sim.kind].filter(Boolean).join('/'),
+                     reason: r.reason };
+  }
   return r;
 }
 // ═══ 일정 보드 — 가능한 모든 행동을 조건·비용·효과와 함께 보여준다(원안 §턴구조② 구현) ═══
