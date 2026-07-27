@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v146</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v147</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -9729,9 +9729,15 @@ function idolBoardCards() {
     `${o.label}·주 ${won(o.weekly)}·${o.weeks}주${o.member ? `·${(IDOL_CHARACTERS[o.member]||{}).name} 개인` : '·팀 전체'}`,
     null, `미팅:브랜드:${i}`, true));
   Object.entries(S.STAFF).forEach(([k, v]) => {
-    if ((d.staff || []).indexOf(k) >= 0) return;
-    add('미팅', `영입 — ${v.name}`, v.hire, `${v.desc} · 주급 ${won(v.pay)}`,
-      (v.gate && d.fame < v.gate) ? `인지도 ${v.gate} 필요` : (v.hire > d.money ? '계약금 부족' : null), `미팅:고용:${k}`);
+    // ★이미 영입한 사람도 목록에 남기고 회색으로 표시한다(유저 지시 2026-07-27: 사라지면
+    //   대화로 뽑았을 때 됐는지 안 됐는지 헷갈린다. 회색으로 남는 게 직관적).
+    const hired = (d.staff || []).indexOf(k) >= 0;
+    add('미팅', `영입 — ${v.name}`, hired ? 0 : v.hire,
+      hired ? `주급 ${won(v.pay)} 지급 중` : `${v.desc} · 주급 ${won(v.pay)}`,
+      hired ? '✓ 이미 영입했습니다'
+            : (v.gate && d.fame < v.gate) ? `인지도 ${v.gate} 필요`
+            : (v.hire > d.money ? '계약금 부족' : null),
+      `미팅:고용:${k}`);
   });
   add('미팅', '투자 유치', 0, '1회 한정 · 1,500~2,500만 유입',
     d.invested ? '이미 유치함' : (d.fame < 30 ? '인지도 30 필요' : null), '미팅:투자');
@@ -9963,15 +9969,28 @@ function openIdolBoard(tab) {
     const ceoDone = window._ibCeo.filter(Boolean).length;
     h += `<button class="ib-confirm" ${(window._ibPlan.filter(Boolean).length < NEED || ceoDone < 4) ? 'disabled' : ''}
       onclick="confirmIdolPlan()">이 편성으로 확정 (팀 ${window._ibPlan.filter(Boolean).length}/${NEED} · 대표 ${ceoDone}/4)</button>`;
+    // ★미팅(영입·브랜드·대출 등)은 일정 칸을 소모하지 않는다 — 편성 중에도 할 수 있어야 한다.
+    //   (2026-07-27 유저 지적: "영입 탭이 왜 없어짐?" — 편성 모드에서 미팅을 걸러내고 있었다)
+    const meets = idolBoardCards().filter(c => c.grp === '미팅');
+    let mgrp = '';
+    meets.forEach((c) => {
+      if (c.grp !== mgrp) { mgrp = c.grp; h += `<div class="ib-group">영입·계약 (일정 칸을 쓰지 않는다 — 편성 중에도 가능)</div>`; }
+      const mi = idolBoardCards().findIndex(x => x.pick === c.pick);
+      h += `<button class="ib-card${c.req ? ' off' : ''}" ${c.req ? '' : `onclick="pickIdolAction(${mi})"`}>
+        <span class="n">${c.name}</span>${c.cost ? `<span class="c">${Math.round(c.cost/10000).toLocaleString()}만</span>` : ''}
+        ${c.rec && !c.req ? '<span class="rec">추천</span>' : ''}
+        <span class="e">${c.req ? `<span class="why">${/^✓/.test(c.req) ? '' : '✕ '}${c.req}</span>` : c.eff}</span></button>`;
+    });
     let grp = '';
     cards.forEach((c, i) => {
       if (c.grp !== grp) { grp = c.grp; h += `<div class="ib-group">${grp}</div>`; }
       h += `<button class="ib-card${c.req ? ' off' : ''}" ${c.req ? '' : `onclick="addPlanSlot(${i})"`}>
         <span class="n">${c.name}</span>${c.cost ? `<span class="c">${Math.round(c.cost/10000).toLocaleString()}만</span>` : ''}
         ${c.rec && !c.req ? '<span class="rec">추천</span>' : ''}
-        <span class="e">${c.req ? `<span class="why">✕ ${c.req}</span>` : c.eff}</span></button>`;
+        <span class="e">${c.req ? `<span class="why">${/^✓/.test(c.req) ? '' : '✕ '}${c.req}</span>` : c.eff}</span></button>`;
     });
-    window._ibCards = cards;
+    window._ibPlanCards = cards;          // 편성 슬롯용(미팅 제외)
+    window._ibCards = idolBoardCards();   // 미팅 카드가 쓰는 전체 인덱스
   } else {
     // ── 주간 실행 모드: 편성된 일정 + 대표는 어디 있을 것인가
     const ps = S.weekPlans(d), wim = S.weekInMonth(d.week);
@@ -10018,12 +10037,12 @@ function openIdolBoard(tab) {
     const free = idolBoardCards().filter(c => c.grp === '미팅');   // 시설=🏢샵 / 개인재산=👤 탭으로 분리
     let grp = '';
     free.forEach((c) => {
-      if (c.grp !== grp) { grp = c.grp; h += `<div class="ib-group">${grp} (일정 소모 없음)</div>`; }
+      if (c.grp !== grp) { grp = c.grp; h += `<div class="ib-group">영입·계약 (일정 칸을 쓰지 않는다)</div>`; }
       const idx = idolBoardCards().findIndex(x => x.pick === c.pick);
       h += `<button class="ib-card${c.req ? ' off' : ''}" ${c.req ? '' : `onclick="pickIdolAction(${idx})"`}>
         <span class="n">${c.name}</span>${c.cost ? `<span class="c">${Math.round(c.cost/10000).toLocaleString()}만</span>` : ''}
         ${c.rec && !c.req ? '<span class="rec">추천</span>' : ''}
-        <span class="e">${c.req ? `<span class="why">✕ ${c.req}</span>` : c.eff}</span></button>`;
+        <span class="e">${c.req ? `<span class="why">${/^✓/.test(c.req) ? '' : '✕ '}${c.req}</span>` : c.eff}</span></button>`;
     });
     window._ibCards = idolBoardCards();
   }
@@ -10032,7 +10051,7 @@ function openIdolBoard(tab) {
 }
 function closeIdolBoard() { document.getElementById('idolBoard').classList.remove('on'); }
 function addPlanSlot(i) {
-  const c = (window._ibCards || [])[i]; if (!c || c.req) return;
+  const c = (window._ibPlanCards || window._ibCards || [])[i]; if (!c || c.req) return;
   window._ibPlan = window._ibPlan || [];
   if (window._ibPlan.filter(Boolean).length >= 4 * IDOL_SIM.PLAN_PER_WEEK) return;   // 주당 2건 × 4주
   const [act, a] = String(c.pick).split(':');
