@@ -347,13 +347,57 @@ function showTab(t) {
   if (t === 'tok') tokInit();
 }
 
-// ===== 토큰 사용량 (novel.html의 recTokens가 localStorage vn_tokens에 적재) =====
+// ===== 토큰 사용량 =====
+//   novel.html의 recTokens가 localStorage vn_tokens에 적재 + 클라우드(tokens:<user>)에 백업.
+//   ★기기별로 따로 쌓이므로 클라우드 것과 **합산**해서 보여준다(2026-07-27 유저 지적:
+//     폰에서 플레이했는데 PC 관리자 화면이 비어 있었다).
+let _tokRemote = null;
+
+async function tokFetchRemote() {
+  if (!AUTH && !TOKEN) return null;
+  const user = localStorage.getItem('vn_auth_user') || 'local';
+  for (const k of ['tokens:' + user, 'tokens:local']) {
+    try {
+      const r = await fetch(API + '/sync?key=' + encodeURIComponent(k), { headers: hdr() });
+      if (r.ok) return await r.json();
+    } catch {}
+  }
+  return null;
+}
+
+function tokMerge(local, remote) {
+  // 같은 스토리는 더 큰 값을 취한다 — 양쪽이 같은 기록을 공유했을 때 두 배로 뻥튀기하지 않는다
+  const out = JSON.parse(JSON.stringify(local || {}));
+  Object.entries(remote || {}).forEach(([sid, r]) => {
+    const c = out[sid];
+    if (!c) { out[sid] = r; return; }
+    out[sid] = { title: c.title || r.title,
+                 in: Math.max(c.in || 0, r.in || 0),
+                 out: Math.max(c.out || 0, r.out || 0),
+                 turns: Math.max(c.turns || 0, r.turns || 0),
+                 cost: Math.max(c.cost || 0, r.cost || 0) };
+  });
+  return out;
+}
+
+async function tokRefresh() {
+  _tokRemote = await tokFetchRemote();
+  tokInit();
+}
+
 function tokInit() {
   const el = document.getElementById('tokTable');
-  let all = {};
-  try { all = JSON.parse(localStorage.getItem('vn_tokens') || '{}'); } catch {}
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem('vn_tokens') || '{}'); } catch {}
+  const all = tokMerge(local, _tokRemote);
   const rows = Object.entries(all);
-  if (!rows.length) { el.innerHTML = '<p class="hint">아직 기록이 없습니다. novel.html에서 플레이하면 쌓입니다 (v103+, 같은 브라우저·도메인).</p>'; return; }
+  if (!rows.length) {
+    el.innerHTML = '<p class="hint">아직 기록이 없습니다.<br>' +
+      '· 폰에서 플레이한 기록은 로그인 후 <b>클라우드에서 불러오기</b>를 눌러야 보입니다.<br>' +
+      '· 이 브라우저에서 플레이한 기록은 자동으로 보입니다 (v103+).</p>' +
+      '<button onclick="tokRefresh()">클라우드에서 불러오기</button>';
+    return;
+  }
   const n = v => (Number(v) || 0).toLocaleString('ko-KR');
   let totI = 0, totO = 0, totC = 0, totT = 0;
   let h = '<table style="width:100%;border-collapse:collapse;font-size:0.88rem">' +
@@ -368,6 +412,8 @@ function tokInit() {
   });
   h += `<tr style="border-top:2px solid var(--border);text-align:right;color:var(--gold,#d4af37)"><td style="text-align:left;padding:8px 10px"><b>전체</b></td>` +
     `<td style="padding:8px 10px"><b>${n(totI + totO)}</b></td><td style="padding:8px 10px">${n(totI)}</td><td style="padding:8px 10px">${n(totO)}</td><td style="padding:8px 10px">${n(totT)}</td><td></td><td style="padding:8px 10px"><b>${totC ? '$' + totC.toFixed(4) : '—'}</b></td></tr></table>`;
+  h += '<div style="margin-top:10px"><button onclick="tokRefresh()">⟳ 클라우드에서 합산 새로고침</button>' +
+       (_tokRemote ? ' <span class="hint">클라우드 기록 반영됨</span>' : ' <span class="hint">이 브라우저 기록만 표시 중</span>') + '</div>';
   // ── 예산·잔액·남은 턴 (실청구액 기반 — OpenRouter BYOK upstream 비용 누적) ──
   const budget = Number(localStorage.getItem('vn_budget') || 300);
   const left = budget - totC;
