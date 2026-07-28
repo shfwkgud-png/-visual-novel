@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v164</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v165</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4301,8 +4301,13 @@ const IDOL_SIM = {
     // ① 우리 팀 — **항상 한 줄은 나온다**. 공백기에 우리 얘기가 없는 신문은 남의 신문이다(2026-07-28 수정).
     //   ★기사 크기(w)는 인기가 정하고, 실린 크기만큼 팬·인지도·이미지가 실제로 움직인다.
     const W = S.pressWeight(d), SZ = ['', '단신', '기사', '헤드라인'][W];
+    // ★기자가 찾아올 계기 — 크게 실렸거나(헤드라인) 나쁜 기사가 났을 때. 이게 없으면
+    //   문지효는 로스터에만 있고 영영 안 나온다(2026-07-28 배선).
+    d.pressCall = null;
     const our = (head, body, good) => {
       const im = S.pressImpact(d, W, good !== false);
+      if (W >= 3) d.pressCall = { why:'big', head };
+      else if (good === false) d.pressCall = { why:'bad', head };
       items.push({ cat:'우리', w:W, size:SZ, head, body,
         eff: `${SZ}${/[가-힣]$/.test(SZ) && (SZ.charCodeAt(SZ.length-1)-0xAC00)%28 ? '으로' : '로'} 실렸다`
            + ` — 라이트팬 ${im.light >= 0 ? '+' : ''}${im.light.toLocaleString()}`
@@ -4389,6 +4394,8 @@ const IDOL_SIM = {
       const eff = it.hit(d, S, R, target);
       if (eff !== null) {
         d.lastIssue = it.id;
+        if (/이미지 −|이미지 -|불똥|논란|파기/.test(String(eff)) && !d.pressCall)
+          d.pressCall = { why:'issue', head: it.head.replace('{corp}', target ? target.name : '') };
         items.push({ cat:it.cat, issue:it.id,          // ★id를 남긴다 = 대응 버튼을 붙일 수 있다
           head: it.head.replace('{corp}', target ? target.name : ''),
           body: it.body, eff });
@@ -5631,6 +5638,21 @@ const IDOL_SIM = {
       d.press[0].items.slice(0, 5).forEach(it => {
         s += `  · [${it.cat}] ${it.head}${it.eff ? ` → ${it.eff}` : ''}
 `; });
+    }
+    // ★문지효 기자 등장 — 계기가 있을 때만. 없으면 부르지 마라(아무 때나 나오면 값이 떨어진다).
+    if (d.pressCall) {
+      const w = d.pressCall;
+      s += `★★**문지효 기자**(연예 매체·33세, 중립)가 이번 주에 접촉해 온다 — 사유: `
+         + (w.why === 'big' ? `우리가 크게 실렸다(「${w.head}」). 후속 취재·인터뷰를 요청한다.`
+          : w.why === 'bad' ? `안 좋은 기사가 났다(「${w.head}」). **쓰기 전에 확인 전화**를 준다 — 사실이면 사실이라고만 하면 된다.`
+          :                   `업계 이슈가 우리를 건드렸다(「${w.head}」). 입장을 묻는다.`) + `
+`;
+      s += `  - 우리 편도 적도 아니다. 사실만 쓰고, 크기는 화제성이 정한다. 봐주지도 깎아내리지도 않는다.
+`;
+      s += `  - 친밀도가 낮으면 건조하게 용건만, 쌓였으면 "이건 안 쓰겠습니다" 정도의 배려를 보인다.
+`;
+      s += `  - 장소는 사무실이나 근처 카페다. 대표가 응하든 피하든 그 선택이 다음 기사에 남는다.
+`;
     }
     if (d.corpNews && d.corpNews.length) s += `★지난주 광고주 소식: ${d.corpNews.join(' / ')}\n`;
     // ★광고 시장 지수 — 기사가 만든 온도가 문턱·주급·투자액을 흔든다. 실장이 이 얘기를 한다.
@@ -10386,6 +10408,7 @@ function migrateIdolSave(d) {
     if (!Array.isArray(d[k])) d[k] = Array.isArray(base[k]) ? base[k].slice() : [];
   });
   if (d.personal && !d.personal.stocks) d.personal.stocks = {};   // 주식 승계(v161)
+  if (d.pressCall === undefined) d.pressCall = null;              // 기자 접촉(v165)
   if (typeof d.network !== 'number') d.network = base.network;
   if (typeof d.biz !== 'number') d.biz = base.biz;
   if (typeof d.day !== 'number') d.day = 0;
