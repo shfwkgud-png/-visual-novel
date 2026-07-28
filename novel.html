@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v160</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v161</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2428,6 +2428,9 @@ const ENGINE_MOD_CG = `
        'weekly'=주급(원, 현물협찬이면 0) / 'weeks'=계약 주수 / 'inkind'=true면 현물협찬(계약금·주급 없음,
        대신 노출·이미지가 오른다) / 'main'=true면 메인모델 / 'member'="char_id"면 그 멤버 개인 앰버서더.
     ★현물협찬·무보수 계약을 "계약금이 없으니 실패"로 처리하지 마라. 돈이 안 들어오는 계약도 계약이다.
+  - ★'target' 개인 주식: **주식매수**/**주식매도**('corp'=회사명, 'amount'=원). **대표 개인 현금**으로만 산다.
+    주가 = 기업가치 ÷ 발행주식수 — 우리가 그 회사 광고를 찍으면 기업가치가 올라 주가도 오른다(우리 인지도에 비례).
+    ★대표가 "○○ 주식 사둬" 같은 말을 하면 이 sim을 실어라. 회사 자금으로는 절대 사지 않는다.
   - ★'target' 개인 재산: **담보대출**(asset=home|car, 대표 개인 현금 유입·만기 못 지키면 **압류**) / **담보상환**(asset=…) / **사재출연**(개인→회사, 멤버 신뢰↑) / **대표급여**(회사→개인, 안 가져가면 대표 개인 통장이 마른다)
     · ★**회사 자금과 대표 개인 현금은 완전히 다른 돈이다.** 회사가 망해도 개인 돈은 남고, 개인이 집을 걸어 회사를 살릴 수도 있다. 이 선택을 가볍게 넘기지 마라 — 집을 담보로 잡는 장면은 대표 혼자 서명하는 장면이어야 한다.
   - ★'facility' = 미팅 target=시설일 때. office(사옥)·dorm(숙소)·practice(연습실)·van(밴)은 회사 자금, home(내 집)·car(내 차)는 대표 개인 현금으로 산다. **등급을 올리면 그 장소의 배경이 실제로 바뀐다** — 사옥·숙소가 좋아지면 애들 표정도 달라진다. 등급을 올리면 연습 효율·컨디션 소모가 영구히 좋아진다 — **성공할수록 돈 쓸 곳**이 생긴다.
@@ -4134,6 +4137,68 @@ const IDOL_SIM = {
       weeks:  t.weeks, rel
     };
   },
+  // ─── 📈 개인 주식 ─────────────────────────────────────────────────────────
+  //   ★**대표 개인 현금으로만** 굴린다(유저 결정 2026-07-28). 회사 자금으로 하면 자금이 주식에 묶여
+  //   대출 만기 엔딩 판정이 무너진다 — 개인 트랙이라 기존 균형을 안 건드린다.
+  //   재미의 핵: **우리가 광고를 찍으면 그 회사 주가가 오른다**(인지도 80이면 촬영 1회 +4.9%).
+  //   반대로 제품 결함 기사가 뜨면 −9%를 맞는다. 우리가 띄울 회사를 미리 사두는 판단이 생긴다.
+  STOCK_FEE: 0.002,        // 매매 수수료
+  STOCK_TAX: 0.002,        // 매도 시 거래세
+  sharesOf(c){
+    // 발행주식수 — 처음 조회될 때 정해진다(주가가 3만~15만원대로 떨어지게). 구 세이브도 여기서 승계.
+    if (!c.shares) c.shares = Math.max(1000, Math.round(c.value / (30000 + Math.floor(Math.random()*120000))));
+    return c.shares;
+  },
+  sharePrice(c){ return Math.max(100, Math.round(c.value / IDOL_SIM.sharesOf(c))); },
+  stocksOf(d){ const P = d.personal || {}; return (P.stocks = P.stocks || {}); },
+  // 보유 주식 평가액 · 손익
+  stockBook(d){
+    const S = IDOL_SIM, st = S.stocksOf(d), corps = S.ensureCorps(d);
+    let val = 0, cost = 0; const rows = [];
+    Object.keys(st).forEach(n => {
+      const h = st[n], c = corps[n];
+      if (!c || !h || h.qty <= 0) return;
+      const px = S.sharePrice(c), v = px * h.qty, cst = Math.round(h.avg * h.qty);
+      val += v; cost += cst;
+      rows.push({ name:n, qty:h.qty, avg:Math.round(h.avg), px, value:v, cost:cst,
+                  pl:v - cst, plPct: cst ? (v - cst) / cst * 100 : 0 });
+    });
+    rows.sort((a,b)=>b.value-a.value);
+    return { rows, value:val, cost, pl:val-cost, plPct: cost ? (val-cost)/cost*100 : 0 };
+  },
+  buyStock(d, name, won){
+    const S = IDOL_SIM, P = d.personal, c = S.ensureCorps(d)[String(name||'').trim()];
+    if (!c) return { ok:false, reason:'그런 회사가 없다' };
+    if (!P) return { ok:false, reason:'개인 재산 없음' };
+    const px = S.sharePrice(c);
+    const budget = Math.min(Math.max(0, Math.round(won||0)), P.cash);
+    const qty = Math.floor(budget / (px * (1 + S.STOCK_FEE)));
+    if (qty < 1) return { ok:false, reason:`한 주도 못 산다(현재가 ${px.toLocaleString()}원)` };
+    const gross = qty * px, fee = Math.round(gross * S.STOCK_FEE), total = gross + fee;
+    if (total > P.cash) return { ok:false, reason:'개인 현금 부족' };
+    P.cash -= total;
+    const st = S.stocksOf(d), h = st[c.name] || { qty:0, avg:0 };
+    h.avg = (h.avg * h.qty + gross) / (h.qty + qty);
+    h.qty += qty;
+    st[c.name] = h;
+    return { ok:true, name:c.name, qty, px, total, fee,
+             note:`${c.name} ${qty.toLocaleString()}주 매수 @${px.toLocaleString()}원 (수수료 ${fee.toLocaleString()}원)` };
+  },
+  sellStock(d, name, won){
+    const S = IDOL_SIM, P = d.personal, nm = String(name||'').trim();
+    const c = S.ensureCorps(d)[nm], st = S.stocksOf(d), h = st[nm];
+    if (!c) return { ok:false, reason:'그런 회사가 없다' };
+    if (!h || h.qty <= 0) return { ok:false, reason:`${nm} 보유 없음` };
+    const px = S.sharePrice(c);
+    const qty = Math.max(1, Math.min(h.qty, Math.floor(Math.round(won||0) / px)));
+    const gross = qty * px, cut = Math.round(gross * (S.STOCK_FEE + S.STOCK_TAX));
+    const pl = Math.round(gross - h.avg * qty) - cut;
+    P.cash += gross - cut;
+    h.qty -= qty;
+    if (h.qty <= 0) delete st[nm]; else st[nm] = h;
+    return { ok:true, name:nm, qty, px, net:gross-cut, pl,
+             note:`${nm} ${qty.toLocaleString()}주 매도 @${px.toLocaleString()}원 · 손익 ${pl>=0?'+':''}${Math.round(pl/10000).toLocaleString()}만` };
+  },
   // ─── 기업(광고주) 레지스트리 ───────────────────────────────────────────────
   //   BRAND_TIERS.pool의 기존 회사 + AI가 대화에서 지어낸 회사를 한 곳에 모은다.
   //   기업가치는 매주 움직인다 — 시장 변동 + (우리와 계약 중이면) 우리 인지도가 만든 광고 효과.
@@ -4141,7 +4206,8 @@ const IDOL_SIM = {
   CORP_LABEL: { 1:'로컬', 2:'중견', 3:'대형' },
   wonBig(n){
     if (n >= 1000000000000) return (n/1000000000000).toFixed(2) + '조';
-    if (n >= 100000000)     return Math.round(n/100000000).toLocaleString() + '억';
+    if (n >= 1000000000)    return Math.round(n/100000000).toLocaleString() + '억';
+    if (n >= 100000000)     return (n/100000000).toFixed(1) + '억';   // 1~10억은 소수 한 자리(1.5억이 2억이 되던 문제)
     return Math.round(n/10000).toLocaleString() + '만';
   },
   regCorp(d, name, tier, ai){
@@ -4928,7 +4994,7 @@ const IDOL_SIM = {
   init() {
     return { week:1, slots:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
       plan:[], planMonth:0, ceoPlan:[], weekDone:false, network:5, biz:5, day:0, wkIdx:0, dow:0, dowTime:'', booked:[],
-      personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
+      personal:{ cash:15000000, own:{ home:true, car:true }, loans:[], stocks:{} },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], corps:null, invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
       fac:{ practice:0, van:0 }, fandom:null, awards:[], press:[], corpNews:[], lastIssue:null, mkt:100,
@@ -5213,6 +5279,14 @@ const IDOL_SIM = {
         if (!r2.ok) return { ok:false, reason:r2.reason };
         dt.money -= r2.amount; d.money += r2.amount; // 표시용 보정
         dt.note = `대표 급여 ${Math.round(r2.amount/10000).toLocaleString()}만 수령`;
+      } else if (t==='주식매수'){
+        const r2 = S.buyStock(d, sim.corp, sim.amount);
+        if (!r2.ok) return { ok:false, reason:r2.reason };
+        dt.note = r2.note;
+      } else if (t==='주식매도'){
+        const r2 = S.sellStock(d, sim.corp, sim.amount);
+        if (!r2.ok) return { ok:false, reason:r2.reason };
+        dt.note = r2.note;
       } else if (t==='외주프로듀서'){
         // 대표(작곡가)의 자존심 vs 실리 — 곡을 남에게 맡긴다
         if (d.money < 25000000) return { ok:false, reason:'외주비 2,500만 부족' };
@@ -10285,6 +10359,7 @@ function migrateIdolSave(d) {
   ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv','press','corpNews'].forEach(k => {
     if (!Array.isArray(d[k])) d[k] = Array.isArray(base[k]) ? base[k].slice() : [];
   });
+  if (d.personal && !d.personal.stocks) d.personal.stocks = {};   // 주식 승계(v161)
   if (typeof d.network !== 'number') d.network = base.network;
   if (typeof d.biz !== 'number') d.biz = base.biz;
   if (typeof d.day !== 'number') d.day = 0;
@@ -10738,12 +10813,60 @@ function buyIdolAsset(k) {
 }
 
 // ── 개인 재산 탭: 일정 칸과 무관한 대표 본인의 돈 (빌릴 금액·갚을 금액을 직접 정한다)
+// 📈 개인 주식 — 보유 종목 + 매매. 개인 현금으로만 굴린다(회사 자금과 분리).
+function idolStockHtml() {
+  const d = gameState.idol, S = IDOL_SIM, P = d.personal;
+  const won = n => Math.round(n / 10000).toLocaleString() + '만';
+  const bk = S.stockBook(d);
+  const corps = S.ensureCorps(d);
+  const mine = new Set((d.brands || []).map(b => b.name));
+  let h = `<div class="ib-group">📈 개인 주식 ${bk.rows.length ? `· 평가 ${won(bk.value)}` : ''}</div>`;
+  if (!bk.rows.length) {
+    h += `<div class="ib-note">보유 종목이 없다. <b>우리가 광고를 찍으면 그 회사 주가가 오른다</b> —
+      인지도가 높을수록 크게. 반대로 결함 기사가 뜨면 떨어진다.</div>`;
+  } else {
+    const col = bk.pl >= 0 ? '#e0524a' : '#4a8de0';
+    h += `<div class="ib-drow"><span class="k">평가손익</span><span class="v">
+      <span style="color:${col}">${bk.pl >= 0 ? '+' : ''}${won(bk.pl)} (${bk.pl >= 0 ? '+' : ''}${bk.plPct.toFixed(1)}%)</span>
+      · 원금 ${won(bk.cost)}</span></div>`;
+    bk.rows.forEach(r => {
+      const c2 = r.pl >= 0 ? '#e0524a' : '#4a8de0';
+      h += `<div class="ib-drow"><span class="k">${r.name}${mine.has(r.name) ? ' <span style="color:#d4af37;font-size:10px">모델</span>' : ''}</span><span class="v">
+        ${r.qty.toLocaleString()}주 · ${r.px.toLocaleString()}원
+        <span style="color:${c2}">(${r.pl >= 0 ? '+' : ''}${r.plPct.toFixed(1)}%)</span></span></div>`;
+      h += `<div style="display:flex;gap:6px;margin:2px 0 8px 10px">
+        <button onclick="idolAsk('buy','${r.name}')" style="padding:4px 10px;border-radius:7px;
+          border:1px solid rgba(224,82,74,0.4);background:transparent;color:#e0524a;font-size:11px">추가 매수</button>
+        <button onclick="idolAsk('sell','${r.name}')" style="padding:4px 10px;border-radius:7px;
+          border:1px solid rgba(74,141,224,0.4);background:transparent;color:#4a8de0;font-size:11px">매도</button></div>`;
+    });
+  }
+  // 살 수 있는 종목 — 가치 순
+  h += `<div class="ib-group">종목 시세 (개인 현금 ${won(P.cash)})</div>`;
+  Object.values(corps).sort((a, b) => b.value - a.value).forEach(c => {
+    const px = S.sharePrice(c);
+    const dv = c.prev ? (c.value - c.prev) / c.prev * 100 : 0;
+    const arrow = Math.abs(dv) < 0.05 ? '<span style="opacity:0.45">—</span>'
+      : dv > 0 ? `<span style="color:#e0524a">▲${dv.toFixed(1)}%</span>`
+               : `<span style="color:#4a8de0">▼${Math.abs(dv).toFixed(1)}%</span>`;
+    const can = P.cash >= px * 1.002;
+    h += `<div class="ib-drow"><span class="k">${c.name}${mine.has(c.name) ? ' <span style="color:#d4af37;font-size:10px">모델</span>' : ''}</span><span class="v">
+      ${px.toLocaleString()}원 ${arrow} ·
+      ${can ? `<button onclick="idolAsk('buy','${c.name}')" style="padding:2px 9px;border-radius:6px;
+        border:1px solid rgba(224,82,74,0.4);background:transparent;color:#e0524a;font-size:11px">매수</button>`
+      : '<span style="opacity:0.4">현금 부족</span>'}</span></div>`;
+  });
+  h += `<div class="ib-note">수수료 0.2% · 매도 시 거래세 0.2%. 주가 = 기업가치 ÷ 발행주식수라
+    <b>기업가치가 움직이면 주가도 같이 움직인다</b>.</div>`;
+  return h;
+}
 function idolPersonalHtml() {
   const d = gameState.idol, S = IDOL_SIM, P = d.personal;
   const won = n => Math.round(n / 10000).toLocaleString() + '만';
   if (!P) return '<div class="ib-note">개인 재산 데이터가 없다.</div>';
   let h = `<div class="ib-head"><span class="ib-title">👤 대표 개인</span>
-    <span class="ib-sub">현금 ${won(P.cash)} · 생활비 주 ${won(S.LIVING)} · 회사 자금과 별개</span></div>`;
+    <span class="ib-sub">현금 ${won(P.cash)}${(() => { const b = S.stockBook(d);
+      return b.value ? ` · 주식 ${won(b.value)}` : ''; })()} · 생활비 주 ${won(S.LIVING)} · 회사 자금과 별개</span></div>`;
   if (window._ibAsk) h += idolAskHtml();
   ['home', 'car'].forEach(k => {
     const A = S.PERSONAL[k], l = S.assetLoan(d, k), room = S.loanRoom(d, k);
@@ -10756,6 +10879,7 @@ function idolPersonalHtml() {
     if (l) h += `<button class="ib-card${P.cash <= 0 ? ' off' : ''}" ${P.cash <= 0 ? '' : `onclick="idolAsk('repay','${k}')"`}>
       <span class="n">상환</span><span class="e">${P.cash <= 0 ? '<span class="why">✕ 개인 현금 없음</span>' : '얼마나 갚을지 정한다 · 전액 갚으면 담보가 풀린다'}</span></button>`;
   });
+  h += idolStockHtml();
   h += `<div class="ib-group">회사 ↔ 개인</div>`;
   h += `<button class="ib-card${P.cash <= 0 ? ' off' : ''}" ${P.cash <= 0 ? '' : `onclick="idolAsk('inject')"`}>
     <span class="n">사재 출연 (개인 → 회사)</span>
@@ -10782,6 +10906,21 @@ function idolAsk(type, asset) {
   }
   if (type === 'inject') { max = P.cash; title = '사재 출연 — 얼마를 회사에 넣을까'; sub = `개인 현금 ${Math.round(P.cash / 10000).toLocaleString()}만`; }
   if (type === 'salary') { max = d.money; title = '대표 급여 — 얼마를 가져갈까'; sub = `회사 자금 ${Math.round(d.money / 10000).toLocaleString()}만`; }
+  if (type === 'buy' || type === 'sell') {
+    const c = S.ensureCorps(d)[asset];
+    if (!c) return;
+    const px = S.sharePrice(c);
+    if (type === 'buy') {
+      max = P.cash;
+      title = `${asset} 매수 — 얼마어치 살까`;
+      sub = `현재가 ${px.toLocaleString()}원 · 개인 현금 ${Math.round(P.cash / 10000).toLocaleString()}만 · 수수료 0.2%`;
+    } else {
+      const h2 = S.stocksOf(d)[asset];
+      max = (h2 ? h2.qty : 0) * px;
+      title = `${asset} 매도 — 얼마어치 팔까`;
+      sub = `보유 ${(h2 ? h2.qty : 0).toLocaleString()}주 · 현재가 ${px.toLocaleString()}원 · 평단 ${Math.round((h2 ? h2.avg : 0)).toLocaleString()}원`;
+    }
+  }
   if (max <= 0) return;
   window._ibAsk = { type, asset, max, title, sub, val: Math.round(max / 2) };
   openIdolBoard();
@@ -10807,9 +10946,11 @@ function idolAskCancel() { window._ibAsk = null; openIdolBoard(); }
 function idolAskConfirm() {
   const a = window._ibAsk; if (!a || a.val <= 0) return;
   const d = gameState.idol;
-  const map = { loan: '담보대출', repay: '담보상환', inject: '사재출연', salary: '대표급여' };
+  const map = { loan: '담보대출', repay: '담보상환', inject: '사재출연', salary: '대표급여',
+                buy: '주식매수', sell: '주식매도' };
   const sim = { action: '미팅', target: map[a.type], amount: a.val };
-  if (a.asset) sim.asset = a.asset;
+  if (a.type === 'buy' || a.type === 'sell') sim.corp = a.asset;   // 주식은 회사명으로 지정
+  else if (a.asset) sim.asset = a.asset;
   window._ibAsk = null;
   closeIdolBoard();
   const before = d.slots;
