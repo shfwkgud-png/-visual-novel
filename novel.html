@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v163</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v164</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4632,21 +4632,25 @@ const IDOL_SIM = {
     '라디오':'waitroom', '토크쇼':'waitroom',
   },
   PLACE_EVENT: { '축제':'stage', '버스킹':'street', '팬사인회':'event', '기업행사':'event', '팬콘':'stage' },
-  PLACE_CEO:   { '곡작업':'studio', '속성작업':'studio', '명함':'street', '방송국':'waitroom',
-                 '투자유치':'office', '동행':null },
+  PLACE_CEO:   { '곡작업':'studio', '속성작업':'studio', '명함':'agency', '방송국':'waitroom',
+                 '투자유치':'invest', '동행':null },
   BG_LOC: { practice:'연습실', office:'블루밍 엔터 사무실', studio:'대표 작업실', waitroom:'방송국 대기실',
             stage:'음악방송 스튜디오', van:'이동 중인 밴', event:'행사장', dorm:'숙소',
-            rooftop:'건물 옥상', home:'대표의 집', street:'거리' },
+            rooftop:'건물 옥상', home:'대표의 집', street:'거리',
+            agency:'광고 대행사 회의실', pressroom:'연예 매체 사무실', invest:'투자사 라운지' },
   // 그 sim이 벌어지는 장소 키를 돌려준다(없으면 null = 장소 유지)
   placeOf(sim){
     const S = IDOL_SIM; if (!sim || !sim.action) return null;
     let bg = null, loc = null;
     if (sim.action === '콘텐츠') bg = S.PLACE_CONTENT[sim.kind] || 'practice';
     else if (sim.action === '행사') bg = S.PLACE_EVENT[sim.kind] || 'event';
+    else if (sim.action === '미팅' && S.PLACE_TARGET[sim.target]) bg = S.PLACE_TARGET[sim.target];
     else { const p = S.PLACE[sim.action] || {}; bg = p.bg || null; loc = p.loc || null; }
     if (!bg) return null;
     return { bg, loc: loc || S.BG_LOC[bg] || bg };   // ★PLACE의 구체 이름이 BG_LOC보다 우선(광고 촬영장 등)
   },
+  // 미팅은 상대에 따라 장소가 다르다 — 광고는 대행사, 투자는 투자사, 나머지는 우리 사무실
+  PLACE_TARGET: { '브랜드':'agency', '투자':'invest' },
   placeOfCeo(act){
     const S = IDOL_SIM, bg = S.PLACE_CEO[act];
     return bg ? { bg, loc: S.BG_LOC[bg] || bg } : null;
@@ -6150,6 +6154,10 @@ const BUILTIN_STORIES = {
       rooftop:    { url: 'sd_samples/backgrounds/idol/rooftop.webp',     label: '건물 옥상' },
       home:       { url: 'sd_samples/backgrounds/idol/home.webp',       label: '대표의 집(작업실 겸)' },
       street:     { url: 'sd_samples/backgrounds/idol/street.webp',      label: '밤 골목(퇴근길)' },
+      // ★기업·주간일보·투자 시스템이 생기면서 필요해진 장소(2026-07-28)
+      agency:     { url: 'sd_samples/backgrounds/idol/agency.webp',     label: '광고 대행사 회의실' },
+      pressroom:  { url: 'sd_samples/backgrounds/idol/pressroom.webp',  label: '연예 매체 사무실' },
+      invest:     { url: 'sd_samples/backgrounds/idol/invest.webp',     label: '투자사 라운지' },
     },
     startBg: 'practice',
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 4월 첫째 주 월요일 오전, 블루밍 엔터 지하 연습실. ${n}이(가) 대표로서 처음 이 다섯을 마주하는 회의 장면 — 차영석 실장이 잔고와 대출 만기를 있는 그대로 브리핑하고(이 팀에 남은 시간이 얼마 없다는 것), 멤버 다섯이 각자의 방식으로 반응한다. 서우는 분위기를 풀려 장난치고, 미유는 눈이 먼저 붉어지고, 하람은 상황을 정확히 짚고, 소예는 소매를 만지작거리며 조심스레 한마디 하고, 시아는 제일 늦게 그러나 제일 단단하게 말한다. 마지막에 실장이 이번 주에 무엇을 할지 대표에게 묻는다.`,
