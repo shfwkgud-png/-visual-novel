@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v153</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v154</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2386,7 +2386,7 @@ const ENGINE_MOD_CG = `
     완성도는 90"이라고 말했으면 그 턴의 sim에 반드시 {"title":"PING","quality":90}을 담아라.
     이건 선택이 아니라 필수다.
 - 순수한 잡담·질문·감정 대화(수치가 안 변하는 것)에는 'sim'을 넣지 마라.
-- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여", "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
+- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅|광고", "brand": "광고 촬영·계약할 회사명", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여", "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
   - 'concept' = 곡작업일 때만
@@ -2413,6 +2413,12 @@ const ENGINE_MOD_CG = `
     ※조건 미달(계약금 부족·인지도 미달)이면 앱이 거절하고 이유를 토스트로 보여준다.
       그럴 땐 장면에서도 "지금은 무리"로 풀어라.
   - ★'target' = **미팅일 때만**. 브랜드(광고 계약, 아래 ★참조) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장) / **고용·해고**('staff'=vocal|dance|manager|pd|stylist|choreo) / **외주프로듀서**(2천만, 곡 완성도 급상승 대신 대표 자존심·멤버 신뢰 소폭 하락)
+  - ★★action='광고' = **계약한 광고를 찍는 일정**(일정 칸 1개 소모). 'brand'=회사명(생략하면 첫 계약).
+    계약만 따고 안 찍으면 광고주 만족도가 매주 깎이고, 20 밑이면 **계약이 파기된다**.
+    찍으면 인지도·라이트팬·SNS·브랜드 이미지가 오르고 **광고주 기업가치도 같이 오른다**.
+    개인 앰버서더 계약이면 그 멤버 혼자 찍는다 — 나머지가 그걸 본다(신뢰 소폭 하락).
+  - ★대화에 **새 광고사**가 나오면 그 이름으로 계약(target='브랜드' + 'brand')하는 순간
+    광고주 목록에 자동 등록되고 기업가치가 매겨진다. 회사명은 매번 **똑같이** 써라(다르게 쓰면 다른 회사가 된다).
   - ★★target='브랜드' — **두 경로가 다 된다**.
     ① 실장이 물어온 제안을 수락 → 'offer'=제안 번호(0부터).
     ② **대표가 광고사를 직접 만나 대화로 뚫은 계약** → 'brand'=회사명(필수). 목록에 없어도 성립한다.
@@ -4072,6 +4078,49 @@ const IDOL_SIM = {
     { tier:2, label:'중견',   gate:40, image:55, weekly:5000000, weeks:12, pool:['코스메 뮤즈','클리어톡','루체 주얼리'] },
     { tier:3, label:'대형',   gate:65, image:70, weekly:12000000, weeks:16, pool:['라비앙 코스메틱','한빛카드','NEXA 스포츠'] },
   ],
+  // ─── 기업(광고주) 레지스트리 ───────────────────────────────────────────────
+  //   BRAND_TIERS.pool의 기존 회사 + AI가 대화에서 지어낸 회사를 한 곳에 모은다.
+  //   기업가치는 매주 움직인다 — 시장 변동 + (우리와 계약 중이면) 우리 인지도가 만든 광고 효과.
+  CORP_BASE: { 1: 30000000000, 2: 400000000000, 3: 2500000000000 },   // 300억 / 4천억 / 2.5조
+  CORP_LABEL: { 1:'로컬', 2:'중견', 3:'대형' },
+  wonBig(n){
+    if (n >= 1000000000000) return (n/1000000000000).toFixed(2) + '조';
+    if (n >= 100000000)     return Math.round(n/100000000).toLocaleString() + '억';
+    return Math.round(n/10000).toLocaleString() + '만';
+  },
+  regCorp(d, name, tier, ai){
+    const S = IDOL_SIM;
+    const nm = String(name || '').trim();
+    if (!nm) return null;
+    d.corps = d.corps || {};
+    if (!d.corps[nm]) {
+      const t = Math.max(1, Math.min(3, (tier|0) || 1));
+      const v = Math.round(S.CORP_BASE[t] * (0.75 + Math.random()*0.5));
+      d.corps[nm] = { name:nm, tier:t, value:v, prev:v, deals:0, shots:0,
+                      ai:!!ai, met:false, since:d.week || 1 };
+    }
+    return d.corps[nm];
+  },
+  ensureCorps(d){
+    const S = IDOL_SIM;
+    if (!d.corps) {
+      d.corps = {};
+      S.BRAND_TIERS.forEach(t => t.pool.forEach(n => S.regCorp(d, n, t.tier, false)));
+      // 이미 계약·제안이 있던 세이브 승계
+      (d.brands || []).forEach(b => { const c = S.regCorp(d, b.name, b.tier, false); if (c) { c.met = true; c.deals = 1; } });
+      (d.offers || []).forEach(o => S.regCorp(d, o.name, o.tier, false));
+    }
+    return d.corps;
+  },
+  // 그 기업이 우리를 볼 수준인가 — 인지도·이미지 게이트(제안이 들어오는 조건과 같다)
+  corpGate(d, c){
+    const t = IDOL_SIM.BRAND_TIERS.find(x => x.tier === c.tier);
+    if (!t) return null;
+    const ease = IDOL_SIM.facCur(d, 'office').gateEase || 0;
+    if (d.fame < t.gate - ease) return `인지도 ${Math.round(t.gate - ease)} 필요`;
+    if ((d.image === undefined ? 70 : d.image) < t.image) return `이미지 ${t.image} 필요`;
+    return null;
+  },
   // 스태프 — 대표+실장 둘이 5인조를 다 돌리는 게 시작 조건. 사람을 붙일수록 같은 일정의 효율이 오른다.
   //   급여가 매주 나가므로 브랜드·행사 수입이 있어야 유지된다(경영 루프의 지출 축).
   STAFF: {
@@ -4549,7 +4598,7 @@ const IDOL_SIM = {
     return { week:1, slots:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
       plan:[], planMonth:0, ceoPlan:[], weekDone:false, network:5, biz:5, day:0, wkIdx:0, dow:0, dowTime:'', booked:[],
       personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
-      core:300, light:2000, sns:0, image:70, brands:[], offers:[], invested:false, staff:['manager'],
+      core:300, light:2000, sns:0, image:70, brands:[], offers:[], corps:null, invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
       fac:{ practice:0, van:0 }, fandom:null, awards:[],
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, rec:false, choreo:false, teaser:false },
@@ -4630,7 +4679,7 @@ const IDOL_SIM = {
     const mem=(sim.members&&sim.members.length?sim.members:Object.keys(d.mem)).filter(i=>d.mem[i]);
     const list = mem.length?mem:Object.keys(d.mem);
     const dt={light:0,core:0,money:0,fame:0,sns:0,note:''};
-    const cost={ '연습':1500000,'콘텐츠':1000000,'음방':6000000,'행사':0,'휴식':0,'곡작업':500000,'미팅':0 }[sim.action];
+    const cost={ '연습':1500000,'콘텐츠':1000000,'음방':6000000,'행사':0,'휴식':0,'곡작업':500000,'미팅':0,'광고':0 }[sim.action];
     if (cost === undefined) return null;
     if (cost > d.money) return { ok:false, reason:'자금부족' };
     dt.money = -cost;
@@ -4748,7 +4797,9 @@ const IDOL_SIM = {
                 weeks: Math.max(1, Math.min(24, (sim.weeks|0) || tr.weeks)),
                 member: (sim.member && d.mem[sim.member]) ? sim.member : null };
         }
-        d.brands.push({ ...o, left:o.weeks });
+        const cp0 = S.regCorp(d, o.name, o.tier, idx < 0);   // ★목록 밖 = AI가 지어낸 회사 → 신규 등록
+        if (cp0) { cp0.met = true; cp0.deals = (cp0.deals||0) + 1; }
+        d.brands.push({ ...o, left:o.weeks, shots:0, satis:55 });
         dt.money += o.weekly * 2;          // 계약금 = 2주치 선지급 (현물협찬이면 0)
         dt.fame += o.tier * 0.4;
         if (o.inkind) {                    // 돈은 안 들어와도 노출·협찬품이 남는다
@@ -4837,6 +4888,35 @@ const IDOL_SIM = {
       const q=4+avg('vocal')/7+avg('dance')/14+(c==='실험'?(R()<.5?10:-4):3);
       d.album.quality=S.clamp(d.album.quality+q,0,100);
       d.album.appeal=S.clamp(d.album.appeal+(c==='대중'?8:c==='팬덤'?2:4),0,100);
+    } else if (sim.action==='광고'){
+      // ★계약한 광고는 찍어야 한다. 안 찍으면 만족도가 떨어져 계약이 파기된다(endWeek).
+      //   찍으면 인지도·라이트팬·이미지가 오르고, 광고주 기업가치도 같이 오른다.
+      d.brands = d.brands || [];
+      if (!d.brands.length) return { ok:false, reason:'계약 중인 광고가 없다 — 먼저 광고사와 계약하라' };
+      const bnm = String(sim.brand || '').trim();
+      let bi = 0;
+      if (bnm) bi = d.brands.findIndex(b => b.name === bnm || b.name.indexOf(bnm) >= 0 || bnm.indexOf(b.name) >= 0);
+      if (bi < 0) return { ok:false, reason:`${bnm}과는 계약 중이 아니다` };
+      const b = d.brands[bi];
+      // 개인 앰버서더면 그 멤버만 찍는다
+      const shoot = (b.member && d.mem[b.member]) ? [b.member] : list;
+      const cm = shoot.reduce((a,i)=>a+d.mem[i].cond,0)/shoot.length;
+      const q = 0.7 + (cm/100)*0.6;                       // 컨디션이 화보 퀄리티
+      const tierM = [0,1,1.6,2.4][b.tier||1] || 1;
+      dt.fame  += 1.2*tierM*q;
+      dt.light += Math.round(340*tierM*q*(1+d.fame/70));
+      dt.sns   += Math.round(120*tierM*q);
+      d.image = S.clamp((d.image===undefined?70:d.image) + 2*q, 0, 100);
+      shoot.forEach(i=>{ const m=d.mem[i];
+        m.cond=S.clamp(m.cond-7*condMul,0,100); m.mind=S.clamp(m.mind-2,0,100); });
+      if (b.member) {                                     // 혼자 찍는 광고 = 나머지가 본다
+        Object.keys(d.mem).forEach(i=>{ if(i!==b.member) d.mem[i].trust=S.clamp(d.mem[i].trust-0.8,0,100); });
+      }
+      b.shots = (b.shots||0) + 1;
+      b.satis = S.clamp((b.satis===undefined?55:b.satis) + 25, 0, 100);
+      const cp = S.ensureCorps(d)[b.name];
+      if (cp) { cp.shots = (cp.shots||0)+1; cp.value = Math.round(cp.value * (1 + 0.012*tierM*q)); }
+      dt.note = `${b.name} 광고 촬영${b.member?`(${(IDOL_CHARACTERS[b.member]||{}).name} 단독)`:''}`;
     }
     d.money+=dt.money; d.fame=S.clamp(d.fame+dt.fame,0,100);
     d.light=Math.max(0,d.light+dt.light); d.core=Math.max(0,d.core+dt.core); d.sns+=dt.sns;
@@ -4895,14 +4975,36 @@ const IDOL_SIM = {
     // ─ 브랜드: 주급 유입 · 계약 만료 · 개인 앰버서더 부작용 · 이미지 미달 시 파기
     if (d.image === undefined) d.image = 70;                 // 구 세이브 승계
     d.brands = d.brands || []; d.offers = d.offers || [];
+    d.corpNews = [];                                         // 이번 주 광고주 소식(stateLine이 AI에게 전달)
     d.brands = d.brands.filter(b => {
       d.money += b.weekly;
       if (b.member) {                                        // 개인 앰버서더 = 그 멤버만 뜬다
         d.light += Math.round(120*(1+d.fame/60));
         Object.keys(d.mem).forEach(i=>{ if(i!==b.member) d.mem[i].trust=S.clamp(d.mem[i].trust-0.6,0,100); });
       }
-      if (d.image < 40 && R() < 0.12) return false;          // 이미지 붕괴 → 계약 파기
-      return (--b.left) > 0;
+      // ★광고주 만족도 — 매주 깎이고 「광고촬영」 일정으로 채운다. 계약만 따고 안 찍으면 잘린다.
+      b.satis = S.clamp((b.satis===undefined?55:b.satis) - 4, 0, 100);
+      if (b.satis < 20 && R() < 0.4) { d.corpNews.push(`${b.name} 계약 파기 — 광고를 한 번도 안 찍었다`); return false; }
+      if (d.image < 40 && R() < 0.12) { d.corpNews.push(`${b.name} 계약 파기 — 이미지 훼손`); return false; }
+      if ((--b.left) > 0) return true;
+      // 만료 — 만족도가 높았으면 더 좋은 조건으로 재계약 제안이 들어온다
+      if (b.satis >= 60 && !b.inkind && !d.offers.some(o=>o.name===b.name)) {
+        const up = Math.round(b.weekly*1.35);
+        d.offers.push({ name:b.name, tier:b.tier, label:(S.CORP_LABEL[b.tier]||'로컬')+'·재계약',
+          weekly:up, weeks:b.weeks, member:b.member||null, life:4 });
+        d.corpNews.push(`${b.name} 계약 만료 — 재계약 제안이 왔다(주 ${Math.round(up/10000).toLocaleString()}만)`);
+      } else d.corpNews.push(`${b.name} 계약 만료`);
+      return false;
+    });
+    // ─ 기업가치: 시장 변동 + 우리와 계약 중이면 우리 인지도가 만든 광고 효과가 붙는다
+    S.ensureCorps(d);
+    const inDeal = new Set(d.brands.map(b => b.name));
+    Object.keys(d.corps).forEach(k => {
+      const c = d.corps[k];
+      c.prev = c.value;
+      let m = 1 + (R() - 0.5) * 0.03;                        // 시장 ±1.5%
+      if (inDeal.has(k)) m += 0.004 + (d.fame - 30) / 4000;  // 우리 인지도가 높을수록 광고가 먹힌다
+      c.value = Math.max(1000000000, Math.round(c.value * m));
     });
     // 제안 만료 — 안 잡으면 4주 뒤 사라진다(낡은 제안이 슬롯을 막아 상위 티어가 안 들어오던 버그)
     d.offers = d.offers.filter(o => (o.life = (o.life===undefined?4:o.life) - 1) > 0);
@@ -4917,6 +5019,7 @@ const IDOL_SIM = {
           // 대형은 40% 확률로 개인 앰버서더 제안(팀 균열의 씨앗)
           const solo = t.tier===3 && R()<0.4 ? ['seowoo','siah','haram'][Math.floor(R()*3)] : null;
           d.offers.push({ name, tier:t.tier, label:t.label, weekly:t.weekly, weeks:t.weeks, member:solo, life:4 });
+          S.regCorp(d, name, t.tier, false);
         }
       }
     }
@@ -5024,8 +5127,22 @@ const IDOL_SIM = {
     // 브랜드/이미지 — 공백기 생존줄이자 팀 균열의 씨앗
     if (d.image !== undefined) s += `브랜드 이미지 ${Math.round(d.image)}`;
     if (d.brands && d.brands.length) s += ` | 계약중: ` + d.brands.map(b=>
-      `${b.name}(${b.inkind?'현물협찬':`주 ${Math.round(b.weekly/10000)}만`}·${b.left}주 남음${b.member?`·${(IDOL_CHARACTERS[b.member]||{}).name} 개인 앰버서더`:''})`).join(', ');
+      `${b.name}(${b.inkind?'현물협찬':`주 ${Math.round(b.weekly/10000)}만`}·${b.left}주 남음${b.member?`·${(IDOL_CHARACTERS[b.member]||{}).name} 개인 앰버서더`:''}·촬영 ${b.shots||0}회·광고주 만족도 ${Math.round(b.satis===undefined?55:b.satis)})`).join(', ');
     if (d.image !== undefined) s += `\n`;
+    // ★광고 촬영 독촉 — 계약만 따고 안 찍으면 잘린다. 실장이 이 얘기를 꺼내야 한다.
+    const lazy = (d.brands||[]).filter(b => (b.satis===undefined?55:b.satis) < 45);
+    if (lazy.length) s += `★★광고주 불만: ${lazy.map(b=>b.name).join(', ')} — 계약해놓고 촬영을 안 하고 있다. `
+      + `일정에 「광고촬영」을 넣어야 한다(만족도 20 밑이면 계약 파기). 실장이 독촉하는 장면을 만들어라.\n`;
+    if (d.corpNews && d.corpNews.length) s += `★지난주 광고주 소식: ${d.corpNews.join(' / ')}\n`;
+    // ★광고주 목록 — 기존 회사 + 대화에서 새로 나온 회사. 기업가치는 매주 움직인다.
+    try {
+      const CS = IDOL_SIM.ensureCorps(d);
+      const top = Object.values(CS).sort((a,b)=>b.value-a.value).slice(0, 9);
+      if (top.length) s += `광고주 시세: ` + top.map(c=>{
+        const dv = c.prev ? (c.value-c.prev)/c.prev*100 : 0;
+        return `${c.name}(${IDOL_SIM.CORP_LABEL[c.tier]}·${IDOL_SIM.wonBig(c.value)}${Math.abs(dv)<0.05?'':dv>0?`▲${dv.toFixed(1)}%`:`▼${Math.abs(dv).toFixed(1)}%`})`;
+      }).join(', ') + `\n`;
+    } catch {}
     if (d.offers && d.offers.length) s += `★들어온 광고 제안: ` + d.offers.map((o,i)=>
       `[${i}] ${o.name}(${o.label}·주 ${Math.round(o.weekly/10000)}만·${o.weeks}주${o.member?`·${(IDOL_CHARACTERS[o.member]||{}).name} 개인 앰버서더`:'·팀 전체'}, ${o.life||1}주 안에 답 줘야 함)`).join(' / ') + ` — 실장이 보고할 것\n`;
     if (d.loanWeek !== undefined) s += d.loanWeek>0 ? `대출 만기까지 ${d.loanWeek}주\n`
@@ -5095,7 +5212,7 @@ const IDOL_SIM = {
     s += `
 ## ★편성 가능한 일정 (이 목록 밖의 일정을 절대 제안하지 마라)
 `;
-    s += `  연습 / 콘텐츠 / 음방 / 행사 / 휴식  — 팀 일정은 이 다섯 종류가 전부다.
+    s += `  연습 / 콘텐츠 / 음방 / 행사 / 휴식${(d.brands||[]).length ? ' / **광고촬영**' : ''}  — 팀 일정은 이것이 전부다.
 `;
     s += `  ★「보컬 훈련」「댄스 훈련」처럼 쪼개서 제안하지 마라. **연습은 하나**이고 그 안에서 보컬·댄스·체력 중
 `;
@@ -9870,6 +9987,14 @@ function idolBoardCards() {
     add('행사', k, E.cost || 0, E.desc, why, `행사:${k}`, k === '기업행사' && d.money < 2000000);
   });
 
+  // ★계약한 광고는 찍어야 한다 — 안 찍으면 만족도가 깎여 계약이 파기된다
+  (d.brands || []).forEach(b => {
+    const sat = Math.round(b.satis === undefined ? 55 : b.satis);
+    add('광고 촬영', `광고촬영 — ${b.name}`, 0,
+      `${b.inkind ? '현물협찬' : `주 ${won(b.weekly)}`} · ${b.member ? `${(IDOL_CHARACTERS[b.member]||{}).name} 단독` : '팀 전체'}` +
+      ` · 촬영 ${b.shots || 0}회 · 만족도 ${sat}${sat < 40 ? ' ⚠' : ''} · 인지도·이미지·라이트팬↑`,
+      null, `광고:${b.name}`, sat < 45);
+  });
   (d.offers || []).forEach((o, i) => add('미팅', `광고 계약 — ${o.name}`, 0,
     `${o.label}·주 ${won(o.weekly)}·${o.weeks}주${o.member ? `·${(IDOL_CHARACTERS[o.member]||{}).name} 개인` : '·팀 전체'}`,
     null, `미팅:브랜드:${i}`, true));
@@ -9960,6 +10085,54 @@ function idolDashHtml() {
     h += `<div class="ib-drow"><span class="k">${nm}</span><span class="v">
       보컬 ${Math.round(m.vocal)} · 댄스 ${Math.round(m.dance)} · 컨디션 ${Math.round(m.cond)}${m.cond<30?'⚠':''} · 멘탈 ${Math.round(m.mind)}${m.mind<30?'⚠':''} · 신뢰 ${Math.round(m.trust)}</span></div>`;
   });
+  return h;
+}
+// 🤝 기업 — 계약 현황 + 광고주 목록(기존 회사 + AI가 지어낸 회사). 기업가치는 매주 움직인다.
+function idolCorpHtml() {
+  const d = gameState.idol, S = IDOL_SIM;
+  const corps = S.ensureCorps(d);
+  const row = (k, v) => `<div class="ib-drow"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  const nm = id => (IDOL_CHARACTERS[id] || {}).name || id;
+  const won = n => Math.round(n / 10000).toLocaleString() + '만';
+  let h = '';
+
+  // ── 계약 현황
+  const bs = d.brands || [];
+  h += `<div class="ib-group">📄 계약 현황 ${bs.length ? `(${bs.length}건)` : ''}</div>`;
+  if (!bs.length) h += `<div class="ib-note">계약 중인 광고가 없다 — 실장이 물어온 제안을 잡거나, 대표가 직접 광고사를 만나라.</div>`;
+  bs.forEach(b => {
+    const c = corps[b.name] || {};
+    const sat = Math.round(b.satis === undefined ? 55 : b.satis);
+    const warn = sat < 40 ? ' ⚠' : '';
+    h += `<div class="ib-drow"><span class="k">${b.name}${b.inkind ? ' (현물)' : ''}</span><span class="v">
+      ${b.inkind ? '주급 없음' : `주 ${won(b.weekly)}`} · ${b.left}주 남음</span></div>`;
+    h += `<div class="ib-drow"><span class="k" style="opacity:0.62;padding-left:10px">└ 모델</span><span class="v">
+      ${b.member ? `${nm(b.member)} 개인 앰버서더` : '팀 전체'} · 촬영 ${b.shots || 0}회 · 만족도 ${sat}${warn}</span></div>`;
+  });
+  if (bs.some(b => (b.satis === undefined ? 55 : b.satis) < 40))
+    h += `<div class="ib-note">⚠ 만족도가 낮다 — 일정에 「광고촬영」을 넣어라. 20 밑으로 떨어지면 계약이 파기된다.</div>`;
+
+  // ── 광고주 목록
+  const list = Object.values(corps).sort((a, b) => b.value - a.value);
+  const mine = new Set(bs.map(b => b.name));
+  const offered = new Set((d.offers || []).map(o => o.name));
+  h += `<div class="ib-group">🏭 광고주 목록 (${list.length}곳)</div>`;
+  list.forEach(c => {
+    const dv = c.value - (c.prev || c.value);
+    const pct = c.prev ? (dv / c.prev * 100) : 0;
+    const arrow = Math.abs(pct) < 0.05 ? '<span style="opacity:0.45">—</span>'
+      : dv > 0 ? `<span style="color:#e0524a">▲${pct.toFixed(1)}%</span>`
+               : `<span style="color:#4a8de0">▼${Math.abs(pct).toFixed(1)}%</span>`;
+    const gate = S.corpGate(d, c);
+    const st = mine.has(c.name) ? '<span style="color:#d4af37">● 계약중</span>'
+      : offered.has(c.name) ? '<span style="color:#7ec87e">○ 제안 옴</span>'
+      : gate ? `<span style="opacity:0.45">${gate}</span>`
+      : '<span style="opacity:0.6">접촉 가능</span>';
+    h += `<div class="ib-drow"><span class="k">${c.name}${c.ai ? ' <span style="opacity:0.5;font-size:10px">신규</span>' : ''}</span><span class="v">
+      ${S.CORP_LABEL[c.tier]} · ${S.wonBig(c.value)} ${arrow} · ${st}</span></div>`;
+  });
+  h += `<div class="ib-note">기업가치는 매주 움직인다 — 시장 변동 + 우리와 계약 중이면 우리 인지도가 만든 광고 효과가 붙는다.
+    대화에서 새 광고사가 나오면 이 목록에 자동으로 추가된다.</div>`;
   return h;
 }
 function idolShopHtml() {
@@ -10105,11 +10278,13 @@ function openIdolBoard(tab) {
   let h = `<div class="ib-tabs">
     <button class="ib-tab${cur==='plan'?' on':''}" onclick="openIdolBoard('plan')">🗓 일정</button>
     <button class="ib-tab${cur==='dash'?' on':''}" onclick="openIdolBoard('dash')">📊 현황</button>
+    <button class="ib-tab${cur==='corp'?' on':''}" onclick="openIdolBoard('corp')">🤝 기업</button>
     <button class="ib-tab${cur==='shop'?' on':''}" onclick="openIdolBoard('shop')">🏢 샵</button>
     <button class="ib-tab${cur==='personal'?' on':''}" onclick="openIdolBoard('personal')">👤 개인</button></div>`;
-  if (cur === 'personal' || cur === 'shop' || cur === 'dash') {
+  if (cur === 'personal' || cur === 'shop' || cur === 'dash' || cur === 'corp') {
     document.getElementById('ibBody').innerHTML = h +
-      (cur === 'shop' ? idolShopHtml() : cur === 'dash' ? idolDashHtml() : idolPersonalHtml());
+      (cur === 'shop' ? idolShopHtml() : cur === 'dash' ? idolDashHtml()
+        : cur === 'corp' ? idolCorpHtml() : idolPersonalHtml());
     document.getElementById('idolBoard').classList.add('on');
     return;
   }
@@ -10228,6 +10403,7 @@ function addPlanSlot(i) {
   const [act, a] = String(c.pick).split(':');
   const sim = { action: act };
   if (act === '콘텐츠' || act === '행사') sim.kind = a;
+  else if (act === '광고') sim.brand = String(c.pick).slice(3);
   else if (act === '연습') sim.intensity = 2;
   window._ibPlan.push({ name: c.name, sim });
   SFX.play('choice'); openIdolBoard();
@@ -10278,6 +10454,7 @@ function pickIdolAction(i) {
   const [act, a, b] = String(c.pick).split(':');
   const sim = { action: act };
   if (act === '콘텐츠' || act === '행사') sim.kind = a;
+  else if (act === '광고') sim.brand = String(c.pick).slice(3);   // 회사명에 ':'가 있어도 안전하게
   else if (act === '미팅') {
     sim.target = a;
     if (a === '브랜드') sim.offer = parseInt(b, 10) || 0;
