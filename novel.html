@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v165</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v166</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4644,7 +4644,8 @@ const IDOL_SIM = {
   BG_LOC: { practice:'연습실', office:'블루밍 엔터 사무실', studio:'대표 작업실', waitroom:'방송국 대기실',
             stage:'음악방송 스튜디오', van:'이동 중인 밴', event:'행사장', dorm:'숙소',
             rooftop:'건물 옥상', home:'대표의 집', street:'거리',
-            agency:'광고 대행사 회의실', pressroom:'연예 매체 사무실', invest:'투자사 라운지' },
+            agency:'광고 대행사 회의실', pressroom:'연예 매체 사무실', invest:'투자사 라운지',
+            hospital:'병원 1인 병실' },
   // 그 sim이 벌어지는 장소 키를 돌려준다(없으면 null = 장소 유지)
   placeOf(sim){
     const S = IDOL_SIM; if (!sim || !sim.action) return null;
@@ -5639,6 +5640,14 @@ const IDOL_SIM = {
         s += `  · [${it.cat}] ${it.head}${it.eff ? ` → ${it.eff}` : ''}
 `; });
     }
+    // ★병원 — 컨디션·멘탈이 바닥난 멤버가 있으면 그 장면을 병원에서 풀 수 있다(2026-07-29 배경 추가).
+    {
+      const crit = Object.entries(d.mem).filter(([,m]) => m.cond < 25 || m.mind < 25)
+        .map(([i]) => (IDOL_CHARACTERS[i]||{}).name || i);
+      if (crit.length) s += `★★${crit.join('·')} 컨디션/멘탈이 한계다 — 쓰러지거나 병원에 실려가는 전개가 가능하다`
+        + `(배경 hospital = 병원 1인 병실). 억지로 굴리면 그 대가가 장면으로 온다.
+`;
+    }
     // ★문지효 기자 등장 — 계기가 있을 때만. 없으면 부르지 마라(아무 때나 나오면 값이 떨어진다).
     if (d.pressCall) {
       const w = d.pressCall;
@@ -6180,6 +6189,7 @@ const BUILTIN_STORIES = {
       agency:     { url: 'sd_samples/backgrounds/idol/agency.webp',     label: '광고 대행사 회의실' },
       pressroom:  { url: 'sd_samples/backgrounds/idol/pressroom.webp',  label: '연예 매체 사무실' },
       invest:     { url: 'sd_samples/backgrounds/idol/invest.webp',     label: '투자사 라운지' },
+      hospital:   { url: 'sd_samples/backgrounds/idol/hospital.webp',   label: '병원 1인 병실' },
     },
     startBg: 'practice',
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 4월 첫째 주 월요일 오전, 블루밍 엔터 지하 연습실. ${n}이(가) 대표로서 처음 이 다섯을 마주하는 회의 장면 — 차영석 실장이 잔고와 대출 만기를 있는 그대로 브리핑하고(이 팀에 남은 시간이 얼마 없다는 것), 멤버 다섯이 각자의 방식으로 반응한다. 서우는 분위기를 풀려 장난치고, 미유는 눈이 먼저 붉어지고, 하람은 상황을 정확히 짚고, 소예는 소매를 만지작거리며 조심스레 한마디 하고, 시아는 제일 늦게 그러나 제일 단단하게 말한다. 마지막에 실장이 이번 주에 무엇을 할지 대표에게 묻는다.`,
