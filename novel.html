@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v158</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v159</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4170,45 +4170,74 @@ const IDOL_SIM = {
       hit(d,S,R){ d.network = S.clamp((d.network||0) + 2, 0, 100);
         return '방송 인맥 +2 (섭외 문턱이 낮아졌다)'; } },
   ],
-  // 그 주 기사 묶음을 만든다 — 우리 소식(고정) + 라이벌 + 광고주 + 랜덤 이슈
+  // 그 주 기사 묶음을 만든다 — 우리 소식(항상) + 라이벌 + 광고주 + 랜덤 이슈
   makePress(d){
     const S = IDOL_SIM, R = Math.random, items = [];
     S.ensureCorps(d);
     const corps = Object.values(d.corps);
 
-    // ① 우리 팀 — 차트·활동
-    if (d.chart && d.chart.rank) {
+    // ① 우리 팀 — **항상 한 줄은 나온다**. 공백기에 우리 얘기가 없는 신문은 남의 신문이다(2026-07-28 수정).
+    if (S.active(d) && d.chart && d.chart.rank) {
       items.push({ cat:'우리', head:`블루밍 신인 5인조, 일간 ${d.chart.rank}위`
         + (d.chart.surge ? ' — 역주행 조짐' : ''),
-        body:`「${d.album.title || '미발매곡'}」 주간 스밍 ${S.weeklyStreams(d).toLocaleString()}회.` });
+        body:`「${d.album.title || '신곡'}」 주간 스밍 ${S.weeklyStreams(d).toLocaleString()}회.` });
     } else if (S.active(d)) {
-      items.push({ cat:'우리', head:'블루밍 신인 5인조, 차트 진입 실패',
+      items.push({ cat:'우리', head:`블루밍 「${d.album.title || '신곡'}」, 차트 진입 실패`,
         body:'활동 중이지만 일간 100위 안에 이름이 없다.' });
+    } else {
+      // 공백기 — 그 주 가장 말이 되는 소식 하나를 고른다
+      const cand = [];
+      if (d.loanWeek > 0 && d.loanWeek <= 8)
+        cand.push({ k:'loan', head:`블루밍 엔터, 대출 만기 ${d.loanWeek}주 앞`, body:'업계에 소문이 돌기 시작했다.' });
+      if ((d.brands||[]).length)
+        cand.push({ k:'brand', head:`블루밍 5인조, ${d.brands[0].name} 모델 활동 중`,
+          body:(d.brands[0].member ? `${(IDOL_CHARACTERS[d.brands[0].member]||{}).name} 개인 앰버서더.` : '팀 전체 모델.') });
+      if (d.album.quality > 0 && d.album.quality < 100)
+        cand.push({ k:'song', head:`블루밍, 신곡 준비 중 — 완성도 ${Math.round(d.album.quality)}%선`,
+          body:d.album.title ? `가제 「${d.album.title}」.` : '제목은 아직 정해지지 않았다.' });
+      if (d.fandom)
+        cand.push({ k:'fandom', head:`블루밍 팬덤 「${d.fandom}」, 코어팬 ${d.core.toLocaleString()}명`,
+          body:'공식 팬카페 가입자 기준.' });
+      else if (d.core >= 500)
+        cand.push({ k:'core', head:`블루밍 코어팬 ${d.core.toLocaleString()}명 — 팬덤명은 아직`,
+          body:'팬들이 직접 이름을 짓자는 글이 올라온다.' });
+      const worst = Object.entries(d.mem).sort((a,b)=>(a[1].cond+a[1].mind)-(b[1].cond+b[1].mind))[0];
+      if (worst && (worst[1].cond < 40 || worst[1].mind < 40))
+        cand.push({ k:'cond', head:`블루밍 ${(IDOL_CHARACTERS[worst[0]]||{}).name}, 컨디션 난조설`,
+          body:'팬들이 최근 영상에서 표정이 안 좋다는 얘기를 한다.' });
+      cand.push({ k:'stat', head:`블루밍 5인조, 인지도 ${Math.round(d.fame)} · 라이트팬 ${d.light.toLocaleString()}명`,
+        body:'중소 기획사 신인 중에서는 눈에 띄는 편.' });
+      // ★직전 2주에 쓴 종류는 빼고 고른다 — 헤드라인 텍스트로 비교하면 숫자가 달라 안 걸린다(2026-07-28)
+      const recent = Array.isArray(d.lastOurs) ? d.lastOurs : [];
+      const fresh = cand.filter(x => recent.indexOf(x.k) < 0);
+      const pool2 = fresh.length ? fresh : cand;
+      const pickd = pool2[Math.floor(R()*pool2.length)];
+      d.lastOurs = [pickd.k].concat(recent).slice(0, 2);
+      items.push({ cat:'우리', head:pickd.head, body:pickd.body });
     }
 
-    // ② 라이벌 — 컴백 주기는 이미 코드가 돌고 있다(RIVALS)
+    // ② 라이벌 — ★컴백 첫 주에만. 4주 내내 같은 헤드라인이 반복되던 문제 수정(2026-07-28).
     S.RIVALS.forEach(rv => {
-      if (S.rivalActive(rv, d.week)) {
-        items.push({ cat:'연예', head:`${rv.name} 컴백 — ${rv.강점} 강세`,
-          body:`이번 주 활동 시작. 음방 경쟁이 세진다.` });
-      } else {
-        const inw = S.rivalIn(rv, d.week);
-        if (inw === 1) items.push({ cat:'연예', head:`${rv.name}, 다음 주 컴백 예고`,
-          body:'티저가 떴다. 같은 주에 붙으면 방송 점수가 갈린다.' });
-      }
+      const now = S.rivalActive(rv, d.week), was = S.rivalActive(rv, d.week - 1);
+      if (now && !was) items.push({ cat:'연예', head:`${rv.name} 컴백 — ${rv.강점} 강세`,
+        body:'이번 주 활동 시작. 음방 경쟁이 세진다.' });
+      else if (!now && S.rivalIn(rv, d.week) === 1)
+        items.push({ cat:'연예', head:`${rv.name}, 다음 주 컴백 예고`, body:'티저가 떴다.' });
+      else if (now && was && d.chart && d.chart.rank && R() < 0.3)
+        items.push({ cat:'연예', head:`${rv.name} 활동 ${((d.week - rv.start) % rv.cycle) + 1}주차`,
+          body:'음방 순위에서 계속 부딪히고 있다.' });
     });
 
-    // ③ 광고주 — 이번 주 등락 1·2위
+    // ③ 광고주 — ★1건만, 그것도 크게 움직였을 때만(표에 있는 걸 매주 베끼지 않는다)
     const moved = corps.filter(c => c.prev).map(c => ({ c, p:(c.value-c.prev)/c.prev*100 }))
-      .sort((a,b)=>Math.abs(b.p)-Math.abs(a.p)).slice(0,2);
-    moved.forEach(({c,p}) => {
-      if (Math.abs(p) < 0.3) return;
-      items.push({ cat:'기업', head:`${c.name} 기업가치 ${p>0?'▲':'▼'}${Math.abs(p).toFixed(1)}% (${S.wonBig(c.value)})`,
-        body: (d.brands||[]).some(b=>b.name===c.name)
-          ? '우리가 모델로 있는 회사다.' : `${S.CORP_LABEL[c.tier]} 광고주.` });
-    });
+      .sort((a,b)=>Math.abs(b.p)-Math.abs(a.p));
+    const mine = moved.find(x => (d.brands||[]).some(b=>b.name===x.c.name) && Math.abs(x.p) >= 1.0);
+    const big = mine || moved.find(x => Math.abs(x.p) >= 1.8);
+    if (big) items.push({ cat:'기업',
+      head:`${big.c.name} 기업가치 ${big.p>0?'▲':'▼'}${Math.abs(big.p).toFixed(1)}% (${S.wonBig(big.c.value)})`,
+      body:(d.brands||[]).some(b=>b.name===big.c.name) ? '우리가 모델로 있는 회사다.' : `${S.CORP_LABEL[big.c.tier]} 광고주.` });
 
-    // ④ 랜덤 이슈 — 실제로 수치를 움직인다
+    // ④ 랜덤 이슈 — 실제로 수치를 움직이고, 일부는 **대응할 수 있다**
     if (R() < 0.62) {
       const pool = S.PRESS_ISSUES.filter(x => x.id !== d.lastIssue);
       const it = pool[Math.floor(R()*pool.length)];
@@ -4221,7 +4250,7 @@ const IDOL_SIM = {
       const eff = it.hit(d, S, R, target);
       if (eff !== null) {
         d.lastIssue = it.id;
-        items.push({ cat:it.cat, issue:true,
+        items.push({ cat:it.cat, issue:it.id,          // ★id를 남긴다 = 대응 버튼을 붙일 수 있다
           head: it.head.replace('{corp}', target ? target.name : ''),
           body: it.body, eff });
       }
@@ -4234,6 +4263,74 @@ const IDOL_SIM = {
     d.press.unshift({ week:d.week, m:S.monthOf(d.week), wk:S.weekInMonth(d.week), items });
     if (d.press.length > 10) d.press.length = 10;      // 최근 10주만 보관(세이브 용량)
     return items;
+  },
+  // ─── 📰 기사 대응 액션 ────────────────────────────────────────────────────
+  //   읽기만 하던 신문을 **반응할 수 있는 것**으로 만든다(2026-07-28 유저 지적: "인터랙티브해?").
+  //   대응은 일정 칸을 쓰지 않는다 — 대표가 그 자리에서 판단하는 일이라서.
+  PRESS_ACTS: {
+    sajaegi: [
+      { label:'공식 입장을 낸다', desc:'해명 성명 — 먹히면 이미지 회복, 안 먹히면 불 키운다',
+        run(d,S,R){
+          if (R() < 0.55 + (d.image-60)/300) { d.image=S.clamp(d.image+6,0,100); d.sns+=600;
+            return { ok:true, note:'해명이 먹혔다 — 이미지 +6 · 언급량 +600' }; }
+          d.image=S.clamp(d.image-5,0,100); d.sns+=2500;
+          return { ok:true, note:'해명이 불을 키웠다 — 이미지 −5 · 언급량 +2,500(나쁜 쪽)' }; } },
+      { label:'대응하지 않는다', desc:'조용히 지나간다 — 잠잠해지지만 애들이 억울해한다',
+        run(d,S,R){ Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=S.clamp(d.mem[i].mind-3,0,100); });
+          d.sns=Math.round(d.sns*0.9);
+          return { ok:true, note:'침묵 — 화제는 식었지만 멤버 멘탈 −3' }; } },
+    ],
+    recall: [
+      { label:'광고를 잠시 내린다', desc:'불똥은 피하지만 광고주가 서운해한다',
+        run(d,S,R){ d.image=S.clamp(d.image+4,0,100);
+          const b=(d.brands||[]).find(x=>d.corps[x.name]);
+          if (b) b.satis=S.clamp(b.satis-15,0,100);
+          return { ok:true, note:'노출 중단 — 이미지 +4 · 광고주 만족도 −15' }; } },
+      { label:'계약을 지킨다', desc:'같이 욕먹지만 광고주가 기억한다',
+        run(d,S,R){ d.image=S.clamp(d.image-3,0,100);
+          const b=(d.brands||[]).find(x=>d.corps[x.name]);
+          if (b) { b.satis=S.clamp(b.satis+20,0,100); b.weeks=(b.weeks||8); }
+          return { ok:true, note:'의리를 지켰다 — 이미지 −3 · 광고주 만족도 +20' }; } },
+    ],
+    ad_winter: [
+      { label:'단가를 낮춰 제안을 돈다', desc:'싸게라도 붙는다 — 제안이 하나 들어온다',
+        run(d,S,R){
+          const t=S.BRAND_TIERS.filter(x=>d.fame>=x.gate-10);
+          const tr=t.length?t[t.length-1]:S.BRAND_TIERS[0];
+          const pool=tr.pool.filter(n=>!(d.brands||[]).some(b=>b.name===n) && !(d.offers||[]).some(o=>o.name===n));
+          if (!pool.length) return { ok:false, reason:'지금은 받아주는 데가 없다' };
+          const name=pool[Math.floor(R()*pool.length)];
+          d.offers.push({ name, tier:tr.tier, label:tr.label+'·저단가', weekly:Math.round(tr.weekly*0.6),
+                          weeks:tr.weeks, member:null, life:3 });
+          S.regCorp(d, name, tr.tier, false);
+          return { ok:true, note:`${name}에서 저단가 제안이 왔다(주 ${Math.round(tr.weekly*0.6/10000).toLocaleString()}만)` }; } },
+      { label:'버틴다', desc:'싸게 팔지 않는다 — 이미지를 지킨다',
+        run(d,S,R){ d.image=S.clamp(d.image+3,0,100);
+          return { ok:true, note:'단가를 안 내렸다 — 이미지 +3' }; } },
+    ],
+    rookie: [
+      { label:'물량으로 맞선다', desc:'콘텐츠를 쏟아붓는다 — SNS는 오르지만 애들이 지친다',
+        run(d,S,R){ d.sns+=Math.round(1200+R()*1200);
+          Object.keys(d.mem).forEach(i=>{ d.mem[i].cond=S.clamp(d.mem[i].cond-8,0,100); });
+          return { ok:true, note:'물량 대응 — SNS 상승 · 전원 컨디션 −8' }; } },
+      { label:'우리 속도로 간다', desc:'휩쓸리지 않는다 — 멤버가 안정된다',
+        run(d,S,R){ Object.keys(d.mem).forEach(i=>{ d.mem[i].mind=S.clamp(d.mem[i].mind+5,0,100); });
+          return { ok:true, note:'페이스 유지 — 전원 멘탈 +5' }; } },
+    ],
+  },
+  // 대응 실행 — 이미 처리한 기사는 다시 못 누른다
+  runPressAct(d, issueId, idx){
+    const S = IDOL_SIM, opts = S.PRESS_ACTS[issueId];
+    if (!opts || !opts[idx]) return { ok:false, reason:'그런 대응이 없다' };
+    const p = (d.press || [])[0];
+    const it = p && p.items.find(x => x.issue === issueId);
+    if (!it) return { ok:false, reason:'이번 호에 없는 기사다' };
+    if (it.done) return { ok:false, reason:'이미 대응했다' };
+    const r = opts[idx].run(d, S, Math.random);
+    if (!r || !r.ok) return r || { ok:false, reason:'실패' };
+    it.done = opts[idx].label;
+    it.doneNote = r.note;
+    return { ok:true, note:r.note, label:opts[idx].label, head:it.head };
   },
   // 그 기업이 우리를 볼 수준인가 — 인지도·이미지 게이트(제안이 들어오는 조건과 같다)
   corpGate(d, c){
@@ -10420,26 +10517,75 @@ function idolCorpHtml() {
     대화에서 새 광고사가 나오면 이 목록에 자동으로 추가된다.</div>`;
   return h;
 }
-// 📰 주간일보 — 매주 마감 때 만들어진 기사. 랜덤 이슈는 실제로 수치를 움직인 것만 실린다.
+// 📰 주간일보 — 기사는 실제로 수치를 움직이고, **최신호는 반응할 수 있다**(대응 선택 / 화제로 꺼내기).
 function idolPressHtml() {
   const d = gameState.idol, S = IDOL_SIM;
   const CAT = { '우리':'🎤', '연예':'🎬', '기업':'📈' };
-  let h = '';
   const ps = d.press || [];
   if (!ps.length) return `<div class="ib-group">📰 주간일보</div>
     <div class="ib-note">아직 발행된 호가 없다 — 한 주를 마감하면 그 주 기사가 실린다.</div>`;
+  let h = '';
   ps.forEach((p, i) => {
-    h += `<div class="ib-group">📰 ${p.m}월 ${p.wk}주${i === 0 ? ' <span style="color:#d4af37">최신호</span>' : ''}</div>`;
+    const latest = (i === 0);
+    h += `<div class="ib-group">📰 ${p.m}월 ${p.wk}주${latest ? ' <span style="color:#d4af37">최신호</span>' : ''}</div>`;
     if (!p.items.length) h += `<div class="ib-note">이번 주는 조용했다.</div>`;
-    p.items.forEach(it => {
+    p.items.forEach((it, j) => {
       h += `<div class="ib-drow" style="display:block">
         <div class="k" style="width:auto">${CAT[it.cat] || '·'} ${it.head}</div>`;
       if (it.body) h += `<div style="opacity:0.6;font-size:12px;margin-top:2px">${it.body}</div>`;
-      if (it.eff) h += `<div style="color:#d4af37;font-size:12px;margin-top:3px">▸ ${it.eff}</div>`;
+      if (it.eff)  h += `<div style="color:#d4af37;font-size:12px;margin-top:3px">▸ ${it.eff}</div>`;
+      // ★대응 — 최신호의 이슈 기사만. 일정 칸을 쓰지 않는다.
+      if (latest && it.issue && S.PRESS_ACTS[it.issue]) {
+        if (it.done) {
+          h += `<div style="color:#7ec87e;font-size:12px;margin-top:4px">✓ ${it.done} — ${it.doneNote || ''}</div>`;
+        } else {
+          h += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`;
+          S.PRESS_ACTS[it.issue].forEach((o, k) => {
+            h += `<button onclick="idolPressAct('${it.issue}',${k})" style="flex:1 1 45%;min-width:120px;
+              padding:7px 9px;border-radius:8px;border:1px solid rgba(212,175,55,0.45);
+              background:rgba(212,175,55,0.08);color:#e8e6e3;font-size:12px;text-align:left;line-height:1.35">
+              <b style="color:#d4af37">${o.label}</b><br><span style="opacity:0.6;font-size:11px">${o.desc}</span></button>`;
+          });
+          h += `</div>`;
+        }
+      }
+      // ★어느 기사든 대화 주제로 꺼낼 수 있다(일정 칸 소모 없음)
+      if (latest) h += `<div style="margin-top:5px"><button onclick="idolPressTalk(${j})"
+        style="padding:4px 9px;border-radius:7px;border:1px solid rgba(232,230,227,0.22);
+        background:transparent;color:rgba(232,230,227,0.7);font-size:11px">💬 이 얘기 꺼내기</button></div>`;
       h += `</div>`;
     });
   });
   return h;
+}
+// 기사 대응 — 수치가 바로 움직이고, 그 장면이 이어진다
+function idolPressAct(issueId, idx) {
+  const d = gameState.idol; if (!d) return;
+  const r = IDOL_SIM.runPressAct(d, issueId, idx);
+  if (!r || !r.ok) { showStatToast((r && r.reason) || '대응 불가', true); return; }
+  showStatToast(`📰 ${r.label} — ${r.note}`);
+  closeIdolBoard();
+  try { autoSave(); } catch {}
+  d._skipSim = true;
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  const txt = `[기사 대응] 「${r.head}」에 대해 대표는 **${r.label}**를 택했다. 결과: ${r.note}. `
+    + `실장이 이 결정을 어떻게 받아들이는지, 멤버들이 뭐라고 하는지 그 장면을 써라.`;
+  window._genText = txt; handlePlayerInput(txt);
+}
+// 기사를 대화 주제로 — 수치 변화 없음, 관계·분위기용
+function idolPressTalk(j) {
+  const d = gameState.idol; if (!d) return;
+  const p = (d.press || [])[0]; if (!p || !p.items[j]) return;
+  const it = p.items[j];
+  closeIdolBoard();
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  const txt = `[화제] 대표가 이번 주 기사 얘기를 꺼낸다 — 「${it.head}」${it.body ? ` (${it.body})` : ''}. `
+    + `실장·멤버가 이 기사에 대해 각자 다르게 반응하는 장면을 써라. 수치는 변하지 않는다(sim 금지).`;
+  window._genText = txt; handlePlayerInput(txt);
 }
 function idolShopHtml() {
   const d = gameState.idol, S = IDOL_SIM;
