@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v152</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v153</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2301,7 +2301,7 @@ const ENGINE_RULES_PROMPT = `
     "status": "새 신분 (변화 없으면 null)",
     "time": "현재 시간대 (예: '3일차 새벽', 변화 없으면 null) — ★시간 과속 금지: 같은 장소에서 이어지는 대화 몇 턴에 수십 분을 점프시키지 마라. 대화 몇 마디=현실 1~5분. time 갱신은 장면 전환(장소 이동·수업 시작/종료·일정 단위)에서만, 그 외엔 null",
     "event": "현재 진행 중인 이벤트·일정 한 줄 (예: '반장 선거', '축제 전야'. 시작·전환 시에만, 변화 없으면 null)",
-    "sim": "★아이돌 육성 스토리 「무대 뒤 3분」 전용 — 아래 「아이돌 육성 sim 필드」의 형식을 그대로 따르는 객체. 일정 행동을 했으면 action을, **대화로 곡 제목·완성도·대중성·팬덤명·영입을 정했으면 title / quality / appeal / fandom / target을 반드시 채운다**(이때 action은 없어도 된다). 다른 스토리에선 반드시 null",
+    "sim": "★아이돌 육성 스토리 「무대 뒤 3분」 전용 — 아래 「아이돌 육성 sim 필드」의 형식을 그대로 따르는 객체. 일정 행동을 했으면 action을, **대화로 곡 제목·완성도·대중성·팬덤명·영입·광고계약을 정했으면 title / quality / appeal / fandom / target / brand를 반드시 채운다**(이때 action은 없어도 된다). 다른 스토리에선 반드시 null",
     "chars": {
       "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "location": "이 인물의 현재 위치(예: 교실, 자소궁 — 변화 시만)", "tier": "이 인물의 경지/등급(첫 등장 시 정하고 이후 고정. 예: 절정)" }
     },
@@ -2412,7 +2412,13 @@ const ENGINE_MOD_CG = `
     - 시설을 사기로 했다 → 'action'=미팅, 'target'=시설, 'facility'=practice 등
     ※조건 미달(계약금 부족·인지도 미달)이면 앱이 거절하고 이유를 토스트로 보여준다.
       그럴 땐 장면에서도 "지금은 무리"로 풀어라.
-  - ★'target' = **미팅일 때만**. 브랜드(광고 계약 수락, 'offer'=제안 번호) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장) / **고용·해고**('staff'=vocal|dance|manager|pd|stylist|choreo) / **외주프로듀서**(2천만, 곡 완성도 급상승 대신 대표 자존심·멤버 신뢰 소폭 하락)
+  - ★'target' = **미팅일 때만**. 브랜드(광고 계약, 아래 ★참조) / 투자(인지도 30+, 1회) / 대출연장(1회, 만기 12주 연장) / **고용·해고**('staff'=vocal|dance|manager|pd|stylist|choreo) / **외주프로듀서**(2천만, 곡 완성도 급상승 대신 대표 자존심·멤버 신뢰 소폭 하락)
+  - ★★target='브랜드' — **두 경로가 다 된다**.
+    ① 실장이 물어온 제안을 수락 → 'offer'=제안 번호(0부터).
+    ② **대표가 광고사를 직접 만나 대화로 뚫은 계약** → 'brand'=회사명(필수). 목록에 없어도 성립한다.
+       'weekly'=주급(원, 현물협찬이면 0) / 'weeks'=계약 주수 / 'inkind'=true면 현물협찬(계약금·주급 없음,
+       대신 노출·이미지가 오른다) / 'main'=true면 메인모델 / 'member'="char_id"면 그 멤버 개인 앰버서더.
+    ★현물협찬·무보수 계약을 "계약금이 없으니 실패"로 처리하지 마라. 돈이 안 들어오는 계약도 계약이다.
   - ★'target' 개인 재산: **담보대출**(asset=home|car, 대표 개인 현금 유입·만기 못 지키면 **압류**) / **담보상환**(asset=…) / **사재출연**(개인→회사, 멤버 신뢰↑) / **대표급여**(회사→개인, 안 가져가면 대표 개인 통장이 마른다)
     · ★**회사 자금과 대표 개인 현금은 완전히 다른 돈이다.** 회사가 망해도 개인 돈은 남고, 개인이 집을 걸어 회사를 살릴 수도 있다. 이 선택을 가볍게 넘기지 마라 — 집을 담보로 잡는 장면은 대표 혼자 서명하는 장면이어야 한다.
   - ★'facility' = 미팅 target=시설일 때. office(사옥)·dorm(숙소)·practice(연습실)·van(밴)은 회사 자금, home(내 집)·car(내 차)는 대표 개인 현금으로 산다. **등급을 올리면 그 장소의 배경이 실제로 바뀐다** — 사옥·숙소가 좋아지면 애들 표정도 달라진다. 등급을 올리면 연습 효율·컨디션 소모가 영구히 좋아진다 — **성공할수록 돈 쓸 곳**이 생긴다.
@@ -4719,15 +4725,39 @@ const IDOL_SIM = {
       // 일정 1칸 = 경영 행동(브랜드 계약·투자 유치·대출 연장). 멤버 소모 없음.
       const t = sim.target || '브랜드';
       if (t==='브랜드'){
-        const idx = Math.max(0, Math.min((sim.offer|0), d.offers.length-1));
-        const o = d.offers[idx];
-        if (!o) return { ok:false, reason:'들어온 제안 없음' };
-        d.offers.splice(idx,1);
+        // ★제안 목록(d.offers)은 실장이 물어온 것일 뿐이다. 대표가 광고사를 직접 만나
+        //   대화로 뚫은 계약도 성립해야 한다 — 목록에 없다고 "무산"이 뜨던 게 버그(2026-07-28).
+        //   현물협찬(계약금·주급 0)도 표현 가능해야 한다.
+        d.brands = d.brands || []; d.offers = d.offers || [];
+        const nm = String(sim.brand || '').trim();
+        let idx = -1;
+        if (nm) idx = d.offers.findIndex(o => o.name === nm || o.name.indexOf(nm) >= 0 || nm.indexOf(o.name) >= 0);
+        else if (d.offers.length) idx = Math.max(0, Math.min((sim.offer|0), d.offers.length-1));
+        let o = idx >= 0 ? d.offers[idx] : null;
+        if (o) d.offers.splice(idx, 1);
+        else {
+          if (!nm) return { ok:false, reason:'들어온 제안 없음 — 대화로 딴 계약이면 sim에 brand(회사명)를 같이 내라' };
+          if (d.brands.some(b => b.name === nm)) return { ok:false, reason:`이미 ${nm}과 계약 중` };
+          const tiers = S.BRAND_TIERS.filter(x => d.fame >= x.gate);
+          const tr = tiers.length ? tiers[tiers.length-1] : S.BRAND_TIERS[0];
+          const inkind = !!sim.inkind || sim.weekly === 0;
+          o = { name:nm, inkind,
+                tier:  Math.max(1, Math.min(3, (sim.tier|0) || tr.tier)),
+                label: inkind ? '현물협찬' : tr.label,
+                weekly: inkind ? 0 : (sim.weekly !== undefined ? Math.max(0, sim.weekly|0) : tr.weekly),
+                weeks: Math.max(1, Math.min(24, (sim.weeks|0) || tr.weeks)),
+                member: (sim.member && d.mem[sim.member]) ? sim.member : null };
+        }
         d.brands.push({ ...o, left:o.weeks });
-        dt.money += o.weekly*2;            // 계약금 = 2주치 선지급
-        dt.fame += o.tier*0.4;
+        dt.money += o.weekly * 2;          // 계약금 = 2주치 선지급 (현물협찬이면 0)
+        dt.fame += o.tier * 0.4;
+        if (o.inkind) {                    // 돈은 안 들어와도 노출·협찬품이 남는다
+          dt.fame += 0.6;
+          d.image = S.clamp((d.image===undefined?70:d.image) + 3, 0, 100);
+        }
+        if (sim.main) dt.fame += 0.6;      // 메인모델 = 얼굴이 크게 걸린다
         if (o.member) { const m=d.mem[o.member]; if(m) m.trust=S.clamp(m.trust+4,0,100); }
-        dt.note = `${o.name} 계약${o.member?`(${(IDOL_CHARACTERS[o.member]||{}).name} 개인)`:''}`;
+        dt.note = `${o.name} 계약${o.inkind?'(현물협찬)':''}${sim.main?'·메인모델':''}${o.member?`(${(IDOL_CHARACTERS[o.member]||{}).name} 개인)`:''}`;
       } else if (t==='투자'){
         if (d.invested) return { ok:false, reason:'이미 유치함' };
         if (d.fame < 30) return { ok:false, reason:'인지도 30 필요' };
@@ -4994,7 +5024,7 @@ const IDOL_SIM = {
     // 브랜드/이미지 — 공백기 생존줄이자 팀 균열의 씨앗
     if (d.image !== undefined) s += `브랜드 이미지 ${Math.round(d.image)}`;
     if (d.brands && d.brands.length) s += ` | 계약중: ` + d.brands.map(b=>
-      `${b.name}(주 ${Math.round(b.weekly/10000)}만·${b.left}주 남음${b.member?`·${(IDOL_CHARACTERS[b.member]||{}).name} 개인 앰버서더`:''})`).join(', ');
+      `${b.name}(${b.inkind?'현물협찬':`주 ${Math.round(b.weekly/10000)}만`}·${b.left}주 남음${b.member?`·${(IDOL_CHARACTERS[b.member]||{}).name} 개인 앰버서더`:''})`).join(', ');
     if (d.image !== undefined) s += `\n`;
     if (d.offers && d.offers.length) s += `★들어온 광고 제안: ` + d.offers.map((o,i)=>
       `[${i}] ${o.name}(${o.label}·주 ${Math.round(o.weekly/10000)}만·${o.weeks}주${o.member?`·${(IDOL_CHARACTERS[o.member]||{}).name} 개인 앰버서더`:'·팀 전체'}, ${o.life||1}주 안에 답 줘야 함)`).join(' / ') + ` — 실장이 보고할 것\n`;
@@ -9919,7 +9949,8 @@ function idolDashHtml() {
   h += row('자금', won(d.money) + '원') + row('대출', won(d.loan) + '원');
   h += row('인맥', `방송 ${Math.round(d.network||0)} · 업계 ${Math.round(d.biz||0)}`);
   h += row('스태프', (d.staff||[]).length ? (d.staff||[]).map(k=>(S.STAFF[k]||{}).name||k).join(', ') : '없음');
-  h += row('브랜드', (d.brands||[]).length ? (d.brands||[]).map(b=>b.name||b).join(', ') : '없음');
+  h += row('브랜드', (d.brands||[]).length
+    ? (d.brands||[]).map(b=>`${b.name||b}${b.inkind?'(현물)':''}${b.left?`·${b.left}주`:''}`).join(', ') : '없음');
   const ns = S.nextSeason(d.week);
   h += row('이번 시즌', (S.season(d.week).map(c=>c.name).join(', ') || '평시') + (ns ? ` · 다음 「${ns.c.name}」 ${ns.in}주 뒤` : ''));
 
