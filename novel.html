@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v154</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v155</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4112,6 +4112,126 @@ const IDOL_SIM = {
     }
     return d.corps;
   },
+  // ─── 📰 주간일보 ──────────────────────────────────────────────────────────
+  //   매주 마감 때 기사 3~5개를 만든다. **기사는 장식이 아니라 실제로 수치를 움직인다**
+  //   (기업가치·우리 이미지·인지도·제안 확률). stateLine이 헤드라인을 AI에 넘겨
+  //   실장·멤버가 그 얘기를 하게 만든다.
+  PRESS_ISSUES: [
+    { id:'ad_winter', cat:'기업', head:'광고 시장 한파 — 상반기 집행액 12% 감소',
+      body:'대기업이 마케팅 예산을 줄이면서 신인 모델 기용이 먼저 잘렸다.',
+      hit(d,S,R){ const m = 0.94 + R()*0.03;
+        Object.keys(d.corps).forEach(k=>{ d.corps[k].value = Math.round(d.corps[k].value*m); });
+        return `광고주 기업가치 일제히 ${((m-1)*100).toFixed(1)}%`; } },
+    { id:'shortform', cat:'기업', head:'숏폼 광고 특수 — 브랜드들이 15초에 돈을 붓는다',
+      body:'TV 대신 숏폼으로 예산이 옮겨갔다. 춤 되는 팀이 유리하다는 분석.',
+      hit(d,S,R){ const m = 1.02 + R()*0.03;
+        Object.keys(d.corps).forEach(k=>{ d.corps[k].value = Math.round(d.corps[k].value*m); });
+        d.sns += Math.round(d.sns*0.05 + 300);
+        return `광고주 기업가치 +${((m-1)*100).toFixed(1)}% · 우리 SNS 화력 소폭 상승`; } },
+    { id:'recall', cat:'기업', head:'{corp} 제품 결함 논란 — 자진 회수',
+      body:'소비자원 조사가 시작됐다. 모델을 쓰던 팀들이 광고를 내렸다.',
+      pick:'any',
+      hit(d,S,R,c){ if(!c) return null; const m = 0.85 + R()*0.07;
+        c.value = Math.round(c.value*m);
+        const b = (d.brands||[]).find(x=>x.name===c.name);
+        let ex = '';
+        if (b) { d.image = S.clamp(d.image - 4, 0, 100); b.satis = S.clamp(b.satis - 10, 0, 100);
+                 ex = ' · **우리가 모델이라 불똥이 튀었다**(이미지 −4)'; }
+        return `${c.name} 기업가치 ${((m-1)*100).toFixed(1)}%${ex}`; } },
+    { id:'hit_launch', cat:'기업', head:'{corp} 신제품 완판 — 3분기 실적 전망 상향',
+      body:'광고 효과가 컸다는 평가. 모델 재계약 얘기가 나온다.',
+      pick:'any',
+      hit(d,S,R,c){ if(!c) return null; const m = 1.06 + R()*0.07;
+        c.value = Math.round(c.value*m);
+        const b = (d.brands||[]).find(x=>x.name===c.name);
+        let ex = '';
+        if (b) { b.satis = S.clamp(b.satis + 12, 0, 100); d.fame = S.clamp(d.fame + 1.2, 0, 100);
+                 ex = ' · **우리 광고 덕이라는 기사**(인지도 +1.2)'; }
+        return `${c.name} 기업가치 +${((m-1)*100).toFixed(1)}%${ex}`; } },
+    { id:'model_survey', cat:'연예', head:'광고주 선호 모델 조사 — 신인 아이돌 기용 늘어',
+      body:'인지도보다 "이미지가 깨끗한가"를 먼저 본다는 응답이 많았다.',
+      hit(d,S,R){ const up = d.image >= 70;
+        d.fame = S.clamp(d.fame + (up?1.5:0), 0, 100);
+        return up ? '이미지가 좋은 팀에 문의가 몰렸다 — 인지도 +1.5' : '이미지 70 미만은 후보에서 빠졌다'; } },
+    { id:'sajaegi', cat:'연예', head:'음원 사재기 의혹 — 차트 신뢰도 도마에',
+      body:'중소 기획사들이 특히 시끄럽다. 우리 이름도 커뮤니티에 오르내렸다.',
+      hit(d,S,R){ d.sns += Math.round(400 + R()*800);
+        d.image = S.clamp(d.image - 2, 0, 100);
+        return '언급량은 늘었지만 이미지 −2 (좋은 화제가 아니다)'; } },
+    { id:'rookie', cat:'연예', head:'대형 3사 동시 신인 데뷔 — 하반기 경쟁 과열',
+      body:'물량 공세다. 같은 주에 데뷔한 팀만 넷.',
+      hit(d,S,R){ d.light = Math.round(d.light*0.97);
+        return '신인 물량에 밀려 라이트팬 −3%'; } },
+    { id:'variety_boom', cat:'연예', head:'예능 출연이 데뷔보다 빠른 길 — 방송가 기류 변화',
+      body:'무대보다 예능에서 얼굴을 먼저 알리는 팀이 늘었다.',
+      hit(d,S,R){ d.network = S.clamp((d.network||0) + 2, 0, 100);
+        return '방송 인맥 +2 (섭외 문턱이 낮아졌다)'; } },
+  ],
+  // 그 주 기사 묶음을 만든다 — 우리 소식(고정) + 라이벌 + 광고주 + 랜덤 이슈
+  makePress(d){
+    const S = IDOL_SIM, R = Math.random, items = [];
+    S.ensureCorps(d);
+    const corps = Object.values(d.corps);
+
+    // ① 우리 팀 — 차트·활동
+    if (d.chart && d.chart.rank) {
+      items.push({ cat:'우리', head:`블루밍 신인 5인조, 일간 ${d.chart.rank}위`
+        + (d.chart.surge ? ' — 역주행 조짐' : ''),
+        body:`「${d.album.title || '미발매곡'}」 주간 스밍 ${S.weeklyStreams(d).toLocaleString()}회.` });
+    } else if (S.active(d)) {
+      items.push({ cat:'우리', head:'블루밍 신인 5인조, 차트 진입 실패',
+        body:'활동 중이지만 일간 100위 안에 이름이 없다.' });
+    }
+
+    // ② 라이벌 — 컴백 주기는 이미 코드가 돌고 있다(RIVALS)
+    S.RIVALS.forEach(rv => {
+      if (S.rivalActive(rv, d.week)) {
+        items.push({ cat:'연예', head:`${rv.name} 컴백 — ${rv.강점} 강세`,
+          body:`이번 주 활동 시작. 음방 경쟁이 세진다.` });
+      } else {
+        const inw = S.rivalIn(rv, d.week);
+        if (inw === 1) items.push({ cat:'연예', head:`${rv.name}, 다음 주 컴백 예고`,
+          body:'티저가 떴다. 같은 주에 붙으면 방송 점수가 갈린다.' });
+      }
+    });
+
+    // ③ 광고주 — 이번 주 등락 1·2위
+    const moved = corps.filter(c => c.prev).map(c => ({ c, p:(c.value-c.prev)/c.prev*100 }))
+      .sort((a,b)=>Math.abs(b.p)-Math.abs(a.p)).slice(0,2);
+    moved.forEach(({c,p}) => {
+      if (Math.abs(p) < 0.3) return;
+      items.push({ cat:'기업', head:`${c.name} 기업가치 ${p>0?'▲':'▼'}${Math.abs(p).toFixed(1)}% (${S.wonBig(c.value)})`,
+        body: (d.brands||[]).some(b=>b.name===c.name)
+          ? '우리가 모델로 있는 회사다.' : `${S.CORP_LABEL[c.tier]} 광고주.` });
+    });
+
+    // ④ 랜덤 이슈 — 실제로 수치를 움직인다
+    if (R() < 0.62) {
+      const pool = S.PRESS_ISSUES.filter(x => x.id !== d.lastIssue);
+      const it = pool[Math.floor(R()*pool.length)];
+      let target = null;
+      if (it.pick === 'any') {
+        const cand = (d.brands||[]).length && R() < 0.55
+          ? corps.filter(c => (d.brands||[]).some(b=>b.name===c.name)) : corps;
+        target = cand[Math.floor(R()*cand.length)] || null;
+      }
+      const eff = it.hit(d, S, R, target);
+      if (eff !== null) {
+        d.lastIssue = it.id;
+        items.push({ cat:it.cat, issue:true,
+          head: it.head.replace('{corp}', target ? target.name : ''),
+          body: it.body, eff });
+      }
+    }
+
+    // ⑤ 계약 소식은 이미 endWeek이 모아뒀다
+    (d.corpNews || []).forEach(t => items.push({ cat:'기업', head:t, body:'' }));
+
+    d.press = (d.press || []);
+    d.press.unshift({ week:d.week, m:S.monthOf(d.week), wk:S.weekInMonth(d.week), items });
+    if (d.press.length > 10) d.press.length = 10;      // 최근 10주만 보관(세이브 용량)
+    return items;
+  },
   // 그 기업이 우리를 볼 수준인가 — 인지도·이미지 게이트(제안이 들어오는 조건과 같다)
   corpGate(d, c){
     const t = IDOL_SIM.BRAND_TIERS.find(x => x.tier === c.tier);
@@ -4600,7 +4720,7 @@ const IDOL_SIM = {
       personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], corps:null, invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
-      fac:{ practice:0, van:0 }, fandom:null, awards:[],
+      fac:{ practice:0, van:0 }, fandom:null, awards:[], press:[], corpNews:[], lastIssue:null,
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, rec:false, choreo:false, teaser:false },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -5095,6 +5215,7 @@ const IDOL_SIM = {
     }
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
     if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; d.album.jacket=false; d.album.mv=false; d.album.mvTier=0; d.album.rec=false; d.album.choreo=false; d.album.teaser=false; }
+    try { S.makePress(d); } catch {}          // ★기사 생성은 그 주 수치가 다 정해진 뒤
     d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; d.day=0; d.wkIdx=0; d.dow=0; d.dowTime=''; },   // ★새 주는 월요일부터
   // AI 주입용 상태 요약
   stateLine(d){
@@ -5133,6 +5254,14 @@ const IDOL_SIM = {
     const lazy = (d.brands||[]).filter(b => (b.satis===undefined?55:b.satis) < 45);
     if (lazy.length) s += `★★광고주 불만: ${lazy.map(b=>b.name).join(', ')} — 계약해놓고 촬영을 안 하고 있다. `
       + `일정에 「광고촬영」을 넣어야 한다(만족도 20 밑이면 계약 파기). 실장이 독촉하는 장면을 만들어라.\n`;
+    // ★주간일보 최신호 — 실장·멤버가 이 얘기를 꺼내야 세계가 살아 있는 느낌이 난다
+    if (d.press && d.press[0] && d.press[0].items.length) {
+      s += `★★이번 주 주간일보 헤드라인(실장이 브리핑하거나 멤버가 화제로 꺼낼 것):
+`;
+      d.press[0].items.slice(0, 5).forEach(it => {
+        s += `  · [${it.cat}] ${it.head}${it.eff ? ` → ${it.eff}` : ''}
+`; });
+    }
     if (d.corpNews && d.corpNews.length) s += `★지난주 광고주 소식: ${d.corpNews.join(' / ')}\n`;
     // ★광고주 목록 — 기존 회사 + 대화에서 새로 나온 회사. 기업가치는 매주 움직인다.
     try {
@@ -9821,7 +9950,7 @@ function updateSceneBanner() {
 function migrateIdolSave(d) {
   if (!d) return d;
   const base = IDOL_SIM.init();
-  ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv'].forEach(k => {
+  ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv','press','corpNews'].forEach(k => {
     if (!Array.isArray(d[k])) d[k] = Array.isArray(base[k]) ? base[k].slice() : [];
   });
   if (typeof d.network !== 'number') d.network = base.network;
@@ -10135,6 +10264,27 @@ function idolCorpHtml() {
     대화에서 새 광고사가 나오면 이 목록에 자동으로 추가된다.</div>`;
   return h;
 }
+// 📰 주간일보 — 매주 마감 때 만들어진 기사. 랜덤 이슈는 실제로 수치를 움직인 것만 실린다.
+function idolPressHtml() {
+  const d = gameState.idol, S = IDOL_SIM;
+  const CAT = { '우리':'🎤', '연예':'🎬', '기업':'📈' };
+  let h = '';
+  const ps = d.press || [];
+  if (!ps.length) return `<div class="ib-group">📰 주간일보</div>
+    <div class="ib-note">아직 발행된 호가 없다 — 한 주를 마감하면 그 주 기사가 실린다.</div>`;
+  ps.forEach((p, i) => {
+    h += `<div class="ib-group">📰 ${p.m}월 ${p.wk}주${i === 0 ? ' <span style="color:#d4af37">최신호</span>' : ''}</div>`;
+    if (!p.items.length) h += `<div class="ib-note">이번 주는 조용했다.</div>`;
+    p.items.forEach(it => {
+      h += `<div class="ib-drow" style="display:block">
+        <div class="k" style="width:auto">${CAT[it.cat] || '·'} ${it.head}</div>`;
+      if (it.body) h += `<div style="opacity:0.6;font-size:12px;margin-top:2px">${it.body}</div>`;
+      if (it.eff) h += `<div style="color:#d4af37;font-size:12px;margin-top:3px">▸ ${it.eff}</div>`;
+      h += `</div>`;
+    });
+  });
+  return h;
+}
 function idolShopHtml() {
   const d = gameState.idol, S = IDOL_SIM;
   const won = n => n >= 100000000 ? (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '억' : Math.round(n / 10000).toLocaleString() + '만';
@@ -10279,12 +10429,13 @@ function openIdolBoard(tab) {
     <button class="ib-tab${cur==='plan'?' on':''}" onclick="openIdolBoard('plan')">🗓 일정</button>
     <button class="ib-tab${cur==='dash'?' on':''}" onclick="openIdolBoard('dash')">📊 현황</button>
     <button class="ib-tab${cur==='corp'?' on':''}" onclick="openIdolBoard('corp')">🤝 기업</button>
+    <button class="ib-tab${cur==='press'?' on':''}" onclick="openIdolBoard('press')">📰 일보</button>
     <button class="ib-tab${cur==='shop'?' on':''}" onclick="openIdolBoard('shop')">🏢 샵</button>
     <button class="ib-tab${cur==='personal'?' on':''}" onclick="openIdolBoard('personal')">👤 개인</button></div>`;
-  if (cur === 'personal' || cur === 'shop' || cur === 'dash' || cur === 'corp') {
+  if (cur === 'personal' || cur === 'shop' || cur === 'dash' || cur === 'corp' || cur === 'press') {
     document.getElementById('ibBody').innerHTML = h +
       (cur === 'shop' ? idolShopHtml() : cur === 'dash' ? idolDashHtml()
-        : cur === 'corp' ? idolCorpHtml() : idolPersonalHtml());
+        : cur === 'corp' ? idolCorpHtml() : cur === 'press' ? idolPressHtml() : idolPersonalHtml());
     document.getElementById('idolBoard').classList.add('on');
     return;
   }
