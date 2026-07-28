@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v155</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v156</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4373,6 +4373,45 @@ const IDOL_SIM = {
   // ───── 대표 전용 칸 (주 1칸) ─────
   //   ★"동행할까 회사에 남을까"를 버튼으로 강제로 끼워넣으니 대화 맥락이 끊겼다(2026-07-26 유저 지적).
   //   대표가 그 주에 **무엇을 하는 사람인지**를 편성으로 정하고, 실제 실랑이는 장면에서 대화로 푼다.
+  // ─── 일정 → 장소 강제 ─────────────────────────────────────────────────────
+  //   "일정에 따라 장소가 이동하는 건 강제되어야 함"(유저 지시 2026-07-28).
+  //   AI가 장소를 정하게 두면 연습인데 사무실, 음방인데 숙소가 나온다.
+  //   일정이 실제로 소화되는 순간 코드가 배경·location을 박고, stateLine이 그걸 못 바꾸게 못 박는다.
+  PLACE: {
+    '연습':   { bg:'practice', loc:'연습실' },
+    '음방':   { bg:'stage',    loc:'음악방송 스튜디오' },
+    '휴식':   { bg:'dorm',     loc:'숙소' },
+    '곡작업': { bg:'studio',   loc:'대표 작업실' },
+    '미팅':   { bg:'office',   loc:'블루밍 엔터 사무실' },
+    '광고':   { bg:'event',    loc:'광고 촬영장' },
+  },
+  PLACE_CONTENT: {
+    '챌린지':'practice', '커버영상':'practice', '안무제작':'practice',
+    '브이로그':'dorm', '라이브':'dorm',
+    '자체예능':'event', '자켓촬영':'event', '뮤비촬영':'event', '저예산 뮤비':'event', '대형 뮤비':'event',
+    '녹음':'studio', '티저공개':'office', '쇼케이스':'stage',
+    '라디오':'waitroom', '토크쇼':'waitroom',
+  },
+  PLACE_EVENT: { '축제':'stage', '버스킹':'street', '팬사인회':'event', '기업행사':'event', '팬콘':'stage' },
+  PLACE_CEO:   { '곡작업':'studio', '속성작업':'studio', '명함':'street', '방송국':'waitroom',
+                 '투자유치':'office', '동행':null },
+  BG_LOC: { practice:'연습실', office:'블루밍 엔터 사무실', studio:'대표 작업실', waitroom:'방송국 대기실',
+            stage:'음악방송 스튜디오', van:'이동 중인 밴', event:'행사장', dorm:'숙소',
+            rooftop:'건물 옥상', home:'대표의 집', street:'거리' },
+  // 그 sim이 벌어지는 장소 키를 돌려준다(없으면 null = 장소 유지)
+  placeOf(sim){
+    const S = IDOL_SIM; if (!sim || !sim.action) return null;
+    let bg = null, loc = null;
+    if (sim.action === '콘텐츠') bg = S.PLACE_CONTENT[sim.kind] || 'practice';
+    else if (sim.action === '행사') bg = S.PLACE_EVENT[sim.kind] || 'event';
+    else { const p = S.PLACE[sim.action] || {}; bg = p.bg || null; loc = p.loc || null; }
+    if (!bg) return null;
+    return { bg, loc: loc || S.BG_LOC[bg] || bg };   // ★PLACE의 구체 이름이 BG_LOC보다 우선(광고 촬영장 등)
+  },
+  placeOfCeo(act){
+    const S = IDOL_SIM, bg = S.PLACE_CEO[act];
+    return bg ? { bg, loc: S.BG_LOC[bg] || bg } : null;
+  },
   CEO_ACTS: {
     '동행':     { desc:'애들 현장에 붙는다 — 그 주 팀 일정 성과 +10% · 전원 신뢰↑' },
     '곡작업':   { desc:'회사에 남아 곡을 만진다 — 완성도·대중성↑ (대표의 본업)' },
@@ -5254,6 +5293,46 @@ const IDOL_SIM = {
     const lazy = (d.brands||[]).filter(b => (b.satis===undefined?55:b.satis) < 45);
     if (lazy.length) s += `★★광고주 불만: ${lazy.map(b=>b.name).join(', ')} — 계약해놓고 촬영을 안 하고 있다. `
       + `일정에 「광고촬영」을 넣어야 한다(만족도 20 밑이면 계약 파기). 실장이 독촉하는 장면을 만들어라.\n`;
+    // ★★일정은 대화가 이끈다 — 버튼은 건너뛰기용일 뿐이다(유저 결정 2026-07-28).
+    //   AI가 다음 편성 일정으로 서사를 몰고 가야 진행이 된다. 그래서 아주 강하게 못 박는다.
+    {
+      const _ps = S.weekPlans(d), _i = d.wkIdx || 0, _np = _ps[_i];
+      if (_np) {
+        const _pl = S.placeOf(_np.sim);
+        s += `★★다음 편성 일정: 「${_np.name}」 (${S.DOW[S.dowOf(d)]}요일${_pl ? ' · ' + _pl.loc : ''}) — 아직 안 했다.\n`;
+        s += `  **이 장면을 그 일정으로 끌고 가라.** 잡담만 하다 끝내지 마라. 선택지 1번은 반드시 이 일정에\n`;
+        s += `  들어가는 것이어야 한다(예: "${_np.name}, 시작하자"). 대표가 그걸 고르면 **그 턴의 sim에\n`;
+        s += `  ${JSON.stringify(_np.sim)} 를 그대로 실어라** — 그래야 일정이 소화되고 요일이 넘어간다.\n`;
+        s += `  ★sim을 안 실으면 장면만 흐르고 게임은 제자리다. 반드시 실어라.\n`;
+        if (_ps.length > _i + 1) s += `  (그 뒤 일정: 「${_ps[_i+1].name}」)\n`;
+      } else if (_ps.length) {
+        s += `★이번 주 일정은 다 소화했다 — 주간 마감을 하도록 장면을 정리하라(대표 칸: ${S.ceoPlanOf(d) || '동행'}).\n`;
+      }
+      // ★대표 칸도 서사다 — 「명함」은 광고 대행사를 만나는 일이다(유저 지적 2026-07-28).
+      //   그 자리에서 계약이 붙으면 sim(target='브랜드'+brand)으로 실으면 실제로 계약이 된다.
+      const _ceoAct = S.ceoPlanOf(d) || '동행';
+      if (_ceoAct !== '동행') {
+        const _cp = S.placeOfCeo(_ceoAct);
+        s += `★이번 주 대표는 「${_ceoAct}」 — ${(S.CEO_ACTS[_ceoAct]||{}).desc||''}${_cp?` (${_cp.loc})`:''}.
+`;
+        if (_ceoAct === '명함') s += `  대표가 광고 대행사·행사 기획사 사람을 만나는 장면을 만들어도 좋다.
+`
+          + `  거기서 광고가 붙으면 **그 턴 sim에 {"action":"미팅","target":"브랜드","brand":"회사명",...}을 실어라** — 실제 계약이 된다.
+`;
+        if (_ceoAct === '방송국') s += `  PD를 만나는 장면을 만들어도 좋다. 섭외는 주간 마감 때 코드가 판정한다.
+`;
+      }
+      // ★장소는 코드가 정한다. AI가 바꾸면 연습인데 사무실이 된다.
+      if (d._place) s += `★★지금 장소는 **${S.BG_LOC[d._place] || d._place}**다. 이 장면에서 장소를 바꾸지 마라(background도 이 장소를 유지).\n`;
+      // ★대표 부재 = 막간 컷
+      if (d._absent) {
+        s += `★★★이 장면에 **대표(주인공)는 없다**. 대표 칸이 「${S.ceoPlanOf(d) || '동행'}」이라 다른 데 가 있다.\n`;
+        s += `  - 멤버들만 나오는 **짧은 3인칭 막간 장면**을 써라(2~4개 대사).\n`;
+        s += `  - 대표의 대사·행동·시점을 절대 쓰지 마라. 대표에게 말을 걸지도 마라.\n`;
+        s += `  - **선택지(choices)를 내지 마라.** 유저는 이 장면에 개입하지 않는다 — 보기만 한다.\n`;
+        s += `  - 여기서 애들끼리의 관계·속마음이 드러나야 한다. 대표가 못 본 얼굴을 보여줘라.\n`;
+      }
+    }
     // ★주간일보 최신호 — 실장·멤버가 이 얘기를 꺼내야 세계가 살아 있는 느낌이 난다
     if (d.press && d.press[0] && d.press[0].items.length) {
       s += `★★이번 주 주간일보 헤드라인(실장이 브리핑하거나 멤버가 화제로 꺼낼 것):
@@ -9504,7 +9583,14 @@ function showChoices(choices) {
     }
     return String(c == null ? '' : c);
   }).filter(t => t.trim());
-  if (!choices.length) { enterInputMode(); return; }
+  if (!choices.length) {
+    // ★대표가 없는 막간 컷에서 입력창을 띄우면 유저가 멤버를 대신 연기하게 된다(2026-07-28 유저 지적).
+    //   개입 지점이 아니므로 「▶ 계속」 하나만 준다.
+    if (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' &&
+        gameState && gameState.idol && gameState.idol._absent) {
+      choices = ['▶ 계속 — 대표 쪽으로 장면을 돌린다'];
+    } else { enterInputMode(); return; }
+  }
   window._lastChoices = choices;   // ★되감기 복원용 — 그 시점에 떠 있던 선택지
   inputMode = true;
   clearTimeout(autoTimer);
@@ -9593,6 +9679,17 @@ async function sendMessage() {
 
 async function handlePlayerInput(text) {
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
+  // ★막간 컷(대표 부재)에서 「▶ 계속」을 누르면 시점을 대표에게 돌린다
+  if (/^▶\s*계속/.test(String(text || '')) && gameState && gameState.idol) {
+    gameState.idol._absent = false;
+    const _ceo = IDOL_SIM.ceoPlanOf(gameState.idol) || '동행';
+    const _p = IDOL_SIM.placeOfCeo(_ceo);
+    if (_p) { gameState.location = _p.loc; gameState.idol._place = _p.bg;
+              try { lastBg = _p.bg; setBg(_p.bg); } catch {} }
+    text = `[시점 전환] 같은 시각, 대표는 ${_p ? _p.loc : '사무실'}에 있다. `
+         + `대표가 「${_ceo}」를 하고 있는 장면으로 넘어가라. 방금 막간 장면은 대표가 못 본 일이다 — 언급하지 마라.`;
+    window._genText = text;
+  }
   // ★시작 플로우(prologue 정의 스토리): 프롤로그·모드선택·설정요청은 앱이 고정 처리(AI 호출 X).
   if (window._startPhase === 'mode') {
     dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
@@ -10003,6 +10100,26 @@ function syncIdolTime() {
   gameState.time = IDOL_SIM.dateLine(d);
   try { updateSceneBanner(); } catch {}
 }
+// ★일정이 소화되면 장소를 코드가 박는다 — AI가 정하게 두면 연습인데 사무실이 나온다(2026-07-28 유저 지시).
+//   버튼으로 넘기든 대화로 자연스럽게 도달하든 같은 경로(runIdolSim)를 타므로 여기 한 곳이면 된다.
+function forceIdolPlace(sim) {
+  try {
+    const d = gameState.idol; if (!d) return;
+    const p = IDOL_SIM.placeOf(sim); if (!p) return;
+    gameState.location = p.loc;
+    d._place = p.bg;
+    lastBg = p.bg; setBg(p.bg);
+  } catch {}
+}
+// 대표가 그 장면에 없는가 — 팀 일정인데 대표 칸이 '동행'이 아니면 막간 컷이 된다.
+function markIdolAbsent(sim) {
+  try {
+    const d = gameState.idol; if (!d) { return; }
+    const teamAct = ['연습','콘텐츠','음방','행사','휴식','광고'].indexOf(sim && sim.action) >= 0;
+    const acc = (IDOL_SIM.ceoPlanOf(d) || '동행') === '동행';
+    d._absent = !!(teamAct && !acc);
+  } catch {}
+}
 function runIdolSim(sim) {
   const d = gameState.idol; if (!d) return null;
   // ★제목·팬덤명은 일정 성공 여부와 무관하게 반영한다 — 대화로 정하는 것이고,
@@ -10041,7 +10158,8 @@ function runIdolSim(sim) {
   }
   const r = IDOL_SIM.apply(d, sim);
   if (r && r.ok) {
-    syncIdolTime();                                    // 요일이 흘렀다 — 배너·time 즉시 반영
+    syncIdolTime();
+    forceIdolPlace(sim); markIdolAbsent(sim);      // ★장소 강제 + 대표 부재 판정(버튼·대화 공통 경로)                                    // 요일이 흘렀다 — 배너·time 즉시 반영
     const t = [];
     if (r.delta.light) t.push(`라이트팬 ${r.delta.light > 0 ? '+' : ''}${r.delta.light.toLocaleString()}`);
     if (r.delta.core)  t.push(`코어팬 ${r.delta.core > 0 ? '+' : ''}${r.delta.core.toLocaleString()}`);
@@ -10519,8 +10637,8 @@ function openIdolBoard(tab) {
         <div class="ib-note">${(S.CEO_ACTS[ceoAct]||{}).desc || ''}</div>`;
       if (nx) {
         h += `<button class="ib-card" onclick="runNextPlan()">
-            <span class="n">▶ ${S.DOW[Math.max(S.RHYTHM[Math.min(3, done + 1)], S.dowOf(d))]}요일 — 「${nx.name}」 진행</span>
-            <span class="e">이 일정 하나만 소화한다${acc ? ' · 대표 동행(+10%)' : ''} — 장면에서 풀린다</span></button>
+            <span class="n">⏭ ${S.DOW[Math.max(S.RHYTHM[Math.min(3, done + 1)], S.dowOf(d))]}요일 — 「${nx.name}」 건너뛰기</span>
+            <span class="e">평소엔 대화가 알아서 이 일정으로 간다${acc ? ' · 대표 동행(+10%)' : ''} — 이 버튼은 기다리기 싫을 때만</span></button>
           <button class="ib-card" onclick="runWeekPlan(${acc ? 2 : -1})">
             <span class="n">⏩ 남은 ${ps.length - done}건 몰아치기 (주 스킵)</span>
             <span class="e">한 주를 통째로 넘긴다 — 장면 없이 결과만</span></button>`;
