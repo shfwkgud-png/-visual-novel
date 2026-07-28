@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v159</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v160</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4081,6 +4081,59 @@ const IDOL_SIM = {
     { tier:2, label:'중견',   gate:40, image:55, weekly:5000000, weeks:12, pool:['코스메 뮤즈','클리어톡','루체 주얼리'] },
     { tier:3, label:'대형',   gate:65, image:70, weekly:12000000, weeks:16, pool:['라비앙 코스메틱','한빛카드','NEXA 스포츠'] },
   ],
+  // ─── 세계가 서로 물리는 고리 ───────────────────────────────────────────────
+  //   유저 지시(2026-07-28): "기사가 상황을 담고 그 기사가 또 상황에 영향을 준다."
+  //   ① 우리 기사는 인기만큼 크게 실리고, 실린 크기만큼 팬·인지도·이미지를 움직인다
+  //   ② 광고주 기업가치가 커지면 우리에게 요구하는 인기도·주급도 같이 커진다
+  //   ③ 투자 금액은 우리 성적·시장 지수로 결정된다(고정 랜덤이 아니다)
+  //   ④ 우리 광고가 그 회사에 얼마나 먹히는지는 **우리 인기에 비례**한다(무명이면 별 반응 없음)
+
+  // 시장 지수 — 100 기준. 기사(광고 한파·숏폼 특수 등)가 여기를 움직이고,
+  //   이 값이 제안 확률·투자 금액·기업가치에 되먹임된다. 이게 ①↔③의 연결 고리.
+  mktOf(d){ return typeof d.mkt === 'number' ? d.mkt : (d.mkt = 100); },
+  mktMove(d, pct){ const S = IDOL_SIM; d.mkt = S.clamp(S.mktOf(d) * (1 + pct/100), 55, 165); return d.mkt; },
+  mktLabel(d){ const m = IDOL_SIM.mktOf(d);
+    return m >= 125 ? '과열' : m >= 108 ? '호황' : m >= 93 ? '평시' : m >= 78 ? '위축' : '한파'; },
+
+  // 우리 기사가 지면에서 차지하는 크기 — 인기가 곧 지면이다.
+  //   1=단신(한 줄) / 2=기사 / 3=헤드라인. 무명이면 활동을 시작해도 단신으로 끝난다.
+  pressWeight(d){
+    const rank = (d.chart && d.chart.rank) || null;
+    // ★차트는 **위로 갈수록 급격히** 가치가 커진다(선형이면 40위도 헤드라인이 됐다 — 2026-07-28 수정)
+    const ch = rank ? Math.pow((101 - Math.min(100, rank)) / 100, 2) * 30 : 0;
+    const sc = d.fame * 0.6
+             + Math.min(30, d.core / 400)
+             + ch
+             + (IDOL_SIM.active(d) ? 6 : 0);
+    return sc >= 85 ? 3 : sc >= 38 ? 2 : 1;
+  },
+  // 기사가 실린 결과 — 좋은 기사면 팬이 붙고, 나쁜 기사면 빠진다. 크기만큼 세게.
+  pressImpact(d, w, good){
+    const S = IDOL_SIM, sg = good ? 1 : -1;
+    const lm = [0, 0.005, 0.016, 0.042][w], sn = [0, 60, 220, 750][w];
+    const fm = [0, 0.1, 0.35, 1.0][w],      im = [0, 0, 0.6, 1.4][w];
+    const dl = Math.round(d.light * lm + (good ? 40 * w : 25 * w)) * sg;
+    d.light = Math.max(0, d.light + dl);
+    d.sns   = Math.max(0, d.sns + Math.round(sn * (good ? 1 : 0.6)) * sg);
+    d.fame  = S.clamp(d.fame + fm * sg, 0, 100);
+    if (im) d.image = S.clamp((d.image === undefined ? 70 : d.image) + im * sg, 0, 100);
+    return { light: dl, fame: +(fm * sg).toFixed(2) };
+  },
+
+  // 그 회사가 우리에게 요구하는 조건 — **기업가치에 연동**된다.
+  //   같은 '중견'이라도 가치가 오른 회사는 더 유명한 팀을 원하고, 대신 주급도 더 준다.
+  corpNeed(d, c){
+    const S = IDOL_SIM;
+    const t = S.BRAND_TIERS.find(x => x.tier === c.tier) || S.BRAND_TIERS[0];
+    const rel = c.value / S.CORP_BASE[c.tier];        // 그 티어 기준선 대비(1.0 = 표준)
+    const mk = S.mktOf(d) / 100;                      // 시장이 좋으면 문턱이 낮고 돈은 더 나온다
+    return {
+      fame:   Math.max(4, Math.round(t.gate  * (0.55 + rel * 0.45) / (0.85 + mk * 0.15))),
+      image:  Math.round(t.image * (0.80 + rel * 0.20)),
+      weekly: Math.max(300000, Math.round(t.weekly * (0.40 + rel * 0.60) * (0.75 + mk * 0.25))),
+      weeks:  t.weeks, rel
+    };
+  },
   // ─── 기업(광고주) 레지스트리 ───────────────────────────────────────────────
   //   BRAND_TIERS.pool의 기존 회사 + AI가 대화에서 지어낸 회사를 한 곳에 모은다.
   //   기업가치는 매주 움직인다 — 시장 변동 + (우리와 계약 중이면) 우리 인지도가 만든 광고 효과.
@@ -4124,13 +4177,15 @@ const IDOL_SIM = {
       body:'대기업이 마케팅 예산을 줄이면서 신인 모델 기용이 먼저 잘렸다.',
       hit(d,S,R){ const m = 0.94 + R()*0.03;
         Object.keys(d.corps).forEach(k=>{ d.corps[k].value = Math.round(d.corps[k].value*m); });
-        return `광고주 기업가치 일제히 ${((m-1)*100).toFixed(1)}%`; } },
+        S.mktMove(d, -9);
+        return `광고주 기업가치 일제히 ${((m-1)*100).toFixed(1)}% · 시장 지수 ${Math.round(S.mktOf(d))}(${S.mktLabel(d)})`; } },
     { id:'shortform', cat:'기업', head:'숏폼 광고 특수 — 브랜드들이 15초에 돈을 붓는다',
       body:'TV 대신 숏폼으로 예산이 옮겨갔다. 춤 되는 팀이 유리하다는 분석.',
       hit(d,S,R){ const m = 1.02 + R()*0.03;
         Object.keys(d.corps).forEach(k=>{ d.corps[k].value = Math.round(d.corps[k].value*m); });
         d.sns += Math.round(d.sns*0.05 + 300);
-        return `광고주 기업가치 +${((m-1)*100).toFixed(1)}% · 우리 SNS 화력 소폭 상승`; } },
+        S.mktMove(d, +8);
+        return `광고주 기업가치 +${((m-1)*100).toFixed(1)}% · 시장 지수 ${Math.round(S.mktOf(d))}(${S.mktLabel(d)})`; } },
     { id:'recall', cat:'기업', head:'{corp} 제품 결함 논란 — 자진 회수',
       body:'소비자원 조사가 시작됐다. 모델을 쓰던 팀들이 광고를 내렸다.',
       pick:'any',
@@ -4163,8 +4218,8 @@ const IDOL_SIM = {
         return '언급량은 늘었지만 이미지 −2 (좋은 화제가 아니다)'; } },
     { id:'rookie', cat:'연예', head:'대형 3사 동시 신인 데뷔 — 하반기 경쟁 과열',
       body:'물량 공세다. 같은 주에 데뷔한 팀만 넷.',
-      hit(d,S,R){ d.light = Math.round(d.light*0.97);
-        return '신인 물량에 밀려 라이트팬 −3%'; } },
+      hit(d,S,R){ d.light = Math.round(d.light*0.97); S.mktMove(d, -3);
+        return `신인 물량에 밀려 라이트팬 −3% · 시장 지수 ${Math.round(S.mktOf(d))}`; } },
     { id:'variety_boom', cat:'연예', head:'예능 출연이 데뷔보다 빠른 길 — 방송가 기류 변화',
       body:'무대보다 예능에서 얼굴을 먼저 알리는 팀이 늘었다.',
       hit(d,S,R){ d.network = S.clamp((d.network||0) + 2, 0, 100);
@@ -4177,13 +4232,21 @@ const IDOL_SIM = {
     const corps = Object.values(d.corps);
 
     // ① 우리 팀 — **항상 한 줄은 나온다**. 공백기에 우리 얘기가 없는 신문은 남의 신문이다(2026-07-28 수정).
+    //   ★기사 크기(w)는 인기가 정하고, 실린 크기만큼 팬·인지도·이미지가 실제로 움직인다.
+    const W = S.pressWeight(d), SZ = ['', '단신', '기사', '헤드라인'][W];
+    const our = (head, body, good) => {
+      const im = S.pressImpact(d, W, good !== false);
+      items.push({ cat:'우리', w:W, size:SZ, head, body,
+        eff: `${SZ}${/[가-힣]$/.test(SZ) && (SZ.charCodeAt(SZ.length-1)-0xAC00)%28 ? '으로' : '로'} 실렸다`
+           + ` — 라이트팬 ${im.light >= 0 ? '+' : ''}${im.light.toLocaleString()}`
+           + `${im.fame ? ` · 인지도 ${im.fame > 0 ? '+' : ''}${im.fame}` : ''}` });
+    };
     if (S.active(d) && d.chart && d.chart.rank) {
-      items.push({ cat:'우리', head:`블루밍 신인 5인조, 일간 ${d.chart.rank}위`
-        + (d.chart.surge ? ' — 역주행 조짐' : ''),
-        body:`「${d.album.title || '신곡'}」 주간 스밍 ${S.weeklyStreams(d).toLocaleString()}회.` });
+      our(`블루밍 신인 5인조, 일간 ${d.chart.rank}위` + (d.chart.surge ? ' — 역주행 조짐' : ''),
+          `「${d.album.title || '신곡'}」 주간 스밍 ${S.weeklyStreams(d).toLocaleString()}회.`, true);
     } else if (S.active(d)) {
-      items.push({ cat:'우리', head:`블루밍 「${d.album.title || '신곡'}」, 차트 진입 실패`,
-        body:'활동 중이지만 일간 100위 안에 이름이 없다.' });
+      our(`블루밍 「${d.album.title || '신곡'}」, 차트 진입 실패`,
+          '활동 중이지만 일간 100위 안에 이름이 없다.', false);
     } else {
       // 공백기 — 그 주 가장 말이 되는 소식 하나를 고른다
       const cand = [];
@@ -4213,9 +4276,18 @@ const IDOL_SIM = {
       const pool2 = fresh.length ? fresh : cand;
       const pickd = pool2[Math.floor(R()*pool2.length)];
       d.lastOurs = [pickd.k].concat(recent).slice(0, 2);
-      items.push({ cat:'우리', head:pickd.head, body:pickd.body });
+      our(pickd.head, pickd.body, pickd.k !== 'cond' && pickd.k !== 'loan');   // 난조설·만기설은 나쁜 기사
     }
 
+    // ①-b 시장 지수 — 기사가 만든 온도가 여기 찍히고, 이게 제안·투자로 되먹임된다
+    {
+      const mk = S.mktOf(d), lb = S.mktLabel(d);
+      if (mk >= 118 || mk <= 84 || (d.week % 4 === 0))
+        items.push({ cat:'기업', head:`광고 시장 지수 ${Math.round(mk)} — ${lb}`,
+          body: mk >= 108 ? '집행액이 늘고 신인에게도 문의가 온다.'
+              : mk <= 92 ? '예산이 잠겼다. 제안이 줄고 투자도 짜진다.'
+              : '평시 수준.' });
+    }
     // ② 라이벌 — ★컴백 첫 주에만. 4주 내내 같은 헤드라인이 반복되던 문제 수정(2026-07-28).
     S.RIVALS.forEach(rv => {
       const now = S.rivalActive(rv, d.week), was = S.rivalActive(rv, d.week - 1);
@@ -4334,11 +4406,11 @@ const IDOL_SIM = {
   },
   // 그 기업이 우리를 볼 수준인가 — 인지도·이미지 게이트(제안이 들어오는 조건과 같다)
   corpGate(d, c){
-    const t = IDOL_SIM.BRAND_TIERS.find(x => x.tier === c.tier);
-    if (!t) return null;
-    const ease = IDOL_SIM.facCur(d, 'office').gateEase || 0;
-    if (d.fame < t.gate - ease) return `인지도 ${Math.round(t.gate - ease)} 필요`;
-    if ((d.image === undefined ? 70 : d.image) < t.image) return `이미지 ${t.image} 필요`;
+    const S = IDOL_SIM, n = S.corpNeed(d, c);
+    if (!n) return null;
+    const ease = S.facCur(d, 'office').gateEase || 0;
+    if (d.fame < n.fame - ease) return `인지도 ${Math.round(n.fame - ease)} 필요`;
+    if ((d.image === undefined ? 70 : d.image) < n.image) return `이미지 ${n.image} 필요`;
     return null;
   },
   // 스태프 — 대표+실장 둘이 5인조를 다 돌리는 게 시작 조건. 사람을 붙일수록 같은 일정의 효율이 오른다.
@@ -4859,7 +4931,7 @@ const IDOL_SIM = {
       personal:{ cash:15000000, own:{ home:true, car:true }, loans:[] },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], corps:null, invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
-      fac:{ practice:0, van:0 }, fandom:null, awards:[], press:[], corpNews:[], lastIssue:null,
+      fac:{ practice:0, van:0 }, fandom:null, awards:[], press:[], corpNews:[], lastIssue:null, mkt:100,
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, rec:false, choreo:false, teaser:false },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -5072,8 +5144,19 @@ const IDOL_SIM = {
         if (d.invested) return { ok:false, reason:'이미 유치함' };
         if (d.fame < 30) return { ok:false, reason:'인지도 30 필요' };
         d.invested = true;
-        dt.money += Math.round(100000000+R()*150000000);
-        dt.note = '투자 유치';
+        // ★고정 랜덤(1~3억)이 아니라 **우리 값어치**로 정해진다(유저 지시 2026-07-28).
+        //   인지도·차트 최고순위·코어팬·업계인맥·이미지 × 시장 지수. 성적이 없으면 소액이다.
+        const pk = (d.chart && d.chart.peak) || null;
+        const val = 50000000
+          * (1 + d.fame/100 * 3)                        // 인지도 (최대 ×4)
+          * (pk ? 1 + (101 - Math.min(100, pk))/100 : 1) // 차트 최고 순위 (1위면 ×2)
+          * (1 + d.core/25000)                           // 코어팬
+          * (1 + (d.biz||0)/120)                         // 업계 인맥
+          * (0.7 + (d.image===undefined?70:d.image)/140) // 이미지
+          * (S.mktOf(d)/100);                            // 시장 지수(기사가 만든 온도)
+        const amt = Math.min(3000000000, Math.round(val * (0.9 + R()*0.2) / 1000000) * 1000000);
+        dt.money += amt;
+        dt.note = `투자 유치 ${S.wonBig(amt)} (시장 ${S.mktLabel(d)}·인지도 ${Math.round(d.fame)}${pk?`·최고 ${pk}위`:''})`;
       } else if (t==='대출연장'){
         if (d.loanExt) return { ok:false, reason:'이미 연장함' };
         d.loanExt = true; d.loanWeek += 12;
@@ -5174,7 +5257,11 @@ const IDOL_SIM = {
       b.shots = (b.shots||0) + 1;
       b.satis = S.clamp((b.satis===undefined?55:b.satis) + 25, 0, 100);
       const cp = S.ensureCorps(d)[b.name];
-      if (cp) { cp.shots = (cp.shots||0)+1; cp.value = Math.round(cp.value * (1 + 0.012*tierM*q)); }
+      // ★광고가 그 회사에 먹히는 정도는 **우리 인기에 비례**한다 — 무명이 찍으면 별 반응이 없다.
+      if (cp) { cp.shots = (cp.shots||0)+1;
+        const reach = 0.25 + d.fame/70;                          // 인지도 12 → 0.42 / 80 → 1.39
+        cp.value = Math.round(cp.value * (1 + 0.012*tierM*q*reach));
+        cp.lastLift = +(1.2*tierM*q*reach).toFixed(2); }
       dt.note = `${b.name} 광고 촬영${b.member?`(${(IDOL_CHARACTERS[b.member]||{}).name} 단독)`:''}`;
     }
     d.money+=dt.money; d.fame=S.clamp(d.fame+dt.fame,0,100);
@@ -5255,31 +5342,39 @@ const IDOL_SIM = {
       } else d.corpNews.push(`${b.name} 계약 만료`);
       return false;
     });
+    // ─ 시장 지수: 매주 평시(100)로 20%씩 복귀 — 기사가 만든 충격이 영원하지 않게
+    d.mkt = S.clamp(S.mktOf(d) + (100 - S.mktOf(d)) * 0.2 + (R()-0.5)*2, 55, 165);
     // ─ 기업가치: 시장 변동 + 우리와 계약 중이면 우리 인지도가 만든 광고 효과가 붙는다
     S.ensureCorps(d);
     const inDeal = new Set(d.brands.map(b => b.name));
     Object.keys(d.corps).forEach(k => {
       const c = d.corps[k];
       c.prev = c.value;
-      let m = 1 + (R() - 0.5) * 0.03;                        // 시장 ±1.5%
+      let m = 1 + (R() - 0.5) * 0.03 + (S.mktOf(d) - 100) / 2500;   // 시장 ±1.5% + 시장 지수
       if (inDeal.has(k)) m += 0.004 + (d.fame - 30) / 4000;  // 우리 인지도가 높을수록 광고가 먹힌다
       c.value = Math.max(1000000000, Math.round(c.value * m));
     });
     // 제안 만료 — 안 잡으면 4주 뒤 사라진다(낡은 제안이 슬롯을 막아 상위 티어가 안 들어오던 버그)
     d.offers = d.offers.filter(o => (o.life = (o.life===undefined?4:o.life) - 1) > 0);
     // 제안 생성: 인지도·이미지 게이트를 통과한 최상위 티어에서 확률적으로
-    if (d.offers.length < 3 && R() < (0.10 + d.fame/320) * (S.facCur(d,'office').offerM || 1) * (1 + (d.biz||0)/150)) {
+    // ★제안은 **회사별로** 판정한다 — 같은 티어라도 기업가치가 오른 회사는 문턱이 높고 주급이 크다.
+    //   시장 지수(d.mkt)가 제안 확률에도 걸린다 = 기사가 만든 한파/호황이 여기서 체감된다.
+    if (d.offers.length < 3 &&
+        R() < (0.10 + d.fame/320) * (S.facCur(d,'office').offerM || 1) * (1 + (d.biz||0)/150) * (S.mktOf(d)/100)) {
       const ease = S.facCur(d,'office').gateEase || 0;                    // 사옥이 번듯하면 대형도 본다
-      const ok = S.BRAND_TIERS.filter(t => d.fame >= (t.gate - ease) && d.image >= t.image);
+      const ok = Object.values(d.corps).filter(c => {
+        if (d.brands.some(b=>b.name===c.name) || d.offers.some(o=>o.name===c.name)) return false;
+        const n = S.corpNeed(d, c);
+        return d.fame >= (n.fame - ease) && d.image >= n.image;
+      });
       if (ok.length) {
-        const t = ok[ok.length-1];
-        const name = t.pool[Math.floor(R()*t.pool.length)];
-        if (!d.brands.some(b=>b.name===name) && !d.offers.some(o=>o.name===name)) {
-          // 대형은 40% 확률로 개인 앰버서더 제안(팀 균열의 씨앗)
-          const solo = t.tier===3 && R()<0.4 ? ['seowoo','siah','haram'][Math.floor(R()*3)] : null;
-          d.offers.push({ name, tier:t.tier, label:t.label, weekly:t.weekly, weeks:t.weeks, member:solo, life:4 });
-          S.regCorp(d, name, t.tier, false);
-        }
+        ok.sort((a,b)=>a.value-b.value);
+        const c = ok[ok.length-1];                                        // 문턱을 넘긴 중 가장 큰 회사
+        const n = S.corpNeed(d, c);
+        const solo = c.tier===3 && R()<0.4 ? ['seowoo','siah','haram'][Math.floor(R()*3)] : null;
+        d.offers.push({ name:c.name, tier:c.tier, label:S.CORP_LABEL[c.tier], weekly:n.weekly,
+                        weeks:n.weeks, member:solo, life:4 });
+        d.corpNews.push(`${c.name}(${S.wonBig(c.value)}) 광고 제안 — 주 ${Math.round(n.weekly/10000).toLocaleString()}만`);
       }
     }
     // ─ 스태프 급여: 매주 나간다. 못 주면 나간다(사람은 신뢰로 붙잡는 게 아니라 급여로 붙잡는다)
@@ -5442,6 +5537,11 @@ const IDOL_SIM = {
 `; });
     }
     if (d.corpNews && d.corpNews.length) s += `★지난주 광고주 소식: ${d.corpNews.join(' / ')}\n`;
+    // ★광고 시장 지수 — 기사가 만든 온도가 문턱·주급·투자액을 흔든다. 실장이 이 얘기를 한다.
+    s += `광고 시장 지수 ${Math.round(IDOL_SIM.mktOf(d))}(${IDOL_SIM.mktLabel(d)})`
+       + ` — ${IDOL_SIM.mktOf(d) >= 108 ? '제안 문턱이 낮고 주급·투자액이 후하다'
+              : IDOL_SIM.mktOf(d) <= 92 ? '제안이 줄고 투자액이 짜진다' : '평시'}
+`;
     // ★광고주 목록 — 기존 회사 + 대화에서 새로 나온 회사. 기업가치는 매주 움직인다.
     try {
       const CS = IDOL_SIM.ensureCorps(d);
@@ -10458,6 +10558,7 @@ function idolDashHtml() {
   h += row('스태프', (d.staff||[]).length ? (d.staff||[]).map(k=>(S.STAFF[k]||{}).name||k).join(', ') : '없음');
   h += row('브랜드', (d.brands||[]).length
     ? (d.brands||[]).map(b=>`${b.name||b}${b.inkind?'(현물)':''}${b.left?`·${b.left}주`:''}`).join(', ') : '없음');
+  h += row('광고 시장', `${Math.round(S.mktOf(d))} · ${S.mktLabel(d)}`);
   const ns = S.nextSeason(d.week);
   h += row('이번 시즌', (S.season(d.week).map(c=>c.name).join(', ') || '평시') + (ns ? ` · 다음 「${ns.c.name}」 ${ns.in}주 뒤` : ''));
 
@@ -10494,6 +10595,15 @@ function idolCorpHtml() {
   if (bs.some(b => (b.satis === undefined ? 55 : b.satis) < 40))
     h += `<div class="ib-note">⚠ 만족도가 낮다 — 일정에 「광고촬영」을 넣어라. 20 밑으로 떨어지면 계약이 파기된다.</div>`;
 
+  // ── 시장 지수 — 기사가 만든 온도. 제안 확률·문턱·주급·투자액에 전부 걸린다.
+  {
+    const mk = S.mktOf(d), lb = S.mktLabel(d);
+    const col = mk >= 108 ? '#7ec87e' : mk <= 92 ? '#e0524a' : 'rgba(232,230,227,0.7)';
+    h += `<div class="ib-group">📉 광고 시장</div>`;
+    h += row('시장 지수', `<span style="color:${col}">${Math.round(mk)} · ${lb}</span>`);
+    h += `<div class="ib-note">${mk >= 108 ? '문턱이 낮고 주급이 후하다 — 지금 계약을 따라.'
+      : mk <= 92 ? '예산이 잠겼다. 제안이 줄고 투자도 짜진다.' : '평시 수준.'}</div>`;
+  }
   // ── 광고주 목록
   const list = Object.values(corps).sort((a, b) => b.value - a.value);
   const mine = new Set(bs.map(b => b.name));
@@ -10505,11 +10615,11 @@ function idolCorpHtml() {
     const arrow = Math.abs(pct) < 0.05 ? '<span style="opacity:0.45">—</span>'
       : dv > 0 ? `<span style="color:#e0524a">▲${pct.toFixed(1)}%</span>`
                : `<span style="color:#4a8de0">▼${Math.abs(pct).toFixed(1)}%</span>`;
-    const gate = S.corpGate(d, c);
+    const gate = S.corpGate(d, c), need = S.corpNeed(d, c);
     const st = mine.has(c.name) ? '<span style="color:#d4af37">● 계약중</span>'
       : offered.has(c.name) ? '<span style="color:#7ec87e">○ 제안 옴</span>'
       : gate ? `<span style="opacity:0.45">${gate}</span>`
-      : '<span style="opacity:0.6">접촉 가능</span>';
+      : `<span style="color:#7ec87e">접촉 가능 · 주 ${Math.round(need.weekly/10000).toLocaleString()}만</span>`;
     h += `<div class="ib-drow"><span class="k">${c.name}${c.ai ? ' <span style="opacity:0.5;font-size:10px">신규</span>' : ''}</span><span class="v">
       ${S.CORP_LABEL[c.tier]} · ${S.wonBig(c.value)} ${arrow} · ${st}</span></div>`;
   });
