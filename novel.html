@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v156</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v157</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -9571,6 +9571,33 @@ function exitHistory() {
 }
 
 // ===== CHOICES =====
+// ★앱이 보장하는 일정 선택지 — AI가 유도를 놓쳐도 진행이 막히지 않게(유저 결정 2026-07-28).
+//   **맨 뒤에 붙인다**: AI가 자연스럽게 낸 선택지가 1번이고, 이건 "기다리기 싫을 때" 쓰는 안전장치.
+//   자동 실행이 아니라 선택지라서 갑자기 장면이 튀지 않는다 — 갈 타이밍은 유저가 정한다.
+function idolPlanChoice() {
+  try {
+    if (typeof STORY === 'undefined' || !STORY || STORY.id !== 'idol') return null;
+    const d = gameState && gameState.idol; if (!d) return null;
+    if (d._absent) return null;                       // 막간 컷엔 붙이지 않는다(▶계속만)
+    if (IDOL_SIM.needPlan(d)) return null;            // 월초 편성 모드
+    const np = IDOL_SIM.nextPlan(d);
+    if (np) {
+      const p = IDOL_SIM.placeOf(np.sim);
+      return `⏵ 「${np.name}」 시작${p ? ' — ' + p.loc : ''}`;
+    }
+    if (!d.weekDone && IDOL_SIM.weekPlans(d).length) return '⏵ 주간 마감 — 다음 주로';
+    return null;
+  } catch { return null; }
+}
+// 주입 선택지를 골랐을 때 — 버튼과 같은 경로를 탄다(수치 적용 후 AI가 그 장면을 쓴다)
+function idolRunInjected(text) {
+  const t = String(text || '');
+  if (!/^⏵/.test(t)) return false;
+  try {
+    if (/주간 마감/.test(t)) { closeIdolWeek(); return true; }
+    runNextPlan(); return true;
+  } catch { return false; }
+}
 function showChoices(choices) {
   // ★모델이 선택지를 문자열이 아니라 객체로 뱉는 경우가 있다({text:…}/{label:…}/{choice:…}) →
   //   그대로 렌더하면 화면에 "[object Object]"가 뜬다(2026-07-26 유저 스샷). 여기서 정규화한다.
@@ -9590,6 +9617,13 @@ function showChoices(choices) {
         gameState && gameState.idol && gameState.idol._absent) {
       choices = ['▶ 계속 — 대표 쪽으로 장면을 돌린다'];
     } else { enterInputMode(); return; }
+  }
+  // ★앱 보장 선택지를 맨 뒤에 붙인다 — 항상 붙인다.
+  //   중복 제거를 시도했다가 '연습실 문을 연다'가 '연습'을 포함해 오판하고 보장이 사라졌다(2026-07-28).
+  //   보장이 사라지는 게 고치려던 실패 자체라, 비슷한 선택지가 하나 더 뜨는 편을 택한다(⏵로 구분됨).
+  {
+    const inj = idolPlanChoice();
+    if (inj && !choices.some(c => c === inj)) choices = choices.concat([inj]);
   }
   window._lastChoices = choices;   // ★되감기 복원용 — 그 시점에 떠 있던 선택지
   inputMode = true;
@@ -9678,6 +9712,8 @@ async function sendMessage() {
 }
 
 async function handlePlayerInput(text) {
+  // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
+  if (idolRunInjected(text)) return;
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
   // ★막간 컷(대표 부재)에서 「▶ 계속」을 누르면 시점을 대표에게 돌린다
   if (/^▶\s*계속/.test(String(text || '')) && gameState && gameState.idol) {
