@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v167</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v168</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -5746,6 +5746,31 @@ const IDOL_SIM = {
     const payW = stf.reduce((a,k)=>a+(IDOL_SIM.STAFF[k]?IDOL_SIM.STAFF[k].pay:0),0);
     // ★★편성 가능한 일정은 앱이 정한 목록뿐이다. AI가 없는 걸 제안하면 유저가 그걸 못 고른다
     //   (2026-07-27 유저 지적: 보컬훈련/댄스훈련을 따로 제안하거나, 미발매곡으로 행사를 뛰자고 한다)
+    // ★★확정 단가표 — AI가 비용을 지어내던 문제(2026-07-29 유저 지적: "단가를 물어보면 지어내").
+    //   ★정의(CONTENT/EVENTS/CEO_ACTS/FACILITY)에서 **직접 읽어** 만든다. 하드코딩하면 값이 바뀔 때 또 어긋난다.
+    {
+      const _w = n => n >= 100000000 ? (n/100000000).toFixed(n % 100000000 ? 1 : 0) + '억'
+                    : n >= 10000 ? Math.round(n/10000).toLocaleString() + '만' : n + '원';
+      s += `\n## ★★확정 단가표 (이 숫자가 유일한 사실 — 비용·수입을 절대 지어내지 마라)\n`;
+      s += `  ★대표가 "얼마 드냐"고 물으면 아래 값을 그대로 답하라. 목록에 없는 항목은 "정해진 게 없다"고 하라.\n`;
+      s += `  · 연습 ${_w(1500000)} / 음방 출연 ${_w(6000000)} / 휴식 0원 / 곡작업(대표 칸) ${_w(500000)}\n`;
+      s += `  · 콘텐츠 촬영: ` + Object.entries(S.CONTENT).filter(([, C]) => !C.bookOnly)
+            .map(([k, C]) => `${k} ${_w(C.cost)}`).join(' / ') + `\n`;
+      const _bk = Object.entries(S.CONTENT).filter(([, C]) => C.bookOnly);
+      if (_bk.length) s += `  · 섭외 전용(대표가 편성 불가): ` + _bk.map(([k, C]) =>
+            `${k} ${_w(C.cost)}${C.pay ? `(출연료 ${_w(C.pay[0])}~${_w(C.pay[1])})` : ''}`).join(' / ') + `\n`;
+      s += `  · 행사(비용 → 수입): ` + Object.entries(S.EVENTS).map(([k, E]) =>
+            `${k} ${E.cost ? _w(E.cost) : '0원'}→${E.money && E.money[1] ? `${_w(E.money[0])}~${_w(E.money[1])}` : '수입없음'}`).join(' / ') + `\n`;
+      s += `  · 대표 칸: ` + Object.entries(S.CEO_ACTS).map(([k, A]) =>
+            `${k} ${A.cost ? _w(A.cost) : '0원'}`).join(' / ') + `\n`;
+      s += `  · 미팅(일정 칸 미소모): 외주 프로듀서 ${_w(25000000)}(완성도 +26·대중성 +18)\n`;
+      s += `  · 시설 업그레이드(다음 등급 기준): ` + Object.entries(S.FACILITY).map(([k, F]) => {
+            const lv = (d.fac && d.fac[k]) || 0, nx = F.levels[lv + 1];
+            return nx ? `${F.name} ${_w(nx.cost)}(${nx.label})` : `${F.name} 최고등급`;
+          }).join(' / ') + `\n`;
+      s += `  · 스태프 급여는 **매주** 나간다(현재 합계 ${_w((d.staff||[]).reduce((a,k)=>a+((S.STAFF[k]||{}).pay||0),0))}) · 대표 생활비 주 ${_w(S.LIVING)}\n`;
+      s += `  ★자금 ${_w(d.money)} — 이걸 넘는 지출은 제안하지 마라(부족하면 "지금 돈이 없다"고 말하라).\n`;
+    }
     s += `
 ## ★편성 가능한 일정 (이 목록 밖의 일정을 절대 제안하지 마라)
 `;
