@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v177</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v178</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4531,6 +4531,7 @@ const IDOL_SIM = {
   fileStory(d, p){
     const S = IDOL_SIM, R = Math.random;
     if (!p || !p.head) return null;
+    const favNow = !!(d.pressFavor && d.week - d.pressFavor.week <= 1);   // 로비 약속이 살아 있나
     const SEC = S.PRESS_DESK[p.sec] ? p.sec : '사회';
     let W = { '단신':1, '기사':2, '헤드라인':3 }[p.size] || 2;
     // ★AI가 "헤드라인"이라 해도 무명이면 헤드라인이 될 수 없다 — 세상은 우리를 그만큼 안 본다.
@@ -4561,16 +4562,14 @@ const IDOL_SIM = {
     if (p.market) { S.mktMove(d, bad ? -6 : 6); eff.push(`시장 지수 ${Math.round(S.mktOf(d))}`); }
     if (W >= 3 || bad) d.pressCall = { why: bad ? 'bad' : 'big', head:p.head };
     // ★대기열에 쌓아두지 않는다 — 기사가 났다면 지금 지면에서 보여야 한다
-    S.issueOf(d).items.push({ sec:SEC, w:W, size:['','단신','기사','헤드라인'][W], breaking:true,
+    S.issueOf(d).items.push({ sec:SEC, w:W, size:['','단신','기사','헤드라인'][W],
       head:p.head, lead:p.lead || '', ai:true,
       body:p.body || '자세한 경위는 확인되지 않았다. 소속사는 별도의 입장을 내지 않았다.',
-      // ★★우리 얘기는 **문지효**가 쓴다(2026-07-29 유저 지적: "로비하는 게 정해진 인물이
-      //   문지효인데 오세빈은 누구며"). 면별 기자 풀에서 무작위로 뽑던 게 잘못이었다.
-      //   대표가 관계를 쌓고 봉투를 건넨 상대가 문지효인데, 정작 기사에 다른 이름이 찍히면 앞뒤가 안 맞는다.
-      //   세계 쪽 사건(about:'world')만 해당 면 기자가 쓴다 — 우리와 무관한 일이니까.
-      by:(p.about === 'world'
-          ? S.PRESS_DESK[SEC].by[Math.floor(R() * S.PRESS_DESK[SEC].by.length)]
-          : '문지효'),
+      // ★로비로 따낸 기사만 문지효가 쓴다 — 대표가 봉투를 건넨 상대가 그 사람이기 때문.
+      //   그 외엔 다른 기자도 우리를 취재한다(2026-07-29 유저 정정).
+      by:(favNow && p.about !== 'world'
+          ? '문지효'
+          : S.PRESS_DESK[SEC].by[Math.floor(R() * S.PRESS_DESK[SEC].by.length)]),
       eff: eff.join(' · ') });
     return { ok:true, size:['','단신','기사','헤드라인'][W], eff:eff.join(' · ') };
   },
@@ -4776,7 +4775,9 @@ const IDOL_SIM = {
       if (W >= 3) d.pressCall = { why:'big', head:best.head };
       else if (best.good === false) d.pressCall = { why:'bad', head:best.head };
       push({ sec:best.sec, us:true, w:W, size:SZ, head:best.head, lead:best.lead, body:best.body,
-        by:'문지효',
+        // ★로비로 따낸 기사만 문지효다(2026-07-29 유저 정정: "전부 다 문지효는 아닌데
+        //   로비해서 따낸 건 문지효라고"). 그 외엔 다른 기자도 우리를 취재한다.
+        by: fav ? '문지효' : byOf(best.sec),
         eff:`${SZ}으로 실렸다 — 라이트팬 ${im.light >= 0 ? '+' : ''}${im.light.toLocaleString()}`
            + `${im.fame ? ` · 인지도 ${im.fame > 0 ? '+' : ''}${im.fame}` : ''}` });
       d.pressUs = best.head;
@@ -11046,11 +11047,13 @@ function migrateIdolSave(d) {
   // ★기존 세이브 복원 — 이미 업계 사람을 만난 흔적이 있으면 첫 대행사를 만난 것으로 시드한다.
   //   (2026-07-29 유저 보고: 계약까지 한 박성철이 매번 초면 취급됐다. 세이브에 그 기록이 없었다.)
   //   흔적 = 광고 계약이 있거나 · 업계인맥이 초기값(5)보다 올랐거나 · 대표 칸에 「명함」을 넣었던 적이 있다.
-  // ★이미 발행된 기사의 기자명 교정(2026-07-29) — 우리 팀 기사·속보는 문지효가 쓴 것이어야 한다.
-  //   v176 이전엔 면별 기자 풀에서 무작위로 뽑아 오세빈·강태준 등이 우리 기사에 찍혔다.
-  //   ★로비 발각 기사(bust)는 예외 — 우리를 취재하던 기자가 아니라 사회부가 파는 게 맞다.
+  // ★이미 발행된 기사 중 **로비로 따낸 것**(it.tie)만 문지효로 교정한다.
+  //   (2026-07-29 유저 정정: 우리 기사를 전부 문지효로 덮었던 것을 되돌린다 —
+  //    다른 기자도 우리를 취재한다. 봉투를 건넨 상대만 문지효다.)
+  //   ★속보 개념도 폐기 — 주간지는 월요일에 한 번 나온다.
   (d.press || []).forEach(p => (p.items || []).forEach(it => {
-    if (it && (it.us || it.breaking) && !it.bust && it.by !== '문지효') it.by = '문지효';
+    if (it && it.tie && it.by !== '문지효') it.by = '문지효';
+    if (it) delete it.breaking;
   }));
   if (!Array.isArray(d.people)) d.people = [];
   if (!d.people.length) {
@@ -11460,8 +11463,6 @@ function idolPressHtml() {
         const fs = W >= 3 ? 17 : W >= 2 ? 15 : 13.5;
         const fw = W >= 2 ? 700 : 600;
         h += `<div style="padding:9px 0;border-bottom:1px dashed rgba(232,230,227,0.09)">`;
-        if (it.breaking) h += `<span style="font-size:10px;color:#e07a5f;border:1px solid rgba(224,122,95,0.5);
-          border-radius:3px;padding:1px 4px;margin-right:5px">속보</span>`;
         if (it.us) h += `<span style="font-size:10px;color:#d4af37;border:1px solid rgba(212,175,55,0.45);
           border-radius:3px;padding:1px 4px;margin-right:5px">우리 팀</span>`;
         if (it.from) h += `<span style="font-size:10px;opacity:0.5;border:1px solid rgba(232,230,227,0.2);
