@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v173</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v174</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11672,6 +11672,19 @@ function idolAskConfirm() {
   const r = runIdolSim(sim);
   d.slots = before;                                  // 개인 재산은 일정 칸을 쓰지 않는다
   if (!r || !r.ok) return;
+  // ★★주식 매매는 **장면을 만들지 않는다**(2026-07-29 유저 지시: "걍 아무것도 출력 안 되고
+  //   안에서만 움직이면 안 됨?"). 대표 개인 계좌에서 조용히 오가는 돈이고, 매수·매도마다
+  //   서사가 붙으면 흐름이 끊긴다. 토스트만 띄우고 보드를 열어둔 채 연속 거래가 되게 한다.
+  //   ★_skipSim을 세우면 안 된다 — AI 턴을 만들지 않으므로 플래그가 남아 **다음 진짜 sim을 삼킨다.**
+  if (a.type === 'buy' || a.type === 'sell') {
+    const w = n => Math.round(n / 10000).toLocaleString() + '만';
+    showStatToast(`📈 ${a.asset} ${a.type === 'buy' ? '매수' : '매도'} ${w(a.val)}원`
+                + ` · 개인 현금 ${w(d.personal.cash)}원`);
+    SFX.play('choice');
+    try { autoSave(); } catch {}
+    openIdolBoard('personal');                       // 보드를 닫지 않는다 — 이어서 거래하게
+    return;
+  }
   d._skipSim = true;
   const won = n => Math.round(n / 10000).toLocaleString() + '만원';
   // ★객체 리터럴로 네 문장을 한꺼번에 만들면 asset 없는 사재출연·급여에서 터진다(2026-07-26) → 조건식
