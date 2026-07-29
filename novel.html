@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v170</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v171</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2389,7 +2389,7 @@ const ENGINE_MOD_CG = `
     완성도는 90"이라고 말했으면 그 턴의 sim에 반드시 {"title":"PING","quality":90}을 담아라.
     이건 선택이 아니라 필수다.
 - 순수한 잡담·질문·감정 대화(수치가 안 변하는 것)에는 'sim'을 넣지 마라.
-- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅|광고", "brand": "광고 촬영·계약할 회사명", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여", "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
+- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅|광고", "brand": "광고 촬영·계약할 회사명", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여|기자|언론", "tie": "식사|단독|광고집행|촌지", "press": { "sec": "엔터|기업|사회", "size": "단신|기사|헤드라인", "tone": "good|bad|neutral", "head": "기사 제목", "lead": "리드문 한 줄", "body": "본문 두세 문장", "corp": "엮인 회사명(없으면 생략)", "market": false, "about": "us|world" }, "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
   - 'concept' = 곡작업일 때만
@@ -2451,6 +2451,28 @@ const ENGINE_MOD_CG = `
       무대·행사장·대기실 장면에서 앱이 자동으로 그 의상 스프라이트로 갈아입힌다.
 - ★**숫자는 절대 네가 만들지 마라.** 팬 수·자금·점수는 앱이 계산해서 다음 턴 상태로 알려준다. 너는 주입된 「소속사 상태」를 장면으로 번역만 해라.
 - choices에는 항상 **다음에 무슨 일정을 쓸지**가 자연스럽게 담기게 하되, 관계 대화 선택지도 섞어라(일정 소모 없이 팀과 가까워지는 길).
+
+## ★★주간일보 — 서사에서 벌어진 일을 지면에 올리는 법 (이 게임의 세계는 신문으로 굴러간다)
+- **주간일보는 우리 팬사이트가 아니다.** 언론이다. 우리가 세상의 눈에 띌 일이 없으면 **우리 얘기는 한 줄도 안 실린다.**
+  무명이 버스킹한 것은 기사가 아니다. 같은 버스킹도 뜬 팀이 하면 기사가 된다.
+- 일정 행동(연습·콘텐츠·음방·행사·광고촬영)은 **앱이 자동으로 기록**한다. 그건 press로 다시 올리지 마라.
+- ★sim.target:"언론" + sim.press는 **시스템이 못 잡는 사건**을 위한 통로다. 서사에서 이런 일이 벌어지면 올려라:
+  · 열애설·스캔들(예: 대표나 멤버가 재벌가 인물과 엮였다) · 사고·부상·소송 · 폭로·내부고발
+  · 갑작스러운 화제(밈이 됨, 무대 영상이 퍼짐) · 다른 회사·인물과의 분쟁 · 사회적 이슈에 우리가 휘말림
+  · 세상 쪽 사건(about:"world") — 우리와 무관하지만 업계·사회가 흔들리는 일
+- **면 선택**: 연예 활동·팀 소식 = 엔터 / 돈·기업·계약·주가 = 기업 / 사회 현상·논란·사건사고 = 사회
+  ★재벌가 인물과의 열애라면 사회(또는 엔터)에 싣고 corp에 그 그룹 이름을 넣어라 — **그 회사 기업가치가 실제로 움직인다.**
+- **크기**(size)는 희망일 뿐이다. 앱이 우리 화제성으로 잘라낸다 — 무명이 "헤드라인"이라 해도 단신이 된다.
+- **수치는 절대 네가 정하지 마라.** tone(good/bad/neutral)만 정하면 팬·이미지·기업가치는 앱이 계산한다.
+- 아무 일 없는 주에 억지로 기사를 만들지 마라. **안 실리는 게 정상이다.**
+
+## ★기자 문지효 — 커넥션과 로비
+- sim.target:"기자" + sim.tie로 대표가 기자와의 관계를 만든다: 식사(40만·회사) / 단독(무료·다음 기사 크기+1)
+  / 광고집행(2,000만·회사·게재 보장) / 촌지(300만·**대표 개인 현금**·게재 보장+크기+1·**발각 위험 누적**)
+- 관계가 쌓이면 게재 문턱이 내려간다(관계 100 = 문턱 −25). 로비로 약속을 받으면 **문턱을 무시하고 실린다.**
+- ★촌지는 **회사 자금이 아니라 대표 개인 현금**에서 나간다. 장부에 남길 수 없는 돈이기 때문이다.
+  누적되면 언젠가 터지고, 터지면 **사회면 헤드라인**으로 실리며 광고주 계약까지 날아간다. 그 위험을 장면에서 감춰주지 마라.
+- 문지효는 **거짓은 안 쓴다.** 돈을 받아도 없는 사실을 만들어주지는 않는다 — 다만 실어주고, 크게 실어준다.
 
 ## 이벤트 CG 규칙 (cg 필드 — 성인 장면 연출):
 - 여캐와의 성적 장면이 무르익으면 cg에 "여캐ID/씬키"를 실어라 (여캐 ID만 — 주인공·남캐 ID 금지). 행위 진행에 따라 씬키를 바꿔도 된다(전희→삽입→절정). 장면이 끝나거나 장소가 바뀌면 반드시 null.
@@ -4239,7 +4261,105 @@ const IDOL_SIM = {
   //   매주 마감 때 기사 3~5개를 만든다. **기사는 장식이 아니라 실제로 수치를 움직인다**
   //   (기업가치·우리 이미지·인지도·제안 확률). stateLine이 헤드라인을 AI에 넘겨
   //   실장·멤버가 그 얘기를 하게 만든다.
+  // ═══ 📰 주간일보 ═══════════════════════════════════════════════════════
+  //  ★유저 지시(2026-07-29): "기업면 사회면 엔터면 다 있어야 함 · 기자명도 나와야 하고
+  //    기사처럼 양식이 있어야 함 · 사회면에 실린 게 기업과도 연결될 수 있고 실제 언론 메커니즘인 거임"
+  //  → 면은 칸막이가 아니다. 한 사건이 한 면에 실리고, 그 파급이 **다른 면의 기사로 이어진다**(link).
+  PRESS_DESK: {
+    '엔터': { label:'연예', icon:'🎬', by:['문지효','강태준','오세빈'] },
+    '기업': { label:'경제', icon:'📈', by:['한상혁','임도경'] },
+    '사회': { label:'사회', icon:'🏙', by:['배정우','신유라'] },
+  },
+  //  ★우리 팀 기사는 **그 주에 실제로 한 일**에서 나온다(2026-07-29 유저 지적:
+  //    "버스킹한 게 듣보 아이돌 기사로 왜 실리는지 모르겠다"). 크기는 화제성이 정하되,
+  //    무엇을 썼는지는 d.wkActs가 정한다 — 안 한 일로 기사를 쓰지 않는다.
+  ACT_NEWS: {
+    '버스킹':   { sec:'사회', head:'거리에서 마주친 아이돌 — {팀}, 버스킹 무대',
+                  lead:'지나가던 시민 수십 명이 발을 멈췄다.',
+                  body:'무대 없이 앰프 하나로 선 신인 그룹에 행인들이 휴대폰을 들었다. 관계자는 "얼굴을 알리는 데는 이만한 게 없다"고 말했다.' },
+    '축제':     { sec:'엔터', head:'{팀}, 대학 축제 무대 올라',
+                  lead:'축제 시즌 섭외가 이어지고 있다.',
+                  body:'객석 반응은 나쁘지 않았다는 평가다. 축제 무대는 신인에게 실전 경험과 현장 팬을 동시에 남긴다.' },
+    '팬사인회': { sec:'엔터', head:'{팀} 팬사인회 — 코어팬 {코어}명',
+                  lead:'현장에서 팬들과 직접 만났다.',
+                  body:'멤버별 대기 줄 길이가 눈에 띄게 갈렸다는 후기가 올라왔다.' },
+    '기업행사': { sec:'기업', head:'{팀}, 기업 행사 무대 — 행사 섭외 시장 확대',
+                  lead:'사내 행사에 아이돌을 부르는 기업이 늘고 있다.',
+                  body:'단가는 인지도에 연동된다. 신인에게는 안정적인 현금이 되는 무대다.' },
+    '팬콘':     { sec:'엔터', head:'{팀} 첫 팬콘서트 개최',
+                  lead:'단독 무대로 팬덤을 확인했다.',
+                  body:'단독 공연은 팬덤 규모가 실제로 어느 정도인지 드러나는 자리다.' },
+    '음방':     { sec:'엔터', head:'{팀}, 음악방송 무대 — 「{곡}」',
+                  lead:'이번 주 방송 무대에 올랐다.',
+                  body:'무대 직캠 조회수가 팀의 실질 화력을 보여준다는 분석이 나온다.' },
+    '챌린지':   { sec:'사회', head:'숏폼 챌린지, 신인 등용문 되나 — {팀} 사례',
+                  lead:'15초가 데뷔 무대를 대신하는 시대다.',
+                  body:'무대보다 먼저 알고리즘을 타는 팀이 늘었다. 업계는 이를 "무대 없는 데뷔"라 부른다.' },
+    '커버영상': { sec:'엔터', head:'{팀}, 커버 영상 공개 — 실력 검증대',
+                  lead:'원곡과 비교당하는 자리다.',
+                  body:'커버는 가장 냉정한 평가가 달리는 포맷이라는 말이 나온다.' },
+    '브이로그': { sec:'사회', head:'아이돌 브이로그가 팔리는 이유 — {팀}',
+                  lead:'무대 밖의 얼굴을 보러 오는 사람들이 늘었다.',
+                  body:'완성된 무대보다 준비 과정을 소비하는 흐름이 뚜렷하다.' },
+    '라이브':   { sec:'엔터', head:'{팀} 라이브 방송 — 팬들과 실시간 소통',
+                  lead:'대본 없는 자리에서 성격이 드러난다.',
+                  body:'말실수가 곧 기사가 되는 포맷이기도 하다.' },
+    '자체예능': { sec:'엔터', head:'{팀} 자체 콘텐츠 공개',
+                  lead:'예능감으로 승부를 본다.',
+                  body:'방송 출연이 어려운 신인에게 자체 콘텐츠는 사실상 유일한 예능 무대다.' },
+    '녹음':     { sec:'엔터', head:'{팀}, 신곡 녹음 마쳐 — 「{곡}」',
+                  lead:'컴백 준비가 궤도에 올랐다.', body:'발매 시점을 조율 중인 것으로 알려졌다.' },
+    '안무제작': { sec:'엔터', head:'{팀} 신곡 안무 완성',
+                  lead:'포인트 안무가 관건이다.', body:'챌린지로 이어질 수 있는 동작인지가 흥행을 가른다.' },
+    '티저공개': { sec:'엔터', head:'{팀} 컴백 티저 공개 — 「{곡}」',
+                  lead:'콘셉트가 처음 드러났다.', body:'티저 조회수는 발매 첫 주 성적의 선행 지표로 읽힌다.' },
+    '쇼케이스': { sec:'엔터', head:'{팀} 쇼케이스 — 「{곡}」 첫 무대',
+                  lead:'기자들 앞에서 곡을 처음 보였다.', body:'현장 질문은 곡보다 팀의 방향에 몰렸다.' },
+    '자켓촬영': { sec:'엔터', head:'{팀} 앨범 자켓 촬영 마쳐',
+                  lead:'비주얼 콘셉트가 잡혔다.', body:'' },
+    '뮤비촬영': { sec:'엔터', head:'{팀} 뮤직비디오 촬영 — 제작비 투입',
+                  lead:'중소 기획사로서는 큰 결정이다.', body:'뮤비 규모는 회사가 이 팀에 얼마나 걸었는지를 보여주는 지표로 읽힌다.' },
+    '라디오':   { sec:'엔터', head:'{팀}, 라디오 출연',
+                  lead:'목소리로 먼저 알려지는 경로다.', body:'' },
+    '토크쇼':   { sec:'엔터', head:'{팀} 토크쇼 출연 — 얼굴 알리기',
+                  lead:'예능 노출이 인지도로 직결된다.', body:'' },
+    '광고촬영': { sec:'기업', head:'{팀}, {브랜드} 광고 촬영',
+                  lead:'모델 계약에 따른 촬영이 진행됐다.',
+                  body:'광고주는 집행 효과를 인지도 대비 단가로 따진다.' },
+    '연습':     null, '휴식': null, '곡작업': null, '미팅': null,   // 기사가 되지 않는 일
+  },
   PRESS_ISSUES: [
+    // ── 사회면 — ★여기 실린 사건이 기업·엔터로 번진다(link) ──
+    { id:'shortform_addict', cat:'사회', head:'"숏폼 그만 보고 싶다" — 피로감 확산',
+      body:'하루 평균 시청 시간이 늘수록 만족도는 떨어진다는 조사가 나왔다. 플랫폼 규제 논의도 시작됐다.',
+      hit(d,S,R){ d.sns = Math.max(0, Math.round(d.sns*0.93));
+        S.mktMove(d, -6);
+        return `숏폼 화력 −7% · 시장 지수 ${Math.round(S.mktOf(d))}(${S.mktLabel(d)})`; },
+      link(d,S,R){ return { sec:'기업', head:'광고주, 숏폼 예산 재검토 착수',
+        lead:'피로감 조사가 나오자 집행 계획이 흔들렸다.',
+        body:'대행사들은 "숏폼 단가가 이미 고점"이라는 말을 내부적으로 하고 있다.',
+        eff:'사회면 기사의 여파 — 광고 시장이 식었다' }; } },
+    { id:'street_culture', cat:'사회', head:'거리 공연 허가 확대 — 지자체, 버스킹 존 신설',
+      body:'주말 유동 인구를 잡으려는 지자체가 공연 구역을 늘리고 있다.',
+      hit(d,S,R){ d.light += Math.round(200 + R()*400);
+        return `거리 공연 노출 증가 — 라이트팬 +${Math.round(200)}선`; } },
+    { id:'fandom_culture', cat:'사회', head:'"팬덤이 곧 소비" — 굿즈 시장 3조 돌파',
+      body:'좋아하는 팀에 쓰는 돈이 커졌다. 규모보다 결집도가 매출을 만든다는 분석이다.',
+      hit(d,S,R){ const up = d.core >= 3000;
+        if (up) d.money += Math.round(d.core * 900);
+        return up ? `굿즈 특수 — 자금 +${Math.round(d.core*900/10000).toLocaleString()}만` : '코어팬 3,000명 미만은 특수에서 비켰다'; },
+      link(d,S,R){ return d.core >= 3000 ? { sec:'기업', head:'유통업계, 아이돌 굿즈 매대 확대',
+        lead:'팬덤 구매력이 실적으로 잡히기 시작했다.',
+        body:'브랜드들이 모델 기용을 굿즈 협업까지 묶어 제안하는 사례가 늘고 있다.',
+        eff:'굿즈 협업 문의 증가' } : null; } },
+    { id:'overwork', cat:'사회', head:'연습생 처우 논란 — "몇 시간까지가 연습인가"',
+      body:'표준계약서 밖의 관행이 도마에 올랐다. 중소 기획사가 특히 지목됐다.',
+      hit(d,S,R){ const bad = Object.values(d.mem).some(m => m.cond < 45 || m.mind < 45);
+        if (bad) { d.image = S.clamp(d.image - 3, 0, 100);
+          return '★우리 팀 컨디션 난조가 겹쳐 시선이 왔다 — 이미지 −3'; }
+        d.image = S.clamp(d.image + 1, 0, 100);
+        return '우리는 무난히 비켜갔다 — 이미지 +1'; } },
+    // ── 기업면 ──
     { id:'ad_winter', cat:'기업', head:'광고 시장 한파 — 상반기 집행액 12% 감소',
       body:'대기업이 마케팅 예산을 줄이면서 신인 모델 기용이 먼저 잘렸다.',
       hit(d,S,R){ const m = 0.94 + R()*0.03;
@@ -4292,97 +4412,288 @@ const IDOL_SIM = {
       hit(d,S,R){ d.network = S.clamp((d.network||0) + 2, 0, 100);
         return '방송 인맥 +2 (섭외 문턱이 낮아졌다)'; } },
   ],
-  // 그 주 기사 묶음을 만든다 — 우리 소식(항상) + 라이벌 + 광고주 + 랜덤 이슈
+  // ═══ 그 주 지면을 만든다 ═══════════════════════════════════════════════
+  //  ★★유저 지시(2026-07-29): "언론은 말 그대로 언론임. 우리 팬사이트가 아니란 말임.
+  //    우리가 뭔가 이슈화되거나 뭔 기업 메인 모델이라도 되서나 컴백하거나,
+  //    그런 세계에 눈에 안 띄면 나올 일이 없는 거임. 설사 이슈고 인기 없으면 누가 관심이나 갖고 싣겠음"
+  //  → 이전 규칙("우리 팀은 **항상 한 줄은 나온다**")을 폐기한다. 그건 사보(社報)지 신문이 아니다.
+  //    지면에 오르려면 **사건 가치(ev) + 화제성(buzz)이 문턱을 넘어야 한다.**
+  //    무명이 버스킹한 것은 기사가 아니다. 같은 버스킹도 뜬 팀이 하면 기사가 된다.
+  PRESS_GATE: 75,
+  // ═══ 🤝 기자 커넥션 · 로비 ═════════════════════════════════════════════
+  //  ★유저 지시(2026-07-29): "기자랑 커넥션을 만들어서 실어주기로 로비로 약속이라도 받으면 실리는지,
+  //    그 과정에서 뇌물을 준다면 내 돈이 나가는 시스템은 구현돼 있는지,
+  //    그게 들통나면 사회면에 실리든 그런 식으로 세계의 흐름이 반영되는지도 같이 검토"
+  //  → 셋 다 구현한다. ①관계는 문턱을 낮추고 ②촌지는 **개인 현금**에서 나가며(회사 장부에 남길 수 없는 돈이다)
+  //    ③누적되면 터진다 — 터지는 자리는 사회면이고, 거기서 광고주·시장으로 번진다.
+  PRESS_TIE: {
+    '식사':   { label:'식사 대접',      cost:400000,   from:'회사', tie:[6,10],   risk:0,
+                desc:'밥 한 끼. 관계가 조금 쌓인다 — 위험 없음' },
+    '단독':   { label:'단독 제공',      cost:0,        from:'회사', tie:[10,16],  risk:0, favor:'size',
+                desc:'우리 소식을 먼저 준다 — 다음 기사 크기 +1 · 위험 없음' },
+    '광고집행':{ label:'매체 광고 집행', cost:20000000, from:'회사', tie:[16,24],  risk:0.05, favor:'gate',
+                desc:'지면 광고를 산다 — 다음 호 게재 보장 · 사실상 합법이나 말은 나온다' },
+    '촌지':   { label:'촌지 (불법)',    cost:3000000,  from:'개인', tie:[14,22],  risk:0.18, favor:'both', dirty:true,
+                desc:'봉투를 건넨다 — 게재 보장 + 크기 +1 · **발각 위험 누적**' },
+  },
+  // ═══ 📝 서사 → 지면 (AI 채널) ═════════════════════════════════════════
+  //  ★★유저 지시(2026-07-29): "모든 변수를 다 캐칭할 수는 없잖아. 예를 들어 기업 재벌이랑
+  //    유저가 연애를 한다면? 사회면에 실리나? 이런 식으로 모든 걸 다 시스템화할 수는 없지만 반영돼야 한다"
+  //  → 맞다. 하드코딩은 **경제(숫자)**만 담당하고, **세계에서 벌어지는 일**은 AI가 지면에 올린다.
+  //    AI는 "무슨 일이 있었고 어느 면에 얼마나 크게 실릴 일인가"만 말한다(sim.press).
+  //    ★수치는 AI가 못 정한다 — 엔진이 buzz·크기로 계산하고 상한을 건다. 그래야 밸런스가 안 깨진다.
+  fileStory(d, p){
+    const S = IDOL_SIM, R = Math.random;
+    if (!p || !p.head) return null;
+    const SEC = S.PRESS_DESK[p.sec] ? p.sec : '사회';
+    let W = { '단신':1, '기사':2, '헤드라인':3 }[p.size] || 2;
+    // ★AI가 "헤드라인"이라 해도 무명이면 헤드라인이 될 수 없다 — 세상은 우리를 그만큼 안 본다.
+    const buzz = S.buzzOf(d);
+    if (p.about !== 'world') W = Math.max(1, Math.min(W, buzz >= 80 ? 3 : buzz >= 40 ? 2 : 1));
+    const bad = p.tone === 'bad', good = p.tone === 'good';
+    const im = S.pressImpact(d, W, !bad);
+    const eff = [];
+    if (p.about !== 'world') {
+      eff.push(`라이트팬 ${im.light >= 0 ? '+' : ''}${im.light.toLocaleString()}`);
+      if (im.fame) eff.push(`인지도 ${im.fame > 0 ? '+' : ''}${im.fame}`);
+      // 이미지 — 좋은 일은 조금 오르고 나쁜 일은 크게 내린다(현실이 그렇다)
+      const dim = bad ? -(2 + W * 2.5) : good ? (1 + W * 1.2) : 0;
+      if (dim) { d.image = S.clamp(d.image + dim, 0, 100);
+                 eff.push(`이미지 ${dim > 0 ? '+' : ''}${dim.toFixed(1)}`); }
+      // 팬심 — 열애설·논란은 코어팬이 빠진다
+      if (bad && W >= 2) { const lose = Math.round(d.core * (0.02 * W));
+        d.core = Math.max(0, d.core - lose); eff.push(`코어팬 −${lose.toLocaleString()}`); }
+    }
+    // ★기업이 엮이면 그 회사 기업가치가 실제로 움직인다(재벌가 연애 → 그 그룹 주가)
+    if (p.corp) {
+      S.ensureCorps(d);
+      const c = Object.values(d.corps).find(x => x.name === p.corp || String(p.corp).indexOf(x.name) >= 0);
+      if (c) { const m = 1 + (bad ? -1 : 1) * (0.006 + R() * 0.004) * W * 2;
+        c.prev = c.value; c.value = Math.round(c.value * m);
+        eff.push(`${c.name} 기업가치 ${m > 1 ? '+' : ''}${((m-1)*100).toFixed(1)}%`); }
+    }
+    if (p.market) { S.mktMove(d, bad ? -6 : 6); eff.push(`시장 지수 ${Math.round(S.mktOf(d))}`); }
+    if (W >= 3 || bad) d.pressCall = { why: bad ? 'bad' : 'big', head:p.head };
+    d.pressQueue = d.pressQueue || [];
+    d.pressQueue.push({ sec:SEC, w:W, size:['','단신','기사','헤드라인'][W],
+      head:p.head, lead:p.lead || '', body:p.body || '', ai:true,
+      by:(S.PRESS_DESK[SEC].by[Math.floor(R() * S.PRESS_DESK[SEC].by.length)]),
+      eff: eff.join(' · ') });
+    return { ok:true, size:['','단신','기사','헤드라인'][W], eff:eff.join(' · ') };
+  },
+  tieLabel(v){ return v >= 70 ? '두터움' : v >= 45 ? '우호적' : v >= 20 ? '안면 있음' : v > 0 ? '데면데면' : '없음'; },
+  // 로비 실행 — 성공/실패와 함께 돈이 실제로 빠진다
+  runPressTie(d, kind){
+    const S = IDOL_SIM, T = S.PRESS_TIE[kind], R = Math.random;
+    if (!T) return { ok:false, reason:'그런 방법 없음' };
+    d.personal = d.personal || { cash:0 };
+    const self = T.from === '개인';
+    const wallet = self ? (d.personal.cash || 0) : d.money;
+    if (T.cost > wallet) return { ok:false, reason:`${self ? '개인 현금' : '회사 자금'} ${Math.round(T.cost/10000).toLocaleString()}만 필요` };
+    if (self) d.personal.cash -= T.cost; else d.money -= T.cost;
+    const gain = Math.round(T.tie[0] + R() * (T.tie[1] - T.tie[0]));
+    d.pressTie = S.clamp((d.pressTie || 0) + gain, 0, 100);
+    if (T.favor === 'gate' || T.favor === 'both') d.pressFavor = { gate:true, week:d.week };
+    if (T.favor === 'size' || T.favor === 'both')
+      d.pressFavor = Object.assign(d.pressFavor || { week:d.week }, { size:true, week:d.week });
+    let note = `기자 관계 +${gain} (${S.tieLabel(d.pressTie)})`;
+    if (T.cost) note += ` · ${self ? '개인 현금' : '자금'} −${Math.round(T.cost/10000).toLocaleString()}만`;
+    if (T.dirty) {
+      // ★장부에 안 남는 돈이 쌓인다. 이게 나중에 터진다.
+      d.bribe = d.bribe || { n:0, sum:0, heat:0 };
+      d.bribe.n += 1; d.bribe.sum += T.cost;
+      d.bribe.heat = Math.min(0.92, d.bribe.heat + T.risk);
+      note += ` · ⚠누적 ${d.bribe.n}회 — 언젠가 새어 나간다`;
+    } else if (T.risk) {
+      d.bribe = d.bribe || { n:0, sum:0, heat:0 };
+      d.bribe.heat = Math.min(0.92, d.bribe.heat + T.risk);
+    }
+    if (T.favor) note += ` · **다음 호 ${T.favor === 'size' ? '크기 +1' : T.favor === 'gate' ? '게재 보장' : '게재 보장 + 크기 +1'}**`;
+    return { ok:true, label:T.label, note, dirty:!!T.dirty };
+  },
+  // 발각 판정 — 매주 한 번. 터지면 사회면에 실리고 거기서 기업·엔터로 번진다.
+  bribeBust(d){
+    const S = IDOL_SIM, R = Math.random, b = d.bribe;
+    if (!b || !b.n || d.bribeBusted) return null;
+    // 뜰수록 감시가 붙는다 — 무명일 땐 아무도 안 캔다
+    const attention = 0.35 + Math.min(1.0, S.buzzOf(d) / 90);
+    if (R() >= b.heat * 0.14 * attention) return null;
+    d.bribeBusted = { week:d.week, n:b.n, sum:b.sum };
+    const im = Math.min(28, 10 + b.n * 4);
+    d.image = S.clamp(d.image - im, 0, 100);
+    d.pressTie = 0; d.pressFavor = null;
+    S.mktMove(d, -10);
+    let ex = '';
+    (d.brands || []).forEach(x => { x.satis = S.clamp((x.satis === undefined ? 55 : x.satis) - 30, 0, 100); });
+    const gone = (d.brands || []).filter(x => x.satis <= 15);
+    if (gone.length) { d.brands = d.brands.filter(x => x.satis > 15);
+      ex = ` · ${gone.map(x=>x.name).join('·')} 계약 파기`; }
+    Object.keys(d.mem).forEach(i => { d.mem[i].mind = S.clamp(d.mem[i].mind - 12, 0, 100);
+                                      d.mem[i].trust = S.clamp(d.mem[i].trust - 15, 0, 100); });
+    b.n = 0; b.heat = 0;
+    return { sum:d.bribeBusted.sum, cnt:d.bribeBusted.n, eff:
+      `이미지 −${im} · 기자 관계 파탄 · 전원 신뢰 −15 · 시장 지수 ${Math.round(S.mktOf(d))}${ex}` };
+  },
+  // 이번 주 새로 성사된 계약 — makePress가 읽고 비운다(계약은 세상이 우리를 처음 알아보는 계기다)
+  noteNewBrand(d, b){ d.newBrands = d.newBrands || []; d.newBrands.push(
+    { name:b.name, weekly:b.weekly, weeks:b.weeks }); },
+  // 사건 자체의 뉴스 가치 — 무엇을 했는가
+  ACT_EV: {
+    '발매':70, '차트':55, '수상':70, '계약':75, '이슈':65,
+    '팬콘':45, '쇼케이스':45, '음방':35,
+    '축제':30, '팬사인회':30, '토크쇼':30, '라디오':30, '광고촬영':25,
+    '뮤비촬영':30, '대형 뮤비':40, '저예산 뮤비':22, '티저공개':30,
+    '버스킹':18, '챌린지':18, '브이로그':18, '라이브':18, '커버영상':18, '자체예능':18, '비하인드':12,
+    '기업행사':22, '녹음':12, '안무제작':12, '자켓촬영':12,
+  },
+  // 화제성 — 세상이 우리를 얼마나 쳐다보고 있는가
+  buzzOf(d){
+    const S = IDOL_SIM, rank = (d.chart && d.chart.rank) || null;
+    const ch = rank ? Math.pow((101 - Math.min(100, rank)) / 100, 2) * 40 : 0;
+    return d.fame * 0.8 + ch + Math.min(20, d.core / 500) + (S.active(d) ? 10 : 0);
+  },
   makePress(d){
     const S = IDOL_SIM, R = Math.random, items = [];
     S.ensureCorps(d);
     const corps = Object.values(d.corps);
-
-    // ① 우리 팀 — **항상 한 줄은 나온다**. 공백기에 우리 얘기가 없는 신문은 남의 신문이다(2026-07-28 수정).
-    //   ★기사 크기(w)는 인기가 정하고, 실린 크기만큼 팬·인지도·이미지가 실제로 움직인다.
-    const W = S.pressWeight(d), SZ = ['', '단신', '기사', '헤드라인'][W];
-    // ★기자가 찾아올 계기 — 크게 실렸거나(헤드라인) 나쁜 기사가 났을 때. 이게 없으면
-    //   문지효는 로스터에만 있고 영영 안 나온다(2026-07-28 배선).
+    const TEAM = '블루밍';
+    const byOf = sec => { const k = S.PRESS_DESK[sec] || S.PRESS_DESK['엔터'];
+                          return k.by[Math.floor(R() * k.by.length)]; };
+    // ★면 이름 정규화 — 기존 이슈는 cat:'연예'를 쓴다. 지면은 엔터/기업/사회 셋뿐이다.
+    const secOf = x => ({ '연예':'엔터', '우리':'엔터' })[x] || (S.PRESS_DESK[x] ? x : '엔터');
+    const push = o => { const sec = secOf(o.sec);
+                        items.push(Object.assign({ lead:'', body:'' }, o,
+                          { sec, by: o.by || byOf(sec) })); };
     d.pressCall = null;
-    const our = (head, body, good) => {
-      const im = S.pressImpact(d, W, good !== false);
-      if (W >= 3) d.pressCall = { why:'big', head };
-      else if (good === false) d.pressCall = { why:'bad', head };
-      items.push({ cat:'우리', w:W, size:SZ, head, body,
-        eff: `${SZ}${/[가-힣]$/.test(SZ) && (SZ.charCodeAt(SZ.length-1)-0xAC00)%28 ? '으로' : '로'} 실렸다`
-           + ` — 라이트팬 ${im.light >= 0 ? '+' : ''}${im.light.toLocaleString()}`
-           + `${im.fame ? ` · 인지도 ${im.fame > 0 ? '+' : ''}${im.fame}` : ''}` });
-    };
-    if (S.active(d) && d.chart && d.chart.rank) {
-      our(`블루밍 신인 5인조, 일간 ${d.chart.rank}위` + (d.chart.surge ? ' — 역주행 조짐' : ''),
-          `「${d.album.title || '신곡'}」 주간 스밍 ${S.weeklyStreams(d).toLocaleString()}회.`, true);
-    } else if (S.active(d)) {
-      our(`블루밍 「${d.album.title || '신곡'}」, 차트 진입 실패`,
-          '활동 중이지만 일간 100위 안에 이름이 없다.', false);
-    } else {
-      // 공백기 — 그 주 가장 말이 되는 소식 하나를 고른다
-      const cand = [];
-      if (d.loanWeek > 0 && d.loanWeek <= 8)
-        cand.push({ k:'loan', head:`블루밍 엔터, 대출 만기 ${d.loanWeek}주 앞`, body:'업계에 소문이 돌기 시작했다.' });
-      if ((d.brands||[]).length)
-        cand.push({ k:'brand', head:`블루밍 5인조, ${d.brands[0].name} 모델 활동 중`,
-          body:(d.brands[0].member ? `${(IDOL_CHARACTERS[d.brands[0].member]||{}).name} 개인 앰버서더.` : '팀 전체 모델.') });
-      if (d.album.quality > 0 && d.album.quality < 100)
-        cand.push({ k:'song', head:`블루밍, 신곡 준비 중 — 완성도 ${Math.round(d.album.quality)}%선`,
-          body:d.album.title ? `가제 「${d.album.title}」.` : '제목은 아직 정해지지 않았다.' });
-      if (d.fandom)
-        cand.push({ k:'fandom', head:`블루밍 팬덤 「${d.fandom}」, 코어팬 ${d.core.toLocaleString()}명`,
-          body:'공식 팬카페 가입자 기준.' });
-      else if (d.core >= 500)
-        cand.push({ k:'core', head:`블루밍 코어팬 ${d.core.toLocaleString()}명 — 팬덤명은 아직`,
-          body:'팬들이 직접 이름을 짓자는 글이 올라온다.' });
+
+    // ① 우리 팀 — **문턱을 넘을 때만** 실린다
+    const buzz = S.buzzOf(d);
+    const cands = [];
+    const fill = t => String(t || '').replace(/\{팀\}/g, TEAM)
+        .replace(/\{곡\}/g, d.album.title || '신곡')
+        .replace(/\{코어\}/g, d.core.toLocaleString());
+
+    if (S.active(d) && d.album.actWeek === 1)
+      cands.push({ ev:S.ACT_EV['발매'], sec:'엔터', good:true,
+        head:`${TEAM}, 신보 「${d.album.title || '신곡'}」 발매`,
+        lead:'중소 기획사 5인조가 컴백했다.',
+        body:`완성도와 대중성 지표가 각각 ${Math.round(d.album.quality)}·${Math.round(d.album.appeal)} 수준으로 평가된다. 첫 주 성적이 팀의 다음 1년을 정한다.` });
+    else if (S.active(d) && d.chart && d.chart.rank)
+      cands.push({ ev:S.ACT_EV['차트'] + (d.chart.rank <= 20 ? 25 : 0), sec:'엔터', good:true,
+        head:`${TEAM}, 일간 ${d.chart.rank}위` + (d.chart.surge ? ' — 역주행 조짐' : ''),
+        lead:`「${d.album.title || '신곡'}」 주간 스트리밍 ${S.weeklyStreams(d).toLocaleString()}회.`,
+        body:d.chart.rank <= 20 ? '중소 기획사 신인의 20위권 진입은 흔한 일이 아니다.'
+                                 : '차트에 이름은 올렸지만 상위권과의 거리는 아직 멀다.' });
+
+    (d.newBrands || []).forEach(b => cands.push({ ev:S.ACT_EV['계약'], sec:'기업', good:true,
+      head:`${b.name}, 모델에 신인 ${TEAM} 발탁`,
+      lead:`주 ${Math.round((b.weekly||0)/10000).toLocaleString()}만 원 ${b.weeks || 0}주 계약.`,
+      body:'광고주가 신인을 쓰는 이유는 단가다. 효과가 나오면 재계약으로, 안 나오면 조용히 끝난다.' }));
+
+    if ((d.awards || []).some(a => a.week === d.week))
+      cands.push({ ev:S.ACT_EV['수상'], sec:'엔터', good:true,
+        head:`${TEAM}, 수상 — 데뷔 후 첫 트로피`, lead:'', body:'' });
+
+    // 그 주에 실제로 한 일 (★안 한 일로 기사를 쓰지 않는다)
+    (d.wkActs || []).forEach(a => {
+      const T = S.ACT_NEWS[a.k] || S.ACT_NEWS[a.a];
+      if (!T) return;
+      cands.push({ ev:S.ACT_EV[a.k] || S.ACT_EV[a.a] || 15, sec:T.sec, good:true,
+        head:fill(T.head).replace('{브랜드}', a.extra || ''),
+        lead:fill(T.lead), body:fill(T.body) });
+    });
+
+    // 나쁜 소식 — 안 좋은 얘기는 무명이어도 새어 나간다(문턱이 낮다)
+    {
       const worst = Object.entries(d.mem).sort((a,b)=>(a[1].cond+a[1].mind)-(b[1].cond+b[1].mind))[0];
-      if (worst && (worst[1].cond < 40 || worst[1].mind < 40))
-        cand.push({ k:'cond', head:`블루밍 ${(IDOL_CHARACTERS[worst[0]]||{}).name}, 컨디션 난조설`,
-          body:'팬들이 최근 영상에서 표정이 안 좋다는 얘기를 한다.' });
-      cand.push({ k:'stat', head:`블루밍 5인조, 인지도 ${Math.round(d.fame)} · 라이트팬 ${d.light.toLocaleString()}명`,
-        body:'중소 기획사 신인 중에서는 눈에 띄는 편.' });
-      // ★직전 2주에 쓴 종류는 빼고 고른다 — 헤드라인 텍스트로 비교하면 숫자가 달라 안 걸린다(2026-07-28)
-      const recent = Array.isArray(d.lastOurs) ? d.lastOurs : [];
-      const fresh = cand.filter(x => recent.indexOf(x.k) < 0);
-      const pool2 = fresh.length ? fresh : cand;
-      const pickd = pool2[Math.floor(R()*pool2.length)];
-      d.lastOurs = [pickd.k].concat(recent).slice(0, 2);
-      our(pickd.head, pickd.body, pickd.k !== 'cond' && pickd.k !== 'loan');   // 난조설·만기설은 나쁜 기사
+      if (worst && (worst[1].cond < 35 || worst[1].mind < 35))
+        cands.push({ ev:50, sec:'엔터', good:false,
+          head:`${TEAM} ${(IDOL_CHARACTERS[worst[0]]||{}).name}, 컨디션 난조설`,
+          lead:'최근 영상에서 표정이 좋지 않다는 얘기가 나온다.',
+          body:'소속사는 별다른 입장을 내지 않았다.' });
+      if (d.loanWeek > 0 && d.loanWeek <= 4)
+        cands.push({ ev:55, sec:'기업', good:false,
+          head:`${TEAM} 엔터, 대출 만기 ${d.loanWeek}주 앞 — 업계 술렁`,
+          lead:'상환 계획이 확인되지 않고 있다.',
+          body:'중소 기획사의 자금 사정은 소속 아티스트의 활동에 곧바로 반영된다.' });
     }
 
-    // ①-b 시장 지수 — 기사가 만든 온도가 여기 찍히고, 이게 제안·투자로 되먹임된다
+    // ★게재 판정 — 가장 센 것 하나만. 문턱을 못 넘으면 **아무것도 안 실린다.**
+    //   단 ①기자 관계가 두터우면 문턱이 내려가고 ②로비로 약속을 받았으면 문턱을 무시한다.
+    const best = cands.sort((a,b)=>b.ev-a.ev)[0];
+    d.pressUs = null; d.pressMiss = null;
+    const fav = (d.pressFavor && d.week - d.pressFavor.week <= 1) ? d.pressFavor : null;
+    const tieCut = Math.round((d.pressTie || 0) * 0.25);      // 관계 100 = 문턱 −25
+    const gate = Math.max(20, S.PRESS_GATE - tieCut);
+    if (best && (best.ev + buzz >= gate || (fav && fav.gate))) {
+      const sc = best.ev + buzz + (fav && fav.size ? 30 : 0);
+      let W = sc >= 150 ? 3 : sc >= 110 ? 2 : 1;
+      if (fav && fav.size) W = Math.min(3, W + 1);
+      const SZ = ['','단신','기사','헤드라인'][W];
+      const im = S.pressImpact(d, W, best.good !== false);
+      if (W >= 3) d.pressCall = { why:'big', head:best.head };
+      else if (best.good === false) d.pressCall = { why:'bad', head:best.head };
+      push({ sec:best.sec, us:true, w:W, size:SZ, head:best.head, lead:best.lead, body:best.body,
+        by:'문지효',
+        eff:`${SZ}으로 실렸다 — 라이트팬 ${im.light >= 0 ? '+' : ''}${im.light.toLocaleString()}`
+           + `${im.fame ? ` · 인지도 ${im.fame > 0 ? '+' : ''}${im.fame}` : ''}` });
+      d.pressUs = best.head;
+      if (fav) { d.pressFavor = null;
+        items[items.length-1].tie = fav.gate ? '기자 약속으로 실렸다' : '단독 제공으로 크게 실렸다'; }
+    } else if (best) {
+      // 실리지 않았다는 것도 정보다 — 가짜 기사로 채우지 않는다
+      d.pressMiss = { head:best.head, need:Math.max(1, Math.ceil((S.PRESS_GATE - best.ev - buzz) / 0.8)) };
+    }
+
+    // ② 라이벌
+    S.RIVALS.forEach(rv => {
+      const now = S.rivalActive(rv, d.week), was = S.rivalActive(rv, d.week - 1);
+      if (now && !was) push({ sec:'엔터', head:`${rv.name} 컴백 — ${rv['강점']} 강세`,
+        lead:'이번 주 활동을 시작했다.', body:'음악방송 경쟁 구도가 다시 짜인다.' });
+      else if (!now && S.rivalIn(rv, d.week) === 1)
+        push({ sec:'엔터', head:`${rv.name}, 다음 주 컴백 예고`, lead:'티저가 공개됐다.', body:'' });
+    });
+
+    // ③ 광고 시장 지수 — 기업면 고정 코너
     {
       const mk = S.mktOf(d), lb = S.mktLabel(d);
       if (mk >= 118 || mk <= 84 || (d.week % 4 === 0))
-        items.push({ cat:'기업', head:`광고 시장 지수 ${Math.round(mk)} — ${lb}`,
-          body: mk >= 108 ? '집행액이 늘고 신인에게도 문의가 온다.'
-              : mk <= 92 ? '예산이 잠겼다. 제안이 줄고 투자도 짜진다.'
-              : '평시 수준.' });
+        push({ sec:'기업', head:`광고 시장 지수 ${Math.round(mk)} — ${lb}`,
+          lead: mk >= 108 ? '집행액이 늘고 신인에게도 문의가 간다.'
+              : mk <= 92 ? '예산이 잠겼다. 제안이 줄고 투자도 짜진다.' : '평시 수준.',
+          body:'지수는 광고주 기업가치와 모델 단가에 직접 반영된다.' });
     }
-    // ② 라이벌 — ★컴백 첫 주에만. 4주 내내 같은 헤드라인이 반복되던 문제 수정(2026-07-28).
-    S.RIVALS.forEach(rv => {
-      const now = S.rivalActive(rv, d.week), was = S.rivalActive(rv, d.week - 1);
-      if (now && !was) items.push({ cat:'연예', head:`${rv.name} 컴백 — ${rv.강점} 강세`,
-        body:'이번 주 활동 시작. 음방 경쟁이 세진다.' });
-      else if (!now && S.rivalIn(rv, d.week) === 1)
-        items.push({ cat:'연예', head:`${rv.name}, 다음 주 컴백 예고`, body:'티저가 떴다.' });
-      else if (now && was && d.chart && d.chart.rank && R() < 0.3)
-        items.push({ cat:'연예', head:`${rv.name} 활동 ${((d.week - rv.start) % rv.cycle) + 1}주차`,
-          body:'음방 순위에서 계속 부딪히고 있다.' });
-    });
 
-    // ③ 광고주 — ★1건만, 그것도 크게 움직였을 때만(표에 있는 걸 매주 베끼지 않는다)
+    // ④ 광고주 시세
     const moved = corps.filter(c => c.prev).map(c => ({ c, p:(c.value-c.prev)/c.prev*100 }))
       .sort((a,b)=>Math.abs(b.p)-Math.abs(a.p));
     const mine = moved.find(x => (d.brands||[]).some(b=>b.name===x.c.name) && Math.abs(x.p) >= 1.0);
     const big = mine || moved.find(x => Math.abs(x.p) >= 1.8);
-    if (big) items.push({ cat:'기업',
-      head:`${big.c.name} 기업가치 ${big.p>0?'▲':'▼'}${Math.abs(big.p).toFixed(1)}% (${S.wonBig(big.c.value)})`,
-      body:(d.brands||[]).some(b=>b.name===big.c.name) ? '우리가 모델로 있는 회사다.' : `${S.CORP_LABEL[big.c.tier]} 광고주.` });
+    if (big) push({ sec:'기업',
+      head:`${big.c.name} 기업가치 ${big.p>0?'▲':'▼'}${Math.abs(big.p).toFixed(1)}% — ${S.wonBig(big.c.value)}`,
+      lead:(d.brands||[]).some(b=>b.name===big.c.name) ? '우리가 모델로 있는 회사다.' : `${S.CORP_LABEL[big.c.tier]} 광고주.`,
+      body:'기업가치는 모델 계약 단가와 요구 인지도를 함께 움직인다.' });
 
-    // ④ 랜덤 이슈 — 실제로 수치를 움직이고, 일부는 **대응할 수 있다**
-    if (R() < 0.62) {
+    // ④-b ★로비 발각 — 사회면에서 터지고 기업면으로 번진다
+    {
+      const bust = S.bribeBust(d);
+      if (bust) {
+        push({ sec:'사회', bust:true, w:3, size:'헤드라인',
+          head:`연예 기획사 언론 로비 의혹 — 금품 ${Math.round(bust.sum/10000).toLocaleString()}만 원 오갔다`,
+          lead:`${TEAM} 소속사가 기사 게재를 대가로 매체 관계자에게 금품을 건넨 정황이 드러났다.`,
+          body:'업계에서는 공공연한 관행이었다는 말이 나온다. 문제는 걸린 쪽이 중소 기획사라는 점이다.',
+          by:'배정우', eff:bust.eff });
+        push({ sec:'기업', from:'언론 로비 의혹',
+          head:'광고주들, 모델 계약 재검토 착수',
+          lead:'이미지 리스크가 실적으로 넘어오는 것을 우려하는 분위기다.',
+          body:'계약서의 도덕조항(모럴 클로즈) 발동 여부를 검토 중인 것으로 알려졌다.',
+          by:'한상혁', eff:'광고주 만족도 −30 · 시장 지수 하락' });
+        d.pressCall = { why:'bust', head:'언론 로비 의혹' };
+      }
+    }
+
+    // ⑤ 이슈 — ★한 면에 실리고 그 파급이 **다른 면 기사로 이어진다**(실제 언론 메커니즘)
+    if (R() < 0.7) {
       const pool = S.PRESS_ISSUES.filter(x => x.id !== d.lastIssue);
       const it = pool[Math.floor(R()*pool.length)];
       let target = null;
@@ -4394,20 +4705,27 @@ const IDOL_SIM = {
       const eff = it.hit(d, S, R, target);
       if (eff !== null) {
         d.lastIssue = it.id;
+        const head = it.head.replace('{corp}', target ? target.name : '');
         if (/이미지 −|이미지 -|불똥|논란|파기/.test(String(eff)) && !d.pressCall)
-          d.pressCall = { why:'issue', head: it.head.replace('{corp}', target ? target.name : '') };
-        items.push({ cat:it.cat, issue:it.id,          // ★id를 남긴다 = 대응 버튼을 붙일 수 있다
-          head: it.head.replace('{corp}', target ? target.name : ''),
-          body: it.body, eff });
+          d.pressCall = { why:'issue', head };
+        push({ sec:it.cat, issue:it.id, head, lead:it.body, body:'', eff });
+        if (it.link) { const lk = it.link(d, S, R, target);
+          if (lk) push(Object.assign({ from:head }, lk)); }
       }
     }
 
-    // ⑤ 계약 소식은 이미 endWeek이 모아뒀다
-    (d.corpNews || []).forEach(t => items.push({ cat:'기업', head:t, body:'' }));
+    // ⑥ ★서사에서 나온 기사(AI가 sim.press로 올린 것) — 시스템이 못 잡는 세계의 사건들
+    (d.pressQueue || []).forEach(q => items.push(q));
+    d.pressQueue = [];
+
+    // ⑦ 계약 소식(endWeek이 모아둔 것)
+    (d.corpNews || []).forEach(t => push({ sec:'기업', head:t, lead:'', body:'' }));
 
     d.press = (d.press || []);
-    d.press.unshift({ week:d.week, m:S.monthOf(d.week), wk:S.weekInMonth(d.week), items });
-    if (d.press.length > 10) d.press.length = 10;      // 최근 10주만 보관(세이브 용량)
+    d.press.unshift({ week:d.week, m:S.monthOf(d.week), wk:S.weekInMonth(d.week),
+                      items, miss:d.pressMiss || null });
+    if (d.press.length > 10) d.press.length = 10;
+    d.wkActs = []; d.newBrands = [];        // 그 주 기록은 지면에 옮겼으니 비운다
     return items;
   },
   // ─── 📰 기사 대응 액션 ────────────────────────────────────────────────────
@@ -5019,6 +5337,9 @@ const IDOL_SIM = {
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], corps:null, invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
       fac:{ practice:0, van:0 }, fandom:null, awards:[], press:[], corpNews:[], lastIssue:null, mkt:100,
+      wkActs:[], newBrands:[], pressUs:null, pressMiss:null,   // 주간일보 — 그 주 실제 활동/신규 계약(v171)
+      pressTie:0, pressFavor:null, bribe:{n:0,sum:0,heat:0}, bribeBusted:null,   // 기자 커넥션·로비(v171)
+      pressQueue:[],                                            // 서사에서 나온 기사 대기열(v171)
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, rec:false, choreo:false, teaser:false },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -5227,6 +5548,15 @@ const IDOL_SIM = {
         if (sim.main) dt.fame += 0.6;      // 메인모델 = 얼굴이 크게 걸린다
         if (o.member) { const m=d.mem[o.member]; if(m) m.trust=S.clamp(m.trust+4,0,100); }
         dt.note = `${o.name} 계약${o.inkind?'(현물협찬)':''}${sim.main?'·메인모델':''}${o.member?`(${(IDOL_CHARACTERS[o.member]||{}).name} 개인)`:''}`;
+      } else if (t==='언론'){
+        const r2 = S.fileStory(d, sim.press || {});
+        if (!r2) return { ok:false, reason:'기사 내용 없음' };
+        dt.note = `기사화 — ${r2.size}: ${r2.eff}`;
+      } else if (t==='기자'){
+        // 기자를 만난다 — sim.tie 로 방법을 고른다(식사/단독/광고집행/촌지)
+        const r2 = S.runPressTie(d, sim.tie || '식사');
+        if (!r2.ok) return { ok:false, reason:r2.reason };
+        dt.note = `${r2.label} — ${r2.note}`;
       } else if (t==='투자'){
         if (d.invested) return { ok:false, reason:'이미 유치함' };
         if (d.fame < 30) return { ok:false, reason:'인지도 30 필요' };
@@ -5363,6 +5693,14 @@ const IDOL_SIM = {
     d.light=Math.max(0,d.light+dt.light); d.core=Math.max(0,d.core+dt.core); d.sns+=dt.sns;
     if (sim.action !== '미팅') d.slots=Math.max(0,d.slots-1);   // 미팅(브랜드·영입·시설·개인재산)은 일정 칸을 안 쓴다
     // ※요일은 여기서 안 움직인다 — 편성된 일정을 소화하는 resolveOne()에서만 흐른다.
+    // ★그 주에 실제로 한 일을 남긴다 — 주간일보가 이걸 보고 기사를 쓴다(2026-07-29 유저 지적:
+    //   "버스킹한 게 듣보 아이돌 기사로 왜 실리는지 모르겠다"). 기록이 없으면 안 한 일이 기사가 된다.
+    if (['연습','콘텐츠','음방','행사','광고'].indexOf(sim.action) >= 0) {
+      d.wkActs = d.wkActs || [];
+      d.wkActs.push({ a: sim.action === '광고' ? '광고촬영' : sim.action,
+                      k: sim.kind || (sim.action === '광고' ? '광고촬영' : null),
+                      extra: sim.brand || (dt.note || '').split(' 광고 촬영')[0] || '' });
+    }
     return { ok:true, delta:dt };
   },
   release(d){ d.album.released=d.week; d.album.actWeek=1;
@@ -5650,28 +5988,26 @@ const IDOL_SIM = {
 `;
     }
     // ★주간일보 최신호 — 실장·멤버가 이 얘기를 꺼내야 세계가 살아 있는 느낌이 난다
-    if (d.press && d.press[0] && d.press[0].items.length) {
-      s += `★★이번 주 주간일보 헤드라인 — **쓴 사람은 문지효 기자**다(연예부 7년차, 우리 편도 적도 아님).
-`
-         + `  기사 크기는 화제성이 정한다(무명=단신 / 뜨면 헤드라인) — 악의가 아니라 지면 사정이다.
-`
-         + `  친밀도가 쌓이면 쓰기 전에 확인 전화를 주고, 틀어지면 확인 없이 쓴다. 어느 쪽이든 거짓은 안 쓴다.
-`
-         + `  실장이 브리핑하거나 멤버가 화제로 꺼낼 것:
-`;
-      d.press[0].items.slice(0, 5).forEach(it => {
-        s += `  · [${it.cat}] ${it.head}${it.eff ? ` → ${it.eff}` : ''}
-`; });
+    if (d.press && d.press[0]) {
+      const P0 = d.press[0], buzz = Math.round(S.buzzOf(d));
+      const gate = Math.max(20, S.PRESS_GATE - Math.round((d.pressTie||0)*0.25));
+      s += `\n## 📰 주간일보 ${P0.m}월 ${P0.wk}주 (쓴 사람: 우리 기사는 **문지효 기자**)\n`;
+      s += `  화제성 ${buzz} / 게재 문턱 ${gate} — ${buzz >= gate ? '웬만한 일은 실린다' : '어지간한 일로는 안 실린다'}\n`;
+      ['엔터','기업','사회'].forEach(sec => {
+        const li = (P0.items||[]).filter(x => (x.sec || (x.cat==='기업'?'기업':x.cat==='사회'?'사회':'엔터')) === sec);
+        if (!li.length) return;
+        s += `  [${S.PRESS_DESK[sec].label}면] ` + li.slice(0,4).map(x =>
+          `「${x.head}」${x.us?'(우리)':''}${x.eff?` → ${x.eff}`:''}`).join(' / ') + `\n`;
+      });
+      if (P0.miss) s += `  ★이번 주 우리 얘기는 **한 줄도 안 실렸다**(「${P0.miss.head}」는 기삿거리였지만 화제성 미달).\n`
+                      + `    실장이 이걸 신경 쓴다 — "아직 아무도 우리를 안 본다"는 공기를 장면에 깔아라.\n`;
+      const tie = Math.round(d.pressTie || 0);
+      s += `  문지효 기자 관계 ${tie}(${S.tieLabel(tie)})`;
+      if (d.pressFavor && d.week - d.pressFavor.week <= 1) s += ` · ★다음 호 게재 약속을 받아둔 상태`;
+      if (d.bribe && d.bribe.n) s += ` · ⚠장부에 없는 돈 ${d.bribe.n}회(터지면 사회면 헤드라인)`;
+      if (d.bribeBusted) s += ` · 💥${d.bribeBusted.week}주차에 이미 터졌다`;
+      s += `\n`;
     }
-    // ★병원 — 컨디션·멘탈이 바닥난 멤버가 있으면 그 장면을 병원에서 풀 수 있다(2026-07-29 배경 추가).
-    {
-      const crit = Object.entries(d.mem).filter(([,m]) => m.cond < 25 || m.mind < 25)
-        .map(([i]) => (IDOL_CHARACTERS[i]||{}).name || i);
-      if (crit.length) s += `★★${crit.join('·')} 컨디션/멘탈이 한계다 — 쓰러지거나 병원에 실려가는 전개가 가능하다`
-        + `(배경 hospital = 병원 1인 병실). 억지로 굴리면 그 대가가 장면으로 온다.
-`;
-    }
-    // ★문지효 기자 등장 — 계기가 있을 때만. 없으면 부르지 마라(아무 때나 나오면 값이 떨어진다).
     if (d.pressCall) {
       const w = d.pressCall;
       s += `★★**문지효 기자**(연예 매체·33세, 중립)가 이번 주에 접촉해 온다 — 사유: `
@@ -10473,7 +10809,7 @@ function updateSceneBanner() {
 function migrateIdolSave(d) {
   if (!d) return d;
   const base = IDOL_SIM.init();
-  ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv','press','corpNews'].forEach(k => {
+  ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv','press','corpNews','wkActs','newBrands','pressQueue'].forEach(k => {
     if (!Array.isArray(d[k])) d[k] = Array.isArray(base[k]) ? base[k].slice() : [];
   });
   if (d.personal && !d.personal.stocks) d.personal.stocks = {};   // 주식 승계(v161)
@@ -10820,46 +11156,130 @@ function idolCorpHtml() {
     대화에서 새 광고사가 나오면 이 목록에 자동으로 추가된다.</div>`;
   return h;
 }
-// 📰 주간일보 — 기사는 실제로 수치를 움직이고, **최신호는 반응할 수 있다**(대응 선택 / 화제로 꺼내기).
+// 📰 주간일보 — ★실제 신문 지면처럼. 제호 → 면(연예/경제/사회) → 제목·리드·본문 → 기자 바이라인.
+//   유저 지시(2026-07-29): "기사도 신문기사처럼 안 실림. 기자명도 나와 있어야 하고 기사처럼 양식이 있어야 함.
+//   그리고 기업면 사회면 엔터면 다 있어야 함."
 function idolPressHtml() {
   const d = gameState.idol, S = IDOL_SIM;
-  const CAT = { '우리':'🎤', '연예':'🎬', '기업':'📈' };
   const ps = d.press || [];
-  if (!ps.length) return `<div class="ib-group">📰 주간일보</div>
-    <div class="ib-note">아직 발행된 호가 없다 — 한 주를 마감하면 그 주 기사가 실린다.</div>`;
-  let h = '';
+  const esc = t => String(t == null ? '' : t);
+  let h = `<div class="ib-group">🤝 기자 커넥션</div>`;
+  // ─ 기자 관계 · 로비 패널 ─
+  {
+    const tie = d.pressTie || 0, b = d.bribe || { n:0, heat:0 };
+    const fav = (d.pressFavor && d.week - d.pressFavor.week <= 1) ? d.pressFavor : null;
+    h += `<div class="ib-drow" style="display:block"><div class="k" style="width:auto">
+      문지효 기자 — <b style="color:#d4af37">${S.tieLabel(tie)}</b> (${Math.round(tie)}/100)
+      · 게재 문턱 −${Math.round(tie*0.25)}</div>`;
+    if (fav) h += `<div style="color:#7ec87e;font-size:12px;margin-top:3px">✓ 다음 호 ${fav.gate?'게재 약속':''}${fav.gate&&fav.size?' · ':''}${fav.size?'크기 +1':''}</div>`;
+    if (b.n) h += `<div style="color:#e07a5f;font-size:12px;margin-top:3px">⚠ 장부에 없는 돈 ${b.n}회 — 뜰수록 캐는 사람이 붙는다</div>`;
+    if (d.bribeBusted) h += `<div style="color:#e07a5f;font-size:12px;margin-top:3px">💥 이미 터졌다(${d.bribeBusted.week}주차)</div>`;
+    h += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px">`;
+    Object.entries(S.PRESS_TIE).forEach(([k, T]) => {
+      const self = T.from === '개인';
+      const wallet = self ? ((d.personal||{}).cash||0) : d.money;
+      const no = T.cost > wallet;
+      h += `<button ${no?'disabled':''} onclick="idolPressTie('${k}')" style="flex:1 1 46%;min-width:130px;
+        padding:7px 9px;border-radius:8px;text-align:left;line-height:1.35;font-size:12px;
+        border:1px solid ${T.dirty?'rgba(224,122,95,0.5)':'rgba(212,175,55,0.45)'};
+        background:${T.dirty?'rgba(224,122,95,0.08)':'rgba(212,175,55,0.08)'};
+        color:#e8e6e3;opacity:${no?0.4:1}">
+        <b style="color:${T.dirty?'#e07a5f':'#d4af37'}">${T.label}</b>
+        <span style="opacity:0.75"> ${T.cost?`${Math.round(T.cost/10000).toLocaleString()}만(${T.from})`:'무료'}</span>
+        <br><span style="opacity:0.6;font-size:11px">${T.desc}${no?' — 돈 부족':''}</span></button>`;
+    });
+    h += `</div></div>`;
+  }
+  if (!ps.length) return h + `<div class="ib-group">📰 주간일보</div>
+    <div class="ib-note">아직 발행된 호가 없다 — 한 주를 마감하면 그 주 지면이 나온다.</div>`;
+
   ps.forEach((p, i) => {
     const latest = (i === 0);
-    h += `<div class="ib-group">📰 ${p.m}월 ${p.wk}주${latest ? ' <span style="color:#d4af37">최신호</span>' : ''}</div>`;
-    if (!p.items.length) h += `<div class="ib-note">이번 주는 조용했다.</div>`;
-    p.items.forEach((it, j) => {
-      h += `<div class="ib-drow" style="display:block">
-        <div class="k" style="width:auto">${CAT[it.cat] || '·'} ${it.head}</div>`;
-      if (it.body) h += `<div style="opacity:0.6;font-size:12px;margin-top:2px">${it.body}</div>`;
-      if (it.eff)  h += `<div style="color:#d4af37;font-size:12px;margin-top:3px">▸ ${it.eff}</div>`;
-      // ★대응 — 최신호의 이슈 기사만. 일정 칸을 쓰지 않는다.
-      if (latest && it.issue && S.PRESS_ACTS[it.issue]) {
-        if (it.done) {
-          h += `<div style="color:#7ec87e;font-size:12px;margin-top:4px">✓ ${it.done} — ${it.doneNote || ''}</div>`;
-        } else {
-          h += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`;
-          S.PRESS_ACTS[it.issue].forEach((o, k) => {
-            h += `<button onclick="idolPressAct('${it.issue}',${k})" style="flex:1 1 45%;min-width:120px;
-              padding:7px 9px;border-radius:8px;border:1px solid rgba(212,175,55,0.45);
-              background:rgba(212,175,55,0.08);color:#e8e6e3;font-size:12px;text-align:left;line-height:1.35">
-              <b style="color:#d4af37">${o.label}</b><br><span style="opacity:0.6;font-size:11px">${o.desc}</span></button>`;
-          });
-          h += `</div>`;
-        }
-      }
-      // ★어느 기사든 대화 주제로 꺼낼 수 있다(일정 칸 소모 없음)
-      if (latest) h += `<div style="margin-top:5px"><button onclick="idolPressTalk(${j})"
-        style="padding:4px 9px;border-radius:7px;border:1px solid rgba(232,230,227,0.22);
-        background:transparent;color:rgba(232,230,227,0.7);font-size:11px">💬 이 얘기 꺼내기</button></div>`;
-      h += `</div>`;
+    // ── 제호 ──
+    h += `<div style="margin:16px 0 0;padding:10px 0 8px;border-top:2px solid rgba(212,175,55,0.55);
+      border-bottom:1px solid rgba(212,175,55,0.28);text-align:center">
+      <div style="font-family:'Noto Serif KR',serif;font-size:19px;letter-spacing:7px;color:#d4af37">주간일보</div>
+      <div style="font-size:11px;opacity:0.55;margin-top:3px;letter-spacing:1px">
+        ${p.m}월 ${p.wk}주${latest ? ' · 최신호' : ''}</div></div>`;
+    // ── 면별로 묶는다 ──
+    const order = ['엔터', '기업', '사회'];
+    const bySec = {};
+    (p.items || []).forEach((it, idx) => {
+      const sec = S.PRESS_DESK[it.sec] ? it.sec : (it.cat === '기업' ? '기업' : it.cat === '사회' ? '사회' : '엔터');
+      (bySec[sec] = bySec[sec] || []).push([it, idx]);
     });
+    let printed = 0;
+    order.forEach(sec => {
+      const list = bySec[sec]; if (!list || !list.length) return;
+      const D = S.PRESS_DESK[sec];
+      h += `<div style="margin:13px 0 6px;padding:3px 0;border-bottom:1px solid rgba(232,230,227,0.16);
+        font-size:12px;letter-spacing:3px;color:rgba(212,175,55,0.9)">${D.icon} ${D.label}면</div>`;
+      list.forEach(([it, j]) => {
+        printed++;
+        const W = it.w || 1;
+        const fs = W >= 3 ? 17 : W >= 2 ? 15 : 13.5;
+        const fw = W >= 2 ? 700 : 600;
+        h += `<div style="padding:9px 0;border-bottom:1px dashed rgba(232,230,227,0.09)">`;
+        if (it.us) h += `<span style="font-size:10px;color:#d4af37;border:1px solid rgba(212,175,55,0.45);
+          border-radius:3px;padding:1px 4px;margin-right:5px">우리 팀</span>`;
+        if (it.from) h += `<span style="font-size:10px;opacity:0.5;border:1px solid rgba(232,230,227,0.2);
+          border-radius:3px;padding:1px 4px;margin-right:5px">관련</span>`;
+        h += `<span style="font-family:'Noto Serif KR',serif;font-size:${fs}px;font-weight:${fw};
+          line-height:1.4;color:#e8e6e3">${esc(it.head)}</span>`;
+        if (it.lead) h += `<div style="font-size:12.5px;opacity:0.78;margin-top:4px;line-height:1.5">${esc(it.lead)}</div>`;
+        if (it.body) h += `<div style="font-size:12px;opacity:0.55;margin-top:3px;line-height:1.55">${esc(it.body)}</div>`;
+        if (it.by) h += `<div style="font-size:11px;opacity:0.45;margin-top:5px;text-align:right">${esc(it.by)} 기자</div>`;
+        if (it.eff) h += `<div style="color:#d4af37;font-size:11.5px;margin-top:3px">▸ ${esc(it.eff)}</div>`;
+        if (it.tie) h += `<div style="color:#7ec87e;font-size:11.5px;margin-top:2px">🤝 ${esc(it.tie)}</div>`;
+        // 대응 — 최신호의 이슈 기사만
+        if (latest && it.issue && S.PRESS_ACTS[it.issue]) {
+          if (it.done) {
+            h += `<div style="color:#7ec87e;font-size:12px;margin-top:4px">✓ ${it.done} — ${it.doneNote || ''}</div>`;
+          } else {
+            h += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">`;
+            S.PRESS_ACTS[it.issue].forEach((o, k) => {
+              h += `<button onclick="idolPressAct('${it.issue}',${k})" style="flex:1 1 45%;min-width:120px;
+                padding:7px 9px;border-radius:8px;border:1px solid rgba(212,175,55,0.45);
+                background:rgba(212,175,55,0.08);color:#e8e6e3;font-size:12px;text-align:left;line-height:1.35">
+                <b style="color:#d4af37">${o.label}</b><br><span style="opacity:0.6;font-size:11px">${o.desc}</span></button>`;
+            });
+            h += `</div>`;
+          }
+        }
+        if (latest) h += `<div style="margin-top:5px"><button onclick="idolPressTalk(${j})"
+          style="padding:4px 9px;border-radius:7px;border:1px solid rgba(232,230,227,0.22);
+          background:transparent;color:rgba(232,230,227,0.7);font-size:11px">💬 이 얘기 꺼내기</button></div>`;
+        h += `</div>`;
+      });
+    });
+    if (!printed) h += `<div class="ib-note">이번 주 지면은 조용했다.</div>`;
+    // ★우리 얘기가 안 실렸다는 것도 정보다
+    if (p.miss) h += `<div style="margin-top:8px;padding:8px 10px;border-radius:8px;
+      background:rgba(232,230,227,0.04);font-size:12px;opacity:0.7;line-height:1.5">
+      📭 이번 주 우리 얘기는 <b>한 줄도 실리지 않았다.</b><br>
+      <span style="opacity:0.75">「${esc(p.miss.head)}」— 기삿거리는 됐지만 세상이 우리를 그만큼 보지 않는다.
+      인지도 ${p.miss.need} 정도는 더 있어야 눈에 걸린다.</span></div>`;
   });
   return h;
+}
+// 기자 로비 — 돈이 실제로 빠지고, 더러운 돈은 쌓인다
+function idolPressTie(kind) {
+  const d = gameState.idol; if (!d) return;
+  const S = IDOL_SIM, r = S.runPressTie(d, kind);
+  if (!r || !r.ok) { showStatToast((r && r.reason) || '불가', true); return; }
+  showStatToast(`🤝 ${r.label} — ${r.note}`);
+  closeIdolBoard();
+  try { autoSave(); } catch {}
+  d._skipSim = true;
+  SFX.play('choice');
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  const txt = `[기자 접촉] 대표가 문지효 기자를 만나 **${r.label}**를 했다. 결과: ${r.note}. `
+    + (r.dirty ? `★이건 봉투다 — 장부에 남지 않는 대표 개인 돈이 나갔다. 문지효는 받되 표정이 좋지 않다. `
+               + `받는 쪽도 아는 일이고, 언젠가 새어 나갈 수 있다는 걸 둘 다 안다. 그 공기를 써라. `
+               : `문지효는 사실만 쓴다는 원칙을 굽히지 않되, 관계가 쌓인 만큼의 태도 변화는 보인다. `)
+    + `장면을 써라. sim은 싣지 마라(이미 반영됨).`;
+  window._genText = txt; handlePlayerInput(txt);
 }
 // 기사 대응 — 수치가 바로 움직이고, 그 장면이 이어진다
 function idolPressAct(issueId, idx) {
