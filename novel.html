@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v169</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v170</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4663,6 +4663,14 @@ const IDOL_SIM = {
     const S = IDOL_SIM, bg = S.PLACE_CEO[act];
     return bg ? { bg, loc: S.BG_LOC[bg] || bg } : null;
   },
+  // ★팀 일정 비용 — 엔진(apply)과 일정 보드가 **같은 값**을 읽어야 한다.
+  //   이전엔 보드가 따로 하드코딩(연습 30만/곡작업 10만/음방 100만)해 엔진 차감(150만/50만/600만)과
+  //   어긋났다 — 보드엔 "30만"이라 떠서 골랐는데 엔진이 자금부족으로 튕겼다(2026-07-29 유저 지적).
+  //   ★연습 150만 → 20만 (2026-07-29 유저 결정): 트레이너 주급(100만/주)과 연습실 시설을 이미 지불하는데
+  //     연습할 때마다 레슨비를 또 받아가는 이중청구였다 — 트레이너를 붙일수록 파산이 빨라져 실력 루트가 막혔다.
+  //     20만 = 자체 연습실 유지비(전기·식대) 수준. 음방 600만은 회차 실비(헤메·의상·차량) 근거가 있어 유지.
+  //   ★콘텐츠는 0 — 종류별 실비(CONTENT[k].cost)가 apply에서 그대로 청구된다(예전 100만은 죽은 값이었다).
+  ACT_COST: { '연습':200000, '콘텐츠':0, '음방':6000000, '행사':0, '휴식':0, '곡작업':500000, '미팅':0, '광고':0 },
   CEO_ACTS: {
     '동행':     { desc:'애들 현장에 붙는다 — 그 주 팀 일정 성과 +10% · 전원 신뢰↑' },
     '곡작업':   { desc:'회사에 남아 곡을 만진다 — 완성도·대중성↑ (대표의 본업)' },
@@ -5089,7 +5097,7 @@ const IDOL_SIM = {
     const mem=(sim.members&&sim.members.length?sim.members:Object.keys(d.mem)).filter(i=>d.mem[i]);
     const list = mem.length?mem:Object.keys(d.mem);
     const dt={light:0,core:0,money:0,fame:0,sns:0,note:''};
-    const cost={ '연습':1500000,'콘텐츠':1000000,'음방':6000000,'행사':0,'휴식':0,'곡작업':500000,'미팅':0,'광고':0 }[sim.action];
+    const cost=S.ACT_COST[sim.action];
     if (cost === undefined) return null;
     if (cost > d.money) return { ok:false, reason:'자금부족' };
     dt.money = -cost;
@@ -5110,7 +5118,7 @@ const IDOL_SIM = {
       if (C.bookOnly && !sim.booked) return { ok:false, reason:'섭외를 받아야 나갈 수 있다(대표가 방송국을 돌아라)' };
       if (C.need==='active' && !S.active(d)) return { ok:false, reason:'활동기·무대 있어야 찍는다' };
       if (C.cost > d.money) return { ok:false, reason:'자금부족' };
-      dt.money -= (C.cost - cost);                    // 종류별 실비로 교체(기본 콘텐츠 비용은 위에서 이미 차감)
+      dt.money -= (C.cost - cost);                    // 종류별 실비로 교체(ACT_COST['콘텐츠']=0이라 실질 -C.cost)
       const A=1+(C.auth?auth:auth*0.35)*0.4;          // 진정성은 브이로그·리얼리티에서 가장 세게 작동
       // ★배율은 '그 콘텐츠의 축'을 담당하는 멤버에게 붙는다(전부 서우 SNS 축을 타면 브이로그가 지배한다)
       const snsMul=list.reduce((a,i)=>a+(S.AXIS[i]===(C.axis||'sns')?S.MUL[i]:1),0)/list.length;
@@ -5777,7 +5785,7 @@ const IDOL_SIM = {
                     : n >= 10000 ? Math.round(n/10000).toLocaleString() + '만' : n + '원';
       s += `\n## ★★확정 단가표 (이 숫자가 유일한 사실 — 비용·수입을 절대 지어내지 마라)\n`;
       s += `  ★대표가 "얼마 드냐"고 물으면 아래 값을 그대로 답하라. 목록에 없는 항목은 "정해진 게 없다"고 하라.\n`;
-      s += `  · 연습 ${_w(1500000)} / 음방 출연 ${_w(6000000)} / 휴식 0원 / 곡작업(대표 칸) ${_w(500000)}\n`;
+      s += `  · 연습 ${_w(S.ACT_COST['연습'])} / 음방 출연 ${_w(S.ACT_COST['음방'])} / 휴식 0원 / 곡작업 ${_w(S.ACT_COST['곡작업'])}\n`;
       s += `  · 콘텐츠 촬영: ` + Object.entries(S.CONTENT).filter(([, C]) => !C.bookOnly)
             .map(([k, C]) => `${k} ${_w(C.cost)}`).join(' / ') + `\n`;
       const _bk = Object.entries(S.CONTENT).filter(([, C]) => C.bookOnly);
@@ -10629,15 +10637,15 @@ function idolBoardCards() {
   const add = (grp, name, cost, eff, req, pick, rec) =>
     cards.push({ grp, name, cost, eff, req: req || null, pick, rec: !!rec });
 
-  add('기본', '연습', 300000, `보컬·댄스↑${S.hasStaff(d,'vocal')||S.hasStaff(d,'dance')?'↑(트레이너)':''} · 컨디션↓`,
-      d.money < 300000 ? '자금부족' : null, '연습', !lowCond && !S.active(d));
+  add('기본', '연습', S.ACT_COST['연습'], `보컬·댄스↑${S.hasStaff(d,'vocal')||S.hasStaff(d,'dance')?'↑(트레이너)':''} · 컨디션↓`,
+      d.money < S.ACT_COST['연습'] ? '자금부족' : null, '연습', !lowCond && !S.active(d));
   add('기본', '휴식', 0, '컨디션 +25 · 멘탈 +10', null, '휴식', lowCond);
-  add('기본', '곡작업 ★대표 전용', 100000,
+  add('기본', '곡작업 ★대표 전용', S.ACT_COST['곡작업'],
       `완성도 ${Math.round(d.album.quality)}→ · 대중성 ${Math.round(d.album.appeal)}→ (컨셉: 대중/팬덤/실험)`,
-      d.money < 100000 ? '자금부족' : null, '곡작업', d.album.quality < 70 && !S.active(d));
-  add('기본', '음방 출연', 1000000,
+      d.money < S.ACT_COST['곡작업'] ? '자금부족' : null, '곡작업', d.album.quality < 70 && !S.active(d));
+  add('기본', '음방 출연', S.ACT_COST['음방'],
       `방송점수·인지도↑ · 컨디션↓↓ (출연 가능: ${S.openShows(d).join(', ') || '없음'})`,
-      !S.active(d) ? '활동기 아님' : (d.money < 1000000 ? '자금부족' : (!S.openShows(d).length ? '인지도 미달' : null)),
+      !S.active(d) ? '활동기 아님' : (d.money < S.ACT_COST['음방'] ? '자금부족' : (!S.openShows(d).length ? '인지도 미달' : null)),
       '음방', S.active(d) && d.album.tvThisWeek < 1);
 
   Object.entries(S.CONTENT).forEach(([k, C]) => {
