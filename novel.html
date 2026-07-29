@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v168</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v169</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -5561,6 +5561,8 @@ const IDOL_SIM = {
 `;
     s += `${d.week}주차 | 남은 일정 ${d.slots}/3 | 자금 ${won(d.money)}원 | 대출 ${won(d.loan)}원 | 인지도 ${Math.round(d.fame)}\n`;
     s += `팬: 코어 ${d.core.toLocaleString()}명 · 라이트 ${d.light.toLocaleString()}명 (결집도 ${Math.round(IDOL_SIM.rally(d))})\n`;
+    s += `곡 제목: ${d.album.title?`「${d.album.title}」`:'(아직 안 정함 — 대표가 정하면 sim에 title을 실어라)'}
+`;
     s += `곡: ${d.album.quality?`완성도 ${Math.round(d.album.quality)} 대중성 ${Math.round(d.album.appeal)}`:'없음(곡작업 필요)'}`;
     s += IDOL_SIM.active(d)? ` | ★활동기 ${d.album.actWeek}/4주차 (이번 주 음방 ${d.album.tvThisWeek}회)\n` : ` | 공백기\n`;
     s += `출연 가능 음방(인지도 ${Math.round(d.fame)}): ${open.length?open.join(', '):'없음'}\n`;
@@ -5591,6 +5593,17 @@ const IDOL_SIM = {
         if (_ps.length > _i + 1) s += `  (그 뒤 일정: 「${_ps[_i+1].name}」)\n`;
       } else if (_ps.length) {
         s += `★이번 주 일정은 다 소화했다 — 주간 마감을 하도록 장면을 정리하라(대표 칸: ${S.ceoPlanOf(d) || '동행'}).\n`;
+      } else if (S.needPlan(d)) {
+        // ★아직 편성 전 — 안내가 없으면 AI가 아무 일정이나 진행시킨다(2026-07-29 유저 지적)
+        s += `★★이번 달(${S.monthOf(d.week)}월) 일정이 **아직 편성되지 않았다**. 대표가 일정 보드에서 짜야 진행된다.
+`;
+        s += `  실장이 편성을 요청하는 장면을 만들고, **임의로 일정을 진행시키지 마라**(sim에 action 금지).
+`;
+      } else {
+        s += `★이번 주는 편성된 칸이 없다 — 비워둔 주다. 쉬거나 관계 장면으로 풀고 주간 마감으로 넘겨라.
+`;
+        s += `  **없는 일정을 지어내 진행시키지 마라**(sim에 action 금지).
+`;
       }
       // ★대표 칸도 서사다 — 「명함」은 광고 대행사를 만나는 일이다(유저 지적 2026-07-28).
       //   그 자리에서 계약이 붙으면 sim(target='브랜드'+brand)으로 실으면 실제로 계약이 된다.
@@ -5679,6 +5692,17 @@ const IDOL_SIM = {
         const dv = c.prev ? (c.value-c.prev)/c.prev*100 : 0;
         return `${c.name}(${IDOL_SIM.CORP_LABEL[c.tier]}·${IDOL_SIM.wonBig(c.value)}${Math.abs(dv)<0.05?'':dv>0?`▲${dv.toFixed(1)}%`:`▼${Math.abs(dv).toFixed(1)}%`})`;
       }).join(', ') + `\n`;
+      // ★어느 회사가 뭘 요구하는지 — 없으면 AI가 계약 조건을 지어낸다(2026-07-29 유저 지적)
+      const _ok = [], _no = [];
+      Object.values(CS).forEach(c => {
+        if ((d.brands || []).some(b => b.name === c.name)) return;
+        const n = IDOL_SIM.corpNeed(d, c), g = IDOL_SIM.corpGate(d, c);
+        (g ? _no : _ok).push(`${c.name}(주 ${Math.round(n.weekly/10000).toLocaleString()}만·${n.weeks}주${g ? ` — ${g}` : ''})`);
+      });
+      if (_ok.length) s += `★지금 계약 가능한 광고주: ${_ok.join(', ')} — 이 주급·기간이 확정값이다(지어내지 마라)
+`;
+      if (_no.length) s += `아직 조건 미달인 광고주: ${_no.slice(0,6).join(', ')}
+`;
     } catch {}
     if (d.offers && d.offers.length) s += `★들어온 광고 제안: ` + d.offers.map((o,i)=>
       `[${i}] ${o.name}(${o.label}·주 ${Math.round(o.weekly/10000)}만·${o.weeks}주${o.member?`·${(IDOL_CHARACTERS[o.member]||{}).name} 개인 앰버서더`:'·팀 전체'}, ${o.life||1}주 안에 답 줘야 함)`).join(' / ') + ` — 실장이 보고할 것\n`;
