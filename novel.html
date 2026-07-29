@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v171</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v172</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4332,6 +4332,7 @@ const IDOL_SIM = {
     // ── 사회면 — ★여기 실린 사건이 기업·엔터로 번진다(link) ──
     { id:'shortform_addict', cat:'사회', head:'"숏폼 그만 보고 싶다" — 피로감 확산',
       body:'하루 평균 시청 시간이 늘수록 만족도는 떨어진다는 조사가 나왔다. 플랫폼 규제 논의도 시작됐다.',
+      detail:'숏폼으로 뜬 팀일수록 타격이 크다. 알고리즘에 기대 온 노출이 줄면 대체할 창구가 마땅치 않다.',
       hit(d,S,R){ d.sns = Math.max(0, Math.round(d.sns*0.93));
         S.mktMove(d, -6);
         return `숏폼 화력 −7% · 시장 지수 ${Math.round(S.mktOf(d))}(${S.mktLabel(d)})`; },
@@ -4341,10 +4342,12 @@ const IDOL_SIM = {
         eff:'사회면 기사의 여파 — 광고 시장이 식었다' }; } },
     { id:'street_culture', cat:'사회', head:'거리 공연 허가 확대 — 지자체, 버스킹 존 신설',
       body:'주말 유동 인구를 잡으려는 지자체가 공연 구역을 늘리고 있다.',
+      detail:'무대에 서지 못한 팀들에게는 관객을 처음 만나는 자리가 된다. 비용은 거의 들지 않지만 사람이 모이는지는 그날 운이다.',
       hit(d,S,R){ d.light += Math.round(200 + R()*400);
         return `거리 공연 노출 증가 — 라이트팬 +${Math.round(200)}선`; } },
     { id:'fandom_culture', cat:'사회', head:'"팬덤이 곧 소비" — 굿즈 시장 3조 돌파',
       body:'좋아하는 팀에 쓰는 돈이 커졌다. 규모보다 결집도가 매출을 만든다는 분석이다.',
+      detail:'라이트팬 만 명보다 코어팬 천 명이 더 많은 돈을 쓴다. 팬덤의 크기가 아니라 밀도가 매출을 만든다.',
       hit(d,S,R){ const up = d.core >= 3000;
         if (up) d.money += Math.round(d.core * 900);
         return up ? `굿즈 특수 — 자금 +${Math.round(d.core*900/10000).toLocaleString()}만` : '코어팬 3,000명 미만은 특수에서 비켰다'; },
@@ -4354,6 +4357,7 @@ const IDOL_SIM = {
         eff:'굿즈 협업 문의 증가' } : null; } },
     { id:'overwork', cat:'사회', head:'연습생 처우 논란 — "몇 시간까지가 연습인가"',
       body:'표준계약서 밖의 관행이 도마에 올랐다. 중소 기획사가 특히 지목됐다.',
+      detail:'몇 시간까지가 연습이고 어디부터가 노동인지에 대한 기준이 없다. 사고가 나야 비로소 따지는 구조다.',
       hit(d,S,R){ const bad = Object.values(d.mem).some(m => m.cond < 45 || m.mind < 45);
         if (bad) { d.image = S.clamp(d.image - 3, 0, 100);
           return '★우리 팀 컨디션 난조가 겹쳐 시선이 왔다 — 이미지 −3'; }
@@ -4362,12 +4366,14 @@ const IDOL_SIM = {
     // ── 기업면 ──
     { id:'ad_winter', cat:'기업', head:'광고 시장 한파 — 상반기 집행액 12% 감소',
       body:'대기업이 마케팅 예산을 줄이면서 신인 모델 기용이 먼저 잘렸다.',
+      detail:'대행사들은 하반기 집행도 보수적으로 잡고 있다. 계약이 남은 팀은 버티지만, 새로 뚫으려는 팀에는 문이 좁아졌다.',
       hit(d,S,R){ const m = 0.94 + R()*0.03;
         Object.keys(d.corps).forEach(k=>{ d.corps[k].value = Math.round(d.corps[k].value*m); });
         S.mktMove(d, -9);
         return `광고주 기업가치 일제히 ${((m-1)*100).toFixed(1)}% · 시장 지수 ${Math.round(S.mktOf(d))}(${S.mktLabel(d)})`; } },
     { id:'shortform', cat:'기업', head:'숏폼 광고 특수 — 브랜드들이 15초에 돈을 붓는다',
       body:'TV 대신 숏폼으로 예산이 옮겨갔다. 춤 되는 팀이 유리하다는 분석.',
+      detail:'15초 안에 각인되는 포인트 안무가 있느냐가 기용 여부를 가른다. 인지도가 낮아도 화제가 되면 제안이 온다.',
       hit(d,S,R){ const m = 1.02 + R()*0.03;
         Object.keys(d.corps).forEach(k=>{ d.corps[k].value = Math.round(d.corps[k].value*m); });
         d.sns += Math.round(d.sns*0.05 + 300);
@@ -4375,6 +4381,7 @@ const IDOL_SIM = {
         return `광고주 기업가치 +${((m-1)*100).toFixed(1)}% · 시장 지수 ${Math.round(S.mktOf(d))}(${S.mktLabel(d)})`; } },
     { id:'recall', cat:'기업', head:'{corp} 제품 결함 논란 — 자진 회수',
       body:'소비자원 조사가 시작됐다. 모델을 쓰던 팀들이 광고를 내렸다.',
+      detail:'광고주 리스크는 모델에게 그대로 옮겨붙는다. 계약서의 도덕조항이 어느 쪽을 보호하는지가 이럴 때 드러난다.',
       pick:'any',
       hit(d,S,R,c){ if(!c) return null; const m = 0.85 + R()*0.07;
         c.value = Math.round(c.value*m);
@@ -4385,6 +4392,7 @@ const IDOL_SIM = {
         return `${c.name} 기업가치 ${((m-1)*100).toFixed(1)}%${ex}`; } },
     { id:'hit_launch', cat:'기업', head:'{corp} 신제품 완판 — 3분기 실적 전망 상향',
       body:'광고 효과가 컸다는 평가. 모델 재계약 얘기가 나온다.',
+      detail:'판매가 뛰면 모델의 몸값도 함께 오른다. 재계약 협상에서 주도권이 어디로 가는지가 이 시점에 정해진다.',
       pick:'any',
       hit(d,S,R,c){ if(!c) return null; const m = 1.06 + R()*0.07;
         c.value = Math.round(c.value*m);
@@ -4395,20 +4403,24 @@ const IDOL_SIM = {
         return `${c.name} 기업가치 +${((m-1)*100).toFixed(1)}%${ex}`; } },
     { id:'model_survey', cat:'연예', head:'광고주 선호 모델 조사 — 신인 아이돌 기용 늘어',
       body:'인지도보다 "이미지가 깨끗한가"를 먼저 본다는 응답이 많았다.',
+      detail:'논란 이력이 있으면 인지도가 높아도 후보에서 빠진다. 신인에게는 이 기준이 오히려 기회가 된다.',
       hit(d,S,R){ const up = d.image >= 70;
         d.fame = S.clamp(d.fame + (up?1.5:0), 0, 100);
         return up ? '이미지가 좋은 팀에 문의가 몰렸다 — 인지도 +1.5' : '이미지 70 미만은 후보에서 빠졌다'; } },
     { id:'sajaegi', cat:'연예', head:'음원 사재기 의혹 — 차트 신뢰도 도마에',
       body:'중소 기획사들이 특히 시끄럽다. 우리 이름도 커뮤니티에 오르내렸다.',
+      detail:'해명해도 의심은 남고, 침묵하면 인정으로 읽힌다. 언급량은 늘지만 좋은 종류의 화제는 아니다.',
       hit(d,S,R){ d.sns += Math.round(400 + R()*800);
         d.image = S.clamp(d.image - 2, 0, 100);
         return '언급량은 늘었지만 이미지 −2 (좋은 화제가 아니다)'; } },
     { id:'rookie', cat:'연예', head:'대형 3사 동시 신인 데뷔 — 하반기 경쟁 과열',
       body:'물량 공세다. 같은 주에 데뷔한 팀만 넷.',
+      detail:'같은 시기에 데뷔가 몰리면 노출이 분산된다. 자본이 붙은 팀부터 자리를 잡고 나머지는 밀린다.',
       hit(d,S,R){ d.light = Math.round(d.light*0.97); S.mktMove(d, -3);
         return `신인 물량에 밀려 라이트팬 −3% · 시장 지수 ${Math.round(S.mktOf(d))}`; } },
     { id:'variety_boom', cat:'연예', head:'예능 출연이 데뷔보다 빠른 길 — 방송가 기류 변화',
       body:'무대보다 예능에서 얼굴을 먼저 알리는 팀이 늘었다.',
+      detail:'노래를 몰라도 얼굴은 아는 상태가 만들어진다. 섭외를 따내는 것 자체가 실력이 된 시대다.',
       hit(d,S,R){ d.network = S.clamp((d.network||0) + 2, 0, 100);
         return '방송 인맥 +2 (섭외 문턱이 낮아졌다)'; } },
   ],
@@ -4420,6 +4432,71 @@ const IDOL_SIM = {
   //    지면에 오르려면 **사건 가치(ev) + 화제성(buzz)이 문턱을 넘어야 한다.**
   //    무명이 버스킹한 것은 기사가 아니다. 같은 버스킹도 뜬 팀이 하면 기사가 된다.
   PRESS_GATE: 75,
+  // ★신문은 면이 비지 않는다(2026-07-29 유저 지적: "사회면 기업면은 어디 갔고").
+  //   우리 소식이 없어도 지면은 나온다 — 업계·사회 단신으로 채운다. 수치는 건드리지 않는다(연출).
+  //   ★대화 소재로도 쓰인다 — 유저가 "사회면은 콘텐츠를 말로 풀어나갈 때 쓰인다"고 한 그 용도.
+  BRIEFS: {
+    '기업': [
+      { head:'광고 대행사 상반기 결산 — 신인 기용 비중 늘어',
+        lead:'모델료 부담을 줄이려는 브랜드가 신인을 찾는다.',
+        body:'업계는 "인지도보다 이미지가 깨끗한가"를 먼저 본다고 말한다. 중소 기획사에는 기회이자 시험대다.' },
+      { head:'엔터 상장사 주가, 지수 대비 부진',
+        lead:'투자자들이 콘텐츠 기업의 수익성을 다시 따지기 시작했다.',
+        body:'앨범 판매보다 공연·굿즈 매출 비중이 높은 회사가 상대적으로 선방했다는 분석이 나온다.' },
+      { head:'유통업계, 아이돌 협업 상품 확대',
+        lead:'팬덤 구매력이 실적으로 잡히면서 매대가 늘었다.',
+        body:'브랜드들이 모델 계약과 굿즈 협업을 묶어 제안하는 사례가 늘고 있다.' },
+      { head:'광고주 계약서에 도덕조항 확대',
+        lead:'모델 리스크가 실적으로 넘어오는 것을 막겠다는 취지다.',
+        body:'논란이 발생하면 즉시 광고를 내리고 위약금을 청구하는 조항이 표준이 되어가고 있다.' },
+      { head:'중소 기획사 자금 경색 — 대출 만기 몰려',
+        lead:'데뷔 투자를 대출로 감당한 회사들이 상환 시기를 맞았다.',
+        body:'성적이 나오지 않으면 팀 해체로 이어진다. 업계는 하반기를 고비로 본다.' },
+      { head:'플랫폼 정산 구조 개편 논의',
+        lead:'음원 수익 배분 비율을 두고 기획사와 플랫폼이 맞섰다.',
+        body:'중소 기획사일수록 정산 구조에 민감하다. 한 곡의 성적이 회사의 존속을 가른다.' },
+    ],
+    '사회': [
+      { head:'"덕질도 노동인가" — 팬 활동 시간 조사',
+        lead:'하루 평균 두 시간 이상을 쓰는 응답이 절반을 넘었다.',
+        body:'좋아하는 마음이 소비가 되고 노동이 되는 구조에 대한 문제 제기가 나온다.' },
+      { head:'10대 장래희망 조사 — 아이돌 3년째 상위권',
+        lead:'현실을 알면서도 택하겠다는 응답이 늘었다.',
+        body:'데뷔 후 3년 내 활동을 접는 비율이 절반을 넘는다는 통계도 함께 공개됐다.' },
+      { head:'연습생 표준계약서 개정 논의 재개',
+        lead:'계약 기간과 정산 시점이 쟁점이다.',
+        body:'현장에서는 "표준은 있는데 관행이 따로 있다"는 말이 나온다.' },
+      { head:'무대 위 안전사고 잇따라 — 리프트·와이어 점검 강화',
+        lead:'행사장 안전 기준을 다시 보자는 목소리가 커졌다.',
+        body:'짧은 리허설과 빡빡한 일정이 사고의 배경으로 지목된다.' },
+      { head:'악성 댓글 처벌 강화 논의 — 소속사 고소 늘어',
+        lead:'참다가 병을 얻는 경우가 많다는 지적이다.',
+        body:'대응 여력이 없는 중소 기획사 소속 아티스트가 더 취약하다는 분석이 나온다.' },
+      { head:'거리 공연 허가 확대 — 지자체, 버스킹 구역 신설',
+        lead:'주말 유동 인구를 잡으려는 시도다.',
+        body:'무대에 서지 못한 팀들에게는 관객을 처음 만나는 자리가 된다.' },
+    ],
+    '엔터': [
+      { head:'하반기 컴백 대전 예고 — 대형사 일정 겹쳐',
+        lead:'같은 주에 컴백이 몰리면 신인은 밀린다.',
+        body:'중소 기획사는 대형사 일정을 피해 발매일을 잡는 것이 관행이 됐다.' },
+      { head:'음방 사전녹화 확대 — 무대 퀄리티 경쟁 심화',
+        lead:'생방송보다 사전녹화 비중이 커지고 있다.',
+        body:'준비 시간과 인력이 곧 무대 완성도로 이어져 소속사 체급 차이가 드러난다.' },
+      { head:'숏폼 챌린지, 신곡 흥행의 선행 지표로',
+        lead:'포인트 안무가 살면 곡이 산다는 말이 통설이 됐다.',
+        body:'안무 제작 단계에서 챌린지 가능성을 먼저 따지는 팀이 늘었다.' },
+      { head:'팬 사인회 응모 경쟁률 상승 — 앨범 판매 견인',
+        lead:'만나기 위해 앨범을 산다.',
+        body:'코어팬 규모가 곧 초동 판매량으로 직결되는 구조가 굳어지고 있다.' },
+      { head:'신인 데뷔 쇼케이스, 온라인 중계 일반화',
+        lead:'현장 규모보다 동시 접속자 수가 지표가 됐다.',
+        body:'비용은 줄었지만 화제성이 없으면 아무도 보지 않는다는 부담도 커졌다.' },
+      { head:'음원 차트 개편 논의 — 실시간 폐지론 다시',
+        lead:'사재기 논란이 반복되면서 나온 이야기다.',
+        body:'중소 기획사들은 실시간 차트가 사라지면 노출 기회가 줄어든다고 우려한다.' },
+    ],
+  },
   // ═══ 🤝 기자 커넥션 · 로비 ═════════════════════════════════════════════
   //  ★유저 지시(2026-07-29): "기자랑 커넥션을 만들어서 실어주기로 로비로 약속이라도 받으면 실리는지,
   //    그 과정에서 뇌물을 준다면 내 돈이 나가는 시스템은 구현돼 있는지,
@@ -4476,7 +4553,8 @@ const IDOL_SIM = {
     if (W >= 3 || bad) d.pressCall = { why: bad ? 'bad' : 'big', head:p.head };
     d.pressQueue = d.pressQueue || [];
     d.pressQueue.push({ sec:SEC, w:W, size:['','단신','기사','헤드라인'][W],
-      head:p.head, lead:p.lead || '', body:p.body || '', ai:true,
+      head:p.head, lead:p.lead || '', ai:true,
+      body:p.body || '자세한 경위는 확인되지 않았다. 소속사는 별도의 입장을 내지 않았다.',
       by:(S.PRESS_DESK[SEC].by[Math.floor(R() * S.PRESS_DESK[SEC].by.length)]),
       eff: eff.join(' · ') });
     return { ok:true, size:['','단신','기사','헤드라인'][W], eff:eff.join(' · ') };
@@ -4592,7 +4670,9 @@ const IDOL_SIM = {
 
     if ((d.awards || []).some(a => a.week === d.week))
       cands.push({ ev:S.ACT_EV['수상'], sec:'엔터', good:true,
-        head:`${TEAM}, 수상 — 데뷔 후 첫 트로피`, lead:'', body:'' });
+        head:`${TEAM}, 수상 — 데뷔 후 첫 트로피`,
+        lead:'중소 기획사 신인의 수상은 흔한 일이 아니다.',
+        body:'트로피 하나로 섭외 전화의 성격이 달라진다. 다음 앨범의 조건도 여기서부터 바뀐다.' });
 
     // 그 주에 실제로 한 일 (★안 한 일로 기사를 쓰지 않는다)
     (d.wkActs || []).forEach(a => {
@@ -4649,9 +4729,11 @@ const IDOL_SIM = {
     S.RIVALS.forEach(rv => {
       const now = S.rivalActive(rv, d.week), was = S.rivalActive(rv, d.week - 1);
       if (now && !was) push({ sec:'엔터', head:`${rv.name} 컴백 — ${rv['강점']} 강세`,
-        lead:'이번 주 활동을 시작했다.', body:'음악방송 경쟁 구도가 다시 짜인다.' });
+        lead:'이번 주 활동을 시작했다.',
+        body:`${rv['강점']}을 앞세운 구성이다. 같은 주에 활동하는 팀들은 음악방송 순위에서 직접 부딪히게 된다.` });
       else if (!now && S.rivalIn(rv, d.week) === 1)
-        push({ sec:'엔터', head:`${rv.name}, 다음 주 컴백 예고`, lead:'티저가 공개됐다.', body:'' });
+        push({ sec:'엔터', head:`${rv.name}, 다음 주 컴백 예고`, lead:'티저가 공개됐다.',
+          body:'컴백 주간에는 음방 출연 경쟁이 세진다. 같은 시기 활동을 준비하는 팀은 일정을 다시 볼 필요가 있다.' });
     });
 
     // ③ 광고 시장 지수 — 기업면 고정 코너
@@ -4708,7 +4790,7 @@ const IDOL_SIM = {
         const head = it.head.replace('{corp}', target ? target.name : '');
         if (/이미지 −|이미지 -|불똥|논란|파기/.test(String(eff)) && !d.pressCall)
           d.pressCall = { why:'issue', head };
-        push({ sec:it.cat, issue:it.id, head, lead:it.body, body:'', eff });
+        push({ sec:it.cat, issue:it.id, head, lead:it.body, body:it.detail || '', eff });
         if (it.link) { const lk = it.link(d, S, R, target);
           if (lk) push(Object.assign({ from:head }, lk)); }
       }
@@ -4719,7 +4801,20 @@ const IDOL_SIM = {
     d.pressQueue = [];
 
     // ⑦ 계약 소식(endWeek이 모아둔 것)
-    (d.corpNews || []).forEach(t => push({ sec:'기업', head:t, lead:'', body:'' }));
+    (d.corpNews || []).forEach(t => push({ sec:'기업', head:t,
+      lead:'광고주와 소속사 사이에 오간 내용이다.',
+      body:'모델 계약은 인지도와 이미지, 그리고 광고주의 기업가치에 따라 조건이 정해진다.' }));
+
+    // ★★비는 면을 업계 단신으로 채운다 — 신문은 면이 통째로 비지 않는다.
+    //   (2026-07-29 실측: 초반 4주에 기업면 49%·사회면 31%만 실렸다. 그건 지면이 아니라 공백이다.)
+    d.briefIdx = d.briefIdx || {};
+    ['엔터', '기업', '사회'].forEach(sec => {
+      if (items.some(x => x.sec === sec)) return;
+      const pool = S.BRIEFS[sec];
+      const i = (d.briefIdx[sec] || 0) % pool.length;
+      d.briefIdx[sec] = i + 1;
+      push(Object.assign({ sec, brief:true }, pool[i]));
+    });
 
     d.press = (d.press || []);
     d.press.unshift({ week:d.week, m:S.monthOf(d.week), wk:S.weekInMonth(d.week),
@@ -5339,7 +5434,7 @@ const IDOL_SIM = {
       fac:{ practice:0, van:0 }, fandom:null, awards:[], press:[], corpNews:[], lastIssue:null, mkt:100,
       wkActs:[], newBrands:[], pressUs:null, pressMiss:null,   // 주간일보 — 그 주 실제 활동/신규 계약(v171)
       pressTie:0, pressFavor:null, bribe:{n:0,sum:0,heat:0}, bribeBusted:null,   // 기자 커넥션·로비(v171)
-      pressQueue:[],                                            // 서사에서 나온 기사 대기열(v171)
+      pressQueue:[], briefIdx:{},                                // 서사 기사 대기열 · 면별 단신 순번(v171)
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, rec:false, choreo:false, teaser:false },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -6002,6 +6097,11 @@ const IDOL_SIM = {
       if (P0.miss) s += `  ★이번 주 우리 얘기는 **한 줄도 안 실렸다**(「${P0.miss.head}」는 기삿거리였지만 화제성 미달).\n`
                       + `    실장이 이걸 신경 쓴다 — "아직 아무도 우리를 안 본다"는 공기를 장면에 깔아라.\n`;
       const tie = Math.round(d.pressTie || 0);
+      s += `  ★기자를 만나는 건 **대화로** 한다(버튼 없음). 대표가 문지효를 만나 아래 중 하나를 하면\n`;
+      s += `    sim에 { "target":"기자", "tie":"식사|단독|광고집행|촌지" }를 실어라 — 일정 칸을 쓰지 않는다.\n`;
+      s += `    · 식사 40만(회사) 관계↑ / 단독 제공 0원 관계↑·다음 기사 크기+1\n`;
+      s += `    · 매체 광고 집행 2,000만(회사) 게재 보장 / **촌지 300만(대표 개인 현금)** 게재 보장+크기+1·발각 위험 누적\n`;
+      s += `    ★촌지는 회사 자금이 아니라 **대표 개인 현금**에서 나간다. 문지효는 받되 거짓은 안 쓴다.\n`;
       s += `  문지효 기자 관계 ${tie}(${S.tieLabel(tie)})`;
       if (d.pressFavor && d.week - d.pressFavor.week <= 1) s += ` · ★다음 호 게재 약속을 받아둔 상태`;
       if (d.bribe && d.bribe.n) s += ` · ⚠장부에 없는 돈 ${d.bribe.n}회(터지면 사회면 헤드라인)`;
@@ -10814,6 +10914,12 @@ function migrateIdolSave(d) {
   });
   if (d.personal && !d.personal.stocks) d.personal.stocks = {};   // 주식 승계(v161)
   if (d.pressCall === undefined) d.pressCall = null;              // 기자 접촉(v165)
+  // ★v171 이전 포맷 기사 정리(2026-07-29 유저 지시) — 옛 기사는 면(sec)·기자(by)·본문이 없어
+  //   새 지면에 섞이면 제호만 있고 알맹이가 빈 호처럼 보인다. 과거분이라도 깨져 보이면 지운다.
+  d.press = (d.press || [])
+    .map(p => Object.assign({}, p, { items: (p.items || []).filter(x => x && x.by && x.sec) }))
+    .filter(p => p.items.length);
+  if (!d.briefIdx) d.briefIdx = {};
   if (typeof d.network !== 'number') d.network = base.network;
   if (typeof d.biz !== 'number') d.biz = base.biz;
   if (typeof d.day !== 'number') d.day = 0;
@@ -11163,32 +11269,24 @@ function idolPressHtml() {
   const d = gameState.idol, S = IDOL_SIM;
   const ps = d.press || [];
   const esc = t => String(t == null ? '' : t);
-  let h = `<div class="ib-group">🤝 기자 커넥션</div>`;
-  // ─ 기자 관계 · 로비 패널 ─
+  // ★로비는 버튼이 아니라 **대화로 푼다**(2026-07-29 유저 지적: "로비는 그냥 대화로 풀어가는 거지
+  //   버튼으로 하는 게 아니라고"). 여기는 **현황판**일 뿐이다 — 관계·약속·위험만 보여주고,
+  //   실제 접촉은 대표가 장면에서 문지효를 만나 말로 한다(AI가 sim.target:'기자'+tie로 싣는다).
+  let h = `<div class="ib-group">🤝 문지효 기자</div>`;
   {
     const tie = d.pressTie || 0, b = d.bribe || { n:0, heat:0 };
     const fav = (d.pressFavor && d.week - d.pressFavor.week <= 1) ? d.pressFavor : null;
     h += `<div class="ib-drow" style="display:block"><div class="k" style="width:auto">
-      문지효 기자 — <b style="color:#d4af37">${S.tieLabel(tie)}</b> (${Math.round(tie)}/100)
-      · 게재 문턱 −${Math.round(tie*0.25)}</div>`;
-    if (fav) h += `<div style="color:#7ec87e;font-size:12px;margin-top:3px">✓ 다음 호 ${fav.gate?'게재 약속':''}${fav.gate&&fav.size?' · ':''}${fav.size?'크기 +1':''}</div>`;
+      관계 <b style="color:#d4af37">${S.tieLabel(tie)}</b> (${Math.round(tie)}/100)
+      · 게재 문턱 −${Math.round(tie * 0.25)}</div>`;
+    if (fav) h += `<div style="color:#7ec87e;font-size:12px;margin-top:3px">✓ 다음 호 ${fav.gate ? '게재 약속' : ''}${fav.gate && fav.size ? ' · ' : ''}${fav.size ? '크기 +1' : ''}</div>`;
     if (b.n) h += `<div style="color:#e07a5f;font-size:12px;margin-top:3px">⚠ 장부에 없는 돈 ${b.n}회 — 뜰수록 캐는 사람이 붙는다</div>`;
-    if (d.bribeBusted) h += `<div style="color:#e07a5f;font-size:12px;margin-top:3px">💥 이미 터졌다(${d.bribeBusted.week}주차)</div>`;
-    h += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px">`;
-    Object.entries(S.PRESS_TIE).forEach(([k, T]) => {
-      const self = T.from === '개인';
-      const wallet = self ? ((d.personal||{}).cash||0) : d.money;
-      const no = T.cost > wallet;
-      h += `<button ${no?'disabled':''} onclick="idolPressTie('${k}')" style="flex:1 1 46%;min-width:130px;
-        padding:7px 9px;border-radius:8px;text-align:left;line-height:1.35;font-size:12px;
-        border:1px solid ${T.dirty?'rgba(224,122,95,0.5)':'rgba(212,175,55,0.45)'};
-        background:${T.dirty?'rgba(224,122,95,0.08)':'rgba(212,175,55,0.08)'};
-        color:#e8e6e3;opacity:${no?0.4:1}">
-        <b style="color:${T.dirty?'#e07a5f':'#d4af37'}">${T.label}</b>
-        <span style="opacity:0.75"> ${T.cost?`${Math.round(T.cost/10000).toLocaleString()}만(${T.from})`:'무료'}</span>
-        <br><span style="opacity:0.6;font-size:11px">${T.desc}${no?' — 돈 부족':''}</span></button>`;
-    });
-    h += `</div></div>`;
+    if (d.bribeBusted) h += `<div style="color:#e07a5f;font-size:12px;margin-top:3px">💥 ${d.bribeBusted.week}주차에 이미 터졌다</div>`;
+    h += `<div style="opacity:0.55;font-size:11.5px;margin-top:7px;line-height:1.6">
+      기자를 만나는 건 <b>대화로</b> 한다 — 밥을 사든, 단독을 주든, 봉투를 건네든 그 자리에서 정해진다.<br>
+      <span style="opacity:0.8">밥 한 끼 40만(회사) · 단독 제공 무료 · 매체 광고 집행 2,000만(회사)
+      · <span style="color:#e07a5f">촌지 300만(대표 개인 현금·발각 위험)</span></span></div>`;
+    h += `</div>`;
   }
   if (!ps.length) return h + `<div class="ib-group">📰 주간일보</div>
     <div class="ib-note">아직 발행된 호가 없다 — 한 주를 마감하면 그 주 지면이 나온다.</div>`;
@@ -11262,25 +11360,7 @@ function idolPressHtml() {
   });
   return h;
 }
-// 기자 로비 — 돈이 실제로 빠지고, 더러운 돈은 쌓인다
-function idolPressTie(kind) {
-  const d = gameState.idol; if (!d) return;
-  const S = IDOL_SIM, r = S.runPressTie(d, kind);
-  if (!r || !r.ok) { showStatToast((r && r.reason) || '불가', true); return; }
-  showStatToast(`🤝 ${r.label} — ${r.note}`);
-  closeIdolBoard();
-  try { autoSave(); } catch {}
-  d._skipSim = true;
-  SFX.play('choice');
-  inputMode = false; inputBar.style.display = 'none';
-  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
-  const txt = `[기자 접촉] 대표가 문지효 기자를 만나 **${r.label}**를 했다. 결과: ${r.note}. `
-    + (r.dirty ? `★이건 봉투다 — 장부에 남지 않는 대표 개인 돈이 나갔다. 문지효는 받되 표정이 좋지 않다. `
-               + `받는 쪽도 아는 일이고, 언젠가 새어 나갈 수 있다는 걸 둘 다 안다. 그 공기를 써라. `
-               : `문지효는 사실만 쓴다는 원칙을 굽히지 않되, 관계가 쌓인 만큼의 태도 변화는 보인다. `)
-    + `장면을 써라. sim은 싣지 마라(이미 반영됨).`;
-  window._genText = txt; handlePlayerInput(txt);
-}
+
 // 기사 대응 — 수치가 바로 움직이고, 그 장면이 이어진다
 function idolPressAct(issueId, idx) {
   const d = gameState.idol; if (!d) return;
