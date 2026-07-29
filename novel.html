@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v172</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v173</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2389,7 +2389,7 @@ const ENGINE_MOD_CG = `
     완성도는 90"이라고 말했으면 그 턴의 sim에 반드시 {"title":"PING","quality":90}을 담아라.
     이건 선택이 아니라 필수다.
 - 순수한 잡담·질문·감정 대화(수치가 안 변하는 것)에는 'sim'을 넣지 마라.
-- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅|광고", "brand": "광고 촬영·계약할 회사명", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여|기자|언론", "tie": "식사|단독|광고집행|촌지", "press": { "sec": "엔터|기업|사회", "size": "단신|기사|헤드라인", "tone": "good|bad|neutral", "head": "기사 제목", "lead": "리드문 한 줄", "body": "본문 두세 문장", "corp": "엮인 회사명(없으면 생략)", "market": false, "about": "us|world" }, "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
+- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅|광고", "brand": "광고 촬영·계약할 회사명", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여|기자|언론|인물", "tie": "식사|단독|광고집행|촌지", "person": { "name": "인물 이름", "org": "소속", "role": "역할", "note": "한 줄 특징" }, "press": { "sec": "엔터|기업|사회", "size": "단신|기사|헤드라인", "tone": "good|bad|neutral", "head": "기사 제목", "lead": "리드문 한 줄", "body": "본문 두세 문장", "corp": "엮인 회사명(없으면 생략)", "market": false, "about": "us|world" }, "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
   - 'concept' = 곡작업일 때만
@@ -2465,6 +2465,15 @@ const ENGINE_MOD_CG = `
 - **크기**(size)는 희망일 뿐이다. 앱이 우리 화제성으로 잘라낸다 — 무명이 "헤드라인"이라 해도 단신이 된다.
 - **수치는 절대 네가 정하지 마라.** tone(good/bad/neutral)만 정하면 팬·이미지·기업가치는 앱이 계산한다.
 - 아무 일 없는 주에 억지로 기사를 만들지 마라. **안 실리는 게 정상이다.**
+
+## ★★업계 사람 — 이름을 지어내지 마라
+- 대표가 만나는 업계 사람(광고 대행사 AE, 광고주 임원, PD, 투자자 등)은 **앱이 기억한다.**
+  한 번 만난 사람은 다음에 또 나오면 **대표를 안다.** 계약까지 한 사람을 초면처럼 쓰면 안 된다.
+- **광고 대행사 담당자는 stateLine의 「아직 안 만난 광고 대행사」 목록에서 고른다.** 이름을 지어내지 마라.
+  대행사가 여럿이고 담당자도 여럿이다 — 그래야 대표 칸 「명함」을 돌릴 이유가 생긴다.
+- 목록에 없는 새 인물이 서사상 필요하면(광고주 임원, 방송 관계자 등) 만들되,
+  **sim.person으로 반드시 등록하라.** 등록하지 않으면 그 사람은 다음 장면에서 사라진다.
+- 이미 만난 사람이 다시 나올 때도 sim.person:{name}만 실으면 만남 횟수가 올라간다.
 
 ## ★기자 문지효 — 커넥션과 로비
 - sim.target:"기자" + sim.tie로 대표가 기자와의 관계를 만든다: 식사(40만·회사) / 단독(무료·다음 기사 크기+1)
@@ -4612,6 +4621,37 @@ const IDOL_SIM = {
     return { sum:d.bribeBusted.sum, cnt:d.bribeBusted.n, eff:
       `이미지 −${im} · 기자 관계 파탄 · 전원 신뢰 −15 · 시장 지수 ${Math.round(S.mktOf(d))}${ex}` };
   },
+  // ═══ 👥 업계 사람들 ═══════════════════════════════════════════════════
+  AGENCIES: [
+    { org:'대홍기획',   ae:'박성철', tag:'대형 대행사 AE 팀장. 결론부터 말하고 숫자를 먼저 꺼낸다' },
+    { org:'제일애드',   ae:'윤태섭', tag:'브랜드 쪽 입김이 센 곳. 신인에게는 단가를 세게 깎는다' },
+    { org:'HS커뮤니케이션', ae:'노지현', tag:'여성 국장. 이미지·클린함을 먼저 본다' },
+    { org:'애드마인',   ae:'구본영', tag:'중소 전문. 물량은 적지만 말이 통한다' },
+    { org:'플레이온미디어', ae:'서정하', tag:'숏폼·디지털 특화. 챌린지 가능한 팀을 찾는다' },
+    { org:'그레이스토리', ae:'임현우', tag:'행사·프로모션 위주. 지방 행사를 많이 물어온다' },
+    { org:'퍼스트라인',  ae:'채도윤', tag:'신생 대행사. 젊고 무리한 제안도 들고 온다' },
+    { org:'유니온애드',  ae:'허정민', tag:'대기업 계열. 문턱이 높지만 붙으면 크다' },
+  ],
+  // 대화에서 나온 사람을 기록한다 — 기업(corps)은 자동 등록되는데 사람은 안 됐다. 그 구멍을 막는다.
+  notePerson(d, p){
+    if (!p || !p.name) return null;
+    d.people = d.people || [];
+    const nm = String(p.name).trim();
+    let x = d.people.find(v => v.name === nm);
+    if (!x) { x = { name:nm, org:p.org || '', role:p.role || '', met:0, first:d.week, note:'' };
+              d.people.push(x); }
+    x.met += 1; x.last = d.week;
+    if (p.org)  x.org  = p.org;
+    if (p.role) x.role = p.role;
+    if (p.note) x.note = String(p.note).slice(0, 60);
+    if (d.people.length > 24) d.people = d.people.slice(-24);
+    return x;
+  },
+  // 아직 안 만난 대행사 — 명함을 돌리면 여기서 한 명이 붙는다
+  freshAgency(d){
+    const met = new Set((d.people || []).map(p => p.org));
+    return IDOL_SIM.AGENCIES.filter(a => !met.has(a.org));
+  },
   // 이번 주 새로 성사된 계약 — makePress가 읽고 비운다(계약은 세상이 우리를 처음 알아보는 계기다)
   noteNewBrand(d, b){ d.newBrands = d.newBrands || []; d.newBrands.push(
     { name:b.name, weekly:b.weekly, weeks:b.weeks }); },
@@ -5184,6 +5224,20 @@ const IDOL_SIM = {
       const n = Math.round(rng(A.biz));
       d.biz = S.clamp((d.biz||0) + n, 0, 100);
       out.note = `업계에 명함을 돌렸다(업계인맥 +${n})`;
+      // ★명함을 돌릴수록 아는 사람이 늘어난다 — 그래야 돌릴 이유가 있다(2026-07-29 유저 지적)
+      const fresh = S.freshAgency(d);
+      if (fresh.length) {
+        const a = fresh[Math.floor(R() * fresh.length)];
+        S.notePerson(d, { name:a.ae, org:a.org, role:'광고 대행사 AE', note:a.tag });
+        out.note += ` · ★${a.org} ${a.ae}와 처음 만났다`;
+        out.newAE = a;
+      } else {
+        // 다 만났으면 이미 아는 사람과 관계가 깊어진다
+        const p = (d.people || []).filter(x => x.role === '광고 대행사 AE');
+        if (p.length) { const t = p[Math.floor(R() * p.length)];
+          S.notePerson(d, { name:t.name });
+          out.note += ` · ${t.org} ${t.name}와 ${t.met}번째`; }
+      }
     } else if (act === '방송국') {
       const n = Math.round(rng(A.net));
       d.network = S.clamp((d.network||0) + n, 0, 100);
@@ -5434,7 +5488,7 @@ const IDOL_SIM = {
       fac:{ practice:0, van:0 }, fandom:null, awards:[], press:[], corpNews:[], lastIssue:null, mkt:100,
       wkActs:[], newBrands:[], pressUs:null, pressMiss:null,   // 주간일보 — 그 주 실제 활동/신규 계약(v171)
       pressTie:0, pressFavor:null, bribe:{n:0,sum:0,heat:0}, bribeBusted:null,   // 기자 커넥션·로비(v171)
-      pressQueue:[], briefIdx:{},                                // 서사 기사 대기열 · 면별 단신 순번(v171)
+      pressQueue:[], briefIdx:{}, people:[],                     // 서사 기사 대기열 · 면별 단신 · 만난 사람(v173)
       album:{ title:null, quality:0, appeal:0, released:null, actWeek:0, tvThisWeek:0, jacket:false, mv:false, mvTier:0, rec:false, choreo:false, teaser:false },
       mem: Object.fromEntries(['seowoo','miyu','haram','soye','siah'].map(id => [id,
         { vocal: id==='miyu'?70:45, dance: id==='siah'?70:(id==='miyu'?60:45),
@@ -5643,6 +5697,10 @@ const IDOL_SIM = {
         if (sim.main) dt.fame += 0.6;      // 메인모델 = 얼굴이 크게 걸린다
         if (o.member) { const m=d.mem[o.member]; if(m) m.trust=S.clamp(m.trust+4,0,100); }
         dt.note = `${o.name} 계약${o.inkind?'(현물협찬)':''}${sim.main?'·메인모델':''}${o.member?`(${(IDOL_CHARACTERS[o.member]||{}).name} 개인)`:''}`;
+      } else if (t==='인물'){
+        const r2 = S.notePerson(d, sim.person || {});
+        if (!r2) return { ok:false, reason:'인물 정보 없음' };
+        dt.note = `${r2.name}${r2.org?`(${r2.org})`:''} — ${r2.met}번째 만남`;
       } else if (t==='언론'){
         const r2 = S.fileStory(d, sim.press || {});
         if (!r2) return { ok:false, reason:'기사 내용 없음' };
@@ -5788,6 +5846,8 @@ const IDOL_SIM = {
     d.light=Math.max(0,d.light+dt.light); d.core=Math.max(0,d.core+dt.core); d.sns+=dt.sns;
     if (sim.action !== '미팅') d.slots=Math.max(0,d.slots-1);   // 미팅(브랜드·영입·시설·개인재산)은 일정 칸을 안 쓴다
     // ※요일은 여기서 안 움직인다 — 편성된 일정을 소화하는 resolveOne()에서만 흐른다.
+    // ★장면에 나온 사람은 행동과 무관하게 기록한다(미팅이 아니어도 사람은 만난다)
+    if (sim.person && sim.person.name) S.notePerson(d, sim.person);
     // ★그 주에 실제로 한 일을 남긴다 — 주간일보가 이걸 보고 기사를 쓴다(2026-07-29 유저 지적:
     //   "버스킹한 게 듣보 아이돌 기사로 왜 실리는지 모르겠다"). 기록이 없으면 안 한 일이 기사가 된다.
     if (['연습','콘텐츠','음방','행사','광고'].indexOf(sim.action) >= 0) {
@@ -6083,6 +6143,30 @@ const IDOL_SIM = {
 `;
     }
     // ★주간일보 최신호 — 실장·멤버가 이 얘기를 꺼내야 세계가 살아 있는 느낌이 난다
+    // ★★만난 사람 — 없으면 AI가 매번 새 이름을 지어내고, 계약한 사람도 초면처럼 쓴다(2026-07-29 유저 지적)
+    {
+      const pp = d.people || [];
+      if (pp.length) {
+        s += `\n## 👥 대표가 이미 만난 업계 사람들 (**초면처럼 쓰지 마라**)\n`;
+        pp.slice(-12).forEach(p => {
+          s += `  · ${p.name}${p.org ? `(${p.org}` + (p.role ? ` ${p.role}` : '') + `)` : ''}`
+             + ` — ${p.met}회 만남, ${p.first}주차 첫 대면`
+             + (p.note ? ` · ${p.note}` : '') + `\n`;
+        });
+        s += `  ★이 사람들은 대표를 안다. 다시 등장하면 **지난 만남을 기억한 채로** 말하게 하라.\n`;
+      }
+      const fr = S.freshAgency(d);
+      if (fr.length) {
+        s += `  아직 안 만난 광고 대행사: ` + fr.map(a => `${a.org}(${a.ae})`).join(', ') + `\n`;
+        s += `    ★새 대행사 사람을 등장시킬 땐 **이 목록에서 골라라**(이름을 지어내지 마라).\n`;
+        s += `    대표 칸 「명함」을 쓰면 여기서 한 명이 자동으로 붙는다.\n`;
+      } else if ((d.people||[]).length) {
+        s += `  ★대행사는 다 만났다 — 새 이름을 지어내지 말고 위 사람들과의 관계를 깊게 하라.\n`;
+      }
+      s += `  ★장면에서 **새 인물**(광고주 임원, PD, 투자자 등)이 처음 나오면\n`;
+      s += `    sim에 { "person": { "name":"이름", "org":"소속", "role":"역할", "note":"한 줄 특징" } }를 실어라\n`;
+      s += `    — 그래야 다음에 또 만났을 때 그 사람으로 기억된다. 이미 목록에 있으면 이름만 실어라.\n`;
+    }
     if (d.press && d.press[0]) {
       const P0 = d.press[0], buzz = Math.round(S.buzzOf(d));
       const gate = Math.max(20, S.PRESS_GATE - Math.round((d.pressTie||0)*0.25));
@@ -10909,7 +10993,7 @@ function updateSceneBanner() {
 function migrateIdolSave(d) {
   if (!d) return d;
   const base = IDOL_SIM.init();
-  ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv','press','corpNews','wkActs','newBrands','pressQueue'].forEach(k => {
+  ['plan','ceoPlan','booked','invites','staff','brands','offers','pending','awards','recentEv','press','corpNews','wkActs','newBrands','pressQueue','people'].forEach(k => {
     if (!Array.isArray(d[k])) d[k] = Array.isArray(base[k]) ? base[k].slice() : [];
   });
   if (d.personal && !d.personal.stocks) d.personal.stocks = {};   // 주식 승계(v161)
@@ -10920,6 +11004,19 @@ function migrateIdolSave(d) {
     .map(p => Object.assign({}, p, { items: (p.items || []).filter(x => x && x.by && x.sec) }))
     .filter(p => p.items.length);
   if (!d.briefIdx) d.briefIdx = {};
+  // ★기존 세이브 복원 — 이미 업계 사람을 만난 흔적이 있으면 첫 대행사를 만난 것으로 시드한다.
+  //   (2026-07-29 유저 보고: 계약까지 한 박성철이 매번 초면 취급됐다. 세이브에 그 기록이 없었다.)
+  //   흔적 = 광고 계약이 있거나 · 업계인맥이 초기값(5)보다 올랐거나 · 대표 칸에 「명함」을 넣었던 적이 있다.
+  if (!Array.isArray(d.people)) d.people = [];
+  if (!d.people.length) {
+    const trace = (d.brands || []).length > 0 || (d.biz || 0) > 5
+               || (d.ceoPlan || []).indexOf('명함') >= 0;
+    if (trace) {
+      const a0 = IDOL_SIM.AGENCIES[0];
+      d.people.push({ name:a0.ae, org:a0.org, role:'광고 대행사 AE',
+                      met:1, first:Math.max(1, (d.week || 1) - 1), last:d.week || 1, note:a0.tag });
+    }
+  }
   if (typeof d.network !== 'number') d.network = base.network;
   if (typeof d.biz !== 'number') d.biz = base.biz;
   if (typeof d.day !== 'number') d.day = 0;
