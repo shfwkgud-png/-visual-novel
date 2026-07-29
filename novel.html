@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v175</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v177</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4560,11 +4560,17 @@ const IDOL_SIM = {
     }
     if (p.market) { S.mktMove(d, bad ? -6 : 6); eff.push(`시장 지수 ${Math.round(S.mktOf(d))}`); }
     if (W >= 3 || bad) d.pressCall = { why: bad ? 'bad' : 'big', head:p.head };
-    d.pressQueue = d.pressQueue || [];
-    d.pressQueue.push({ sec:SEC, w:W, size:['','단신','기사','헤드라인'][W],
+    // ★대기열에 쌓아두지 않는다 — 기사가 났다면 지금 지면에서 보여야 한다
+    S.issueOf(d).items.push({ sec:SEC, w:W, size:['','단신','기사','헤드라인'][W], breaking:true,
       head:p.head, lead:p.lead || '', ai:true,
       body:p.body || '자세한 경위는 확인되지 않았다. 소속사는 별도의 입장을 내지 않았다.',
-      by:(S.PRESS_DESK[SEC].by[Math.floor(R() * S.PRESS_DESK[SEC].by.length)]),
+      // ★★우리 얘기는 **문지효**가 쓴다(2026-07-29 유저 지적: "로비하는 게 정해진 인물이
+      //   문지효인데 오세빈은 누구며"). 면별 기자 풀에서 무작위로 뽑던 게 잘못이었다.
+      //   대표가 관계를 쌓고 봉투를 건넨 상대가 문지효인데, 정작 기사에 다른 이름이 찍히면 앞뒤가 안 맞는다.
+      //   세계 쪽 사건(about:'world')만 해당 면 기자가 쓴다 — 우리와 무관한 일이니까.
+      by:(p.about === 'world'
+          ? S.PRESS_DESK[SEC].by[Math.floor(R() * S.PRESS_DESK[SEC].by.length)]
+          : '문지효'),
       eff: eff.join(' · ') });
     return { ok:true, size:['','단신','기사','헤드라인'][W], eff:eff.join(' · ') };
   },
@@ -4669,6 +4675,22 @@ const IDOL_SIM = {
     const S = IDOL_SIM, rank = (d.chart && d.chart.rank) || null;
     const ch = rank ? Math.pow((101 - Math.min(100, rank)) / 100, 2) * 40 : 0;
     return d.fame * 0.8 + ch + Math.min(20, d.core / 500) + (S.active(d) ? 10 : 0);
+  },
+  // ★★그 주 호를 얻거나 만든다(2026-07-29 유저 지적: "기자가 기사 써주기로 약속했고 스토리에선
+  //   그게 풀려 나오는데 정작 일보에 없는 이유는?").
+  //   원인: 지면이 **주간 마감 때만** 찍혔다. 월요일에 기사가 났다고 해놓고 일요일까지 못 본다.
+  //   → 서사에서 기사가 나오면 **그 주 호에 즉시** 붙이고, 주간 마감 기사는 같은 호에 합친다.
+  issueOf(d){
+    const S = IDOL_SIM;
+    d.press = d.press || [];
+    let p = d.press[0];
+    if (!p || p.week !== d.week) {
+      const c = S.calOf(d.week);
+      p = { week:d.week, m:c.m, wk:c.wk, items:[], miss:null };
+      d.press.unshift(p);
+      if (d.press.length > 10) d.press.length = 10;
+    }
+    return p;
   },
   makePress(d){
     const S = IDOL_SIM, R = Math.random, items = [];
@@ -4836,11 +4858,7 @@ const IDOL_SIM = {
       }
     }
 
-    // ⑥ ★서사에서 나온 기사(AI가 sim.press로 올린 것) — 시스템이 못 잡는 세계의 사건들
-    (d.pressQueue || []).forEach(q => items.push(q));
-    d.pressQueue = [];
-
-    // ⑦ 계약 소식(endWeek이 모아둔 것)
+    // ⑥ 계약 소식(endWeek이 모아둔 것)
     (d.corpNews || []).forEach(t => push({ sec:'기업', head:t,
       lead:'광고주와 소속사 사이에 오간 내용이다.',
       body:'모델 계약은 인지도와 이미지, 그리고 광고주의 기업가치에 따라 조건이 정해진다.' }));
@@ -4856,10 +4874,10 @@ const IDOL_SIM = {
       push(Object.assign({ sec, brief:true }, pool[i]));
     });
 
-    d.press = (d.press || []);
-    d.press.unshift({ week:d.week, m:S.monthOf(d.week), wk:S.weekInMonth(d.week),
-                      items, miss:d.pressMiss || null });
-    if (d.press.length > 10) d.press.length = 10;
+    // ★이미 그 주에 서사 기사(sim.press)가 실려 있으면 **같은 호에 합친다** — 호를 새로 만들지 않는다
+    const issue = S.issueOf(d);
+    issue.items = issue.items.concat(items);
+    issue.miss = d.pressMiss || null;
     d.wkActs = []; d.newBrands = [];        // 그 주 기록은 지면에 옮겼으니 비운다
     return items;
   },
@@ -5058,8 +5076,8 @@ const IDOL_SIM = {
   //   ★요일은 **편성된 일정을 몇 건 소화했는가(wkIdx)** 에서만 나온다.
   //   대화·AI가 뱉은 sim으로는 절대 안 흐른다(2026-07-26 유저 우려: "대화하다 하루가 가면 문제").
   dateLine(d){
-    const S = IDOL_SIM, yw = S.yearWeek(d.week || 1);
-    const m = Math.floor((yw - 1) / 4) + 1, wk = ((yw - 1) % 4) + 1;
+    const S = IDOL_SIM, c = S.calOf(d.week);
+    const m = c.m, wk = c.wk;
     //   ★주 안의 요일은 유저가 움직일 수 있다(연출로 하루 넘기기). 주차 표기만 앱이 지킨다.
     const di = S.dowOf(d);
     const tod = (typeof d.dowTime === 'string' && d.dowTime)
@@ -5067,6 +5085,9 @@ const IDOL_SIM = {
       : (S.DOW_LABEL[Math.min(3, d.wkIdx || 0)].split(' ')[1] || '');
     return `[${m}월 ${wk}주] ${S.DOW[di]}요일${tod ? ' ' + tod : ''}`;
   },
+  // ★표시용 달력 — dateLine()과 같은 기준(yearWeek). 지면·UI에 찍히는 날짜는 전부 이걸 쓴다.
+  calOf(w){ const yw = IDOL_SIM.yearWeek(w || 1);
+            return { m: Math.floor((yw - 1) / 4) + 1, wk: ((yw - 1) % 4) + 1 }; },
   monthOf(w){ return Math.floor((w - 1) / 4) + 1; },
   weekInMonth(w){ return ((w - 1) % 4) + 1; },
   // ───── 대표 전용 칸 (주 1칸) ─────
@@ -6037,8 +6058,11 @@ const IDOL_SIM = {
     }
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
     if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; d.album.jacket=false; d.album.mv=false; d.album.mvTier=0; d.album.rec=false; d.album.choreo=false; d.album.teaser=false; }
-    try { S.makePress(d); } catch {}          // ★기사 생성은 그 주 수치가 다 정해진 뒤
-    d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; d.day=0; d.wkIdx=0; d.dow=0; d.dowTime=''; },   // ★새 주는 월요일부터
+    d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; d.day=0; d.wkIdx=0; d.dow=0; d.dowTime=''; // ★새 주는 월요일부터
+    // ★★지면은 **월요일 아침에 나온다**(2026-07-29 유저 지적: "신문은 당연히 월요일 아침이 노멀하지 않냐").
+    //   그래서 주차를 넘긴 **뒤에** 찍는다 — 이번 주 월요일 호에 **지난주 결산**이 실리는 구조다.
+    //   (이전엔 d.week++ 앞에서 찍어 일요일 마감 순간에 튀어나왔다. 금요일에 주간 생략을 하면 그 자리에서 발행됐다.)
+    try { S.makePress(d); } catch {} },
   // AI 주입용 상태 요약
   stateLine(d){
     if(!d) return '';
@@ -6180,6 +6204,21 @@ const IDOL_SIM = {
       });
       if (P0.miss) s += `  ★이번 주 우리 얘기는 **한 줄도 안 실렸다**(「${P0.miss.head}」는 기삿거리였지만 화제성 미달).\n`
                       + `    실장이 이걸 신경 쓴다 — "아직 아무도 우리를 안 본다"는 공기를 장면에 깔아라.\n`;
+      // ★★약속한 기사가 나가는 주 — 장면에서 "기사가 났다"고만 쓰고 sim.press를 안 실으면
+      //   일보엔 아무것도 안 올라간다(2026-07-29 유저 지적). 그 구멍을 여기서 막는다.
+      if (d.pressFavor && d.week - d.pressFavor.week <= 1) {
+        s += `
+★★**이번 주는 문지효 기자와 약속한 기사가 나가는 주다.**
+`;
+        s += `  장면에서 기사가 실렸다고 쓸 거면 **반드시 sim에 press를 함께 실어라** —
+`;
+        s += `  { "target":"언론", "press":{ "sec":"엔터", "size":"기사", "tone":"good",
+`;
+        s += `    "head":"실제 기사 제목", "lead":"리드 한 줄", "body":"본문 두세 문장" } }
+`;
+        s += `  ★안 실으면 대표가 일보를 열었을 때 그 기사가 **없다.** 말만 하고 지면에 없으면 거짓말이 된다.
+`;
+      }
       const tie = Math.round(d.pressTie || 0);
       s += `  ★기자를 만나는 건 **대화로** 한다(버튼 없음). 대표가 문지효를 만나 아래 중 하나를 하면\n`;
       s += `    sim에 { "target":"기자", "tie":"식사|단독|광고집행|촌지" }를 실어라 — 일정 칸을 쓰지 않는다.\n`;
@@ -11007,6 +11046,12 @@ function migrateIdolSave(d) {
   // ★기존 세이브 복원 — 이미 업계 사람을 만난 흔적이 있으면 첫 대행사를 만난 것으로 시드한다.
   //   (2026-07-29 유저 보고: 계약까지 한 박성철이 매번 초면 취급됐다. 세이브에 그 기록이 없었다.)
   //   흔적 = 광고 계약이 있거나 · 업계인맥이 초기값(5)보다 올랐거나 · 대표 칸에 「명함」을 넣었던 적이 있다.
+  // ★이미 발행된 기사의 기자명 교정(2026-07-29) — 우리 팀 기사·속보는 문지효가 쓴 것이어야 한다.
+  //   v176 이전엔 면별 기자 풀에서 무작위로 뽑아 오세빈·강태준 등이 우리 기사에 찍혔다.
+  //   ★로비 발각 기사(bust)는 예외 — 우리를 취재하던 기자가 아니라 사회부가 파는 게 맞다.
+  (d.press || []).forEach(p => (p.items || []).forEach(it => {
+    if (it && (it.us || it.breaking) && !it.bust && it.by !== '문지효') it.by = '문지효';
+  }));
   if (!Array.isArray(d.people)) d.people = [];
   if (!d.people.length) {
     const trace = (d.brands || []).length > 0 || (d.biz || 0) > 5
@@ -11386,7 +11431,7 @@ function idolPressHtml() {
     h += `</div>`;
   }
   if (!ps.length) return h + `<div class="ib-group">📰 주간일보</div>
-    <div class="ib-note">아직 발행된 호가 없다 — 한 주를 마감하면 그 주 지면이 나온다.</div>`;
+    <div class="ib-note">아직 발행된 호가 없다 — 주간일보는 <b>월요일 아침</b>에 나온다(지난주 결산).</div>`;
 
   ps.forEach((p, i) => {
     const latest = (i === 0);
@@ -11415,6 +11460,8 @@ function idolPressHtml() {
         const fs = W >= 3 ? 17 : W >= 2 ? 15 : 13.5;
         const fw = W >= 2 ? 700 : 600;
         h += `<div style="padding:9px 0;border-bottom:1px dashed rgba(232,230,227,0.09)">`;
+        if (it.breaking) h += `<span style="font-size:10px;color:#e07a5f;border:1px solid rgba(224,122,95,0.5);
+          border-radius:3px;padding:1px 4px;margin-right:5px">속보</span>`;
         if (it.us) h += `<span style="font-size:10px;color:#d4af37;border:1px solid rgba(212,175,55,0.45);
           border-radius:3px;padding:1px 4px;margin-right:5px">우리 팀</span>`;
         if (it.from) h += `<span style="font-size:10px;opacity:0.5;border:1px solid rgba(232,230,227,0.2);
