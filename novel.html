@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v166</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v167</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -5541,6 +5541,8 @@ const IDOL_SIM = {
   // AI 주입용 상태 요약
   stateLine(d){
     if(!d) return '';
+    const S = IDOL_SIM;   // ★v156에서 추가한 블록들이 S를 쓰는데 선언이 없어 새 게임 시작 시
+                          //   "Can't find variable: S"로 죽었다(2026-07-29 유저 보고).
     const won = n => (n>=100000000? (n/100000000).toFixed(2)+'억' : Math.round(n/10000)+'만');
     const warn = Object.entries(d.mem).filter(([,m])=>m.cond<30||m.mind<30)
       .map(([i,m])=>`${(IDOL_CHARACTERS[i]||{}).name||i}(${m.cond<30?'탈진':'멘탈위험'})`);
