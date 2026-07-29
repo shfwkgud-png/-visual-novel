@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v174</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v175</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11644,18 +11644,33 @@ function idolAskHtml() {
   const a = window._ibAsk, won = n => Math.round(n / 10000).toLocaleString() + '만';
   const uniq = [...new Set([0.25, 0.5, 0.75, 1].map(r => Math.round(a.max * r)))].filter(v => v > 0);
   return `<div class="ib-ask"><div class="q">${a.title}</div><div class="sub">${a.sub}</div>
-    <div class="ib-chips">${uniq.map(v => `<button class="ib-chip${v === a.val ? ' sel' : ''}" onclick="idolAskSet(${v})">${won(v)}${v === a.max ? ' (전액)' : ''}</button>`).join('')}</div>
-    <div class="ib-chips"><input type="number" inputmode="numeric" placeholder="직접 입력(만원)" value="${Math.round(a.val / 10000)}"
-      oninput="idolAskSet(this.value*10000)" style="flex:1;min-width:120px;padding:7px 10px;border-radius:9px;
+    <div class="ib-chips">${uniq.map(v => `<button class="ib-chip${v === a.val ? ' sel' : ''}" data-v="${v}" onclick="idolAskSet(${v})">${won(v)}${v === a.max ? ' (전액)' : ''}</button>`).join('')}</div>
+    <div class="ib-chips"><input type="number" inputmode="numeric" placeholder="직접 입력(만원)" value="${a.val ? Math.round(a.val / 10000) : ''}"
+      oninput="idolAskSet(this.value*10000, true)" style="flex:1;min-width:120px;padding:7px 10px;border-radius:9px;
       background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:#e8e6e3;font-family:inherit;font-size:12px;"></div>
-    <div class="row"><button onclick="idolAskConfirm()">${won(a.val)} 확정</button>
+    <div class="row"><button class="ib-ok" onclick="idolAskConfirm()">${won(a.val)} 확정</button>
       <button class="ghost" onclick="idolAskCancel()">취소</button></div></div>`;
 }
-function idolAskSet(v) {
+// ★★입력할 때 블록을 다시 그리면 안 된다(2026-07-29 유저 보고: "숫자 하나 치면 키보드가 내려감").
+//   outerHTML 대입은 <input> 노드를 DOM에서 들어내고 새로 만든다 → 포커스가 날아가고
+//   모바일 키보드가 닫힌다. 한 글자마다 반복된다.
+//   → 필요한 것만 갱신한다: 칩 선택 표시 + 확정 버튼 라벨. 입력창은 건드리지 않는다.
+//   fromInput=true(사용자가 타이핑 중)면 input.value도 손대지 않는다 — 커서·입력 중인 값이 튄다.
+function idolAskSet(v, fromInput) {
   const a = window._ibAsk; if (!a) return;
-  a.val = Math.min(Math.max(0, Math.round(v)), a.max);
+  a.val = Math.min(Math.max(0, Math.round(v || 0)), a.max);
   const box = document.querySelector('#idolBoard .ib-ask');
-  if (box) box.outerHTML = idolAskHtml();
+  if (!box) return;
+  const won = n => Math.round(n / 10000).toLocaleString() + '만';
+  const ok = box.querySelector('.ib-ok');
+  if (ok) ok.textContent = `${won(a.val)} 확정`;
+  box.querySelectorAll('.ib-chip').forEach(c => {
+    c.classList.toggle('sel', Number(c.dataset.v) === a.val);
+  });
+  if (!fromInput) {                                  // 칩을 눌렀을 때만 입력창에 반영
+    const inp = box.querySelector('input');
+    if (inp) inp.value = a.val ? Math.round(a.val / 10000) : '';
+  }
 }
 function idolAskCancel() { window._ibAsk = null; openIdolBoard(); }
 function idolAskConfirm() {
