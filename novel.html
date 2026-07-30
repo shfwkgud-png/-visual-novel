@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v186</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v187</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -5292,7 +5292,7 @@ const IDOL_SIM = {
     // ★★편성은 그 주 **월~일 7일치**를 짜는 일이다 → 확정하면 월요일부터 시작한다.
     //   전엔 wkIdx를 그대로 둬서, 금요일에 서 있는 상태로 편성하면 월~목이 그 자리에서
     //   날아갔다(2026-07-31 유저 화면: 편성표는 비었는데 배너는 금요일).
-    d.wkIdx = 0; d.dow = 0; d.dowTime = ''; d.weekDone = false;
+    d.wkIdx = 0; d.dowTime = ''; d.weekDone = false;
     (d.booked||[]).forEach(b => { if (b.week === d.week) b.placed = false; });
     IDOL_SIM.applyBooked(d); },
   // 그 주 7칸 — 인덱스가 곧 요일(0=월 … 6=일). filter(Boolean)을 쓰지 않는다:
@@ -5349,7 +5349,6 @@ const IDOL_SIM = {
     //   하루를 그냥 넘기고 싶으면 보드의 ⏭ 버튼이 그 자리다.
     return { moved:0, matched:false, offPlan: real(ps[i0]) ? ps[i0].name : null };
   },
-  weekPlan(d){ return IDOL_SIM.weekPlans(d)[0] || null; },   // 구 호출부 호환(쓰지 마라 — 항상 월요일 칸이다)
   // 그 주 실행: accompany=true(현장 동행) / false(회사에 남아 곡작업·사무)
   ceoPlanOf(d){ return (d.ceoPlan || [])[0] || null; },   // 주 단위 편성 → 그 주 대표 칸 하나
   // 대표 칸 실행 — 그 주 대표가 한 일
@@ -5500,12 +5499,15 @@ const IDOL_SIM = {
   },
   resolveWeek(d, accIdx){
     const S = IDOL_SIM, ps = S.weekPlans(d);
-    if (!ps.length) return { ok:false, reason:'이번 주 일정이 편성되지 않았다(월초 회의에서 편성)' };
+    // ★`ps.length`는 **항상 7**이다(빈 칸 포함) — 미편성 판정에 쓸 수 없다. needPlan을 본다.
+    if (S.needPlan(d)) return { ok:false, reason:'이번 주 일정이 편성되지 않았다(월요일 아침에 편성)' };
     if (d.weekDone) return { ok:false, reason:'이번 주는 이미 진행했다' };
     const notes = [], total = { light:0, core:0, money:0, sns:0 };
     let anyOk = false;
     ps.forEach((p, idx) => {
       if (idx < (d.wkIdx || 0)) return;                  // 이미 소화한 칸은 건너뛴다
+      // ★빈 칸은 null이다(7칸 전환) — 그냥 쉬는 날로 넘긴다. 예전엔 p.fixed에서 터졌다.
+      if (!p || !p.sim) { S.apply(d, { action:'생략' }); return; }
       const r = S.apply(d, p.fixed ? { ...p.sim, booked: true } : p.sim);   // 🔒섭외 블록은 게이트를 넘는다
       if (!r || !r.ok) { notes.push(`${p.name} 무산(${(r&&r.reason)||'실패'})`); return; }
       anyOk = true;
@@ -5516,7 +5518,7 @@ const IDOL_SIM = {
         d.light += addL; d.core += addC;
         r.delta.light += addL; r.delta.core += addC;
       }
-      notes.push(`${p.name}${acc ? '(동행)' : ''}${r.delta.note ? ' ' + r.delta.note : ''}`);
+      if (p.sim.action !== '생략') notes.push(`${p.name}${acc ? '(동행)' : ''}${r.delta.note ? ' ' + r.delta.note : ''}`);
       total.light += r.delta.light; total.core += r.delta.core;
       total.money += r.delta.money; total.sns += r.delta.sns;
     });
@@ -5674,8 +5676,8 @@ const IDOL_SIM = {
     (d.pending = d.pending || []).push({ week, amount: Math.round(amount), memo });
   },
   init() {
-    return { week:1, slots:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
-      plan:[], planWeek:0, ceoPlan:[], weekDone:false, network:5, biz:5, day:0, wkIdx:0, dow:0, dowTime:'', booked:[],
+    return { week:1, money:40000000, fame:12, loan:800000000, loanWeek:52,
+      plan:[], planWeek:0, ceoPlan:[], weekDone:false, network:5, biz:5, wkIdx:0, dowTime:'', booked:[],
       personal:{ cash:15000000, own:{ home:true, car:true }, loans:[], stocks:{} },
       core:300, light:2000, sns:0, image:70, brands:[], offers:[], corps:null, invested:false, staff:['manager'],
       streams:0, chart:{ rank:null, prev:null, peak:null, weeks:0, surge:0 }, albumSold:0, pending:[], ending:null,
@@ -6121,7 +6123,6 @@ const IDOL_SIM = {
     }
     d.money+=dt.money; d.fame=S.clamp(d.fame+dt.fame,0,100);
     d.light=Math.max(0,d.light+dt.light); d.core=Math.max(0,d.core+dt.core); d.sns+=dt.sns;
-    if (sim.action !== '미팅') d.slots=Math.max(0,d.slots-1);   // 미팅(브랜드·영입·시설·개인재산)은 일정 칸을 안 쓴다
     // ※요일은 여기서 안 움직인다 — 편성된 일정을 소화하는 resolveOne()에서만 흐른다.
     // ★장면에 나온 사람은 행동과 무관하게 기록한다(미팅이 아니어도 사람은 만난다)
     if (sim.person && sim.person.name) S.notePerson(d, sim.person);
@@ -6324,7 +6325,7 @@ const IDOL_SIM = {
     }
     if(d.album.released!==null && d.album.actWeek<6) d.album.actWeek+=1;
     if(d.album.actWeek>4){ d.album.released=null; d.album.actWeek=0; d.album.quality=0; d.album.appeal=0; d.album.title=null; d.album.jacket=false; d.album.mv=false; d.album.mvTier=0; d.album.rec=false; d.album.choreo=false; d.album.teaser=false; }
-    d.album.tvThisWeek=0; d.week+=1; d.slots=1; d.weekDone=false; d.day=0; d.wkIdx=0; d.dow=0; d.dowTime='';
+    d.album.tvThisWeek=0; d.week+=1; d.weekDone=false; d.wkIdx=0; d.dowTime='';
     d.wkPrac=0; d.wkKind={}; d.wkEvt=0;          // ★주간 반복 카운터 초기화(연습·콘텐츠·행사)
     // ★★지면은 **월요일 아침에 나온다**(2026-07-29 유저 지적: "신문은 당연히 월요일 아침이 노멀하지 않냐").
     //   그래서 주차를 넘긴 **뒤에** 찍는다 — 이번 주 월요일 호에 **지난주 결산**이 실리는 구조다.
@@ -6418,8 +6419,9 @@ const IDOL_SIM = {
         // ★편성표를 AI가 바꾸지 못하게 못 박는다(2026-07-30 유저 지적: 뮤비촬영을 넣었는데 저예산 뮤비로 나갔다)
         s += `  ★★일정의 **종류를 바꾸지 마라**. 위 sim을 글자 그대로 실어라 — 돈이 부족해 보여도\n`;
         s += `    더 싼 것으로 갈아타지 마라(예: 「뮤비촬영」을 「저예산 뮤비」로 바꾸는 것). 돈이 없으면 앱이 거절한다.\n`;
-      } else if (S.realPlanCount(d) && _i >= _ps.length) {
-        s += `★이번 주 일정은 다 소화했다 — 주간 마감을 하도록 장면을 정리하라(대표 칸: ${S.ceoPlanOf(d) || '동행'}).\n`;
+      } else if (_i >= _ps.length) {
+        // ★realPlanCount 조건을 걸면 **7일을 전부 비워둔 주**엔 마감 안내가 안 나가 진행이 막혔다
+        s += `★이번 주는 일요일까지 다 지났다 — 주간 마감을 하도록 장면을 정리하라(대표 칸: ${S.ceoPlanOf(d) || '동행'}).\n`;
       } else {
         s += `★이번 주는 남은 일정이 없다 — 비워둔 날들이다. 쉬거나 관계 장면으로 풀고 주간 마감으로 넘겨라.
 `;
@@ -10862,7 +10864,9 @@ function idolPlanChoice() {
       const p = IDOL_SIM.placeOf(np.sim);
       return `⏵ 「${np.name}」 시작${p ? ' — ' + p.loc : ''}`;
     }
-    if (!d.weekDone && IDOL_SIM.weekPlans(d).length) return '⏵ 주간 마감 — 다음 주로';
+    // ★`weekPlans().length`는 항상 7이라 조건이 되지 못한다 — 편성 여부와 진행도로 판단한다
+    if (IDOL_SIM.needPlan(d)) return '⏵ 이번 주 일정 편성';
+    if (!d.weekDone && (d.wkIdx || 0) >= IDOL_SIM.PLAN_PER_WEEK) return '⏵ 주간 마감 — 다음 주로';
     return null;
   } catch { return null; }
 }
@@ -11421,9 +11425,9 @@ function migrateIdolSave(d) {
   }
   if (typeof d.network !== 'number') d.network = base.network;
   if (typeof d.biz !== 'number') d.biz = base.biz;
-  if (typeof d.day !== 'number') d.day = 0;
   if (typeof d.wkIdx !== 'number') d.wkIdx = 0;
-  if (typeof d.dow !== 'number') d.dow = 0;
+  // ★죽은 필드는 지운다 — 무엇이 요일을 정하는지 헷갈리게 했다(요일 = wkIdx 하나뿐)
+  delete d.slots; delete d.day; delete d.dow;
   delete d.lastReject;
   if (typeof d.dowTime !== 'string') d.dowTime = '';
   delete d.dayLabel;
@@ -11980,9 +11984,7 @@ function idolShopHtml() {
 function buyIdolAsset(k) {
   const d = gameState.idol, F = IDOL_SIM.FACILITY[k];
   closeIdolBoard();
-  const before = d.slots;
-  const r = runIdolSim({ action: '미팅', target: '시설', facility: k });
-  d.slots = before;
+  const r = runIdolSim({ action: '미팅', target: '시설', facility: k });   // 미팅은 하루를 쓰지 않는다(SLOT_ACTS 밖)
   if (!r || !r.ok) return;
   d._skipSim = true;
   try { if (lastBg) setBg(lastBg); } catch {}      // 산 즉시 배경 갱신
@@ -12153,9 +12155,7 @@ function idolAskConfirm() {
   else if (a.asset) sim.asset = a.asset;
   window._ibAsk = null;
   closeIdolBoard();
-  const before = d.slots;
-  const r = runIdolSim(sim);
-  d.slots = before;                                  // 개인 재산은 일정 칸을 쓰지 않는다
+  const r = runIdolSim(sim);                         // 개인 재산은 일정 칸을 쓰지 않는다(SLOT_ACTS 밖)
   if (!r || !r.ok) return;
   // ★★주식 매매는 **장면을 만들지 않는다**(2026-07-29 유저 지시: "걍 아무것도 출력 안 되고
   //   안에서만 움직이면 안 됨?"). 대표 개인 계좌에서 조용히 오가는 돈이고, 매수·매도마다
@@ -12440,10 +12440,8 @@ function pickIdolAction(i) {
     else if (a === '시설') sim.facility = b;
     else if (a === '고용' || a === '해고') sim.staff = b;
   } else if (act === '연습') sim.intensity = 2;
-  const before = d.slots;
-  const r = runIdolSim(sim);
+  const r = runIdolSim(sim);                     // 미팅은 일정 칸을 소모하지 않는다(SLOT_ACTS 밖)
   if (!r || !r.ok) return;
-  if (act === '미팅') d.slots = before;          // 미팅은 일정 칸을 소모하지 않는다
   d._skipSim = true;
   SFX.play('choice');
   inputMode = false; inputBar.style.display = 'none';
@@ -12591,9 +12589,12 @@ function runWeekPlan(accIdx) {
   d._skipSim = true;
   const jong = w => { const c = String(w).charCodeAt(String(w).length-1) - 0xAC00;
     return (c >= 0 && c <= 11171) ? (c % 28) > 0 : false; };
-  const names = ps.length > 1
-    ? `「${ps[0].name}」${jong(ps[0].name) ? '과' : '와'} 「${ps[1].name}」`
-    : `「${ps[0].name}」`;
+  // ★빈 칸(null)이 섞이므로 **실제 일정만** 골라 말한다. 예전엔 ps[0]이 null이면 터졌다.
+  const done = ps.filter(p => p && p.sim && p.sim.action !== '생략').map(p => p.name);
+  const names = !done.length ? '이렇다 할 일정 없이'
+    : done.length === 1 ? `「${done[0]}」`
+    : done.slice(0, -1).map(n => `「${n}」`).join(', ')
+      + `${jong(done[done.length - 2]) ? '과' : '와'} 「${done[done.length - 1]}」`;
   const ceoAct = IDOL_SIM.ceoPlanOf(d) || (accIdx === 2 ? '동행' : '곡작업');
   const txt = ceoAct === '동행' ? `이번 주 ${names}. 나도 현장에 붙는다.`
             : `이번 주 ${names}. 나는 ${ceoAct === '곡작업' ? '작업실에 틀어박힌다' : ceoAct === '명함' ? '업계에 명함을 돌리러 다닌다' : ceoAct === '방송국' ? '방송국을 돈다' : '투자처를 만나러 간다'}.`;
