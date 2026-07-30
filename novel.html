@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v185</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v186</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -5289,6 +5289,10 @@ const IDOL_SIM = {
   //   이미 그 주를 다 소화해 칸이 비는 경우도 있다 — 그때 편성을 다시 요구하면 진행이 막힌다.
   needPlan(d){ return d.planWeek !== d.week; },
   setPlan(d, arr){ d.plan = (arr || []).slice(0, IDOL_SIM.PLAN_PER_WEEK); d.planWeek = d.week;
+    // ★★편성은 그 주 **월~일 7일치**를 짜는 일이다 → 확정하면 월요일부터 시작한다.
+    //   전엔 wkIdx를 그대로 둬서, 금요일에 서 있는 상태로 편성하면 월~목이 그 자리에서
+    //   날아갔다(2026-07-31 유저 화면: 편성표는 비었는데 배너는 금요일).
+    d.wkIdx = 0; d.dow = 0; d.dowTime = ''; d.weekDone = false;
     (d.booked||[]).forEach(b => { if (b.week === d.week) b.placed = false; });
     IDOL_SIM.applyBooked(d); },
   // 그 주 7칸 — 인덱스가 곧 요일(0=월 … 6=일). filter(Boolean)을 쓰지 않는다:
