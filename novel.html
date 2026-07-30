@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v189</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v190</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10065,9 +10065,38 @@ function idolTextFallback(data) {
   }
   if (Object.keys(out).length) runIdolSim(out);
 }
+// ★★AI가 쓴 요일·날짜 도약을 앱 기준으로 교정한다(2026-07-31 유저 지적:
+//   배너는 화요일인데 스토리는 "금요일의 광고 촬영… 주말 동안 푹 쉰… 월요일 아침").
+//   프롬프트로 "요일은 앱이 정한다"를 아무리 강하게 써도 AI는 **자기가 앞 장면에 쓴 요일**의
+//   관성을 따른다(gameHistory에 그 서술이 쌓여 있다). 지시로는 못 막으니 출력에서 고친다.
+//   · 「지난/저번/다음/이번/오는」 같은 수식이 붙은 요일은 **정당한 언급**이라 건드리지 않는다.
+//   · "다음 날/이튿날/며칠 뒤" 같은 도약 표현은 그 날 안에 머무는 말로 바꾼다.
+function fixIdolDayWords(data) {
+  if (!(typeof STORY !== 'undefined' && STORY && STORY.id === 'idol')) return;
+  const d = gameState && gameState.idol; if (!d) return;
+  const now = IDOL_SIM.DOW[IDOL_SIM.dowOf(d)]; if (!now) return;
+  let hit = 0;
+  const QUAL = '지난|저번|다음|이번|오는|전주|다다음|매주|매';
+  const fix = (t) => {
+    if (typeof t !== 'string' || !t) return t;
+    let out = t.replace(new RegExp(`([월화수목금토일])요일`, 'g'), (m, w, off, whole) => {
+      if (w === now) return m;
+      const before = whole.slice(Math.max(0, off - 6), off);
+      if (new RegExp(`(${QUAL})\\s*$`).test(before)) return m;   // "지난 금요일" 등은 그대로
+      hit++; return `${now}요일`;
+    });
+    out = out.replace(/다음\s?날|이튿날|다음날|며칠\s?뒤|이틀\s?뒤|사흘\s?뒤/g, () => { hit++; return '그날'; });
+    return out;
+  };
+  if (data.narration) data.narration = fix(data.narration);
+  if (Array.isArray(data.dialogue)) data.dialogue.forEach(x => { if (x && x.text) x.text = fix(x.text); });
+  if (Array.isArray(data.choices)) data.choices = data.choices.map(c => typeof c === 'string' ? fix(c) : c);
+  if (hit) { try { showStatToast(`🗓 ${now}요일 기준으로 맞췄다`, true); } catch {} }
+}
 function processResponse(data, activeCharIds, streamed) {
   hideThinking();
   window._timeSkipNote = null;   // one-shot consumed
+  try { fixIdolDayWords(data); } catch {}   // ★AI가 쓴 요일을 앱 기준으로 교정(아래 함수 주석 참고)
   // ★주인공 대사 필터는 회귀위험(대사 실종)으로 롤백(2026-07-21) — 유저 정정: 핵심은 밀도지 대필 아님
   // NOTE: do NOT force historyMode=false here — if the player is browsing
   // history when the response lands, we defer playing it (see end of fn).
