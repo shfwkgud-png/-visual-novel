@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v181</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v182</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -5084,17 +5084,20 @@ const IDOL_SIM = {
   DOW: ['월', '화', '수', '목', '금', '토', '일'],
   // ★칸 = 요일. wkIdx 0=월 … 6=일. (전엔 RHYTHM이 2칸을 월·수·금·일로 늘려 매핑해
   //   "3일로 끊긴다"는 어긋남이 났다 — 2026-07-30 유저 지적으로 폐기.)
-  dowOf(d){
-    const base = Math.min(6, d.wkIdx || 0);
-    return Math.max(base, typeof d.dow === 'number' ? d.dow : base);
-  },
+  //   ★★요일은 **편성 포인터(wkIdx)가 소유한다**. AI 텍스트로 앞당기지 못한다.
+  //     전엔 `Math.max(base, d.dow)`라 AI가 "화요일"이라고 쓰면 화면만 화요일로 갔다.
+  //     그러면 화요일 화면에서 아직 안 지난 **월요일 칸**이 실행되고, 편성표에선 화요일 칸이
+  //     지나간 것처럼 보인다 → 화요일에 잡아둔 광고촬영이 「휴식」으로 소화돼 날아갔다
+  //     (2026-07-30 유저 스크린샷: 장면 "화요일 오후 — 「휴식」" / 편성 화요일 = 광고촬영 데일리핏).
+  dowOf(d){ return Math.min(6, d.wkIdx || 0); },
   // AI/유저가 준 시각 문자열에서 요일과 시간대를 뽑는다("[4월 2주] 화요일 아침" → 1, "아침")
   setDayFrom(d, text){
     const S = IDOL_SIM;
     const t = String(text).replace(/^\s*\[[^\]]*\]\s*/, '').trim();
     const i = S.DOW.findIndex(w => t.includes(w + '요일'));
     if (i < 0) { if (t) d.dowTime = t.slice(0, 16); return false; }
-    d.dow = Math.max(S.dowOf(d), i);           // ★뒤로는 안 간다
+    // ★요일은 여기서 **안 옮긴다** — 편성 포인터(wkIdx)만 요일을 움직인다(dowOf 주석 참고).
+    //   AI가 쓴 요일은 시간대(아침/오후/밤)만 받아 쓴다.
     const rest = t.replace(new RegExp(S.DOW[i] + '요일'), '').trim();
     d.dowTime = rest ? rest.slice(0, 16) : '';
     return true;
@@ -5299,7 +5302,73 @@ const IDOL_SIM = {
   realPlanCount(d){
     return IDOL_SIM.weekPlans(d).filter(p => p && p.sim && p.sim.action !== '생략').length;
   },
-  weekPlan(d){ return IDOL_SIM.weekPlans(d)[0] || null; },   // 구 호출부 호환
+  // ★칸을 쓰는 행동(팀 일정). 미팅·곡작업 같은 대표 행동은 하루를 쓰지 않는다.
+  SLOT_ACTS: ['연습','콘텐츠','음방','행사','휴식','광고','테라피','촬영중'],
+  // 편성된 칸의 일정과 AI가 낸 sim이 **같은 일**인가 — 종류까지 본다
+  //   (「뮤비촬영」 칸에 「저예산 뮤비」를 실으면 다른 일이다).
+  sameAct(a, b){
+    if (!a || !b || a.action !== b.action) return false;
+    if (a.action === '콘텐츠' || a.action === '행사') return (a.kind || '') === (b.kind || '');
+    if (a.action === '광고') return !a.brand || !b.brand || a.brand === b.brand;
+    return true;
+  },
+  // ★대화로 일정을 진행했을 때 **그 칸이 소모된다**(요일이 하루 흐른다).
+  //   전엔 버튼(resolveOne)만 칸을 넘겼고 대화 경로는 apply만 불러서, 화면 요일은 AI가 옮기는데
+  //   편성은 제자리였다 → 잡아둔 일정에 닿지 못하고 주말에 통째로 날아갔다(2026-07-30 유저 지적).
+  //
+  //   ★네 갈래로 갈린다. 어느 경우에도 **잡아둔 일정을 지우지 않는다**:
+  //     ① 이번 sim이 앞으로 나올 편성 일정과 같은 일  → 그 사이 빈 날을 지나 그 칸을 소화
+  //     ② 오늘이 빈 날/생략인데 다른 일을 했다        → **오늘 하루만** 쓴다(뒤 일정 안 건드림)
+  //     ③ 오늘이 편성된 날인데 다른 일을 했다          → 그 일정을 뒤 빈 날로 **연기**(취소 아님)
+  //     ④ 남은 편성이 하나도 없다                     → 오늘 + 남은 빈 날을 다 흘려보낸다
+  consumeSlot(d, sim){
+    const S = IDOL_SIM, ps = S.weekPlans(d), n = ps.length;
+    if (!sim || S.SLOT_ACTS.indexOf(sim.action) < 0) return { moved:0 };
+    const real = p => p && p.sim && p.sim.action !== '생략';
+    const i0 = d.wkIdx || 0;
+    if (i0 >= n) return { moved:0 };
+    let moved = 0;
+    const pass = () => { S.apply(d, { action:'생략' }); d.wkIdx = (d.wkIdx || 0) + 1; moved++; };
+
+    // 앞으로 남은 편성 일정 중 첫 칸
+    let j = -1;
+    for (let k = i0; k < n; k++) if (real(ps[k])) { j = k; break; }
+
+    // ① 이번에 한 일이 그 편성 일정과 같은 일이다 — 사이의 빈 날을 흘려보내고 그 칸을 소화
+    if (j >= 0 && S.sameAct(ps[j].sim, sim)) {
+      while ((d.wkIdx || 0) < j) pass();
+      d.wkIdx = j + 1; moved++;
+      d.dowTime = '';
+      return { moved, matched:true, name:ps[j].name };
+    }
+    // ④ 남은 편성이 없다 — 오늘부터 주말까지 비어 있으니 다 흘려보낸다
+    if (j < 0) {
+      d.wkIdx = i0 + 1; moved++;                         // 오늘은 이 sim으로 썼다
+      while ((d.wkIdx || 0) < n) pass();
+      d.dowTime = '';
+      return { moved, matched:true, freeDay:true };
+    }
+    // ② 오늘은 빈 날이다 — 하루만 쓰고 **뒤 일정은 그대로 둔다**
+    if (!real(ps[i0])) {
+      d.wkIdx = i0 + 1; moved++;
+      d.dowTime = '';
+      return { moved, matched:true, freeDay:true };
+    }
+    // ③ 오늘 잡힌 일정 대신 다른 일을 했다 — 그 일정을 뒤 빈 날로 **연기**한다.
+    //    "오늘은 광고 말고 연습"이 가능하면서도 광고가 사라지지 않는다.
+    //    뒤에 자리가 없으면 그 자리를 지킨다(하루도 안 간다) — 그래야 이번 주 안에 할 수 있다.
+    {
+      const cur = ps[i0];
+      let to = -1;
+      for (let k = i0 + 1; k < n; k++) if (!real(ps[k])) { to = k; break; }
+      if (to < 0) return { moved, matched:false, blocked:cur.name, full:true };
+      d.plan[to] = cur; d.plan[i0] = null;
+      d.wkIdx = i0 + 1; moved++;
+      d.dowTime = '';
+      return { moved, matched:false, moved2:cur.name, to };
+    }
+  },
+  weekPlan(d){ return IDOL_SIM.weekPlans(d)[0] || null; },   // 구 호출부 호환(쓰지 마라 — 항상 월요일 칸이다)
   // 그 주 실행: accompany=true(현장 동행) / false(회사에 남아 곡작업·사무)
   ceoPlanOf(d){ return (d.ceoPlan || [])[0] || null; },   // 주 단위 편성 → 그 주 대표 칸 하나
   // 대표 칸 실행 — 그 주 대표가 한 일
@@ -6301,7 +6370,9 @@ const IDOL_SIM = {
 `;
     s += `  대화에서 영입·구매를 정했더라도 목록에 없으면 아직 성사되지 않은 것이다 — 진행 중이거나 무산된 것으로 풀어라.
 `;
-    s += `${d.week}주차 | 남은 일정 ${d.slots}/3 | 자금 ${won(d.money)}원 | 대출 ${won(d.loan)}원 | 인지도 ${Math.round(d.fame)}\n`;
+    { const _ps = IDOL_SIM.weekPlans(d), _t = d.wkIdx || 0;
+      const _left = _ps.slice(_t).filter(p => p && p.sim && p.sim.action !== '생략').length;
+      s += `${d.week}주차 | 남은 일정 ${_left}건 (이번 주 ${IDOL_SIM.realPlanCount(d)}건) | 자금 ${won(d.money)}원 | 대출 ${won(d.loan)}원 | 인지도 ${Math.round(d.fame)}\n`; }
     s += `팬: 코어 ${d.core.toLocaleString()}명 · 라이트 ${d.light.toLocaleString()}명 (결집도 ${Math.round(IDOL_SIM.rally(d))})\n`;
     s += `곡 제목: ${d.album.title?`「${d.album.title}」`:'(아직 안 정함 — 대표가 정하면 sim에 title을 실어라)'}
 `;
@@ -6356,6 +6427,14 @@ const IDOL_SIM = {
         {
           const _after = _ps.slice(_run.from + _run.n).find(_real);
           if (_after) s += `  (그 뒤 일정: 「${_after.name}」)\n`;
+        }
+        if (d.lastOffPlan) {
+          // ★편성과 다른 일을 해서 일정이 밀렸다 — AI가 그걸 알고 이야기에 반영해야 한다
+          const _o = d.lastOffPlan;
+          s += _o.moved
+            ? `  ★지난 장면에서 편성 대신 「${_o.did}」을 했다 → 「${_o.moved}」은 **${_o.to}요일로 밀렸다**. 실장이 그 사실을 짚는 대사를 넣어라.\n`
+            : `  ★★「${_o.kept}」을 넣을 날이 이번 주에 없다. 이번 주 안에 못 하면 광고주 만족도가 깎인다 — 실장이 경고하게 하라.\n`;
+          delete d.lastOffPlan;
         }
         // ★편성표를 AI가 바꾸지 못하게 못 박는다(2026-07-30 유저 지적: 뮤비촬영을 넣었는데 저예산 뮤비로 나갔다)
         s += `  ★★일정의 **종류를 바꾸지 마라**. 위 sim을 글자 그대로 실어라 — 돈이 부족해 보여도\n`;
@@ -11268,7 +11347,8 @@ function updateSceneBanner() {
   if (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' && gameState && gameState.idol) {
     const d = gameState.idol;
     const won = n => (n >= 100000000 ? (n / 100000000).toFixed(2) + '억' : Math.round(n / 10000).toLocaleString() + '만');
-    biz = `<span class="biz">💰 ${won(d.money)}</span> · ${d.week}주 ${'●'.repeat(d.slots)}${'○'.repeat(Math.max(0, 3 - d.slots))}`;
+    { const _n = IDOL_SIM.PLAN_PER_WEEK, _t = Math.min(_n, d.wkIdx || 0);
+      biz = `<span class="biz">💰 ${won(d.money)}</span> · ${d.week}주 ${'○'.repeat(_t)}${'●'.repeat(_n - _t)}`; }
   }
   const pb = document.getElementById('planBtn');
   if (pb) {
@@ -11487,6 +11567,13 @@ function runIdolSim(sim) {
   }
   const r = IDOL_SIM.apply(d, sim);
   if (r && r.ok) {
+    // ★★대화로 일정을 진행하면 **그 칸이 소모돼야 한다**(2026-07-30 유저 지적:
+    //   "월요일 휴식을 진행했는데 화요일 광고가 걍 날아갔네?"). 전엔 버튼(resolveOne)만
+    //   칸을 넘겼고 대화 경로는 apply만 불러서, 요일은 AI 텍스트로만 흐르고 편성은 제자리였다.
+    const _cs = IDOL_SIM.consumeSlot(d, sim);
+    // 편성과 다른 일을 했다 — 밀린 일정(또는 못 민 일정)을 AI에게 되돌려준다
+    if (_cs.moved2) d.lastOffPlan = { did: sim.action, moved: _cs.moved2, to: IDOL_SIM.DOW[_cs.to] };
+    else if (_cs.blocked) d.lastOffPlan = { did: sim.action, kept: _cs.blocked, full: true };
     syncIdolTime();
     forceIdolPlace(sim); markIdolAbsent(sim);      // ★장소 강제 + 대표 부재 판정(버튼·대화 공통 경로)                                    // 요일이 흘렀다 — 배너·time 즉시 반영
     const t = [];
@@ -11500,7 +11587,9 @@ function runIdolSim(sim) {
       IDOL_SIM.release(d);
       showStatToast(`🎬 컴백! ${d.album.title || '신곡'} 발매 (완성도 ${Math.round(d.album.quality)})`);
     }
-    if (sim.action !== '미팅' && d.slots <= 0 && !IDOL_SIM.weekPlan(d)) {   // 미팅·개인재산은 주를 넘기지 않는다
+    // ★주간 마감은 **7칸을 다 지났을 때만**. 전엔 `d.slots<=0 && !weekPlan(d)`였는데
+    //   weekPlan(d)은 항상 **월요일 칸**이라, 월요일을 비워두면 첫 행동에 주가 통째로 넘어갔다.
+    if (sim.action !== '미팅' && (d.wkIdx || 0) >= IDOL_SIM.PLAN_PER_WEEK && !IDOL_SIM.needPlan(d)) {
       if (IDOL_SIM.active(d) && d.album.tvThisWeek > 0) {
         let best = null;
         IDOL_SIM.openShows(d).forEach(sh => {
@@ -11518,7 +11607,8 @@ function runIdolSim(sim) {
       }
       IDOL_SIM.endWeek(d);
       syncIdolTime();                                 // ★새 주 = 월요일부터
-      showStatToast(`🗓 ${d.week}주차 시작 · 일정 3칸`);
+      { const _c = IDOL_SIM.calOf(d.week);
+        showStatToast(`🗓 ${_c.m}월 ${_c.wk}주 — 월요일. 이번 주 7일치를 편성하라`); }
     }
   } else if (r && !r.ok) {
     showStatToast(`실패: ${r.reason}`, true);
@@ -11526,6 +11616,11 @@ function runIdolSim(sim) {
     //   "대화에선 트레이너가 합류했는데 앱에는 없는" 어긋남이 생긴다(2026-07-27 유저 지적).
     d.lastReject = { what: [sim.action, sim.target, sim.staff, sim.facility, sim.kind].filter(Boolean).join('/'),
                      reason: r.reason };
+  }
+  if (d.lastOffPlan) {
+    const _o = d.lastOffPlan;
+    showStatToast(_o.moved ? `🗓 「${_o.moved}」은 ${_o.to}요일로 밀었다`
+                           : `「${_o.kept}」을 넣을 날이 없다 — 이번 주 안에 해야 한다`, !_o.moved);
   }
   return r;
 }
@@ -12373,12 +12468,18 @@ function runNextPlan() {
 function runPlanBatch(days) {
   const d = gameState.idol, S = IDOL_SIM;
   window._ibRunAsked = false;
-  const p = S.nextPlan(d); if (!p) return;
+  // ★★장면에 쓸 요일은 **소화하기 전에** 잡는다(2026-07-30 유저 스크린샷).
+  //   전엔 resolveOne → syncIdolTime → 그 다음에 day를 읽어서, 월요일에 한 휴식이
+  //   "화요일 오후 — 「휴식」"으로 찍혔다. 편성표는 월요일이 지나갔다고 표시하는데
+  //   장면은 화요일이라 하니, 화요일에 잡아둔 광고촬영이 휴식으로 처리된 것처럼 보였다.
   const acc = (S.ceoPlanOf(d) || '동행') === '동행';
   closeIdolBoard();
+  const day = String(S.dateLine(d) || '').replace(/^\[.+?\]\s*/, '');
   const r = (days > 1) ? S.resolveRun(d, acc, days) : S.resolveOne(d, acc);
   syncIdolTime();
   if (!r || !r.ok) { showStatToast(`${(r && r.reason) || '실행 불가'}`, true); return; }
+  // ★실제로 소화된 일정 이름을 쓴다 — nextPlan()은 생략 칸을 가리킬 수 있어 어긋났다
+  const p = { name: r.name || '일정' };
   const t = [];
   if (r.delta.note) t.push(r.delta.note);
   if (r.delta.light) t.push(`라이트팬 ${r.delta.light > 0 ? '+' : ''}${r.delta.light.toLocaleString()}`);
@@ -12388,7 +12489,6 @@ function runPlanBatch(days) {
   showStatToast(`${p.name}${nd > 1 ? ` ${nd}일` : ''} · ${t.join(' / ')}`
     + ((r.skipped && r.skipped.length) ? ` · ${r.skipped.join('·')} 생략` : ''));
   d._skipSim = true;
-  const day = String(gameState.time || '').replace(/^\[.+?\]\s*/, '');
   const txt = nd > 1
     ? `${day}부터 ${nd}일 내리 「${p.name}」${acc ? '. 나도 계속 붙어 있었다.' : '. 애들끼리 해냈다.'}\n`
       + `★${nd}일을 한 장면으로 묶어 써라 — 날마다 나누지 말고, 그 며칠이 어떻게 흘렀는지 하나의 흐름으로.`
