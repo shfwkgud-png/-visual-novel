@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v190</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v191</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10069,20 +10069,27 @@ function idolTextFallback(data) {
 //   배너는 화요일인데 스토리는 "금요일의 광고 촬영… 주말 동안 푹 쉰… 월요일 아침").
 //   프롬프트로 "요일은 앱이 정한다"를 아무리 강하게 써도 AI는 **자기가 앞 장면에 쓴 요일**의
 //   관성을 따른다(gameHistory에 그 서술이 쌓여 있다). 지시로는 못 막으니 출력에서 고친다.
-//   · 「지난/저번/다음/이번/오는」 같은 수식이 붙은 요일은 **정당한 언급**이라 건드리지 않는다.
+//   · ★**예외를 두지 않는다**(2026-07-31 유저 재지적: "지난 금요일은 그대로? 이걸 왜 유지해").
+//     처음엔 「지난/다음」이 붙은 요일을 정당한 회상으로 봐서 남겼는데, 애초에 **금요일에
+//     촬영한 적이 없다.** AI가 과거를 지어내는 게 문제이므로 그 예외가 곧 구멍이었다.
+//     수식이 붙은 건 요일 단어를 **지워서**("지난 금요일 촬영" → "지난번 촬영") 거짓 날짜를 없앤다.
 //   · "다음 날/이튿날/며칠 뒤" 같은 도약 표현은 그 날 안에 머무는 말로 바꾼다.
 function fixIdolDayWords(data) {
   if (!(typeof STORY !== 'undefined' && STORY && STORY.id === 'idol')) return;
   const d = gameState && gameState.idol; if (!d) return;
   const now = IDOL_SIM.DOW[IDOL_SIM.dowOf(d)]; if (!now) return;
   let hit = 0;
-  const QUAL = '지난|저번|다음|이번|오는|전주|다다음|매주|매';
   const fix = (t) => {
     if (typeof t !== 'string' || !t) return t;
-    let out = t.replace(new RegExp(`([월화수목금토일])요일`, 'g'), (m, w, off, whole) => {
+    // ① 수식 + 요일 → 요일을 지운다(날짜를 지어내지 못하게). "지난 금요일" → "지난번"
+    let out = t.replace(/(지난주|지난|저번|전주|다다음|다음|오는|이번주|이번)\s*([월화수목금토일])요일/g,
+      (m, q) => { hit++;
+        return /지난|저번|전주/.test(q) ? '지난번' : /다다음|다음|오는/.test(q) ? '다음번' : '이번'; });
+    // ② 「매주 금요일」처럼 반복을 뜻하는 것도 날짜다 — 요일만 뺀다
+    out = out.replace(/(매주|매)\s*([월화수목금토일])요일/g, () => { hit++; return '매주'; });
+    // ③ 남은 맨 요일 → 앱의 현재 요일
+    out = out.replace(/([월화수목금토일])요일/g, (m, w) => {
       if (w === now) return m;
-      const before = whole.slice(Math.max(0, off - 6), off);
-      if (new RegExp(`(${QUAL})\\s*$`).test(before)) return m;   // "지난 금요일" 등은 그대로
       hit++; return `${now}요일`;
     });
     out = out.replace(/다음\s?날|이튿날|다음날|며칠\s?뒤|이틀\s?뒤|사흘\s?뒤/g, () => { hit++; return '그날'; });
