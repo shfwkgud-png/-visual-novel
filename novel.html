@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v179</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v180</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -12472,9 +12472,17 @@ async function regenerate() {
 // 기존 undoInput()은 **직전 한 턴**만, 그것도 채팅 기록만 되돌렸다 — 아이돌 수치(팬·자금·주차)는
 // 그대로 남아 되돌린 뒤에도 상태가 어긋났다(2026-07-26 유저 지적). 매 입력 직전 상태를 통째로
 // 스냅샷으로 떠서, 아무 시점으로나 되감을 수 있게 한다.
-const SNAP_MAX = 40;                 // 보관 개수
-const SNAP_BYTES = 1500000;          // localStorage 보관 상한(초과분은 오래된 것부터 버림)
+// ★★되감기가 한참 전 시점만 뜨던 문제(2026-07-30 유저 스샷: 600턴대인데 113·114턴만, 9시간 전).
+//   원인: persistSnaps()가 **조용히 실패**하고 있었다.
+//     ①스냅샷 하나가 gameHistory 전체를 담아 600턴쯤엔 400KB를 넘는다(턴이 늘면 계속 커진다).
+//     ②트림 루프가 `arr.length > 3`에서 멈춰 **3개 아래로는 줄이지 않는다** → 여전히 1MB 이상.
+//     ③localStorage.setItem이 용량 초과로 던지면 `catch {}`가 먹어버린다.
+//   결과: 마지막으로 성공한 시점(114턴)이 localStorage에 박히고, 새로고침하면 그게 올라온다.
+//   → 트림 하한을 1로 내리고, **실제로 써질 때까지 재시도**한다. 그래도 안 되면 키를 비운다.
+const SNAP_MAX = 24;                 // 보관 개수(턴이 쌓이면 스냅샷 하나가 커지므로 40 → 24)
+const SNAP_BYTES = 2000000;          // 1차 트림 기준(그 뒤엔 setItem 성공까지 더 줄인다)
 let turnSnaps = [];
+let snapWarned = false;
 
 function snapKeyFor(id) { return 'vn_snaps_' + id; }
 
@@ -12498,18 +12506,40 @@ function captureSnap(label) {
   } catch {}
 }
 
+// 스냅샷 저장 — **써지는 만큼만** 남긴다. 실패를 삼키지 않고 줄여서 다시 시도한다.
 function persistSnaps() {
-  try {
-    let arr = turnSnaps.slice();
-    let json = JSON.stringify(arr);
-    while (json.length > SNAP_BYTES && arr.length > 3) { arr = arr.slice(1); json = JSON.stringify(arr); }
-    localStorage.setItem(snapKeyFor(STORY.id), json);
-  } catch {}   // 용량 초과 등은 조용히 무시(스냅샷은 부가 기능)
+  const key = snapKeyFor(STORY.id);
+  let arr = turnSnaps.slice();
+  // ① 1차 트림 — 기준을 넘으면 오래된 것부터 버린다(하한 1)
+  let json = JSON.stringify(arr);
+  while (json.length > SNAP_BYTES && arr.length > 1) { arr = arr.slice(1); json = JSON.stringify(arr); }
+  // ② 실제로 써질 때까지 재시도 — 브라우저 쿼터는 다른 키(세이브 등)와 공유라 예측할 수 없다
+  for (;;) {
+    try { localStorage.setItem(key, json); snapWarned = false; return arr.length; }
+    catch {
+      if (arr.length > 1) { arr = arr.slice(1); json = JSON.stringify(arr); continue; }
+      // ③ 하나조차 못 넣는다 — 키를 비워 **낡은 스냅샷이 남는 것을 막는다**(그게 이번 사고의 증상)
+      try { localStorage.removeItem(key); } catch {}
+      if (!snapWarned) { snapWarned = true;
+        try { showStatToast('되감기 저장 공간이 없다 — 이번 세션 안에서만 되돌릴 수 있다', true); } catch {}
+      }
+      return 0;
+    }
+  }
 }
 
 function loadSnaps() {
   try { turnSnaps = JSON.parse(localStorage.getItem(snapKeyFor(STORY.id)) || '[]') || []; }
   catch { turnSnaps = []; }
+  // ★현재 진행보다 한참 뒤처진 스냅샷은 버린다 — 저장이 실패했던 구간의 잔재다.
+  //   그걸 남겨두면 "되돌리기를 눌렀는데 한참 전으로만 간다"가 된다(2026-07-30 유저 지적).
+  try {
+    const cur = (typeof turnCount === 'number') ? turnCount : 0;
+    if (cur && turnSnaps.length) {
+      const newest = turnSnaps[turnSnaps.length - 1].turn || 0;
+      if (cur - newest > SNAP_MAX) turnSnaps = [];   // 보관 개수보다 더 벌어졌다 = 이어질 수 없는 잔재
+    }
+  } catch {}
 }
 
 function openRewind() {
