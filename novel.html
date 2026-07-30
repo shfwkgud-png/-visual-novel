@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v178</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v179</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2389,7 +2389,7 @@ const ENGINE_MOD_CG = `
     완성도는 90"이라고 말했으면 그 턴의 sim에 반드시 {"title":"PING","quality":90}을 담아라.
     이건 선택이 아니라 필수다.
 - 순수한 잡담·질문·감정 대화(수치가 안 변하는 것)에는 'sim'을 넣지 마라.
-- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅|광고", "brand": "광고 촬영·계약할 회사명", "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여|기자|언론|인물", "tie": "식사|단독|광고집행|촌지", "person": { "name": "인물 이름", "org": "소속", "role": "역할", "note": "한 줄 특징" }, "press": { "sec": "엔터|기업|사회", "size": "단신|기사|헤드라인", "tone": "good|bad|neutral", "head": "기사 제목", "lead": "리드문 한 줄", "body": "본문 두세 문장", "corp": "엮인 회사명(없으면 생략)", "market": false, "about": "us|world" }, "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
+- 형식: '"sim": { "action": "연습|콘텐츠|음방|행사|휴식|곡작업|미팅|광고", "brand": "광고 촬영·계약할 회사명", "brands": [{ "name": "회사명", "weekly": 0, "weeks": 0, "upfront": 0, "inkind": false, "main": false, "member": "char_id" }], "upfront": 0, "members": ["char_id", ...], "intensity": 1~3, "authenticity": 0~3, "concept": "대중|팬덤|실험", "kind": "축제|버스킹|팬사인회|기업행사|팬콘", "target": "브랜드|투자|대출연장|고용|해고|시설|외주프로듀서|담보대출|담보상환|사재출연|대표급여|기자|언론|인물", "tie": "식사|단독|광고집행|촌지", "person": { "name": "인물 이름", "org": "소속", "role": "역할", "note": "한 줄 특징" }, "press": { "sec": "엔터|기업|사회", "size": "단신|기사|헤드라인", "tone": "good|bad|neutral", "head": "기사 제목", "lead": "리드문 한 줄", "body": "본문 두세 문장", "corp": "엮인 회사명(없으면 생략)", "market": false, "about": "us|world" }, "staff": "vocal|dance|manager|pd|stylist|choreo", "facility": "office|dorm|practice|van|home|car", "offer": 0, "amount": 0, "title": "곡 제목", "quality": 0, "appeal": 0, "fandom": "팬덤명", "release": false }'
   - 'members' = 그 일정에 실제로 투입된 멤버 id(전원이면 생략 가능)
   - 'authenticity' = 콘텐츠 촬영일 때만. 사생활·약한 모습을 얼마나 팔았나(0=무난한 챌린지, 3=속마음까지 드러낸 브이로그)
   - 'concept' = 곡작업일 때만
@@ -2465,6 +2465,18 @@ const ENGINE_MOD_CG = `
 - **크기**(size)는 희망일 뿐이다. 앱이 우리 화제성으로 잘라낸다 — 무명이 "헤드라인"이라 해도 단신이 된다.
 - **수치는 절대 네가 정하지 마라.** tone(good/bad/neutral)만 정하면 팬·이미지·기업가치는 앱이 계산한다.
 - 아무 일 없는 주에 억지로 기사를 만들지 마라. **안 실리는 게 정상이다.**
+
+## ★★광고 계약 — 대화에서 정한 **금액을 그대로 숫자로 실어라**
+- 계약을 **여러 건 한꺼번에** 땄으면 sim.brands **배열**에 전부 담아라. 하나만 실으면 나머지는 계약이 안 된다.
+  (실제 사고: 대행사가 4건을 정리했는데 1건만 실려 나머지가 사라졌다.)
+- 각 건마다 **weekly(주급)·weeks(기간)·upfront(계약금)**를 숫자로 넣어라. 단위는 원이다.
+  · "주급 125만 원" → weekly: 1250000    · "계약금 1억 5천" → upfront: 150000000
+  · "계약금 5천, 주급 100만" → upfront: 50000000, weekly: 1000000
+- **현물 협찬이면 weekly: 0 과 inkind: true를 같이 내라.** weekly를 빼먹으면 티어 기본 주급이 붙는다.
+  반대로 **페이가 있는 계약에 inkind를 넣지 마라** — 돈이 안 들어온다.
+- upfront를 안 내면 주급 2주치가 계약금으로 잡힌다. 대화에서 계약금을 말했으면 **반드시 upfront로 내라.**
+- 이미 계약 중인 회사를 다시 내면 **조건이 갱신된다**(잘못 들어간 계약을 바로잡는 용도). 차액만 입금된다.
+- ★계약이 성사되면 앱이 **광고촬영을 일정에 자동으로 박는다.** 대표가 따로 편성하지 않아도 된다.
 
 ## ★★업계 사람 — 이름을 지어내지 마라
 - 대표가 만나는 업계 사람(광고 대행사 AE, 광고주 임원, PD, 투자자 등)은 **앱이 기억한다.**
@@ -5213,6 +5225,41 @@ const IDOL_SIM = {
     talk:  { name:'토크쇼 출연',     need:{ net:35, fame:35 }, weeks:4 },
   },
   PLAN_PER_WEEK: 2,                                 // ★주당 2건(월 8칸) — 실장이 주 2~3건을 잡는 게 현실
+  // ★★계약을 따면 **광고촬영이 일정에 박힌다**(2026-07-29 유저 지적: "광고나 모델사진 촬영도
+  //   스케줄 강제 반영하라 했던 건?"). 지금까진 편성 가능한 일정이고 만족도 독촉만 있었다.
+  //   → 이번 주 남은 칸 중 **빈 칸을 먼저** 채우고, 빈 칸이 없으면 아직 안 소화한 칸을 덮는다.
+  //     덮은 사실은 note에 남으므로 대표가 안다.
+  forceShoot(d, name){
+    const S = IDOL_SIM, n = S.PLAN_PER_WEEK;
+    d.plan = d.plan || [];
+    const base = (S.weekInMonth(d.week) - 1) * n;
+    const from = base + (d.wkIdx || 0);
+    const last = 4 * n;                                    // 이번 달 편성 전체
+    const slot = { name:`광고촬영 — ${name}`, sim:{ action:'광고', brand:name }, forced:true };
+    for (let j = from; j < last; j++) if (!d.plan[j]) { d.plan[j] = slot; return j; }
+    for (let j = from; j < last; j++) if (!d.plan[j].forced) { d.plan[j] = slot; return j; }
+    return -1;                                             // 이번 달은 이미 촬영으로 꽉 찼다
+  },
+  // ★★계약 조건을 보드에서 직접 고친다(2026-07-29 유저: "세이브파일 적용은 어떻게 할 건데").
+  //   대화로 잘못 들어간 계약(주급이 현물로 잡히거나 계약금이 안 들어온 것)을 대표가 손볼 수 있어야 한다.
+  //   계약금은 **차액만** 입금한다 — 고칠 때마다 전액이 다시 들어오면 무한 증식이다.
+  editBrand(d, name, spec){
+    const S = IDOL_SIM;
+    const b = (d.brands || []).find(x => x.name === name);
+    if (!b) return { ok:false, reason:'그런 계약 없음' };
+    const wk = spec.weekly !== undefined ? Math.max(0, spec.weekly | 0) : b.weekly;
+    const up = spec.upfront !== undefined ? Math.max(0, spec.upfront | 0) : (b.upfront || 0);
+    const wn = spec.weeks !== undefined ? Math.max(1, Math.min(24, spec.weeks | 0)) : b.weeks;
+    const inkind = wk === 0;
+    const addUp = Math.max(0, up - (b.upfront || 0));
+    const before = { weekly:b.weekly, upfront:b.upfront || 0, weeks:b.weeks, inkind:!!b.inkind };
+    b.weekly = wk; b.upfront = up; b.weeks = wn;
+    b.left = Math.min(b.left === undefined ? wn : b.left, wn);
+    b.inkind = inkind;
+    b.label = inkind ? '현물협찬' : (S.BRAND_TIERS.find(t => t.tier === b.tier) || S.BRAND_TIERS[0]).label;
+    if (addUp) d.money += addUp;
+    return { ok:true, before, after:{ weekly:wk, upfront:up, weeks:wn, inkind }, paid:addUp };
+  },
   needPlan(d){ return d.planMonth !== IDOL_SIM.monthOf(d.week) || !(d.plan || []).filter(Boolean).length; },
   setPlan(d, arr){ d.plan = (arr || []).slice(0, 4 * IDOL_SIM.PLAN_PER_WEEK); d.planMonth = IDOL_SIM.monthOf(d.week);
     (d.booked||[]).forEach(b => { if (IDOL_SIM.monthOf(b.week) === d.planMonth) b.placed = false; });
@@ -5684,41 +5731,71 @@ const IDOL_SIM = {
       // 일정 1칸 = 경영 행동(브랜드 계약·투자 유치·대출 연장). 멤버 소모 없음.
       const t = sim.target || '브랜드';
       if (t==='브랜드'){
-        // ★제안 목록(d.offers)은 실장이 물어온 것일 뿐이다. 대표가 광고사를 직접 만나
-        //   대화로 뚫은 계약도 성립해야 한다 — 목록에 없다고 "무산"이 뜨던 게 버그(2026-07-28).
-        //   현물협찬(계약금·주급 0)도 표현 가능해야 한다.
+        // ★★한 장면에서 계약을 **여러 건** 딸 수 있어야 한다(2026-07-29 유저 스샷: 윤태섭이 4건을
+        //   한꺼번에 정리했는데 sim.brand가 단수라 일부만 등록되고 스텝온 슈즈는 통째로 빠졌다).
+        //   → sim.brands 배열을 받는다. sim.brand(단수)도 그대로 지원.
+        // ★★계약금(upfront)을 대화에서 정할 수 있어야 한다 — "계약금 1억 5천"이라고 합의해도
+        //   반영할 필드가 없어 주급×2로만 들어왔다(아르페지오 1.5억이 자금에 안 잡힌 원인).
         d.brands = d.brands || []; d.offers = d.offers || [];
-        const nm = String(sim.brand || '').trim();
-        let idx = -1;
-        if (nm) idx = d.offers.findIndex(o => o.name === nm || o.name.indexOf(nm) >= 0 || nm.indexOf(o.name) >= 0);
-        else if (d.offers.length) idx = Math.max(0, Math.min((sim.offer|0), d.offers.length-1));
-        let o = idx >= 0 ? d.offers[idx] : null;
-        if (o) d.offers.splice(idx, 1);
-        else {
-          if (!nm) return { ok:false, reason:'들어온 제안 없음 — 대화로 딴 계약이면 sim에 brand(회사명)를 같이 내라' };
-          if (d.brands.some(b => b.name === nm)) return { ok:false, reason:`이미 ${nm}과 계약 중` };
-          const tiers = S.BRAND_TIERS.filter(x => d.fame >= x.gate);
-          const tr = tiers.length ? tiers[tiers.length-1] : S.BRAND_TIERS[0];
-          const inkind = !!sim.inkind || sim.weekly === 0;
-          o = { name:nm, inkind,
-                tier:  Math.max(1, Math.min(3, (sim.tier|0) || tr.tier)),
-                label: inkind ? '현물협찬' : tr.label,
-                weekly: inkind ? 0 : (sim.weekly !== undefined ? Math.max(0, sim.weekly|0) : tr.weekly),
-                weeks: Math.max(1, Math.min(24, (sim.weeks|0) || tr.weeks)),
-                member: (sim.member && d.mem[sim.member]) ? sim.member : null };
-        }
-        const cp0 = S.regCorp(d, o.name, o.tier, idx < 0);   // ★목록 밖 = AI가 지어낸 회사 → 신규 등록
-        if (cp0) { cp0.met = true; cp0.deals = (cp0.deals||0) + 1; }
-        d.brands.push({ ...o, left:o.weeks, shots:0, satis:55 });
-        dt.money += o.weekly * 2;          // 계약금 = 2주치 선지급 (현물협찬이면 0)
-        dt.fame += o.tier * 0.4;
-        if (o.inkind) {                    // 돈은 안 들어와도 노출·협찬품이 남는다
-          dt.fame += 0.6;
-          d.image = S.clamp((d.image===undefined?70:d.image) + 3, 0, 100);
-        }
-        if (sim.main) dt.fame += 0.6;      // 메인모델 = 얼굴이 크게 걸린다
-        if (o.member) { const m=d.mem[o.member]; if(m) m.trust=S.clamp(m.trust+4,0,100); }
-        dt.note = `${o.name} 계약${o.inkind?'(현물협찬)':''}${sim.main?'·메인모델':''}${o.member?`(${(IDOL_CHARACTERS[o.member]||{}).name} 개인)`:''}`;
+        const specs = Array.isArray(sim.brands) && sim.brands.length
+          ? sim.brands
+          : [{ name:sim.brand, inkind:sim.inkind, tier:sim.tier, weekly:sim.weekly,
+               weeks:sim.weeks, member:sim.member, main:sim.main,
+               upfront:sim.upfront, offer:sim.offer }];
+        const notes = [], fails = [];
+        specs.forEach(sp => {
+          const nm = String(sp.name || '').trim();
+          let idx = -1;
+          if (nm) idx = d.offers.findIndex(o => o.name === nm || o.name.indexOf(nm) >= 0 || nm.indexOf(o.name) >= 0);
+          else if (d.offers.length) idx = Math.max(0, Math.min((sp.offer|0), d.offers.length-1));
+          let o = idx >= 0 ? d.offers[idx] : null;
+          if (o) d.offers.splice(idx, 1);
+          else {
+            if (!nm) { fails.push('회사명 없음'); return; }
+            const tiers = S.BRAND_TIERS.filter(x => d.fame >= x.gate);
+            const tr = tiers.length ? tiers[tiers.length-1] : S.BRAND_TIERS[0];
+            // ★현물 판정 — weekly를 **명시적으로 0으로 냈을 때만** 현물이다.
+            //   안 실으면 티어 기본 주급이 붙는다(코스메 뮤즈가 주급 100만인데 현물로 찍힌 원인).
+            const inkind = !!sp.inkind || sp.weekly === 0;
+            o = { name:nm, inkind,
+                  tier:  Math.max(1, Math.min(3, (sp.tier|0) || tr.tier)),
+                  label: inkind ? '현물협찬' : tr.label,
+                  weekly: inkind ? 0 : (sp.weekly !== undefined ? Math.max(0, sp.weekly|0) : tr.weekly),
+                  weeks: Math.max(1, Math.min(24, (sp.weeks|0) || tr.weeks)),
+                  member: (sp.member && d.mem[sp.member]) ? sp.member : null };
+          }
+          // ★계약금 — 대화에서 정한 값이 있으면 그걸 쓰고, 없으면 주급 2주치(기존 규칙)
+          const up = (sp.upfront !== undefined && sp.upfront !== null)
+                   ? Math.max(0, sp.upfront|0) : o.weekly * 2;
+          const ex = d.brands.find(b => b.name === o.name);
+          if (ex) {
+            // ★이미 계약 중이면 **조건을 갱신**한다 — 잘못 들어간 계약을 대화로 바로잡을 수 있어야 한다
+            const addUp = Math.max(0, up - (ex.upfront || 0));
+            Object.assign(ex, { inkind:o.inkind, label:o.label, tier:o.tier, weekly:o.weekly,
+                                weeks:o.weeks, left:o.weeks, member:o.member, upfront:up });
+            dt.money += addUp;
+            notes.push(`${o.name} 조건 갱신(주 ${Math.round(o.weekly/10000)}만·${o.weeks}주`
+                     + `${addUp?`·계약금 차액 ${Math.round(addUp/10000).toLocaleString()}만`:''})`);
+            return;
+          }
+          const cp0 = S.regCorp(d, o.name, o.tier, idx < 0);
+          if (cp0) { cp0.met = true; cp0.deals = (cp0.deals||0) + 1; }
+          d.brands.push({ ...o, left:o.weeks, shots:0, satis:55, upfront:up });
+          dt.money += up;
+          dt.fame += o.tier * 0.4;
+          if (o.inkind) { dt.fame += 0.6;
+            d.image = S.clamp((d.image===undefined?70:d.image) + 3, 0, 100); }
+          if (sp.main) dt.fame += 0.6;
+          if (o.member) { const m=d.mem[o.member]; if(m) m.trust=S.clamp(m.trust+4,0,100); }
+          S.noteNewBrand(d, o);                     // 주간일보 기업면에 실린다
+          const slot = S.forceShoot(d, o.name);     // ★광고촬영을 일정에 강제 편성
+          notes.push(`${o.name}${o.inkind?'(현물)':`·주 ${Math.round(o.weekly/10000)}만`}`
+                   + `${up?`·계약금 ${Math.round(up/10000).toLocaleString()}만`:''}`
+                   + `${sp.main?'·메인모델':''}${o.member?`(${(IDOL_CHARACTERS[o.member]||{}).name} 개인)`:''}`
+                   + `${slot>=0?'·★촬영 편성됨':''}`);
+        });
+        if (!notes.length) return { ok:false, reason:fails[0] || '계약 정보 없음 — sim에 brand 또는 brands를 내라' };
+        dt.note = `계약 ${notes.length}건 — ` + notes.join(' / ');
       } else if (t==='인물'){
         const r2 = S.notePerson(d, sim.person || {});
         if (!r2) return { ok:false, reason:'인물 정보 없음' };
@@ -6099,7 +6176,7 @@ const IDOL_SIM = {
     // 브랜드/이미지 — 공백기 생존줄이자 팀 균열의 씨앗
     if (d.image !== undefined) s += `브랜드 이미지 ${Math.round(d.image)}`;
     if (d.brands && d.brands.length) s += ` | 계약중: ` + d.brands.map(b=>
-      `${b.name}(${b.inkind?'현물협찬':`주 ${Math.round(b.weekly/10000)}만`}·${b.left}주 남음${b.member?`·${(IDOL_CHARACTERS[b.member]||{}).name} 개인 앰버서더`:''}·촬영 ${b.shots||0}회·광고주 만족도 ${Math.round(b.satis===undefined?55:b.satis)})`).join(', ');
+      `${b.name}(${b.inkind?'현물협찬':`주 ${Math.round(b.weekly/10000)}만`}${b.upfront?`·계약금 ${Math.round(b.upfront/10000).toLocaleString()}만`:''}·${b.left}주 남음${b.member?`·${(IDOL_CHARACTERS[b.member]||{}).name} 개인 앰버서더`:''}·촬영 ${b.shots||0}회·광고주 만족도 ${Math.round(b.satis===undefined?55:b.satis)})`).join(', ');
     if (d.image !== undefined) s += `\n`;
     // ★광고 촬영 독촉 — 계약만 따고 안 찍으면 잘린다. 실장이 이 얘기를 꺼내야 한다.
     const lazy = (d.brands||[]).filter(b => (b.satis===undefined?55:b.satis) < 45);
@@ -11055,6 +11132,33 @@ function migrateIdolSave(d) {
     if (it && it.tie && it.by !== '문지효') it.by = '문지효';
     if (it) delete it.breaking;
   }));
+  // ★★일회성 복구(v179) — 계약금·주급을 담을 필드가 없던 시절의 세이브를 바로잡는다.
+  //   (2026-07-29 유저 스샷: 윤태섭이 정리한 4건 중 스텝온 슈즈가 누락되고, 코스메 뮤즈는
+  //    주급 100만인데 현물로 잡혔고, 아르페지오 계약금 1.5억이 자금에 안 들어왔다.)
+  //   ★유저가 "직접 수정"을 거부했으므로(치트가 된다) 대화에서 합의된 조건을 앱이 복원한다.
+  //   ★식별 지문: upfront 필드를 가진 계약이 하나도 없다 = v179 이전 세이브. 새 게임엔 영향 없다.
+  if (!d.fixBrand179 && Array.isArray(d.brands)) {
+    d.fixBrand179 = true;
+    const pre = d.brands.length && d.brands.every(b => b.upfront === undefined);
+    if (pre) {
+      const DEAL = {                       // 대화에서 합의된 조건(원)
+        '아르페지오':  { upfront:150000000, weekly:0,       weeks:8  },
+        '코스메 뮤즈': { upfront:50000000,  weekly:1000000, weeks:23 },
+        '스텝온 슈즈': { upfront:0,         weekly:1250000, weeks:8  },
+      };
+      Object.keys(DEAL).forEach(nm => {
+        const spec = DEAL[nm];
+        const has = d.brands.find(b => b.name === nm);
+        if (has) { IDOL_SIM.editBrand(d, nm, spec); }
+        else if (nm === '스텝온 슈즈') {    // 아예 누락됐던 계약 — 다시 세운다
+          d.brands.push({ name:nm, inkind:false, label:'로컬', tier:1,
+            weekly:spec.weekly, weeks:spec.weeks, left:spec.weeks,
+            member:null, shots:0, satis:55, upfront:spec.upfront });
+          try { IDOL_SIM.forceShoot(d, nm); } catch {}
+        }
+      });
+    }
+  }
   if (!Array.isArray(d.people)) d.people = [];
   if (!d.people.length) {
     const trace = (d.brands || []).length > 0 || (d.biz || 0) > 5
@@ -11371,6 +11475,7 @@ function idolCorpHtml() {
       ${b.inkind ? '주급 없음' : `주 ${won(b.weekly)}`} · ${b.left}주 남음</span></div>`;
     h += `<div class="ib-drow"><span class="k" style="opacity:0.62;padding-left:10px">└ 모델</span><span class="v">
       ${b.member ? `${nm(b.member)} 개인 앰버서더` : '팀 전체'} · 촬영 ${b.shots || 0}회 · 만족도 ${sat}${warn}</span></div>`;
+    if (b.upfront) h += `<div class="ib-drow"><span class="k" style="opacity:0.62;padding-left:10px">└ 계약금</span><span class="v">${won(b.upfront)}원 수령</span></div>`;
   });
   if (bs.some(b => (b.satis === undefined ? 55 : b.satis) < 40))
     h += `<div class="ib-note">⚠ 만족도가 낮다 — 일정에 「광고촬영」을 넣어라. 20 밑으로 떨어지면 계약이 파기된다.</div>`;
