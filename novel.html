@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v182</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v183</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -5320,7 +5320,7 @@ const IDOL_SIM = {
   //     ① 이번 sim이 앞으로 나올 편성 일정과 같은 일  → 그 사이 빈 날을 지나 그 칸을 소화
   //     ② 오늘이 빈 날/생략인데 다른 일을 했다        → **오늘 하루만** 쓴다(뒤 일정 안 건드림)
   //     ③ 오늘이 편성된 날인데 다른 일을 했다          → 그 일정을 뒤 빈 날로 **연기**(취소 아님)
-  //     ④ 남은 편성이 하나도 없다                     → 오늘 + 남은 빈 날을 다 흘려보낸다
+  //     ④ 남은 편성이 하나도 없다                     → 그래도 **하루만** 쓴다(주를 멋대로 끝내지 않는다)
   consumeSlot(d, sim){
     const S = IDOL_SIM, ps = S.weekPlans(d), n = ps.length;
     if (!sim || S.SLOT_ACTS.indexOf(sim.action) < 0) return { moved:0 };
@@ -5341,15 +5341,11 @@ const IDOL_SIM = {
       d.dowTime = '';
       return { moved, matched:true, name:ps[j].name };
     }
-    // ④ 남은 편성이 없다 — 오늘부터 주말까지 비어 있으니 다 흘려보낸다
-    if (j < 0) {
-      d.wkIdx = i0 + 1; moved++;                         // 오늘은 이 sim으로 썼다
-      while ((d.wkIdx || 0) < n) pass();
-      d.dowTime = '';
-      return { moved, matched:true, freeDay:true };
-    }
-    // ② 오늘은 빈 날이다 — 하루만 쓰고 **뒤 일정은 그대로 둔다**
-    if (!real(ps[i0])) {
+    // ②·④ 오늘이 빈 날이거나(②) 남은 편성이 아예 없다(④) — 어느 쪽이든 **하루만** 쓴다.
+    //   ★한 번의 행동으로 주말까지 몰아 흘려보내고 주를 끝내지 않는다(2026-07-31 유저 지적:
+    //     "갑자기 일주차 편성 다시하라고 되어있는디"). 남은 날이 다 비었더라도 주를 끝낼지는
+    //     대표가 정한다 — 보드의 「주간 마감」이 그 자리다.
+    if (j < 0 || !real(ps[i0])) {
       d.wkIdx = i0 + 1; moved++;
       d.dowTime = '';
       return { moved, matched:true, freeDay:true };
@@ -11790,6 +11786,18 @@ function idolCorpHtml() {
     h += `<div class="ib-drow"><span class="k" style="opacity:0.62;padding-left:10px">└ 모델</span><span class="v">
       ${b.member ? `${nm(b.member)} 개인 앰버서더` : '팀 전체'} · 촬영 ${b.shots || 0}회 · 만족도 ${sat}${warn}</span></div>`;
     if (b.upfront) h += `<div class="ib-drow"><span class="k" style="opacity:0.62;padding-left:10px">└ 계약금</span><span class="v">${won(b.upfront)}원 수령</span></div>`;
+    // ★이번 주에 촬영을 잡아두는 버튼 — 계약은 있는데 편성에서 빠졌을 때 여기서 다시 넣는다.
+    //   (2026-07-31: 대화 경로 버그로 잡아둔 광고촬영이 소화돼 버린 사고의 복구 수단이기도 하다.)
+    {
+      const has = (d.plan || []).some(p => p && p.sim && p.sim.action === '광고' && p.sim.brand === b.name);
+      const done = (d.wkIdx || 0) >= S.PLAN_PER_WEEK;
+      h += has
+        ? `<div class="ib-drow"><span class="k" style="opacity:0.5;padding-left:10px">└ 이번 주</span><span class="v" style="opacity:0.7">촬영 편성됨</span></div>`
+        : `<button class="ib-card" ${done ? 'disabled' : ''} onclick="scheduleShoot('${b.name.replace(/'/g, "\\'")}')">
+             <span class="n">📸 ${b.name} 촬영을 이번 주에 넣기</span>
+             <span class="e">${done ? '이번 주는 끝났다 — 다음 주 편성에서 넣어라'
+                                    : '가장 이른 빈 날(없으면 휴식인 날)에 잡는다'}</span></button>`;
+    }
   });
   if (bs.some(b => (b.satis === undefined ? 55 : b.satis) < 40))
     h += `<div class="ib-note">⚠ 만족도가 낮다 — 일정에 「광고촬영」을 넣어라. 20 밑으로 떨어지면 계약이 파기된다.</div>`;
@@ -12498,6 +12506,32 @@ function runPlanBatch(days) {
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
   window._genText = txt; handlePlayerInput(txt);
 }
+// ★계약한 광고의 촬영을 이번 주에 다시 잡는다(기업 탭 버튼).
+//   빈 날 → 생략한 날 → 휴식인 날 순으로 넣는다. **다른 일정은 절대 덮지 않는다** —
+//   뮤비촬영 같은 걸 말없이 밀어내면 그게 또 "일정이 날아갔다"가 된다.
+function scheduleShoot(name) {
+  const d = gameState.idol, S = IDOL_SIM, n = S.PLAN_PER_WEEK;
+  const b = (d.brands || []).find(x => x.name === name);
+  if (!b) { showStatToast(`${name}과는 계약 중이 아니다`, true); return; }
+  if ((d.plan || []).some(p => p && p.sim && p.sim.action === '광고' && p.sim.brand === name)) {
+    showStatToast(`${name} 촬영은 이미 편성돼 있다`, true); return;
+  }
+  d.plan = d.plan || [];
+  const from = d.wkIdx || 0;
+  const pick = test => { for (let j = from; j < n; j++) if (test(d.plan[j])) return j; return -1; };
+  let slot = pick(p => !p);                                        // ① 빈 날
+  if (slot < 0) slot = pick(p => p.sim && p.sim.action === '생략'); // ② 생략한 날
+  if (slot < 0) slot = pick(p => p.sim && p.sim.action === '휴식'); // ③ 휴식인 날
+  if (slot < 0) {
+    showStatToast('이번 주엔 넣을 날이 없다 — 일정을 하나 비워라', true); return;
+  }
+  const was = d.plan[slot];
+  d.plan[slot] = { name: `광고촬영 — ${name}`, sim: { action:'광고', brand:name }, forced:true };
+  SFX.play('choice');
+  showStatToast(`📸 ${S.DOW[slot]}요일에 ${name} 촬영을 넣었다`
+    + (was && was.sim && was.sim.action === '휴식' ? ' (휴식과 맞바꿈)' : ''));
+  openIdolBoard('corp');
+}
 // 주간 마감 — 대표 칸 처리 + 차트·정산 + 다음 주 월요일
 function closeIdolWeek() {
   const d = gameState.idol, S = IDOL_SIM;
@@ -12914,6 +12948,16 @@ function captureSnap(label) {
       t: Date.now(),
       turn: turnCount,
       label: String(label || '').replace(/\s+/g, ' ').slice(0, 40),
+      // ★그 시점의 주·요일을 따로 적어둔다 — 되감기 목록에서 **어디로 가는지** 보이게 하고,
+      //   "이번 주 월요일로" 같은 지점 찾기를 스냅샷 본문(수백 KB) 파싱 없이 하기 위해서다.
+      d: (function(){
+        try {
+          const g = gameState && gameState.idol;
+          if (!g) return null;
+          const c = IDOL_SIM.calOf(g.week);
+          return { w:g.week, k:(g.wkIdx || 0), m:c.m, wk:c.wk };
+        } catch { return null; }
+      })(),
       s: JSON.stringify({
         gameHistory, gameState, storySummary, summaryIndex, lastBg, turnCount,
         dialogueLog, playerName, playerDesc,
@@ -12964,21 +13008,47 @@ function loadSnaps() {
   } catch {}
 }
 
+// ★스냅샷의 주·요일 — 옛 스냅샷엔 sn.d가 없으니 그때만 본문을 한 번 읽고 캐시한다
+function snapWhen(sn) {
+  if (sn.d !== undefined) return sn.d;
+  try {
+    const g = JSON.parse(sn.s).gameState.idol;
+    const c = IDOL_SIM.calOf(g.week);
+    sn.d = { w:g.week, k:(g.wkIdx || 0), m:c.m, wk:c.wk };
+  } catch { sn.d = null; }
+  return sn.d;
+}
 function openRewind() {
   if (!turnSnaps.length) { showStatToast('되돌릴 시점이 아직 없다', true); return; }
   const box = document.getElementById('rewindBox');
+  const idol = (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' && gameState && gameState.idol);
+  // ★이번 주 월요일(wkIdx 0)로 가는 가장 최근 지점 — 편성이 꼬였을 때 여기로 돌리면 그 주를 다시 산다
+  let mon = -1;
+  if (idol) {
+    for (let i = turnSnaps.length - 1; i >= 0; i--) {
+      const w = snapWhen(turnSnaps[i]);
+      if (w && w.w === gameState.idol.week && w.k === 0) { mon = i; break; }
+    }
+  }
+  const head = (mon >= 0)
+    ? `<button class="rw-item" onclick="restoreSnap(${mon})" style="border-color:rgba(242,193,78,0.5)">
+         <span class="rw-turn" style="color:#f2c14e">⏮ 월요일</span>
+         <span class="rw-label">이번 주(${snapWhen(turnSnaps[mon]).m}월 ${snapWhen(turnSnaps[mon]).wk}주)를 처음부터 다시</span>
+         <span class="rw-ago">${turnSnaps[mon].turn}턴</span></button>` : '';
   const rows = turnSnaps.slice().reverse().map((sn, ri) => {
     const i = turnSnaps.length - 1 - ri;
     const ago = Math.max(0, Math.round((Date.now() - sn.t) / 60000));
+    const w = snapWhen(sn);
+    const when = w ? `${w.m}/${w.wk} ${IDOL_SIM.DOW[Math.min(6, w.k)]}` : '';
     return `<button class="rw-item" onclick="restoreSnap(${i})">
-      <span class="rw-turn">${sn.turn}턴</span>
+      <span class="rw-turn">${when || (sn.turn + '턴')}</span>
       <span class="rw-label">${sn.label ? esc(sn.label) : '(시작)'}</span>
       <span class="rw-ago">${ago < 1 ? '방금' : ago < 60 ? ago + '분 전' : Math.round(ago / 60) + '시간 전'}</span>
     </button>`;
   }).join('');
   box.innerHTML = `<div class="rw-head">⏪ 어디로 되돌릴까
       <span class="rw-sub">그 입력을 하기 직전으로 돌아간다 · 최근 ${turnSnaps.length}개</span>
-      <button class="rw-close" onclick="closeRewind()">✕</button></div>${rows}`;
+      <button class="rw-close" onclick="closeRewind()">✕</button></div>${head}${rows}`;
   box.classList.add('on');
 }
 function closeRewind() { document.getElementById('rewindBox').classList.remove('on'); }
