@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v183</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v184</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -8759,6 +8759,9 @@ let autoTimer = null;
 //     (프롬프트는 gameHistory.slice(-CONTEXT_RECENT)만 씀) → 잘라내도 맥락이 안 끊긴다.
 const HISTORY_MAX  = 400;    // 대화 원문 보관 상한(≈200턴). 넘으면 요약된 앞부분부터 버린다
 const DIALOG_MAX   = 600;    // 기록(백로그) 보관 상한
+// ★앞에서 버려진 누적 개수 — 되감기가 "그 시점 길이"를 찾을 때 기준점이 된다.
+//   배열은 뒤로만 자라고 앞으로만 잘리니, (버린 수 + 현재 길이) = 논리적 길이가 늘 단조증가한다.
+let histDropped = 0, dlogDropped = 0;
 
 function trimHistory(keep) {
   // 요약이 끝난 구간(summaryIndex 이전)에서만 버린다 — 안 버리면 요약 인덱스가 깨진다
@@ -8766,6 +8769,7 @@ function trimHistory(keep) {
   const drop = Math.min(over, Math.max(0, summaryIndex));
   if (drop <= 0) return 0;
   gameHistory = gameHistory.slice(drop);
+  histDropped += drop;
   summaryIndex = Math.max(0, summaryIndex - drop);
   return drop;
 }
@@ -8773,9 +8777,13 @@ function trimHistory(keep) {
 function autoSave() {
   // 평상시 상한 유지 — 여기서 미리 줄여두면 용량 초과 자체가 잘 안 난다
   if (gameHistory.length > HISTORY_MAX) trimHistory(HISTORY_MAX);
-  if (dialogueLog.length > DIALOG_MAX) dialogueLog = dialogueLog.slice(-DIALOG_MAX);
+  if (dialogueLog.length > DIALOG_MAX) {
+    dlogDropped += dialogueLog.length - DIALOG_MAX;
+    dialogueLog = dialogueLog.slice(-DIALOG_MAX);
+  }
 
   const build = () => ({
+    histDropped, dlogDropped,     // ★되감기 기준점 — 없으면 새로고침 후 자르기가 안 먹는다
     gameHistory,
     gameState,
     storySummary,
@@ -8962,8 +8970,15 @@ function restoreAndReplay(save, checkTimeflow) {
   window._startPhase = 'playing';   // 이어하기는 본편 진행 중 — 시작 플로우 상태머신 스킵
   loadSnaps();                      // 되감기 스냅샷 복원
   gameHistory = save.gameHistory || [];
+  histDropped = save.histDropped || 0;
+  dlogDropped = save.dlogDropped || 0;
   gameState = save.gameState || gameState;
-  if (STORY.id === 'idol' && gameState.idol) migrateIdolSave(gameState.idol);   // 구 세이브 필드 보정
+  if (STORY.id === 'idol' && gameState.idol) {
+    migrateIdolSave(gameState.idol);                    // 구 세이브 필드 보정
+    // ★세이브에 박힌 gameState.time은 v182 이전엔 AI가 옮긴 요일이라 wkIdx와 어긋나 있다.
+    //   불러온 직후 **다시 계산**한다 — 안 그러면 다음 AI 턴까지 배너가 엉뚱한 요일을 띄운다.
+    try { gameState.time = IDOL_SIM.dateLine(gameState.idol); } catch {}
+  }
   window._freeMode = !!(gameState && gameState.freeMode);   // 자유모드 복원(이름 치환 판단)
   window._modeChosen = true;
   storySummary = save.storySummary || '';
@@ -12935,7 +12950,8 @@ async function regenerate() {
 //     ③localStorage.setItem이 용량 초과로 던지면 `catch {}`가 먹어버린다.
 //   결과: 마지막으로 성공한 시점(114턴)이 localStorage에 박히고, 새로고침하면 그게 올라온다.
 //   → 트림 하한을 1로 내리고, **실제로 써질 때까지 재시도**한다. 그래도 안 되면 키를 비운다.
-const SNAP_MAX = 24;                 // 보관 개수(턴이 쌓이면 스냅샷 하나가 커지므로 40 → 24)
+// ★본문을 빼면서 스냅샷 하나가 수백 KB → 수 KB로 줄었다. 보관 개수를 되돌린다.
+const SNAP_MAX = 60;
 const SNAP_BYTES = 2000000;          // 1차 트림 기준(그 뒤엔 setItem 성공까지 더 줄인다)
 let turnSnaps = [];
 let snapWarned = false;
@@ -12958,9 +12974,14 @@ function captureSnap(label) {
           return { w:g.week, k:(g.wkIdx || 0), m:c.m, wk:c.wk };
         } catch { return null; }
       })(),
+      // ★★본문(gameHistory·dialogueLog)은 **넣지 않는다** — 대신 그 시점의 길이만 적는다.
+      //   둘 다 뒤로만 자라므로 되감기는 "그 길이로 자르기"면 된다. 통째로 복사하던 때는
+      //   스냅샷 하나가 약 380KB라 localStorage에 두세 개밖에 안 들어갔다(2026-07-31 유저 화면: "최근 2개").
+      hL: histDropped + gameHistory.length,
+      dL: dlogDropped + dialogueLog.length,
       s: JSON.stringify({
-        gameHistory, gameState, storySummary, summaryIndex, lastBg, turnCount,
-        dialogueLog, playerName, playerDesc,
+        gameState, storySummary, summaryIndex, lastBg, turnCount,
+        playerName, playerDesc,
         currentBgFile: (typeof currentBgFile !== 'undefined' ? currentBgFile : null),
         shownSprites: (typeof shownSprites !== 'undefined' ? [...shownSprites] : []),
         choices: (window._lastChoices || null),
@@ -13059,19 +13080,31 @@ function restoreSnap(i) {
   try { d = JSON.parse(sn.s); } catch { showStatToast('스냅샷을 읽지 못했다', true); return; }
   closeRewind();
   if (typeof historyMode !== 'undefined' && historyMode) exitHistory();
-  // 상태 통째 복원 — 아이돌 수치(gameState.idol)도 함께 돌아간다
-  gameHistory = d.gameHistory || [];
+  // 상태 복원 — 아이돌 수치(gameState.idol)도 함께 돌아간다
+  // ★본문은 **자른다**. 스냅샷에 본문이 들어 있던 옛 형식이면 그걸 그대로 쓴다(호환).
+  if (d.gameHistory) {
+    gameHistory = d.gameHistory;
+    if (d.dialogueLog) dialogueLog = d.dialogueLog;
+  } else {
+    if (typeof sn.hL === 'number')
+      gameHistory = gameHistory.slice(0, Math.max(0, Math.min(gameHistory.length, sn.hL - histDropped)));
+    if (typeof sn.dL === 'number')
+      dialogueLog = dialogueLog.slice(0, Math.max(0, Math.min(dialogueLog.length, sn.dL - dlogDropped)));
+  }
   gameState = d.gameState || gameState;
   storySummary = d.storySummary || '';
   summaryIndex = d.summaryIndex || 0;
   lastBg = d.lastBg || null;
   turnCount = d.turnCount || 0;
-  dialogueLog = d.dialogueLog || [];
   playerName = d.playerName || playerName;
   playerDesc = d.playerDesc || playerDesc;
   turnSnaps = turnSnaps.slice(0, i);          // 되돌린 지점 이후 스냅샷은 버린다
   persistSnaps();
   // 화면 재구성
+  // ★★날짜를 **다시 계산한다**(2026-07-31 유저 지적: "되돌리기하니까 화요일이던 게 수요일이네").
+  //   gameState.time은 문자열로 같이 복원되는데, v182 이전 스냅샷의 그 값은 AI가 옮긴 요일이라
+  //   편성 포인터(wkIdx)와 어긋나 있다. 요일은 wkIdx가 소유하므로 여기서 새로 만든다.
+  try { syncIdolTime(); } catch {}
   try { if (lastBg) setBg(lastBg); } catch {}
   try { updateStatusUI(); } catch {}
   try { updateSceneBanner(); } catch {}
