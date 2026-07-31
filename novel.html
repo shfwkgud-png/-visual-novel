@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v196</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v197</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10152,7 +10152,11 @@ function processResponse(data, activeCharIds, streamed) {
     if (!replaying && STORY.id === 'idol' && gameState.idol && s.sim && typeof s.sim === 'object') {
       // ★sim.action이 있을 때만 받던 게 버그였다(2026-07-27) — 제목·완성도·팬덤명은 일정과 무관하게
       //   대화로 정하는 것이라 action이 없다. 그래서 「앨범명 PING」이 영영 안 박혔다.
-      const HAS_STATE = x => !!(x && (x.title || x.fandom || x.quality !== undefined || x.appeal !== undefined));
+      // ★대화로 정한 상태값이 하나라도 있으면 통과시킨다. 여기 빠진 필드는 **일정을 소화한 턴에**
+      //   통째로 버려진다(_skipSim 경로). stage가 빠져 있어서 무대 장면에서 "Y2K로 갈아입어"라고
+      //   말해도 컨셉이 안 잡혔다(2026-07-31 유저 지적) — 무대 장면은 거의 항상 일정 소화 턴이다.
+      const HAS_STATE = x => !!(x && (x.title || x.fandom || x.stage !== undefined
+                                      || x.quality !== undefined || x.appeal !== undefined));
       if (gameState.idol._skipSim) {
         // 일정 보드로 이미 적용한 턴 — 일정(action)만 무시하고, 대화로 정한 상태값은 살린다
         delete gameState.idol._skipSim;
