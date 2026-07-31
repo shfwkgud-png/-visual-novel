@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v191</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v192</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -12363,14 +12363,15 @@ function openIdolBoard(tab) {
           <span class="e">그 자리에 ${pb.name}이(가) 들어간다</span></button>`).join('') + `</div>`;
     }
     // ★칸 = 요일(2026-07-30). 지난 날은 done, 오늘은 now, 비운 날은 「생략(휴식)」으로 보여준다.
-    const today = d.wkIdx || 0;
+    // ★표시(오늘)와 진행(소화한 칸)은 다른 값이다 — 섞으면 하루 앞선 요일이 강조된다
+    const today = S.dowOf(d), donePtr = d.wkIdx || 0;
     h += [0,1,2,3,4,5,6].map(i => {
       const pk = ps[i], skip = !pk || (pk.sim && pk.sim.action === '생략');
       // ★지난 요일을 탭하면 그 날로 되돌린다 — 날짜가 어긋났을 때 대표가 직접 맞춘다
-      const back = i < today ? ` onclick="setToday(${i})"` : '';
+      const back = i < today ? ` onclick="setToday(${i})"` : '';   // 지난 요일만 되돌리기
       return `<div class="ib-plan">
         <div class="ib-wk${i === today ? ' now' : ''}" style="${i >= 5 ? 'color:#e07a5f' : ''}">${S.DOW[i]}</div>
-        <div class="ib-slot${i === today ? ' now' : ''}${i < today ? ' done' : ''}${pk && pk.fixed ? ' fixed' : ''}"
+        <div class="ib-slot${i === today ? ' now' : ''}${i < donePtr && i !== today ? ' done' : ''}${pk && pk.fixed ? ' fixed' : ''}"
              style="${skip ? 'opacity:0.5' : ''}"${back}>
           <span>${pk ? (pk.fixed ? '🔒 ' : '') + pk.name : '생략(휴식)'}</span>
           ${back ? '<span style="font-size:10px;opacity:0.45"> · 탭하면 이 날로</span>' : ''}</div></div>`;
@@ -13051,7 +13052,9 @@ function captureSnap(label) {
           const g = gameState && gameState.idol;
           if (!g) return null;
           const c = IDOL_SIM.calOf(g.week);
-          return { w:g.week, k:(g.wkIdx || 0), m:c.m, wk:c.wk };
+          // k = 표시 요일(curDow) · i = 진행 포인터(wkIdx). 둘은 다르다 — k는 "무슨 날이었나",
+          // i는 "몇 칸 소화했나"다. 목록엔 k를, 「이번 주 처음부터」 찾기엔 i를 쓴다.
+          return { w:g.week, k:IDOL_SIM.dowOf(g), i:(g.wkIdx || 0), m:c.m, wk:c.wk };
         } catch { return null; }
       })(),
       // ★★본문(gameHistory·dialogueLog)은 **넣지 않는다** — 대신 그 시점의 길이만 적는다.
@@ -13115,7 +13118,7 @@ function snapWhen(sn) {
   try {
     const g = JSON.parse(sn.s).gameState.idol;
     const c = IDOL_SIM.calOf(g.week);
-    sn.d = { w:g.week, k:(g.wkIdx || 0), m:c.m, wk:c.wk };
+    sn.d = { w:g.week, k:IDOL_SIM.dowOf(g), i:(g.wkIdx || 0), m:c.m, wk:c.wk };
   } catch { sn.d = null; }
   return sn.d;
 }
@@ -13128,7 +13131,8 @@ function openRewind() {
   if (idol) {
     for (let i = turnSnaps.length - 1; i >= 0; i--) {
       const w = snapWhen(turnSnaps[i]);
-      if (w && w.w === gameState.idol.week && w.k === 0) { mon = i; break; }
+      const wi = w && (typeof w.i === 'number' ? w.i : w.k);   // 옛 스냅샷은 k가 wkIdx였다
+      if (w && w.w === gameState.idol.week && wi === 0) { mon = i; break; }
     }
   }
   const head = (mon >= 0)
@@ -13140,7 +13144,8 @@ function openRewind() {
     const i = turnSnaps.length - 1 - ri;
     const ago = Math.max(0, Math.round((Date.now() - sn.t) / 60000));
     const w = snapWhen(sn);
-    const when = w ? `${w.m}/${w.wk} ${IDOL_SIM.DOW[Math.min(6, w.k)]}` : '';
+    // ★"5/1 수"는 **5월 1일**로 읽힌다(2026-07-31 유저 지적). 주차임을 드러낸다.
+    const when = w ? `${w.m}월 ${w.wk}주<br>${IDOL_SIM.DOW[Math.min(6, w.k)]}요일` : '';
     return `<button class="rw-item" onclick="restoreSnap(${i})">
       <span class="rw-turn">${when || (sn.turn + '턴')}</span>
       <span class="rw-label">${sn.label ? esc(sn.label) : '(시작)'}</span>
