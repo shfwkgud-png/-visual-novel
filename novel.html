@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v193</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v194</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10154,20 +10154,33 @@ function processResponse(data, activeCharIds, streamed) {
         const base = CHARACTERS[id] || {};
         const cur = gameState.metChars[id] || { name: base.name || id, role: base.role || '' };
         // ★호감도 델타 토스트(프론티아 '행동→수치 즉시 반영'): 기존 수치가 있고 변했을 때만
-        if (!replaying && typeof u.intimacy === 'number' && typeof cur.intimacy === 'number' && u.intimacy !== cur.intimacy) {
-          showStatToast(`${cur.name || base.name || id} 💗 ${u.intimacy > cur.intimacy ? '+' : ''}${u.intimacy - cur.intimacy}`, u.intimacy < cur.intimacy);
-        }
+        // (델타 토스트는 아래에서 클램프된 최종값으로 띄운다)
+        // ★★한 턴에 친밀도가 뚝 떨어지는 걸 막는다(2026-07-31 유저 지적: "갑자기 아무 이유 없이
+        //   친밀도가 다 내려간다"). AI가 준 값을 그대로 쓰다 보니 근거 없는 급락이 그대로 반영됐다.
+        //   서사상 진짜 사건이면 여러 턴에 걸쳐 내려가면 된다. 상승은 제한하지 않는다.
+        //   ★아이돌 **멤버**는 아예 받지 않는다 — 그 관계의 진짜 값은 앱이 계산하는 trust다.
+        //     AI가 절대값으로 다시 써서 한 번에 38이 날아가는데 장면은 "고맙다"인 일이 있었다.
+        const _isMember = !!(typeof STORY !== 'undefined' && STORY && STORY.id === 'idol'
+                             && gameState.idol && gameState.idol.mem && gameState.idol.mem[id]);
+        let _int = (_isMember || typeof u.intimacy !== 'number') ? cur.intimacy : u.intimacy;
+        if (typeof _int === 'number' && typeof cur.intimacy === 'number' && _int < cur.intimacy - 8)
+          _int = cur.intimacy - 8;                     // 그 밖의 인물도 한 턴 급락은 −8까지
         gameState.metChars[id] = {
           ...cur,
           name: cur.name || base.name || id,
           role: cur.role || base.role || '',
           relationship: u.relationship ?? cur.relationship,
-          intimacy: (typeof u.intimacy === 'number') ? u.intimacy : cur.intimacy,
+          intimacy: _int,
           condition: u.condition ?? cur.condition,
           note: u.note ?? cur.note,
           location: u.location ?? cur.location,
           tier: u.tier ?? cur.tier
         };
+        // ★호감도 델타 토스트 — **클램프된 실제 반영값**으로 띄운다(안 그러면 화면과 수치가 어긋난다)
+        if (!replaying && typeof _int === 'number' && typeof cur.intimacy === 'number' && _int !== cur.intimacy) {
+          showStatToast(`${cur.name || base.name || id} 💗 ${_int > cur.intimacy ? '+' : ''}${Math.round(_int - cur.intimacy)}`,
+                        _int < cur.intimacy);
+        }
       }
     }
     // Merge protagonist status
@@ -12941,7 +12954,9 @@ function renderStatusPanel() {
           <div class="char-meta">컨디션 ${Math.round(m.cond)}${bar(m.cond, m.cond < 40 ? '#e05252' : '#5fb37a')}</div>
           <div class="char-meta">멘탈 ${Math.round(m.mind)}${bar(m.mind, m.mind < 40 ? '#e05252' : '#6b8fd6')}</div>
           <div class="char-meta">신뢰 ${Math.round(m.trust)}${bar(m.trust, '#f2c14e')}</div>
-          ${intim !== undefined && intim !== null ? `<div class="char-meta">친밀도 ${intim}${bar(intim, '#e11d48')}</div>` : ''}
+          ${'' /* ★멤버는 신뢰(trust) 하나로 본다 — AI가 관리하는 intimacy를 같이 띄우면
+                 앱이 계산한 값과 따로 놀아 "아무 이유 없이 친밀도가 내려간다"가 된다
+                 (2026-07-31 유저 지적). 관계 수치의 단일 진실원은 trust다. */}
           ${mt.note ? `<div class="char-meta">📌 ${esc(mt.note)}</div>` : ''}
         </div></div>`;
     }).join('');
