@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v192</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v193</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11503,7 +11503,7 @@ function migrateIdolSave(d) {
   // ★표시 요일 — 구 세이브엔 없다. 마지막으로 소화한 칸(= wkIdx-1)이 오늘이다.
   if (typeof d.curDow !== 'number')
     d.curDow = Math.max(0, Math.min(6, (d.wkIdx || 0) > 0 ? (d.wkIdx - 1) : 0));
-  // ★죽은 필드는 지운다 — 무엇이 요일을 정하는지 헷갈리게 했다(요일 = wkIdx 하나뿐)
+  // ★죽은 필드는 지운다 — 무엇이 요일을 정하는지 헷갈리게 했다(표시 요일 = curDow 하나뿐)
   delete d.slots; delete d.day; delete d.dow;
   delete d.lastReject;
   if (typeof d.dowTime !== 'string') d.dowTime = '';
@@ -11528,13 +11528,15 @@ function migrateIdolSave(d) {
       const np = new Array(n2).fill(null);
       rest.forEach((p, k) => { if (nd + k < n2) np[nd + k] = p; });
       d.plan = np;
-      d.wkIdx = nd;
+      // ★표시 요일도 같이 옮긴다 — wkIdx만 옮기면 위에서 옛 값으로 계산해 둔 curDow와 어긋난다
+      //   (구조 가드가 "wkIdx 할당에 curDow 짝이 없다"고 잡아준 자리다).
+      d.wkIdx = nd; d.curDow = nd;
       d.planWeek = d.week;                                      // 다시 편성하라고 하지 않는다
     } else if (Array.isArray(d.plan) && d.plan.length && typeof d.planMonth === 'number') {
       // ★옛 clearPlanSlot이 splice였어서 8칸이 안 되는 세이브가 있다(칸이 앞으로 당겨진 상태).
       //   이건 어느 칸이 어느 주였는지 복원할 수 없다 → 편성표를 버리고 **재편성을 요구**한다.
       //   수치·계약·팬은 그대로다. 잘못 복원해 다른 주 일정을 진행시키는 것보다 낫다.
-      d.plan = []; d.planWeek = 0; d.wkIdx = nd;
+      d.plan = []; d.planWeek = 0; d.wkIdx = nd; d.curDow = nd;
       d.needReplan181 = true;                                   // 실장이 편성을 요청하는 근거
     }
     if (Array.isArray(d.ceoPlan) && d.ceoPlan.length > 1) d.ceoPlan = [d.ceoPlan[wi] || null];
