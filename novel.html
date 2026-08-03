@@ -2036,7 +2036,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v203</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v204</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7493,12 +7493,25 @@ function openStorage() {
       <span class="rw-label">${esc(LS_LABEL(r.k))}${safe ? '' : ' <b style="color:#e0524a">·실제 데이터</b>'}</span>
       <span class="rw-ago">지우기</span></button>`;
   });
-  h += `<div class="ib-note" style="padding:10px 14px">되감기·배경음악 캐시는 지워도 게임에 지장이 없다.
-    <b style="color:#e0524a">세이브·내가 만든 스토리</b>는 지우면 진짜로 사라진다 — 백업 먼저.</div>`;
+  h += `<button class="rw-item" onclick="offloadNow()" style="border-color:rgba(126,200,126,0.5)">
+      <span class="rw-turn" style="color:#7ec87e">☁ 정리</span>
+      <span class="rw-label">지금 안 하는 스토리 세이브를 <b>클라우드로 옮기고</b> 로컬을 비운다</span>
+      <span class="rw-ago">안전</span></button>`;
+  h += `<div class="ib-note" style="padding:10px 14px">세이브는 매 턴 클라우드에 자동 업로드된다 —
+    로컬에서 비워도 <b>이어하기 하면 다시 받아온다</b>. 되감기·음악 캐시도 지워도 무방하다.
+    <b style="color:#e0524a">내가 만든 스토리</b>만 지울 때 조심하라.</div>`;
   const box = document.getElementById('rewindBox');
   box.innerHTML = h; box.classList.add('on');
 }
 function closeStorage() { document.getElementById('rewindBox').classList.remove('on'); }
+async function offloadNow() {
+  if (!hasSyncAuth()) { alert('로그인이 필요합니다 — 클라우드에 올릴 수 없습니다.'); return; }
+  const r = await offloadSaves();
+  alert(r.moved ? `세이브 ${r.moved}개를 클라우드로 옮기고 ${Math.round(r.freed/1024)}KB를 비웠습니다.
+이어하기 하면 다시 받아옵니다.`
+                : '옮길 세이브가 없습니다(지금 하는 스토리만 남아 있음).');
+  openStorage();
+}
 function lsDrop(k) {
   const safe = LS_SAFE(k);
   const msg = safe ? `「${LS_LABEL(k)}」를 지울까? (게임에 지장 없음)`
@@ -7513,16 +7526,32 @@ function lsDrop(k) {
 function lsSet(key, val, what) {
   try { localStorage.setItem(key, val); return true; }
   catch (e) {
-    const { total } = lsUsage();
-    const mb = (total / 1024 / 1024).toFixed(2);
-    alert(`저장 공간이 꽉 찼습니다 (${mb}MB 사용 중).
+    // ★1차 자동 복구: 안 하는 스토리 세이브를 클라우드로 밀어내고 그 자리를 비운다.
+    //   세이브는 어차피 KV에 올라가 있으니 로컬에서 비워도 잃는 게 없다(이어하기 때 되받는다).
+    if (!window._lsOffloading && hasSyncAuth()) {
+      window._lsOffloading = true;
+      offloadSaves().then(r => {
+        window._lsOffloading = false;
+        if (r.moved) {
+          try { localStorage.setItem(key, val); } catch { return lsFull(key, what); }
+          showStatToast(`☁ 세이브 ${r.moved}개를 클라우드로 옮겨 ${Math.round(r.freed/1024)}KB 확보 — 저장했다`);
+        } else lsFull(key, what);
+      }).catch(() => { window._lsOffloading = false; lsFull(key, what); });
+      return 'retry';                       // 호출부는 이 값을 '실패로 닫지 않음'으로 다룬다
+    }
+    return lsFull(key, what);
+  }
+}
+function lsFull(key, what) {
+  const { total } = lsUsage();
+  const mb = (total / 1024 / 1024).toFixed(2);
+  alert(`저장 공간이 꽉 찼습니다 (${mb}MB 사용 중).
 
 「${what}」을(를) 저장하지 못했습니다.
 `
-        + `창을 닫지 말고, 방금 뜨는 목록에서 큰 항목을 지운 뒤 다시 저장하세요.`);
-    try { openStorage(); } catch {}
-    return false;
-  }
+      + `창을 닫지 말고, 방금 뜨는 목록에서 큰 항목을 지운 뒤 다시 저장하세요.`);
+  try { openStorage(); } catch {}
+  return false;
 }
 function getLocalStories() {
   try { return JSON.parse(localStorage.getItem('vn_local_stories') || '{}'); } catch { return {}; }
@@ -7778,8 +7807,14 @@ function startStoryNew() {
   startGame(false);
 }
 
-function startStoryContinue() {
+async function startStoryContinue() {
   if (!requireLogin()) return;
+  // ★로컬에 세이브가 없으면 클라우드에서 되받는다(오프로드된 스토리를 다시 열 때)
+  if (detailStoryId && !localStorage.getItem(saveKeyFor(detailStoryId))) {
+    syncStatus && syncStatus('클라우드에서 세이브를 가져오는 중…');
+    const got = await pullSave(detailStoryId);
+    if (!got) { alert('저장된 플레이를 찾지 못했습니다.'); return; }
+  }
   if (!detailStoryId || !saveInfoFor(detailStoryId)) return;
   if (needsAiSetup()) { openSettings(); return; }
   setActiveStory(detailStoryId);
@@ -8025,6 +8060,48 @@ function syncStatus(msg) {
   if (el) el.textContent = msg;
 }
 
+// 조건에 맞는 localStorage 키 목록
+function lsKeys(re) {
+  const out = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (re.test(k)) out.push(k);
+  }
+  return out;
+}
+// ★★안 하는 스토리 세이브를 **클라우드로 밀어내고 로컬을 비운다**(2026-08-01 유저 제안:
+//   "세이브를 다른 곳에 올리면 되잖아"). 세이브는 어차피 매 턴 KV에 자동 업로드되고 있었는데,
+//   올려놓고 로컬에도 그대로 둬서 5MB를 잡아먹었다. 지금 하는 스토리만 로컬에 남긴다.
+//   ★반드시 **업로드 성공을 확인한 뒤에만** 지운다. 실패하면 그 키는 건드리지 않는다.
+async function offloadSaves(keepId) {
+  if (!hasSyncAuth()) return { moved: 0, freed: 0, reason: '로그인이 필요하다' };
+  const keep = keepId || (typeof STORY !== 'undefined' && STORY ? STORY.id : null);
+  const keepKeys = new Set([saveKeyFor(keep)]);
+  let moved = 0, freed = 0;
+  for (const k of lsKeys(/^vn_save_|^nakin_save$|^vn_slot_/)) {
+    if (keepKeys.has(k)) continue;
+    const raw = localStorage.getItem(k);
+    if (!raw) continue;
+    const cloudKey = /^vn_slot_/.test(k) ? k
+                   : 'save:' + (k === 'nakin_save' ? 'nakin' : k.slice(8));
+    let ok = false;
+    try { ok = await syncPut(cloudKey, raw); } catch {}
+    if (!ok) continue;                       // ★올리지 못했으면 절대 지우지 않는다
+    try { localStorage.removeItem(k); moved++; freed += raw.length; } catch {}
+  }
+  return { moved, freed };
+}
+// 로컬에 없으면 클라우드에서 되찾는다(이어하기·슬롯 로드에서 쓴다)
+async function pullSave(id) {
+  const k = saveKeyFor(id);
+  if (localStorage.getItem(k)) return true;
+  if (!hasSyncAuth()) return false;
+  try {
+    const v = await syncGet('save:' + id);
+    if (!v) return false;
+    return lsSet(k, typeof v === 'string' ? v : JSON.stringify(v), '세이브 — ' + id);
+  } catch { return false; }
+}
 async function syncPut(key, value) {
   const h = authHeaders();
   if (!Object.keys(h).length) return false;
@@ -8055,6 +8132,11 @@ async function backupAll(manual) {
     for (const id of Object.keys(allStories())) {
       const raw = localStorage.getItem(saveKeyFor(id));
       if (raw) { await syncPut('save:' + id, raw); n++; }
+    }
+    // ★슬롯 세이브도 올린다 — 전엔 백업 대상이 아니라, 로컬에서 지우면 그대로 사라졌다.
+    for (const k of lsKeys(/^vn_slot_/)) {
+      const raw = localStorage.getItem(k);
+      if (raw) { await syncPut(k, raw); n++; }
     }
     await syncPut('cfg', localStorage.getItem('vn_cfg') || '{}'); n++;
     const when = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
@@ -8760,7 +8842,9 @@ function publishStory() {
   local[id] = story;
   // ★저장에 실패하면 **편집창을 닫지 않는다** — 닫으면 방금 쓴 내용이 통째로 날아간다
   //   (2026-08-01 유저: 편집 중 QuotaExceededError. 그 줄엔 방어가 아예 없었다.)
-  if (!lsSet('vn_local_stories', JSON.stringify(local), '스토리 「' + (story.title || id) + '」')) return;
+  const r = lsSet('vn_local_stories', JSON.stringify(local), '스토리 「' + (story.title || id) + '」');
+  if (r === 'retry') { showStatToast('☁ 공간을 확보하는 중 — 잠시 뒤 다시 저장하라', true); return; }
+  if (!r) return;
   try { scheduleAutoBackup(); } catch {}
   closeCreator();
   switchMainTab('my');
