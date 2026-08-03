@@ -1790,6 +1790,7 @@
       <div class="my-section">
         <div class="my-label">설정</div>
         <button class="my-btn" onclick="openSettings()">⚙ AI 연결 설정</button>
+        <button class="my-btn" onclick="openStorage()">💾 저장 공간 — 뭐가 차지하나</button>
       </div>
       <div class="my-section" id="myAdmin" style="display:none"></div>
     </div>
@@ -2035,7 +2036,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v202</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v203</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7447,6 +7448,82 @@ const BUILTIN_STORIES = {
   }
 };
 
+// ★★저장소 용량 진단·정리 (2026-08-01 유저: 스토리 편집 중 QuotaExceededError)
+//   localStorage는 오리진당 약 5MB뿐인데 세이브·업로드 이미지·되감기가 전부 여기 산다.
+//   꽉 차면 저장이 **던지고** 편집 내용이 통째로 날아갔다 — 그걸 막고, 뭐가 먹는지 보여준다.
+function lsUsage() {
+  const rows = [];
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    let n = 0;
+    try { n = (localStorage.getItem(k) || '').length + k.length; } catch {}
+    total += n;
+    rows.push({ k, n });
+  }
+  rows.sort((x, y) => y.n - x.n);
+  return { rows, total };
+}
+const LS_LABEL = k =>
+  k === 'vn_uploads'        ? '업로드 이미지(얼굴·배경)'
+  : k === 'vn_local_stories'? '내가 만든 스토리'
+  : k === 'nakin_save'      ? '세이브 — 낙인의 검'
+  : /^vn_save_/.test(k)     ? '세이브 — ' + k.slice(8)
+  : /^vn_snaps_/.test(k)    ? '되감기 — ' + k.slice(9)
+  : /^vn_timeflow_/.test(k) ? '시간 흐름 — ' + k.slice(12)
+  : /^vn_endings_/.test(k)  ? '엔딩 기록 — ' + k.slice(12)
+  : k === 'vn_cfg'          ? '설정'
+  : k === 'vn_bgm2'         ? '배경음악 캐시'
+  : k;
+// 지워도 되는가 — 세이브·내 스토리는 진짜 데이터라 경고를 세게 낸다
+const LS_SAFE = k => /^vn_snaps_|^vn_bgm2$|^vn_timeflow_/.test(k);
+
+function openStorage() {
+  const { rows, total } = lsUsage();
+  const mb = n => (n / 1024 / 1024).toFixed(2) + 'MB';
+  const kb = n => n >= 1024 * 1024 ? mb(n) : (n / 1024).toFixed(0) + 'KB';
+  let h = `<div class="rw-head">💾 저장 공간
+      <span class="rw-sub">쓴 용량 <b>${mb(total)}</b> — 브라우저 한도는 보통 5MB다.
+        꽉 차면 스토리 편집·세이브가 실패한다.</span>
+      <button class="rw-close" onclick="closeStorage()">✕</button></div>`;
+  rows.forEach(r => {
+    const safe = LS_SAFE(r.k);
+    h += `<button class="rw-item" onclick="lsDrop('${r.k}')">
+      <span class="rw-turn" style="color:${r.n > 300000 ? '#e0524a' : 'rgba(232,230,227,0.6)'}">${kb(r.n)}</span>
+      <span class="rw-label">${esc(LS_LABEL(r.k))}${safe ? '' : ' <b style="color:#e0524a">·실제 데이터</b>'}</span>
+      <span class="rw-ago">지우기</span></button>`;
+  });
+  h += `<div class="ib-note" style="padding:10px 14px">되감기·배경음악 캐시는 지워도 게임에 지장이 없다.
+    <b style="color:#e0524a">세이브·내가 만든 스토리</b>는 지우면 진짜로 사라진다 — 백업 먼저.</div>`;
+  const box = document.getElementById('rewindBox');
+  box.innerHTML = h; box.classList.add('on');
+}
+function closeStorage() { document.getElementById('rewindBox').classList.remove('on'); }
+function lsDrop(k) {
+  const safe = LS_SAFE(k);
+  const msg = safe ? `「${LS_LABEL(k)}」를 지울까? (게임에 지장 없음)`
+                   : `「${LS_LABEL(k)}」를 지울까?
+★이건 실제 데이터다 — 되돌릴 수 없다.`;
+  if (!confirm(msg)) return;
+  try { localStorage.removeItem(k); } catch {}
+  openStorage();
+}
+// ★쿼터 초과를 조용히 삼키지 않는다 — 무엇이 실패했는지 말하고 정리 화면을 띄운다.
+//   성공하면 true, 실패하면 false. 호출부는 false일 때 **작업을 되돌리지 말고 유지**해야 한다.
+function lsSet(key, val, what) {
+  try { localStorage.setItem(key, val); return true; }
+  catch (e) {
+    const { total } = lsUsage();
+    const mb = (total / 1024 / 1024).toFixed(2);
+    alert(`저장 공간이 꽉 찼습니다 (${mb}MB 사용 중).
+
+「${what}」을(를) 저장하지 못했습니다.
+`
+        + `창을 닫지 말고, 방금 뜨는 목록에서 큰 항목을 지운 뒤 다시 저장하세요.`);
+    try { openStorage(); } catch {}
+    return false;
+  }
+}
 function getLocalStories() {
   try { return JSON.parse(localStorage.getItem('vn_local_stories') || '{}'); } catch { return {}; }
 }
@@ -8052,8 +8129,9 @@ function getUploads() {
   catch { return { faces: {}, bgs: {} }; }
 }
 function saveUploads(u) {
-  localStorage.setItem('vn_uploads', JSON.stringify(u));
+  if (!lsSet('vn_uploads', JSON.stringify(u), '업로드 이미지')) return false;
   try { scheduleAutoBackup(); } catch {}
+  return true;
 }
 
 // image src for any character id: custom img url > uploaded face > sprite file
@@ -8680,7 +8758,9 @@ function publishStory() {
   };
   const local = getLocalStories();
   local[id] = story;
-  localStorage.setItem('vn_local_stories', JSON.stringify(local));
+  // ★저장에 실패하면 **편집창을 닫지 않는다** — 닫으면 방금 쓴 내용이 통째로 날아간다
+  //   (2026-08-01 유저: 편집 중 QuotaExceededError. 그 줄엔 방어가 아예 없었다.)
+  if (!lsSet('vn_local_stories', JSON.stringify(local), '스토리 「' + (story.title || id) + '」')) return;
   try { scheduleAutoBackup(); } catch {}
   closeCreator();
   switchMainTab('my');
@@ -8813,8 +8893,14 @@ let autoTimer = null;
 //   localStorage는 오리진당 약 5MB(사파리)뿐인데 gameHistory에 상한이 없어 무한히 쌓였다.
 //   ★summaryIndex 이전 기록은 이미 storySummary에 들어가 있고 AI에게도 안 보내진다
 //     (프롬프트는 gameHistory.slice(-CONTEXT_RECENT)만 씀) → 잘라내도 맥락이 안 끊긴다.
-const HISTORY_MAX  = 400;    // 대화 원문 보관 상한(≈200턴). 넘으면 요약된 앞부분부터 버린다
-const DIALOG_MAX   = 600;    // 기록(백로그) 보관 상한
+// ★★대화 원문 보관 상한. **400 → 60** (2026-08-01 유저: "고작 세이브가 왜 용량을 꽉 채우냐")
+//   AI에게 실제로 보내는 건 `gameHistory.slice(-CONTEXT_RECENT)` = **최근 8개뿐**이고,
+//   그 앞은 storySummary(요약)가 대신한다. 요약은 length-8까지 진행되므로 60이면
+//   요약분 52 + 미요약 8로 충분하다. 400개는 6.7배 과잉이었고, 턴당 약 900자라
+//   **세이브 하나가 360KB**를 먹어 스토리 몇 개만 해도 5MB 한도를 채웠다.
+//   ※되감기 화면 복원은 dialogueLog가 담당하므로 이 값을 줄여도 장면은 그대로 보인다.
+const HISTORY_MAX  = 60;
+const DIALOG_MAX   = 600;    // 기록(백로그) 보관 상한 — 유저가 실제로 읽는 화면이라 유지
 // ★앞에서 버려진 누적 개수 — 되감기가 "그 시점 길이"를 찾을 때 기준점이 된다.
 //   배열은 뒤로만 자라고 앞으로만 잘리니, (버린 수 + 현재 길이) = 논리적 길이가 늘 단조증가한다.
 let histDropped = 0, dlogDropped = 0;
@@ -9028,6 +9114,14 @@ function restoreAndReplay(save, checkTimeflow) {
   gameHistory = save.gameHistory || [];
   histDropped = save.histDropped || 0;
   dlogDropped = save.dlogDropped || 0;
+  // ★옛 세이브는 gameHistory를 400개까지 들고 있다 — 불러오는 즉시 상한(60)으로 줄인다.
+  //   요약된 앞부분만 버리므로 맥락은 안 끊긴다(프롬프트는 최근 8개만 쓴다).
+  if (gameHistory.length > HISTORY_MAX) {
+    const before = gameHistory.length;
+    trimHistory(HISTORY_MAX);
+    if (before !== gameHistory.length)
+      try { showStatToast(`💾 저장 공간 정리 — 대화 원문 ${before} → ${gameHistory.length}개`); } catch {}
+  }
   gameState = save.gameState || gameState;
   if (STORY.id === 'idol' && gameState.idol) {
     migrateIdolSave(gameState.idol);                    // 구 세이브 필드 보정
