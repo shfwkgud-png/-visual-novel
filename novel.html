@@ -2035,7 +2035,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v197</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v198</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11810,6 +11810,21 @@ function idolBoardCards() {
 // ── 🏢 샵: 회사 자산(회사 자금) / 개인 자산(대표 개인 현금). 사면 **배경이 바뀐다**.
 // 📊 현황 — 팬·앨범·차트·멤버·회사를 한 화면에(유저 지적: "대시보드가 없다")
 // 현황판 ✎ — 제목·완성도·대중성을 직접 지정한다(대화가 반영 안 될 때의 확실한 경로).
+// ★컴백(발매) — 대표가 결정하는 일이라 버튼으로 연다. AI가 sim.release를 실어야만 되던 걸 대체한다.
+function idolRelease() {
+  const d = gameState.idol, S = IDOL_SIM;
+  if (S.active(d)) { showStatToast(`활동 중이다 (${d.album.actWeek}/4주차)`, true); return; }
+  if (d.album.quality < 50) { showStatToast(`완성도 ${Math.round(d.album.quality)}/50 — 아직 못 낸다`, true); return; }
+  S.release(d);
+  SFX.play('choice');
+  showStatToast(`🎬 컴백! ${d.album.title || '신곡'} 발매 (완성도 ${Math.round(d.album.quality)})`);
+  closeIdolBoard();
+  d._skipSim = true;                                  // 수치는 앱이 반영했다 — AI는 장면만 쓴다
+  inputMode = false; inputBar.style.display = 'none';
+  const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
+  const txt = `「${d.album.title || '신곡'}」를 발매한다. 오늘부터 활동기다.`;
+  window._genText = txt; handlePlayerInput(txt);
+}
 // ★무대의상 컨셉을 직접 고른다(현황 탭). 무대·행사장·대기실·광고/뮤비 촬영장에서 이 옷이 나온다.
 function idolSetStage(n) {
   const d = gameState.idol, S = IDOL_SIM;
@@ -11873,6 +11888,18 @@ function idolDashHtml() {
         background:${A.stage === i+1 ? 'rgba(242,193,78,0.14)' : 'transparent'};
         color:${A.stage === i+1 ? '#f2c14e' : 'rgba(232,230,227,0.75)'}">${i+1}. ${nm}</button>`).join('') +
       `</div>`;
+    // ★★컴백(발매) 버튼 — 전엔 AI가 sim.release를 실어야만 발매됐다(2026-07-31 유저 지적: "발매 버튼이 없어").
+    //   대표가 결정하는 일인데 대화 운에 맡길 수 없다.
+    {
+      const act = S.active(d);
+      const why = act ? `활동 중 (${A.actWeek}/4주차) — 끝나야 다음 컴백`
+                : A.quality < 50 ? `완성도 ${Math.round(A.quality)}/50 — 아직 발매 못 한다`
+                : null;
+      h += `<button class="ib-card" ${why ? 'disabled' : ''} onclick="idolRelease()">
+          <span class="n">🎬 컴백 — 「${A.title || '신곡'}」 발매</span>
+          <span class="e">${why || `발매하면 4주 활동기가 시작된다 · 무대의상 ${S.stageName(d) || '미정(컴백 순서대로)'}`
+            }${!why && !A.mv ? ' · ⚠뮤비 없이 나간다' : ''}${!why && !A.rec ? ' · ⚠녹음 전' : ''}</span></button>`;
+    }
   }
   h += row('제작 공정', `녹음 ${A.rec?'✓':'—'} · 자켓 ${A.jacket?'✓':'—'} · 뮤비 ${A.mv?['','저예산','중급','대형'][A.mvTier||1]:'—'} · 안무 ${A.choreo?'✓':'—'} · 티저 ${A.teaser?'✓':'—'}`);
     if (!A.rec) h += row('', `<span style="color:rgba(232,230,227,0.5)">녹음 전이라 완성도 상한 90</span>`);
