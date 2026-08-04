@@ -949,8 +949,11 @@
     -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 99%);
     mask-image: linear-gradient(to bottom, #000 80%, transparent 99%);
   }
-  body[data-story="lovediary"] #charLayer[data-count="2"] .char-sprite,
   body[data-story="idol"] #charLayer[data-count="2"] .char-sprite { height: calc(54% * min(var(--arScale, 1), 1)); --ty: -30%; }
+  /* ★연애일기 2인은 아이돌과 같은 54%로 묶여 있었는데, 실사 chest-up 트랙이라 그 값이면
+     얼굴이 유독 작아 보인다(2026-08-04 유저: "얘는 여전히 뜨면서 작아져").
+     1인 65% 대비 낙차를 줄여 62%로 — 둘이 나란히 서도 얼굴 크기가 유지된다. */
+  body[data-story="lovediary"] #charLayer[data-count="2"] .char-sprite { height: calc(62% * min(var(--arScale, 1), 1)); --ty: -26%; }
   /* ★무대의상 컷은 무릎 위까지 잡힌 넓은 프레이밍(의상을 보여주려고) — chest-up 트랙 그대로 깔면
      인물이 작고 붕 뜬다. 무대 배경일 때만 더 크게·아래로 붙여 전신 실루엣이 살게 한다. */
   body[data-story="idol"][data-idolstage] .char-sprite { height: calc(86% * min(var(--arScale, 1), 1)); --ty: -6%; }
@@ -2036,7 +2039,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v208</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v209</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7051,6 +7054,7 @@ const BUILTIN_STORIES = {
   nakin: {
     id: 'nakin',
     title: '낙인의 검',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '몰락한 백작가의 외아들, 죄인의 낙인을 찬 채 항구도시의 밑바닥에서 복수를 꿈꾼다. 다크 판타지.',
     cover: 'character/25_upper/106_1.webp',
     worldPrompt: NAKIN_WORLD_PROMPT,
@@ -7069,6 +7073,7 @@ const BUILTIN_STORIES = {
   muhyeop: {
     id: 'muhyeop',
     title: '회귀한 천마의 아들',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '배신으로 죽은 마교 소공자, 20년 전으로 회귀하다. 오늘 밤 아버지 암살이 시작된다. 무협 회귀 복수극.',
     cover: 'sd_samples/backgrounds/muhyeop/cheonma_hall.webp',
     worldPrompt: MUHYEOP_WORLD_PROMPT,
@@ -7085,6 +7090,7 @@ const BUILTIN_STORIES = {
   murim: {
     id: 'murim',
     title: '강호행',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '정마대전 이십 년 후, 칼집 속의 전쟁이라 불리는 냉전의 강호. 정해진 주인공도 결말도 없다 — 이름 없는 나그네로 들어서서, 그대만의 강호를 살아라. 무협 오픈월드.',
     cover: 'sd_samples/characters/murim/moyongcheong/2d/1_calm.webp',
     worldPrompt: MURIM_WORLD_PROMPT,
@@ -7137,6 +7143,7 @@ const BUILTIN_STORIES = {
   hollowinn: {
     id: 'hollowinn',
     title: '공허의 여관',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '죽음의 문턱에서만 보이는 여관, 허숙(虛宿). 미련에 묶인 혼들의 비밀을 풀거나, 이용하거나, 배신하라 — 당신이 어떻게 죽었는지, 정말 죽긴 했는지 기억나지 않는다는 것만 빼면. 심리 오컬트 미스터리.',
     cover: 'sd_samples/backgrounds/kyungsung/gisaeng_house.webp',
     worldPrompt: HOLLOWINN_WORLD_PROMPT,
@@ -7264,6 +7271,7 @@ const BUILTIN_STORIES = {
   hunter: {
     id: 'hunter',
     title: 'F급의 재각성',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '10년차 F급 짐꾼, 던전 브레이크의 지옥에서 측정불가 등급으로 재각성하다. 현대 헌터물.',
     cover: 'sd_samples/backgrounds/hunter/gate_break.webp',
     worldPrompt: HUNTER_WORLD_PROMPT,
@@ -7280,6 +7288,7 @@ const BUILTIN_STORIES = {
   academy: {
     id: 'academy',
     title: '악역의 생존법',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '읽던 소설 속 1권 퇴학·2권 사망 예정인 3류 악역으로 빙의했다. 오늘이 입학식이다. 아카데미 빙의물.',
     cover: 'sd_samples/backgrounds/academy/great_hall.webp',
     worldPrompt: ACADEMY_WORLD_PROMPT,
@@ -7296,6 +7305,7 @@ const BUILTIN_STORIES = {
   cyber: {
     id: 'cyber',
     title: '네오서울 2087',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '뒷골목에서 주운 군용칩 속에서 소녀 AI가 깨어났다. 기업 회수반이 온다. 사이버펑크 용병물.',
     cover: 'sd_samples/backgrounds/cyber/megacity_night.webp',
     worldPrompt: CYBER_WORLD_PROMPT,
@@ -7312,6 +7322,7 @@ const BUILTIN_STORIES = {
   romance: {
     id: 'romance',
     title: '위험한 계약',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '재벌 3세가 내민 혼인 계약서. 대가는 어머니 병원비, 조건은 "사랑에 빠지지 말 것". 성인 로맨스.',
     cover: 'sd_samples/backgrounds/romance/mansion_living.webp',
     worldPrompt: ROMANCE_WORLD_PROMPT,
@@ -7328,6 +7339,7 @@ const BUILTIN_STORIES = {
   hero: {
     id: 'hero',
     title: '가면의 시대',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '히어로가 기획사 상품인 시대. 무허가 각성자인 나의 능력 폭주 영상이 지금 퍼지고 있다. 히어로물.',
     cover: 'sd_samples/backgrounds/hero/starforce_lobby.webp',
     worldPrompt: HERO_WORLD_PROMPT,
@@ -7344,6 +7356,7 @@ const BUILTIN_STORIES = {
   zombie: {
     id: 'zombie',
     title: '붕괴: 서울 72시간',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '금요일 밤 11시, 편의점 유리문에 첫 감염자가 몸을 박았다. 72시간 안에 한강을 건너라. 좀비 생존물.',
     cover: 'sd_samples/backgrounds/zombie/rooftop_refuge.webp',
     worldPrompt: ZOMBIE_WORLD_PROMPT,
@@ -7360,6 +7373,7 @@ const BUILTIN_STORIES = {
   deathgame: {
     id: 'deathgame',
     title: '13번째 초대장',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '빚을 청산해준다는 금색 초대장. 눈뜨니 밀폐된 홀, 13명, 목의 칼라. "탈락은 곧 죽음입니다." 데스게임.',
     cover: 'sd_samples/backgrounds/deathgame/lobby_hall.webp',
     worldPrompt: DEATHGAME_WORLD_PROMPT,
@@ -7377,6 +7391,7 @@ const BUILTIN_STORIES = {
   gumiho: {
     id: 'gumiho',
     title: '구미호 계약',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '할머니 장례식 밤, 신당의 봉인이 풀리고 천년 구미호가 깨어났다. 손등엔 계약 인장. 동양 현대판타지.',
     cover: 'sd_samples/backgrounds/gumiho/shrine.webp',
     worldPrompt: GUMIHO_WORLD_PROMPT,
@@ -7393,6 +7408,7 @@ const BUILTIN_STORIES = {
   loveisland: {
     id: 'loveisland',
     title: '러브아일랜드: 위험한 초대',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '연애 리얼리티쇼에 참가했다. 그리고 제작진 태블릿에서 봤다 — 5일 뒤, 내 전 연인이 투입된다. 리얼리티 로맨스.',
     cover: 'sd_samples/backgrounds/loveisland/villa_pool.webp',
     worldPrompt: LOVEISLAND_WORLD_PROMPT,
@@ -7410,6 +7426,7 @@ const BUILTIN_STORIES = {
   throne: {
     id: 'throne',
     title: '부서진 왕관',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '왕이 독살당한 밤, 인정받지 못한 서자에게 왕의 인장 반지가 전해졌다. 계승전쟁의 겨울이 온다. 대하 판타지.',
     cover: 'sd_samples/backgrounds/throne/throne_room.webp',
     worldPrompt: THRONE_WORLD_PROMPT,
@@ -7426,6 +7443,7 @@ const BUILTIN_STORIES = {
   timeloop: {
     id: 'timeloop',
     title: '시월 4일',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '첫사랑이 죽는 하루가 반복된다. 이건 사고가 아니다 — 트럭은 기다리고 있었다. 타임루프 미스터리.',
     cover: 'sd_samples/backgrounds/timeloop/alley_cafe.webp',
     worldPrompt: TIMELOOP_WORLD_PROMPT,
@@ -7443,6 +7461,7 @@ const BUILTIN_STORIES = {
   voidship: {
     id: 'voidship',
     title: '카론호의 연대기',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '200년 늦게 깨어난 콜드슬립. 아는 사람은 전원 사망, 내 목엔 사상 최고 현상금. 우주 오페라.',
     cover: 'sd_samples/backgrounds/voidship/bridge.webp',
     worldPrompt: VOIDSHIP_WORLD_PROMPT,
@@ -7459,6 +7478,7 @@ const BUILTIN_STORIES = {
   isekai: {
     id: 'isekai',
     title: '버려진 용사',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '4인 소환 중 혼자 무능 판정 — 누명 쓰고 폐광에 버려졌다. 하지만 내 직업은 측정구가 못 읽은 [무한 성장]. 이세계 추방물.',
     cover: 'sd_samples/backgrounds/isekai/mine_village.webp',
     worldPrompt: ISEKAI_WORLD_PROMPT,
@@ -7475,6 +7495,7 @@ const BUILTIN_STORIES = {
   kyungsung: {
     id: 'kyungsung',
     title: '경성 탐정록',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '1935년 경성, 판자촌에서 사람이 열둘 사라졌다 — 신문은 한 줄도 못 썼다. 몰락 양반가 탐정의 시대 미스터리.',
     cover: 'sd_samples/backgrounds/kyungsung/jongno_street.webp',
     worldPrompt: KYUNGSUNG_WORLD_PROMPT,
@@ -7492,6 +7513,7 @@ const BUILTIN_STORIES = {
   palace: {
     id: 'palace',
     title: '동궁의 붉은 달',
+    maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '광증이 짙어가는 부왕, 그 뒤의 외척. 그리고 서고에서 금서를 읽다 들킨 겁 없는 궁녀. 궁중 사극 로맨스.',
     cover: 'sd_samples/backgrounds/palace/throne_hall.webp',
     worldPrompt: PALACE_WORLD_PROMPT,
