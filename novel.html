@@ -2036,7 +2036,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v205</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v206</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3804,7 +3804,20 @@ function getCharPrompt(charIds, onScreenIds) {
   // ★풀 카드 상한(2026-07-21 실측: 프롬프트 크기가 응답 지연 주범 — 교실 13장 풀카드 ~6k자가 몇 초를 더 먹음).
   //   최근 대화 인물 우선 6명만 풀 카드, 나머지 present는 이름만(역할·성격 상세는 아래 '등장인물 전원' 명단이 커버).
   const MAX_FULL = 6;
-  const ordered = [...charIds].sort((a, b) => (on.has(b) ? 1 : 0) - (on.has(a) ? 1 : 0));
+  // ★★전엔 `on`(방금 대화)만 앞으로 보내고 나머지는 **배열 순서 그대로**였다.
+  //   그래서 명단 뒤쪽 인물(교실이면 슬기·지호·태풍·도범·만복…)은 풀 카드가 영영 안 나가고,
+  //   카드가 없으니 AI가 안 쓰고, 안 쓰니 `on`에 못 들어가는 **닭과 달걀**이 됐다
+  //   (2026-08-04 유저: "초반에 등장 안 하면 아예 안 하는 구조였다는 뜻?" — 그렇다).
+  //   → ①방금 대화 중 ②아직 한 번도 안 만난 얼굴 ③그 밖은 턴마다 회전.
+  const _met = (typeof gameState !== 'undefined' && gameState && gameState.metChars) || {};
+  const _on = [...charIds].filter(id => on.has(id));
+  const _rest = [...charIds].filter(id => !on.has(id));
+  if (_rest.length > 1) {                       // ★턴마다 시작점을 밀어 전원이 돌아가며 들어간다
+    const t = (typeof turnCount === 'number' ? turnCount : 0) % _rest.length;
+    _rest.push(..._rest.splice(0, t));
+  }
+  _rest.sort((a, b) => (_met[a] ? 1 : 0) - (_met[b] ? 1 : 0));   // 안정 정렬 — 새 얼굴이 앞, 회전 순서는 유지
+  const ordered = _on.concat(_rest);
   ordered.slice(0, MAX_FULL).forEach(id => {
     const c = CHARACTERS[id];
     if (c) {
