@@ -2036,7 +2036,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v204</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v205</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3670,6 +3670,9 @@ const LOVEDIARY_LORE = `당신은 현대 학원 연애 시뮬레이션 비주얼
 - 창가(앞→뒤): [한소요·정다희] → [주인공·백리안] → [남도범·오만복]
 - 가운데(앞→뒤): [유단아·문슬기] → [차도윤·유지호] → [서하연·서지운]
 - 복도(앞→뒤): [강태풍·차무강] → (빈 책상)
+★**짝꿍 목록(이대로만 쓴다 — 다른 조합을 지어내지 마라)**:
+  한소요↔정다희 · 주인공↔백리안 · 남도범↔오만복 · 유단아↔문슬기 · 차도윤↔유지호 · 서하연↔서지운 · 강태풍↔차무강
+  (예: **유단아는 소요의 짝이 아니다** — 단아 짝은 문슬기이고, 단아는 다른 분단이다.)
 - 자리 바꾸기는 6월 학사 이벤트에서만.
 - ★★시야 리얼리즘: 인물은 자기 자리에서 보이는 것만 안다. **앞자리는 뒷줄의 은밀한 행동(쪽지·귓속말)을 볼 수 없다** — 알아채려면 구체적 경로(소리에 돌아봄, 전달 실수, 뒷자리의 폭로, 교사 적발)가 필요하다. 질투 반응도 목격 가능했을 때만.
 - ★★공개 사건 = 반 전체의 사건: 교실에서 벌어진 공개 사건(혼남·소란·고백)엔 반드시 주변 1~2명의 dialogue + 익명 급우들의 나레이션 반응을 같이 넣어라.
@@ -3838,11 +3841,17 @@ const LD_PLACE_GROUPS = {
   // 나머지(rooftop, cafe, conv_store, snack_bar, my_room, home_alley, hangang_park, night_street, snow_street) = 사적 → 그룹 없음(동행/추적/언급만)
 };
 function ldSchoolTimeActive() {
-  // gameState.time 예: "[3월 4일 월요일] 오전 8시 45분" — 평일 & 대략 학교시간(8~18시)인가
+  // ★v199에서 time을 "[3월 4일 월요일] 2교시"처럼 **구간 표기**로 바꿨다(시·분 제거).
+  //   여기가 옛 "오전 8시 45분" 정규식을 그대로 쓰고 있어서 매번 파싱에 실패했다 —
+  //   실패 시 true로 떨어져 **밤·방과후에도 학교 그룹이 활성**됐다(2026-08-04 발견).
   const t = (typeof gameState !== 'undefined' && gameState && gameState.time) || '';
   if (/토요일|일요일/.test(t)) return false;                  // 주말=학교 그룹 없음
-  const m = t.match(/(오전|오후)\s*(\d{1,2})\s*시/);
-  if (!m) return true;                                        // 시간 파싱 실패 → 관대(빈 교실 방지)
+  // 학교 안 구간
+  if (/등굣길|조회|교시|쉬는 ?시간|점심|청소|종례|자율|동아리/.test(t)) return true;
+  // 학교 밖 구간
+  if (/방과후|저녁|밤|새벽|하굣길|주말/.test(t)) return false;
+  const m = t.match(/(오전|오후)\s*(\d{1,2})\s*시/);          // 옛 세이브의 시각 표기 호환
+  if (!m) return true;                                        // 그래도 모르면 관대(빈 교실 방지)
   let h = parseInt(m[2], 10); if (m[1] === '오후' && h < 12) h += 12; if (m[1] === '오전' && h === 12) h = 0;
   return h >= 8 && h < 18;
 }
@@ -11205,6 +11214,17 @@ function showChoices(choices) {
   {
     const inj = idolPlanChoice();
     if (inj && !choices.some(c => c === inj)) choices = choices.concat([inj]);
+  }
+  // ★★AI가 choices를 안 주는 턴이 간간이 있다(2026-08-04 유저: "간간이 선택지 안 나와").
+  //   전엔 아이돌만 보장 선택지가 있었고 나머지 스토리는 입력창만 떴다. 어느 스토리든
+  //   **최소 하나는 준다** — 유저가 매번 직접 타이핑하게 만들지 않는다.
+  if (!choices.length) {
+    const st = (typeof gameState !== 'undefined' && gameState) || {};
+    const who = Object.keys(st.metChars || {})
+      .filter(id => (CHARACTERS[id] || {}).name && !/사망/.test((st.metChars[id] || {}).condition || ''))
+      .slice(-2).map(id => CHARACTERS[id].name);
+    choices = ['▶ 계속 — 장면을 이어간다', '(주위를 둘러본다)'];
+    if (who.length) choices.push(`${who[who.length - 1]}에게 말을 건다`);
   }
   if (!choices.length) { enterInputMode(); return; }   // 붙일 게 정말 없으면 기존대로 입력창만
   window._lastChoices = choices;   // ★되감기 복원용 — 그 시점에 떠 있던 선택지
