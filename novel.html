@@ -2039,7 +2039,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v209</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v210</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2230,12 +2230,7 @@ const NAKIN_LORE = `당신은 다크 판타지 비주얼 노벨 "낙인의 검"�
 - 15일차: 왕국 감찰단이 베른에 도착, 신원불명자 색출 시작 (낙인 발각 위험)
 - 30일차: 그림자 의회 5인 회합이 베른 등대에서 열림 — 잠입의 기회이자 함정
 
-## 엔딩 (조건 충족 시에만):
-- [복수의 검]: 다르칸·갈원 세력 처단 + 진실 공표 — 복수는 이뤘으나 남는 공허까지 그릴 것
-- [오명을 벗다]: 왕실 문서 확보 + 세력 규합으로 가문 복권 — 명예로운 귀환
-- [그림자의 주인]: 그림자 의회를 무너뜨리지 않고 장악 — 어둠의 권력자 엔딩
-- [작은 평화]: 복수를 내려놓고 연인과 떠남 — 상처의 치유를 그릴 것
-- [낙인의 최후]: 봉인 폭주 또는 무모한 복수 실패 — 죽음. 부당하고 쓸쓸하게`;
+`;
 
 // ===== ENGINE RULES (shared by ALL stories — output format, state tracking,
 // backgrounds, poses, content policy). Custom stories get lore + these rules.
@@ -2512,7 +2507,14 @@ const ENGINE_MOD_CG = `
 // RPG 모듈을 받는 스토리(전투·성장·위계). 목록 밖(연애/미스터리/일상 시뮬)은 미주입.
 const RPG_STORIES = new Set(['nakin','muhyeop','murim','hunter','academy','cyber','hero','zombie','deathgame','gumiho','throne','voidship','isekai','kyungsung','palace']);
 
-const NAKIN_WORLD_PROMPT = NAKIN_LORE + ENGINE_RULES_PROMPT;
+const NAKIN_ENDINGS = [
+  { t: '복수의 검', cond: '다르칸·갈원 세력 처단 + 진실 공표', d: '복수는 이뤘으나 남는 공허까지 그릴 것' },
+  { t: '오명을 벗다', cond: '왕실 문서 확보 + 세력 규합으로 가문 복권', d: '명예로운 귀환' },
+  { t: '그림자의 주인', cond: '그림자 의회를 무너뜨리지 않고 장악', d: '어둠의 권력자 엔딩' },
+  { t: '작은 평화', cond: '복수를 내려놓고 연인과 떠남', d: '상처의 치유를 그릴 것' },
+  { t: '낙인의 최후', cond: '봉인 폭주 또는 무모한 복수 실패', d: '죽음. 부당하고 쓸쓸하게' },
+];
+const NAKIN_WORLD_PROMPT = NAKIN_LORE + loreEndingsEventsBlock(null, NAKIN_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ═══════════════ STORY PACK 2 (9 stories, v66) ═══════════════
 // 리서치 기반: 회빙환 엔진(개연성+사이다), 구체적 오프닝(장소+관계+긴장1개),
@@ -2573,12 +2575,14 @@ const MUHYEOP_LORE = `당신은 무협 비주얼 노벨 "회귀한 천마의 아
 - 1개월 후: 무림맹 사절단 방문 (위진천의 간보기), 정마대전의 불씨
 - 3개월 후: 갈원의 거사 예정일 (전생보다 빨라질 수 있음)
 
-## 엔딩:
-- [천마등극]: 갈원파 숙청 + 아버지의 인정 — 마교의 새 하늘
-- [파천황]: 마교 장악 후 위진천의 위선까지 무너뜨림 — 강호 재편
-- [강호은원]: 복수 후 연인과 강호를 등짐 — 무협의 낭만
-- [혈로]: 배신을 막지 못하고 전생의 비극 반복 — 두 번째 죽음`;
-const MUHYEOP_WORLD_PROMPT = MUHYEOP_LORE + ENGINE_RULES_PROMPT;
+`;
+const MUHYEOP_ENDINGS = [
+  { t: '천마등극', cond: '갈원파 숙청 + 아버지의 인정', d: '마교의 새 하늘' },
+  { t: '파천황', cond: '마교 장악 후 위진천의 위선까지 무너뜨림', d: '강호 재편' },
+  { t: '강호은원', cond: '복수 후 연인과 강호를 등짐', d: '무협의 낭만' },
+  { t: '혈로', cond: '배신을 막지 못하고 전생의 비극 반복', d: '두 번째 죽음' },
+];
+const MUHYEOP_WORLD_PROMPT = MUHYEOP_LORE + loreEndingsEventsBlock(null, MUHYEOP_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 무협: 강호행 — 샌드박스 개편 (구파의겨울 서사 폐기, 캐릭 46인 4층 재작성, 2026-07-19 B안) ─────
 const MURIM_CHARACTERS = {
@@ -2664,13 +2668,15 @@ const MURIM_LORE = `당신은 무협 샌드박스 비주얼 노벨 "강호행"�
 - 불씨3 「검총의 균열」: 화산 후산 검총의 봉인이 약해지고 있다 — 밤마다 검혼의 목소리가 새어 나오고, 기종 대장로 유백이 은밀히 개방을 추진한다(하란·매화검존이 봉인의 요석).
 - 지역 갈등(탐사 콘텐츠): 무당 봉인 동굴의 목소리(연)의 정체 / 소림 '마혈의 아이'(혜명)와 그를 노리는 마교 사자(혈나찰) / 화산 검종vs기종 / 형산 전대 장문 급서의 의문.
 
-## 엔딩 (업적 — 조건이 실제로 충족될 때만. 서두르지 말 것):
-- [천하제일인]: 화경 도달 + 당대 최강자들과의 공개 비무 제패
-- [일파의 조사]: 문파를 창건하거나 스러진 문파를 재건 — 제자 셋과 현판을 걸다
-- [강호 거상]: 거금과 세 개 이상 세력과의 통상 — 돈으로 강호를 움직이는 자
-- [은원청산]: 맺은 은원을 모두 갚고 낙향 — 깊은 연을 맺은 이와의 가약 동반 가능
-- [마교 교주] / [무림공적]: 어둠의 길 — 권좌 또는 만인의 표적, 그 끝의 부귀 혹은 파멸`;
-const MURIM_WORLD_PROMPT = MURIM_LORE + ENGINE_RULES_PROMPT;
+`;
+const MURIM_ENDINGS = [
+  { t: '천하제일인', cond: '', d: '화경 도달 + 당대 최강자들과의 공개 비무 제패' },
+  { t: '일파의 조사', cond: '문파를 창건하거나 스러진 문파를 재건', d: '제자 셋과 현판을 걸다' },
+  { t: '강호 거상', cond: '거금과 세 개 이상 세력과의 통상', d: '돈으로 강호를 움직이는 자' },
+  { t: '은원청산', cond: '맺은 은원을 모두 갚고 낙향', d: '깊은 연을 맺은 이와의 가약 동반 가능' },
+  { t: '마교 교주', cond: '/ [무림공적]: 어둠의 길', d: '권좌 또는 만인의 표적, 그 끝의 부귀 혹은 파멸' },
+];
+const MURIM_WORLD_PROMPT = MURIM_LORE + loreEndingsEventsBlock(null, MURIM_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 2. 헌터물: F급의 재각성 ─────
 const HUNTER_CHARACTERS = {
@@ -2729,12 +2735,14 @@ const HUNTER_LORE = `당신은 현대 헌터물 비주얼 노벨 "F급의 재각
 - 1개월 후: 균열 대붕괴의 전조 (몬스터 웨이브), '관리자'의 각성을 재촉하는 시스템 메시지
 - 상시: 한주혁은 증거를 지우려 달수 제거를 준비 중
 
-## 엔딩:
-- [관리자]: 균열의 진실에 도달해 대붕괴를 막음 — 인류의 방패
-- [정점]: 랭킹 1위 공인 + 자기 길드 설립 — 밑바닥에서 왕좌까지
-- [은둔 강자]: 정체를 끝까지 숨기고 소중한 사람들만 지키는 삶
-- [균열 붕괴]: 진실에 늦어 서울이 무너짐 — 폐허에서의 재시작 (배드)`;
-const HUNTER_WORLD_PROMPT = HUNTER_LORE + ENGINE_RULES_PROMPT;
+`;
+const HUNTER_ENDINGS = [
+  { t: '관리자', cond: '균열의 진실에 도달해 대붕괴를 막음', d: '인류의 방패' },
+  { t: '정점', cond: '랭킹 1위 공인 + 자기 길드 설립', d: '밑바닥에서 왕좌까지' },
+  { t: '은둔 강자', cond: '', d: '정체를 끝까지 숨기고 소중한 사람들만 지키는 삶' },
+  { t: '균열 붕괴', cond: '진실에 늦어 서울이 무너짐', d: '폐허에서의 재시작 (배드)' },
+];
+const HUNTER_WORLD_PROMPT = HUNTER_LORE + loreEndingsEventsBlock(null, HUNTER_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 3. 아카데미: 악역의 생존법 ─────
 const ACADEMY_CHARACTERS = {
@@ -2791,12 +2799,14 @@ const ACADEMY_LORE = `당신은 아카데미 빙의물 비주얼 노벨 "악역�
 - 3개월 후: 학원제 — 여명회의 성물 탈취 습격 (원작 1권 클라이맥스, 사상자 발생)
 - 6개월 후: 이졸데의 마력 폭주 징후 시작 (원작에선 여기서 죽음의 카운트다운)
 
-## 엔딩:
-- [운명 파괴자]: 멸망의 원인을 찾아 원작 결말 자체를 바꿈 — 진 엔딩
-- [새로운 주인공]: 원작 남주를 대신해 이야기의 중심이 됨 — 서사의 왕좌
-- [조용한 생존]: 파멸 플래그만 전부 꺾고 부유한 엑스트라로 퇴장 — 소소한 해피
-- [수정된 죽음]: 원작의 수정력에 삼켜져 '예정된 퇴학과 죽음'을 맞음 (배드)`;
-const ACADEMY_WORLD_PROMPT = ACADEMY_LORE + ENGINE_RULES_PROMPT;
+`;
+const ACADEMY_ENDINGS = [
+  { t: '운명 파괴자', cond: '멸망의 원인을 찾아 원작 결말 자체를 바꿈', d: '진 엔딩' },
+  { t: '새로운 주인공', cond: '원작 남주를 대신해 이야기의 중심이 됨', d: '서사의 왕좌' },
+  { t: '조용한 생존', cond: '파멸 플래그만 전부 꺾고 부유한 엑스트라로 퇴장', d: '소소한 해피' },
+  { t: '수정된 죽음', cond: '', d: '원작의 수정력에 삼켜져 \'예정된 퇴학과 죽음\'을 맞음 (배드)' },
+];
+const ACADEMY_WORLD_PROMPT = ACADEMY_LORE + loreEndingsEventsBlock(null, ACADEMY_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 4. 사이버펑크: 네오서울 2087 ─────
 const CYBER_CHARACTERS = {
@@ -2855,12 +2865,14 @@ const CYBER_LORE = `당신은 사이버펑크 비주얼 노벨 "네오서울 208
 - 3주 후: 천궁 '선녀' 프로젝트 공개 발표회 — 아리 회수의 데드라인
 - 상시: 칩 사용마다 [수명 잠식] 경고. 남용하면 신경 손상 증상(코피, 환청)이 서사에 반영됨
 
-## 엔딩:
-- [일출]: 아리의 진실을 세상에 폭로하고 함께 탈출 — 밤도시에 뜨는 해
-- [자장가]: 아리가 스스로 삭제를 선택해 주인공을 살림 — 최대 감동선, 여운을 길게
-- [전복]: 유세라·픽셀과 손잡고 천궁 회장을 무너뜨림 — 도시의 새 판
-- [폭주]: 수명 잠식 한계 초과 — 마지막 불꽃 같은 전투 후 소멸 (장렬한 배드)`;
-const CYBER_WORLD_PROMPT = CYBER_LORE + ENGINE_RULES_PROMPT;
+`;
+const CYBER_ENDINGS = [
+  { t: '일출', cond: '아리의 진실을 세상에 폭로하고 함께 탈출', d: '밤도시에 뜨는 해' },
+  { t: '자장가', cond: '아리가 스스로 삭제를 선택해 주인공을 살림', d: '최대 감동선, 여운을 길게' },
+  { t: '전복', cond: '유세라·픽셀과 손잡고 천궁 회장을 무너뜨림', d: '도시의 새 판' },
+  { t: '폭주', cond: '수명 잠식 한계 초과', d: '마지막 불꽃 같은 전투 후 소멸 (장렬한 배드)' },
+];
+const CYBER_WORLD_PROMPT = CYBER_LORE + loreEndingsEventsBlock(null, CYBER_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 5. 현대 로맨스(19+): 위험한 계약 ─────
 const ROMANCE_CHARACTERS = {
@@ -2915,12 +2927,14 @@ const ROMANCE_LORE = `당신은 성인 로맨스 비주얼 노벨 "위험한 계
 - 2개월 후: 진태오의 계약서 탈취 시도 + 한지원의 승부수
 - 3개월 후: 진회장 위독 — 유언 보충서의 존재가 드러남
 
-## 엔딩:
-- [진짜 부부]: 계약 기간 만료일, 계약서를 함께 태움 — '사랑 금지' 조항 위반을 서로 자백하는 명장면으로
-- [백지 위임]: 서린이 경영권을 지키고 주인공은 조용히 떠남 — 어른의 이별 (새드)
-- [첫사랑의 자리]: 서린이 아닌 채아를 선택 — 계약의 끝과 오랜 진심
-- [몰락 동반]: 진태오의 공작 성공, 둘 다 잃음 — 그러나 빈손으로 서로를 얻는 변형 해피 가능`;
-const ROMANCE_WORLD_PROMPT = ROMANCE_LORE + ENGINE_RULES_PROMPT;
+`;
+const ROMANCE_ENDINGS = [
+  { t: '진짜 부부', cond: '계약 기간 만료일, 계약서를 함께 태움', d: '\'사랑 금지\' 조항 위반을 서로 자백하는 명장면으로' },
+  { t: '백지 위임', cond: '서린이 경영권을 지키고 주인공은 조용히 떠남', d: '어른의 이별 (새드)' },
+  { t: '첫사랑의 자리', cond: '서린이 아닌 채아를 선택', d: '계약의 끝과 오랜 진심' },
+  { t: '몰락 동반', cond: '진태오의 공작 성공, 둘 다 잃음', d: '그러나 빈손으로 서로를 얻는 변형 해피 가능' },
+];
+const ROMANCE_WORLD_PROMPT = ROMANCE_LORE + loreEndingsEventsBlock(null, ROMANCE_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 6. 히어로물: 가면의 시대 ─────
 const HERO_CHARACTERS = {
@@ -2975,12 +2989,14 @@ const HERO_LORE = `당신은 히어로물 비주얼 노벨 "가면의 시대"의
 - 1개월 후: 이레의 타워 침투 D-day — 주인공은 어느 쪽에 설 것인가
 - 상시: 타이탄은 자신의 사고 은폐 건을 아는 세이렌을 감시 중. 여론(SNS)은 매 사건마다 실시간으로 출렁임
 
-## 엔딩:
-- [진짜 히어로]: 진실 폭로 + 시민의 신뢰 — 면허가 아니라 사람이 히어로임을 증명
-- [제국의 후계]: 백대표의 후계자가 되어 산업을 안에서 바꿈 (혹은 물들거나) — 회색 엔딩
-- [가면 없는 자]: 등록도 소속도 거부하고 언더그라운드의 수호자로 — 자경단 엔딩
-- [빌런 낙인]: 조작된 여론에 몰려 이레와 함께 도망자가 됨 — 두 사람만의 정의 (비터스위트)`;
-const HERO_WORLD_PROMPT = HERO_LORE + ENGINE_RULES_PROMPT;
+`;
+const HERO_ENDINGS = [
+  { t: '진짜 히어로', cond: '진실 폭로 + 시민의 신뢰', d: '면허가 아니라 사람이 히어로임을 증명' },
+  { t: '제국의 후계', cond: '백대표의 후계자가 되어 산업을 안에서 바꿈 (혹은 물들거나)', d: '회색 엔딩' },
+  { t: '가면 없는 자', cond: '등록도 소속도 거부하고 언더그라운드의 수호자로', d: '자경단 엔딩' },
+  { t: '빌런 낙인', cond: '조작된 여론에 몰려 이레와 함께 도망자가 됨', d: '두 사람만의 정의 (비터스위트)' },
+];
+const HERO_WORLD_PROMPT = HERO_LORE + loreEndingsEventsBlock(null, HERO_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 7. 좀비 아포칼립스: 붕괴 72시간 ─────
 const ZOMBIE_CHARACTERS = {
@@ -3035,12 +3051,15 @@ const ZOMBIE_LORE = `당신은 좀비 아포칼립스 비주얼 노벨 "붕괴: 
 - 48시간째: 감염체 1차 변이 (빛 회피 → 야간 완전 적응)
 - 60시간째: 봉쇄선 조기 완성 + 잔여 교량 폭파 (진짜 데드라인)
 
-## 엔딩 (★도하 성공/봉쇄 자체는 1막의 끝일 뿐 엔딩이 아님 — 원하면 이후 2막으로 계속: 피난민 캠프의 일상, 실종자 수색, 재건, 백신 개발의 후일담, 동행들과의 그 후. ending은 이야기가 진짜 매듭지어질 때만):
-- [도하]: 60시간 내 한강 이남 진입 — 살아남은 자의 숫자가 엔딩의 온도를 정함
-- [방주]: 도하를 포기하고 방어 가능한 거점에 공동체를 세움 — 새로운 시작
-- [백신]: 문박사의 데이터를 군에 전달 (누군가의 희생이 필요할 것) — 세상을 구하는 엔딩
-- [잿더미]: 전멸 — 마지막 생존자의 시점으로 여운을 남기고 끝낼 것`;
-const ZOMBIE_WORLD_PROMPT = ZOMBIE_LORE + ENGINE_RULES_PROMPT;
+★엔딩 규칙: 도하 성공/봉쇄 자체는 1막의 끝일 뿐 엔딩이 아님 — 원하면 이후 2막으로 계속: 피난민 캠프의 일상, 실종자 수색, 재건, 백신 개발의 후일담, 동행들과의 그 후. ending은 이야기가 진짜 매듭지어질 때만
+`;
+const ZOMBIE_ENDINGS = [
+  { t: '도하', cond: '60시간 내 한강 이남 진입', d: '살아남은 자의 숫자가 엔딩의 온도를 정함' },
+  { t: '방주', cond: '도하를 포기하고 방어 가능한 거점에 공동체를 세움', d: '새로운 시작' },
+  { t: '백신', cond: '문박사의 데이터를 군에 전달 (누군가의 희생이 필요할 것)', d: '세상을 구하는 엔딩' },
+  { t: '잿더미', cond: '전멸', d: '마지막 생존자의 시점으로 여운을 남기고 끝낼 것' },
+];
+const ZOMBIE_WORLD_PROMPT = ZOMBIE_LORE + loreEndingsEventsBlock(null, ZOMBIE_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 8. 데스게임: 13번째 초대장 ─────
 const DEATHGAME_CHARACTERS = {
@@ -3100,12 +3119,15 @@ const DEATHGAME_LORE = `당신은 데스게임 스릴러 비주얼 노벨 "13번
 - 3라운드: [다수결 처형] — 도덕성의 시험. 4라운드: [일대일 교환] — 신뢰의 시험
 - 최종 5라운드: [승자의 방] — 남은 자들끼리 '전원 균등 분배 vs 단독 독식' 선택 (배신 가능 룰)
 
-## 엔딩 (★게임 생존/우승 자체는 1막의 끝일 뿐 엔딩이 아님 — 원하면 이후 2막 일상 페이즈로 계속: 상금과 트라우마를 안고 사는 삶, 생존자들의 비밀 모임, 주최측의 잔재 추적, 서이레와의 재회. ending은 인생 이야기가 진짜 매듭지어질 때만):
-- [인간 증명]: 5라운드에서 전원 균등 분배 합의 성공 — 마스터의 명제를 무너뜨림 (진 엔딩, 마스터의 눈물)
-- [단독 우승]: 130억과 함께 혼자 걸어나감 — 살아남았으나 무엇을 잃었는지 그릴 것
-- [게임 전복]: 스파이 색출 + 차노인의 설계 지식으로 시스템 자체를 붕괴시킴 — 탈출
-- [13번째 의자]: 사망 — 죽는 순간까지 누구를 믿었는지가 마지막 문장이 되게`;
-const DEATHGAME_WORLD_PROMPT = DEATHGAME_LORE + ENGINE_RULES_PROMPT;
+★엔딩 규칙: 게임 생존/우승 자체는 1막의 끝일 뿐 엔딩이 아님 — 원하면 이후 2막 일상 페이즈로 계속: 상금과 트라우마를 안고 사는 삶, 생존자들의 비밀 모임, 주최측의 잔재 추적, 서이레와의 재회. ending은 인생 이야기가 진짜 매듭지어질 때만
+`;
+const DEATHGAME_ENDINGS = [
+  { t: '인간 증명', cond: '5라운드에서 전원 균등 분배 합의 성공', d: '마스터의 명제를 무너뜨림 (진 엔딩, 마스터의 눈물)' },
+  { t: '단독 우승', cond: '130억과 함께 혼자 걸어나감', d: '살아남았으나 무엇을 잃었는지 그릴 것' },
+  { t: '게임 전복', cond: '스파이 색출 + 차노인의 설계 지식으로 시스템 자체를 붕괴시킴', d: '탈출' },
+  { t: '13번째 의자', cond: '사망', d: '죽는 순간까지 누구를 믿었는지가 마지막 문장이 되게' },
+];
+const DEATHGAME_WORLD_PROMPT = DEATHGAME_LORE + loreEndingsEventsBlock(null, DEATHGAME_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 9. 동양 현대판타지: 구미호 계약 ─────
 const GUMIHO_CHARACTERS = {
@@ -3160,12 +3182,14 @@ const GUMIHO_LORE = `당신은 동양 현대판타지 비주얼 노벨 "구미�
 - 100일째: 흑무의 대저주 발동일 — 강씨 집안 백 년 원한의 결산
 - 상시: 설아가 힘을 쓸 때마다 주인공의 봉인이 한 겹씩 풀림 (손등 인장의 꼬리가 하나씩 늘어남 — 아홉 개가 차면 그날이 온다)
 
-## 엔딩:
-- [연(緣)]: 여의주를 깨고 인간을 택한 설아 — 백 년을 돌아온 연의 완성 (최대 감동선)
-- [승천]: 설아를 웃으며 보내줌 — 아름다운 이별, 첫눈 오는 날의 재회 암시
-- [대무당]: 봉인을 전부 받아들여 할머니의 자리를 이음 — 경계의 수호자
-- [흑화]: 흑무의 저주에 삼켜짐 혹은 원한의 진실을 외면 — 백 년 원한의 반복 (배드)`;
-const GUMIHO_WORLD_PROMPT = GUMIHO_LORE + ENGINE_RULES_PROMPT;
+`;
+const GUMIHO_ENDINGS = [
+  { t: '연(緣)', cond: '여의주를 깨고 인간을 택한 설아', d: '백 년을 돌아온 연의 완성 (최대 감동선)' },
+  { t: '승천', cond: '설아를 웃으며 보내줌', d: '아름다운 이별, 첫눈 오는 날의 재회 암시' },
+  { t: '대무당', cond: '봉인을 전부 받아들여 할머니의 자리를 이음', d: '경계의 수호자' },
+  { t: '흑화', cond: '흑무의 저주에 삼켜짐 혹은 원한의 진실을 외면', d: '백 년 원한의 반복 (배드)' },
+];
+const GUMIHO_WORLD_PROMPT = GUMIHO_LORE + loreEndingsEventsBlock(null, GUMIHO_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ═══════════════ STORY PACK 3 (7 stories, v67 — 딥리서치 반영) ═══════════════
 // 명작 기법 내장: GRRM(회색도덕·죽음의 무게), 리제로(루프의 고통), 솔로지옥/환승연애(리얼리티 룰),
@@ -3230,19 +3254,22 @@ const LOVEISLAND_LORE = `당신은 연애 리얼리티 비주얼 노벨 "러브�
 - [2막] D+30: 방송 첫 방영 — 편집된 자신과 마주함. SNS 화제, 밈, 악플과 팬덤의 시작
 - [2막] D+45: 방영 중반 — '조작 논란' 커뮤니티 글 확산 (주인공이 아는 진실이 무기이자 폭탄)
 - [2막] D+60: 시즌5 동창회 (전원 재집결 — 재회·환승·질투의 2차전)
-## 엔딩 (2막에서 인생 이야기가 결말에 닿았을 때만. 쇼 종료 시점엔 절대 사용 금지):
-- [진짜 연애]: 방송이 끝나고도 남은 사랑 — 카메라 없는 곳에서의 프러포즈로 완성
-- [환승 완료]: 나연과의 오해를 풀고 재결합 — 이별의 진실이 최루탄이 되게 (2막 재회가 결정적)
-- [폭로]: 조작의 전모를 공개하고 쇼를 뒤집음 — 우승 대신 진실 (통쾌+씁쓸, 1막 폭로 시 2막은 그 여파의 삶)
-- [스포트라이트]: 사랑 대신 유명세를 얻은 삶 — 인플루언서가 된 주인공, 화려하고 공허하게 (아이러니)
-- [편집당한 사랑]: 진심이 방송 서사에 밀려 끝내 어긋남 — 방영 종료일의 쓸쓸한 뒷모습 (새드, 여운)
+
+★엔딩 규칙: 2막에서 인생 이야기가 결말에 닿았을 때만. 쇼 종료 시점엔 절대 사용 금지
 
 ## 스토리 원칙(리얼리티 톤):
 - 카메라 안/밖의 이중생활을 항상 의식시킬 것 (인터뷰 씬, 마이크 꺼진 대화, 사각지대)
 - 질투·밀당·삼각관계가 연료. 그러나 조롱이 아니라 각자의 절실함으로 그릴 것
 - 매일 밤 투표·게임 결과 발표는 예능 자막 느낌의 긴장 연출로
 - 성인 수위: 천국스위트의 밤, 사각지대의 밀회 — 카메라가 없는 곳에서만 완전히 솔직해지는 아이러니를 살릴 것`;
-const LOVEISLAND_WORLD_PROMPT = LOVEISLAND_LORE + ENGINE_RULES_PROMPT;
+const LOVEISLAND_ENDINGS = [
+  { t: '진짜 연애', cond: '방송이 끝나고도 남은 사랑', d: '카메라 없는 곳에서의 프러포즈로 완성' },
+  { t: '환승 완료', cond: '나연과의 오해를 풀고 재결합', d: '이별의 진실이 최루탄이 되게 (2막 재회가 결정적)' },
+  { t: '폭로', cond: '조작의 전모를 공개하고 쇼를 뒤집음', d: '우승 대신 진실 (통쾌+씁쓸, 1막 폭로 시 2막은 그 여파의 삶)' },
+  { t: '스포트라이트', cond: '사랑 대신 유명세를 얻은 삶', d: '인플루언서가 된 주인공, 화려하고 공허하게 (아이러니)' },
+  { t: '편집당한 사랑', cond: '진심이 방송 서사에 밀려 끝내 어긋남', d: '방영 종료일의 쓸쓸한 뒷모습 (새드, 여운)' },
+];
+const LOVEISLAND_WORLD_PROMPT = LOVEISLAND_LORE + loreEndingsEventsBlock(null, LOVEISLAND_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 11. 대하 판타지: 부서진 왕관 ─────
 const THRONE_CHARACTERS = {
@@ -3284,18 +3311,18 @@ const THRONE_LORE = `당신은 대하 판타지 비주얼 노벨 "부서진 왕�
 - 2개월 후: 신전의 '기적' 선포 — 오렌이 중재자로 부상 (그의 각본대로)
 - 3개월 후: 북부 방벽 함락 — 재앙이 남하 시작. 그때 왕국이 하나이지 못하면 끝
 
-## 엔딩:
-- [서자의 왕관]: 혈통 공표 + 세력 규합으로 즉위 — 그러나 왕관의 무게를 그릴 것
-- [킹메이커]: 스스로는 물러나고 루안(혹은 다른 이)을 왕으로 세움 — 그늘의 건국자
-- [겨울의 방벽]: 왕좌 다툼을 버리고 북부로 — 재앙에 맞서는 인류의 검 (영웅 서사)
-- [부서진 왕관]: 내분 끝에 재앙이 왕국을 삼킴 — 몰락의 연대기 (배드, 장엄하게)
-
 ## 스토리 원칙(대하 판타지 톤):
 - 왕좌의 게임 문법: 회색 도덕, 정치적 대화의 칼날, 명예로운 자가 먼저 죽는 냉혹함
 - 주요 인물도 죽을 수 있음 — 단 죽음은 반드시 서사적 의미와 여파를 가질 것
 - 대화가 곧 전투: 만찬·협상·혼담 씬을 전투만큼 긴장감 있게
 - 북부 재앙의 복선은 소문→피난민→증거의 순서로 서서히, 그러나 확실하게`;
-const THRONE_WORLD_PROMPT = THRONE_LORE + ENGINE_RULES_PROMPT;
+const THRONE_ENDINGS = [
+  { t: '서자의 왕관', cond: '혈통 공표 + 세력 규합으로 즉위', d: '그러나 왕관의 무게를 그릴 것' },
+  { t: '킹메이커', cond: '스스로는 물러나고 루안(혹은 다른 이)을 왕으로 세움', d: '그늘의 건국자' },
+  { t: '겨울의 방벽', cond: '왕좌 다툼을 버리고 북부로', d: '재앙에 맞서는 인류의 검 (영웅 서사)' },
+  { t: '부서진 왕관', cond: '내분 끝에 재앙이 왕국을 삼킴', d: '몰락의 연대기 (배드, 장엄하게)' },
+];
+const THRONE_WORLD_PROMPT = THRONE_LORE + loreEndingsEventsBlock(null, THRONE_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 12. 타임루프: 시월 4일 ─────
 const TIMELOOP_CHARACTERS = {
@@ -3343,18 +3370,18 @@ const TIMELOOP_LORE = `당신은 타임루프 미스터리 비주얼 노벨 "시
 - [최심층 — 루프의 근원] 이 루프는 우연이 아니다: 1회차의 그 밤, 죽어가던 지유가 보살 할머니의 점집에서 산 '연(緣)의 부적'을 쥐고 빌었다 — "이 사람만은 모르게 해주세요"가 아니라 "이 사람이 나를 잊게 해주세요". 부적은 소원을 뒤집어 들어줬다: 잊는 대신, 잊을 수 없는 하루를 반복하게. 루프를 끝내는 조건은 살해 저지가 아니라 — 두 사람이 서로에게 진심을 말하는 것 (10년 묵은 고백)
 - ★따라서: 윤민석을 막아도 고백이 없으면 루프는 끝나지 않는다 (이 반전을 후반의 절망+해답으로 쓸 것)
 
-## 엔딩:
-- [시월 5일]: 살인 저지 + 서로의 고백 — 처음 보는 10월 5일의 아침 햇살로 마무리 (진 엔딩)
-- [맞바꾼 시간]: 주인공이 지유 대신 죽으며 루프 종료 — 지유만 기억을 안고 살아감 (최루 새드)
-- [영원한 오늘]: 진실을 포기하고 '죽지 않는 하루' 안에 안주 — 행복해 보이는 지옥 (아이러니 배드)
-- [기억의 무게]: 수십 회차의 마모로 무너짐 — 광기 엔딩 (루프 남용 시)
-
 ## 스토리 원칙(타임루프 톤):
 - 회차 지식의 쾌감: 같은 장면을 다르게 통과하는 재미 (대사 선점, 사건 선회피)
 - 루프의 고통: 리셋될 때마다 쌓은 관계도 리셋 — "나만 기억하는 다정함"의 외로움을 그릴 것
 - 미스터리는 공정하게: 모든 단서는 시간표 안에 있고, 플레이어가 조합할 수 있게
 - 반복 속 변주: 같은 NPC 대사도 주인공의 개입에 따라 미묘하게 달라지게 (지루함 방지)`;
-const TIMELOOP_WORLD_PROMPT = TIMELOOP_LORE + ENGINE_RULES_PROMPT;
+const TIMELOOP_ENDINGS = [
+  { t: '시월 5일', cond: '살인 저지 + 서로의 고백', d: '처음 보는 10월 5일의 아침 햇살로 마무리 (진 엔딩)' },
+  { t: '맞바꾼 시간', cond: '주인공이 지유 대신 죽으며 루프 종료', d: '지유만 기억을 안고 살아감 (최루 새드)' },
+  { t: '영원한 오늘', cond: '진실을 포기하고 \'죽지 않는 하루\' 안에 안주', d: '행복해 보이는 지옥 (아이러니 배드)' },
+  { t: '기억의 무게', cond: '수십 회차의 마모로 무너짐', d: '광기 엔딩 (루프 남용 시)' },
+];
+const TIMELOOP_WORLD_PROMPT = TIMELOOP_LORE + loreEndingsEventsBlock(null, TIMELOOP_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 13. 우주 오페라: 카론호의 연대기 ─────
 const VOIDSHIP_CHARACTERS = {
@@ -3394,18 +3421,18 @@ const VOIDSHIP_LORE = `당신은 우주 오페라 비주얼 노벨 "카론호의
 - 2개월 후: 선구자 유적 '관문성단' 좌표가 암시장에 풀림 — 은하 전체의 골드러시 시작
 - 3개월 후: 오리온 vs 연방의 변경 무력 충돌 (전쟁 전야) — 카론호는 그 한복판을 달리게 됨
 
-## 엔딩:
-- [문 너머]: 관문을 열고 선구자의 진실을 봄 — 인류의 다음 장을 여는 자 (진 엔딩)
-- [카론호의 가족]: 키를 파괴하고 현상금을 지움 — 평범한 밀수선 크루로의 자유 (소소한 해피)
-- [자산 7호]: 오리온에 회수됨 — 실험실의 열쇠로 사는 삶 (배드)
-- [빈 우주]: 크루를 잃고 홀로 문에 도달 — 열 이유가 사라진 열쇠 (최루 새드)
-
 ## 스토리 원칙(우주 오페라 톤):
 - 카우보이 비밥의 낭만 + 듄의 신화 스케일. 낡은 배, 좁은 침상, 광활한 어둠의 대비
 - 크루는 가족이 되어간다: 밥상 씬(자르갈의 요리)을 관계 성장의 무대로 쓸 것
 - 200년 시차 개그와 향수를 오갈 것 (주인공만 아는 '옛 지구'가 감정 코드)
 - 우주선 전투·도킹·선상 침입전은 3차원 전술로 구체적이게`;
-const VOIDSHIP_WORLD_PROMPT = VOIDSHIP_LORE + ENGINE_RULES_PROMPT;
+const VOIDSHIP_ENDINGS = [
+  { t: '문 너머', cond: '관문을 열고 선구자의 진실을 봄', d: '인류의 다음 장을 여는 자 (진 엔딩)' },
+  { t: '카론호의 가족', cond: '키를 파괴하고 현상금을 지움', d: '평범한 밀수선 크루로의 자유 (소소한 해피)' },
+  { t: '자산 7호', cond: '오리온에 회수됨', d: '실험실의 열쇠로 사는 삶 (배드)' },
+  { t: '빈 우주', cond: '크루를 잃고 홀로 문에 도달', d: '열 이유가 사라진 열쇠 (최루 새드)' },
+];
+const VOIDSHIP_WORLD_PROMPT = VOIDSHIP_LORE + loreEndingsEventsBlock(null, VOIDSHIP_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 14. 이세계 소환: 버려진 용사 ─────
 const ISEKAI_CHARACTERS = {
@@ -3445,18 +3472,18 @@ const ISEKAI_LORE = `당신은 이세계 소환 판타지 비주얼 노벨 "버�
 - 2개월 후: 왕도 무투대회 — 가면을 쓰고 출전 가능한 공식 무대 (카이젤과의 재회전)
 - 3개월 후: 재상의 "마왕성 총공격" 선포 — 전쟁 비즈니스의 클라이맥스
 
-## 엔딩:
-- [무대 전복]: 무투대회 또는 총공격의 한복판에서 매료를 깨고 진실 폭로 — 왕국 사기극의 붕괴 (사이다 진 엔딩)
-- [귀환]: 봉인된 귀환 마법을 열다 — 남을 것인가 돌아갈 것인가, 동료들과의 이별 선택 (최루)
-- [마왕의 객장]: 인간 왕국을 버리고 마족과 새 질서를 세움 — 회색 엔딩
-- [두 번째 가면상인]: 복수는 이뤘으나 사람을 잃음 — 선대 용사의 길을 반복 (씁쓸)
-
 ## 스토리 원칙(이세계물 톤):
 - 추방물의 쾌감 공식: 무시→각성→재평가의 사이클을 굵직하게. "그 무능이?!"의 순간들을 아껴서 크게
 - 성장은 눈물 나게 구체적으로 (스킬 획득 조건, 수련, 사망 직전의 내성 획득)
 - 나로우 클리셰를 알고 비트는 메타 유머 가능 (주인공은 현대인 — "아 이거 추방물 클리셰잖아")
 - 여캐 인연: 함께 버려진 기사와의 전우애→연정, 마족 소녀의 이문화 로맨스, 매료에서 깨어나는 성녀의 죄책감과 구원`;
-const ISEKAI_WORLD_PROMPT = ISEKAI_LORE + ENGINE_RULES_PROMPT;
+const ISEKAI_ENDINGS = [
+  { t: '무대 전복', cond: '무투대회 또는 총공격의 한복판에서 매료를 깨고 진실 폭로', d: '왕국 사기극의 붕괴 (사이다 진 엔딩)' },
+  { t: '귀환', cond: '봉인된 귀환 마법을 열다', d: '남을 것인가 돌아갈 것인가, 동료들과의 이별 선택 (최루)' },
+  { t: '마왕의 객장', cond: '인간 왕국을 버리고 마족과 새 질서를 세움', d: '회색 엔딩' },
+  { t: '두 번째 가면상인', cond: '복수는 이뤘으나 사람을 잃음', d: '선대 용사의 길을 반복 (씁쓸)' },
+];
+const ISEKAI_WORLD_PROMPT = ISEKAI_LORE + loreEndingsEventsBlock(null, ISEKAI_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 15. 경성 탐정: 경성 탐정록 ─────
 const KYUNGSUNG_CHARACTERS = {
@@ -3504,18 +3531,18 @@ const KYUNGSUNG_LORE = `당신은 경성 탐정 미스터리 비주얼 노벨 "�
 - 1개월 후: 실험 "3상" 개시 예정 — 수용동 실험체 전원 소모 계획 (구출 데드라인)
 - 상시: 주인공의 수사가 깊어질수록 미행·사무소 수색·면허 압박이 단계적으로 조여옴
 
-## 엔딩:
-- [활자의 힘]: 증거를 모아 이강의 특종 + 해외 언론 타전 — 연구소 폐쇄, 그러나 씁쓸한 뒷맛까지 (진 엔딩)
-- [구출]: 폭로는 못 해도 수용동 사람들을 빼냄 — 작지만 확실한 승리
-- [침묵의 대가]: 회유(거액+면허)를 받아들임 — 탐정은 부자가 되고 경성은 그대로 (회색 배드)
-- [아버지의 아들]: 진실에 닿았으나 같은 방식으로 매장당함 — 그러나 설매와 홍설이 증거를 이어받는 씨앗 엔딩 (비극+희망)
-
 ## 스토리 원칙(경성물 톤):
 - 시대의 공기를 디테일로: 전차 소리, 카페 '제비', 검열 삭제된 신문, 일본어/조선어가 섞이는 대화
 - 추리는 공정하게 (단서 선제시), 발품 수사의 맛 (탐문→미행→잠입→대질)
 - 식민지의 아픔은 배경이 아니라 사건의 구조로 — 그러나 설교 없이, 인물의 삶으로 보여줄 것
 - 여캐 인연: 조수 홍설과의 파트너십→연정(오빠 건의 비밀이 가시), 기생 월향과의 거래→신뢰, 간호부 아야코의 죄책감과 균열`;
-const KYUNGSUNG_WORLD_PROMPT = KYUNGSUNG_LORE + ENGINE_RULES_PROMPT;
+const KYUNGSUNG_ENDINGS = [
+  { t: '활자의 힘', cond: '증거를 모아 이강의 특종 + 해외 언론 타전', d: '연구소 폐쇄, 그러나 씁쓸한 뒷맛까지 (진 엔딩)' },
+  { t: '구출', cond: '폭로는 못 해도 수용동 사람들을 빼냄', d: '작지만 확실한 승리' },
+  { t: '침묵의 대가', cond: '회유(거액+면허)를 받아들임', d: '탐정은 부자가 되고 경성은 그대로 (회색 배드)' },
+  { t: '아버지의 아들', cond: '진실에 닿았으나 같은 방식으로 매장당함', d: '그러나 설매와 홍설이 증거를 이어받는 씨앗 엔딩 (비극+희망)' },
+];
+const KYUNGSUNG_WORLD_PROMPT = KYUNGSUNG_LORE + loreEndingsEventsBlock(null, KYUNGSUNG_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 16. 궁중 사극: 동궁의 붉은 달 ─────
 const PALACE_CHARACTERS = {
@@ -3561,19 +3588,19 @@ const PALACE_LORE = `당신은 궁중 사극 비주얼 노벨 "동궁의 붉은 
 - 2개월 후: 민겸의 거사 — "세자 폐위 상소" 연판장과 병조 병력의 도성 배치 (최종 국면)
 - 상시: 홍단이와의 만남이 잦아질수록 궁의 눈들이 그것을 기록한다 — 금단의 연은 반드시 대가를 요구함
 
-## 엔딩:
-- [여명]: 독의 증거 + 밀지 + 사신의 재가를 모아 민겸 일파 숙청, 부왕을 독에서 구하고 대리청정 — 아버지가 맑은 눈으로 "미안하다" 하는 장면을 정점으로 (진 엔딩)
-- [사랑의 값]: 왕좌 대신 홍단이를 택해 폐세자를 자청, 궁을 나감 — 초가삼간의 에필로그 (로맨스 엔딩)
-- [피의 반정]: 평화적 해결이 무너져 무력 반정 — 이겼으나 아버지를 잃는 왕관 (회색)
-- [뒤주]: 민겸의 각본대로 역모 누명 — 야사의 비극이 반복됨 (배드, 홍단이의 통곡으로 끝맺을 것)
-
 ## 스토리 원칙(궁중 사극 톤):
 - 옷소매 붉은 끝동의 문법: 신분의 벽 너머의 연모 — 눈빛, 스치는 손끝, 서고의 밀회 같은 절제된 긴장이 오히려 뜨겁게
 - 궁중 언어의 격식(저하, 마마, 소인 등)을 살리되 대사는 살아있게. 격식 밖으로 새는 순간이 감정의 절정
 - 정치는 상소·문안·다과·인사 같은 일상 의례 속의 칼싸움으로
 - 부왕과의 관계가 이 이야기의 심장: 공포와 연민, 원망과 사랑이 공존하는 부자 서사를 놓치지 말 것
 - 성인 수위: 금단의 연이 깊어진 뒤의 밀회는 절절하고 위태롭게 (발각의 긴장이 항상 함께)`;
-const PALACE_WORLD_PROMPT = PALACE_LORE + ENGINE_RULES_PROMPT;
+const PALACE_ENDINGS = [
+  { t: '여명', cond: '독의 증거 + 밀지 + 사신의 재가를 모아 민겸 일파 숙청, 부왕을 독에서 구하고 대리청정', d: '아버지가 맑은 눈으로 "미안하다" 하는 장면을 정점으로 (진 엔딩)' },
+  { t: '사랑의 값', cond: '왕좌 대신 홍단이를 택해 폐세자를 자청, 궁을 나감', d: '초가삼간의 에필로그 (로맨스 엔딩)' },
+  { t: '피의 반정', cond: '평화적 해결이 무너져 무력 반정', d: '이겼으나 아버지를 잃는 왕관 (회색)' },
+  { t: '뒤주', cond: '민겸의 각본대로 역모 누명', d: '야사의 비극이 반복됨 (배드, 홍단이의 통곡으로 끝맺을 것)' },
+];
+const PALACE_WORLD_PROMPT = PALACE_LORE + loreEndingsEventsBlock(null, PALACE_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ===== 공허의 여관 (허숙) — 오리지널 플래그십: 심리·오컬트 정체 미스터리 =====
 // 엔진 쇼케이스: 전 캐스트 4층(want/secret/wound/depth), 주인공 정체 3단 리빌,
@@ -3616,14 +3643,16 @@ const HOLLOWINN_LORE = `당신은 심리 오컬트 미스터리 비주얼 노벨
 - 모든 미련은 죄와 얽혀 있다 — "풀어주는 것이 옳은가"가 매번 갈리게 하라(청산할 악당을 만들지 말 것)
 - 기억을 지불하는 거래를 적극 활용하라: 정보의 값은 항상 주인공의 기억 한 조각(무엇을 잊었는지는 나중에 드러남)
 
-## 엔딩 (조건 충족 시에만):
-- [해방자]: 세 혼(하선·유월·서운)의 미련을 풀고 자기 진실과 대면 — 이승으로 눈을 뜨며, 허숙의 기억은 눈물 한 줄로만 남는다
-- [새 여관주]: 하선의 죄를 쥐고 장부를 빼앗아 허숙의 주인이 됨 — 살아있는 몸을 버린 어둠의 권력
-- [산 자의 귀환]: 진실 확증 즉시 도망치듯 귀환 — 살아나지만 여관에서 지불한 기억들은 영영 돌아오지 않는다
-- [동반 타락]: 담의 완성된 곡에 삼켜져 미련의 화신이 됨 — 여관의 새 "손님 아닌 것"이 된다. 부당하고 쓸쓸하게
-- [일곱째 밤의 눈]: 아무 미련도 풀지 못한 채 이렛날 밤을 맞음 — 장부에 이름이 적히고, 다음 손님을 맞는 종업원이 된다`;
+`;
 
-const HOLLOWINN_WORLD_PROMPT = HOLLOWINN_LORE + ENGINE_RULES_PROMPT;
+const HOLLOWINN_ENDINGS = [
+  { t: '해방자', cond: '세 혼(하선·유월·서운)의 미련을 풀고 자기 진실과 대면', d: '이승으로 눈을 뜨며, 허숙의 기억은 눈물 한 줄로만 남는다' },
+  { t: '새 여관주', cond: '하선의 죄를 쥐고 장부를 빼앗아 허숙의 주인이 됨', d: '살아있는 몸을 버린 어둠의 권력' },
+  { t: '산 자의 귀환', cond: '진실 확증 즉시 도망치듯 귀환', d: '살아나지만 여관에서 지불한 기억들은 영영 돌아오지 않는다' },
+  { t: '동반 타락', cond: '담의 완성된 곡에 삼켜져 미련의 화신이 됨', d: '여관의 새 "손님 아닌 것"이 된다. 부당하고 쓸쓸하게' },
+  { t: '일곱째 밤의 눈', cond: '아무 미련도 풀지 못한 채 이렛날 밤을 맞음', d: '장부에 이름이 적히고, 다음 손님을 맞는 종업원이 된다' },
+];
+const HOLLOWINN_WORLD_PROMPT = HOLLOWINN_LORE + loreEndingsEventsBlock(null, HOLLOWINN_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // ───── 현대 학원 연애 시뮬: 방과후 연애일기 (프론티아 연애일기2 완전 오마쥬 — 2026-07-19 실플레이 분석 기반) ─────
 const LOVEDIARY_CHARACTERS = {
@@ -3746,20 +3775,37 @@ const LOVEDIARY_LORE = `당신은 현대 학원 연애 시뮬레이션 비주얼
 - 지운의 스케치북: 단서: 지운의 시선이 자주 머무는 방향 / 의심: 미술실 이젤의 미완성 초상 / 확증: 바람에 넘어간 스케치북 — 페이지 절반이 하연이다
 - 무강의 무대: 단서: 시선이 몰리면 소매를 만지는 버릇 / 의심: 그의 런웨이 영상이 전부 중간에 끊겨 있음 / 확증: 한빛제 무대 뒤, 조명 아래서 얼어붙은 그를 발견한다
 
-## 엔딩 (조건 충족 시에만 — 서두르지 말 것):
-- [첫눈의 고백]: 호감도 85+ 인물과 12월 크리스마스 — 서로의 진심이 닿는 순간 (인물별 엔딩)
-- [평범한 봄]: 아무 고백 없이 학년이 끝남 — 다음 봄, 같은 교실이기를 바라는 쓸쓸한 여운
-- [무너진 일지]: 단아의 비밀을 잔인하게 폭로한 경우 — 완벽한 반장의 파국 (비극)
-- [무대 위의 재회]: 리안의 누명을 함께 풀어낸 경우 — 조명 아래로 돌아가는 그녀의 손을 잡을지 선택
-
 ## 모드 규칙 (시작 시 유저가 선택 — 해석을 반드시 지켜라):
 - 📖 스토리 모드: 학사 캘린더가 이 작품의 "메인 서사"다. 현재 날짜에 걸린 행사(반장 선거[새 학년 3월, 새로 편성된 반의 첫 반장 선출 — 아직 아무도 반장이 아니며 유단아가 유력 후보로 출마]→중간고사→체육대회→한빛제→기말→크리스마스)를 이벤트 배너(event)로 걸고, 준비·당일·여파를 적극적으로 사건화하라. 반장 다이어리·리안 스캔들·소요 10년 등 GM 비밀의 단서도 행사 흐름에 실어 능동적으로 배치하라.
 - ★첫 등교일(1일차 오전)은 몽타주 연출: 한 인물과의 대화를 2~3교환 안에 끊고 다음 인물·사건으로 리듬을 넘겨, 점심시간 전까지 반의 주요 인물 대부분이 최소 한 번씩 화면에 스치게 하라(교문 조우→자리 배치→짝·앞뒤 인사→조회→쉬는 시간 소동 식). 한 명과의 긴 대화에 오전을 다 쓰지 마라 — 깊은 대화는 관계가 쌓인 뒤의 보상이다.
 - ★시간 페이싱: 교실 대화 몇 턴에 교시가 넘어가지 않는다. 쉬는 시간 10분이면 그 안의 대화는 전부 10분 안이다 — time 점프는 수업 시작·종료, 장소 이동 같은 실제 전환에서만.
 - 🕊️ 자유 모드: 행사는 뒤편 소음(방송·게시판·소문)일 뿐 강요하지 마라. 유저가 만드는 관계와 일상이 전부다. 단, 시간은 흐르고 행사 결과는 세계에 반영된다(선거는 누군가 당선되고, 축제는 열린다).`;
-const LOVEDIARY_WORLD_PROMPT = LOVEDIARY_LORE + ENGINE_RULES_PROMPT;
+const LOVEDIARY_ENDINGS = [
+  { t: '첫눈의 고백', cond: '호감도 85+ 인물과 12월 크리스마스', d: '서로의 진심이 닿는 순간 (인물별 엔딩)' },
+  { t: '평범한 봄', cond: '아무 고백 없이 학년이 끝남', d: '다음 봄, 같은 교실이기를 바라는 쓸쓸한 여운' },
+  { t: '무너진 일지', cond: '단아의 비밀을 잔인하게 폭로한 경우', d: '완벽한 반장의 파국 (비극)' },
+  { t: '무대 위의 재회', cond: '리안의 누명을 함께 풀어낸 경우', d: '조명 아래로 돌아가는 그녀의 손을 잡을지 선택' },
+];
+const LOVEDIARY_WORLD_PROMPT = LOVEDIARY_LORE + loreEndingsEventsBlock(null, LOVEDIARY_ENDINGS) + ENGINE_RULES_PROMPT;
 
 // Build the full world prompt for a user-created story (lore + engine rules)
+
+// ★엔딩/이벤트: 구조화 배열 → LORE 텍스트 렌더러 (2026-08-04 유저 지적: "엔딩을 왜 프롬프트에
+//   박아놓음? 장면이벤트 탭 만들어놓고" — 내장 스토리들이 편집기 구조를 안 쓰고 산문에 이중으로 박혀 있었다).
+//   이제 내장·창작 모두 원본은 STORY.events/STORY.endings 배열 하나 — 편집기 탭·총감독(runDirector)·
+//   업적(endingTitlesFor)·프롬프트가 전부 같은 배열을 읽고, 텍스트化는 이 함수 한 곳뿐.
+function loreEndingsEventsBlock(evs, ends) {
+  let t = '';
+  if (Array.isArray(evs) && evs.length) {
+    t += `\n\n## 이벤트 트리 (각 이벤트는 발동 조건이 충족되는 시점에 자연스럽게 일으킬 것. 조건이 안 됐으면 억지로 발생시키지 말 것):`;
+    evs.forEach(e => { t += `\n- [${e.t}] 발동 조건: ${e.cond || '스토리 흐름상 적절할 때'} → 내용: ${e.d}`; });
+  }
+  if (Array.isArray(ends) && ends.length) {
+    t += `\n\n## 엔딩 조건 (아래 조건이 충족되면 이야기를 해당 엔딩으로 마무리 지을 것. 조건 미충족 시 계속 진행 — 서두르지 말 것):`;
+    ends.forEach(e => { t += `\n- [${e.t}] 조건: ${e.cond || '-'} → 결말: ${e.d}`; });
+  }
+  return t;
+}
 function buildCustomWorldPrompt(s) {
   const p = s.protagonist || {};
   const raw = (s.worldLore || '').trim();
@@ -3768,15 +3814,8 @@ function buildCustomWorldPrompt(s) {
     + (raw.startsWith('#') ? raw : `## 세계관\n${raw}`);
   lore += `\n\n**주인공: ${p.name || '주인공'}**`;
   if (p.desc) lore += `\n${p.desc}`;
-  // optional event tree / endings (creator step 4)
-  if (Array.isArray(s.events) && s.events.length) {
-    lore += `\n\n## 이벤트 트리 (각 이벤트는 발동 조건이 충족되는 시점에 자연스럽게 일으킬 것. 조건이 안 됐으면 억지로 발생시키지 말 것):`;
-    s.events.forEach(e => { lore += `\n- [${e.t}] 발동 조건: ${e.cond || '스토리 흐름상 적절할 때'} → 내용: ${e.d}`; });
-  }
-  if (Array.isArray(s.endings) && s.endings.length) {
-    lore += `\n\n## 엔딩 조건 (아래 조건이 충족되면 이야기를 해당 엔딩으로 마무리 지을 것. 조건 미충족 시 계속 진행):`;
-    s.endings.forEach(e => { lore += `\n- [${e.t}] 조건: ${e.cond || '-'} → 결말: ${e.d}`; });
-  }
+  // optional event tree / endings (creator step 4) — 내장 스토리와 같은 렌더러 공용
+  lore += loreEndingsEventsBlock(s.events, s.endings);
   if (s.customBgs && Object.keys(s.customBgs).length) {
     lore += `\n\n## 이 스토리 전용 배경 (background 필드에 아래 키도 사용 가능 — 어울리는 장면에서 우선 사용):`;
     for (const k in s.customBgs) lore += `\n- ${k}: ${s.customBgs[k].label || ''}`;
@@ -7054,6 +7093,7 @@ const BUILTIN_STORIES = {
   nakin: {
     id: 'nakin',
     title: '낙인의 검',
+    endings: NAKIN_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '몰락한 백작가의 외아들, 죄인의 낙인을 찬 채 항구도시의 밑바닥에서 복수를 꿈꾼다. 다크 판타지.',
     cover: 'character/25_upper/106_1.webp',
@@ -7073,6 +7113,7 @@ const BUILTIN_STORIES = {
   muhyeop: {
     id: 'muhyeop',
     title: '회귀한 천마의 아들',
+    endings: MUHYEOP_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '배신으로 죽은 마교 소공자, 20년 전으로 회귀하다. 오늘 밤 아버지 암살이 시작된다. 무협 회귀 복수극.',
     cover: 'sd_samples/backgrounds/muhyeop/cheonma_hall.webp',
@@ -7090,6 +7131,7 @@ const BUILTIN_STORIES = {
   murim: {
     id: 'murim',
     title: '강호행',
+    endings: MURIM_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '정마대전 이십 년 후, 칼집 속의 전쟁이라 불리는 냉전의 강호. 정해진 주인공도 결말도 없다 — 이름 없는 나그네로 들어서서, 그대만의 강호를 살아라. 무협 오픈월드.',
     cover: 'sd_samples/characters/murim/moyongcheong/2d/1_calm.webp',
@@ -7143,6 +7185,7 @@ const BUILTIN_STORIES = {
   hollowinn: {
     id: 'hollowinn',
     title: '공허의 여관',
+    endings: HOLLOWINN_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '죽음의 문턱에서만 보이는 여관, 허숙(虛宿). 미련에 묶인 혼들의 비밀을 풀거나, 이용하거나, 배신하라 — 당신이 어떻게 죽었는지, 정말 죽긴 했는지 기억나지 않는다는 것만 빼면. 심리 오컬트 미스터리.',
     cover: 'sd_samples/backgrounds/kyungsung/gisaeng_house.webp',
@@ -7175,6 +7218,7 @@ const BUILTIN_STORIES = {
   lovediary: {
     id: 'lovediary',
     title: '방과후 연애일기',
+    endings: LOVEDIARY_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     desc: '한빛고 2학년 1반, 3월 새 학기 — 당신은 오늘 전학 왔다. 거대한 사건은 없다. 교실의 공기, 시선 하나, 말 한마디가 사건이다. 반장의 다이어리엔 비밀이 있고, 아는 얼굴은 하나도 없다. 학원 연애 시뮬.',
     cover: 'sd_samples/characters/lovediary/danah/2d/1_calm.webp',
     worldPrompt: LOVEDIARY_WORLD_PROMPT,
@@ -7271,6 +7315,7 @@ const BUILTIN_STORIES = {
   hunter: {
     id: 'hunter',
     title: 'F급의 재각성',
+    endings: HUNTER_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '10년차 F급 짐꾼, 던전 브레이크의 지옥에서 측정불가 등급으로 재각성하다. 현대 헌터물.',
     cover: 'sd_samples/backgrounds/hunter/gate_break.webp',
@@ -7288,6 +7333,7 @@ const BUILTIN_STORIES = {
   academy: {
     id: 'academy',
     title: '악역의 생존법',
+    endings: ACADEMY_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '읽던 소설 속 1권 퇴학·2권 사망 예정인 3류 악역으로 빙의했다. 오늘이 입학식이다. 아카데미 빙의물.',
     cover: 'sd_samples/backgrounds/academy/great_hall.webp',
@@ -7305,6 +7351,7 @@ const BUILTIN_STORIES = {
   cyber: {
     id: 'cyber',
     title: '네오서울 2087',
+    endings: CYBER_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '뒷골목에서 주운 군용칩 속에서 소녀 AI가 깨어났다. 기업 회수반이 온다. 사이버펑크 용병물.',
     cover: 'sd_samples/backgrounds/cyber/megacity_night.webp',
@@ -7322,6 +7369,7 @@ const BUILTIN_STORIES = {
   romance: {
     id: 'romance',
     title: '위험한 계약',
+    endings: ROMANCE_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '재벌 3세가 내민 혼인 계약서. 대가는 어머니 병원비, 조건은 "사랑에 빠지지 말 것". 성인 로맨스.',
     cover: 'sd_samples/backgrounds/romance/mansion_living.webp',
@@ -7339,6 +7387,7 @@ const BUILTIN_STORIES = {
   hero: {
     id: 'hero',
     title: '가면의 시대',
+    endings: HERO_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '히어로가 기획사 상품인 시대. 무허가 각성자인 나의 능력 폭주 영상이 지금 퍼지고 있다. 히어로물.',
     cover: 'sd_samples/backgrounds/hero/starforce_lobby.webp',
@@ -7356,6 +7405,7 @@ const BUILTIN_STORIES = {
   zombie: {
     id: 'zombie',
     title: '붕괴: 서울 72시간',
+    endings: ZOMBIE_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '금요일 밤 11시, 편의점 유리문에 첫 감염자가 몸을 박았다. 72시간 안에 한강을 건너라. 좀비 생존물.',
     cover: 'sd_samples/backgrounds/zombie/rooftop_refuge.webp',
@@ -7373,6 +7423,7 @@ const BUILTIN_STORIES = {
   deathgame: {
     id: 'deathgame',
     title: '13번째 초대장',
+    endings: DEATHGAME_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '빚을 청산해준다는 금색 초대장. 눈뜨니 밀폐된 홀, 13명, 목의 칼라. "탈락은 곧 죽음입니다." 데스게임.',
     cover: 'sd_samples/backgrounds/deathgame/lobby_hall.webp',
@@ -7391,6 +7442,7 @@ const BUILTIN_STORIES = {
   gumiho: {
     id: 'gumiho',
     title: '구미호 계약',
+    endings: GUMIHO_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '할머니 장례식 밤, 신당의 봉인이 풀리고 천년 구미호가 깨어났다. 손등엔 계약 인장. 동양 현대판타지.',
     cover: 'sd_samples/backgrounds/gumiho/shrine.webp',
@@ -7408,6 +7460,7 @@ const BUILTIN_STORIES = {
   loveisland: {
     id: 'loveisland',
     title: '러브아일랜드: 위험한 초대',
+    endings: LOVEISLAND_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '연애 리얼리티쇼에 참가했다. 그리고 제작진 태블릿에서 봤다 — 5일 뒤, 내 전 연인이 투입된다. 리얼리티 로맨스.',
     cover: 'sd_samples/backgrounds/loveisland/villa_pool.webp',
@@ -7426,6 +7479,7 @@ const BUILTIN_STORIES = {
   throne: {
     id: 'throne',
     title: '부서진 왕관',
+    endings: THRONE_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '왕이 독살당한 밤, 인정받지 못한 서자에게 왕의 인장 반지가 전해졌다. 계승전쟁의 겨울이 온다. 대하 판타지.',
     cover: 'sd_samples/backgrounds/throne/throne_room.webp',
@@ -7443,6 +7497,7 @@ const BUILTIN_STORIES = {
   timeloop: {
     id: 'timeloop',
     title: '시월 4일',
+    endings: TIMELOOP_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '첫사랑이 죽는 하루가 반복된다. 이건 사고가 아니다 — 트럭은 기다리고 있었다. 타임루프 미스터리.',
     cover: 'sd_samples/backgrounds/timeloop/alley_cafe.webp',
@@ -7461,6 +7516,7 @@ const BUILTIN_STORIES = {
   voidship: {
     id: 'voidship',
     title: '카론호의 연대기',
+    endings: VOIDSHIP_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '200년 늦게 깨어난 콜드슬립. 아는 사람은 전원 사망, 내 목엔 사상 최고 현상금. 우주 오페라.',
     cover: 'sd_samples/backgrounds/voidship/bridge.webp',
@@ -7478,6 +7534,7 @@ const BUILTIN_STORIES = {
   isekai: {
     id: 'isekai',
     title: '버려진 용사',
+    endings: ISEKAI_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '4인 소환 중 혼자 무능 판정 — 누명 쓰고 폐광에 버려졌다. 하지만 내 직업은 측정구가 못 읽은 [무한 성장]. 이세계 추방물.',
     cover: 'sd_samples/backgrounds/isekai/mine_village.webp',
@@ -7495,6 +7552,7 @@ const BUILTIN_STORIES = {
   kyungsung: {
     id: 'kyungsung',
     title: '경성 탐정록',
+    endings: KYUNGSUNG_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '1935년 경성, 판자촌에서 사람이 열둘 사라졌다 — 신문은 한 줄도 못 썼다. 몰락 양반가 탐정의 시대 미스터리.',
     cover: 'sd_samples/backgrounds/kyungsung/jongno_street.webp',
@@ -7513,6 +7571,7 @@ const BUILTIN_STORIES = {
   palace: {
     id: 'palace',
     title: '동궁의 붉은 달',
+    endings: PALACE_ENDINGS,   // ★편집기 엔딩 탭·총감독·업적이 읽는 원본(2026-08-04 구조화)
     maxSprites: 2,   // ★동시 2인까지 — 3명부터 스프라이트가 작아진다(2026-08-04)
     desc: '광증이 짙어가는 부왕, 그 뒤의 외척. 그리고 서고에서 금서를 읽다 들킨 겁 없는 궁녀. 궁중 사극 로맨스.',
     cover: 'sd_samples/backgrounds/palace/throne_hall.webp',
@@ -10178,9 +10237,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   try {
     let result;
     if (PROVIDER !== 'gemini') {   // nim·openrouter는 OpenAI 호환 fetchNim 경로(fetchNim이 프로바이더별 URL·인증 처리)
-      result = await fetchNim(systemContent, messages, 0.7, 3000, onChunk);
+      result = await fetchNim(systemContent, messages, 0.7, 4000, onChunk);
     } else {
-      result = await fetchGemini(systemContent, messages, 0.9, 3000, true, onChunk);   // ★스트리밍(onChunk) — 첫 글자 즉시 표시
+      result = await fetchGemini(systemContent, messages, 0.9, 4000, true, onChunk);   // ★스트리밍(onChunk) — 첫 글자 즉시 표시
     }
 
     // If playback already started, don't retry/replace — close out gracefully.
