@@ -2039,7 +2039,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v214</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v215</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3965,7 +3965,29 @@ function presentCharIds(activeCharIds) {
 }
 
 // Compact state injected each turn so the AI keeps relationships/status consistent
+// ★백씨 성 함정 세정기(2026-08-05 유저: "삼촌이라고 나오기 전 턴부터 이어가는데 그래도 삼촌이라 하네"):
+//   AI가 백호진·백리안을 같은 성만 보고 혈연으로 엮은 주장은 화면에 말하기 **전에** 관계 문자열
+//   (charUpdates)·요약·연대기에 조용히 저장될 수 있다 — 그러면 "첫 언급 전"으로 되감아도 그 시점
+//   상태에 이미 눌어붙어 있어 계속 재발한다. 매 턴 프롬프트 조립 직전에 세 통을 전부 씻는다.
+function ldScrubFakeKin() {
+  try {
+    if (!(typeof STORY !== 'undefined' && STORY && STORY.id === 'lovediary' && gameState)) return;
+    const KIN = /(삼촌|조카|친척|외숙|이모부|고모부|큰아버지|작은아버지|혈육|가족)/;
+    const PAIR = /(호진|리안|하늘|만복)/;      // 백호진↔백리안 · 오하늘↔오만복 — 동성씨 함정 쌍
+    const dirty = t => typeof t === 'string' && KIN.test(t) && PAIR.test(t);
+    const met = gameState.metChars || {};
+    for (const id of Object.keys(met)) {
+      if (met[id] && dirty(met[id].relationship)) met[id].relationship = '반 사람';
+    }
+    const scrubText = t => t.replace(/[^.!?…\n]*(?:삼촌|조카|친척|외숙|혈육)[^.!?…\n]*[.!?…]?/g,
+                                     m => (PAIR.test(m) ? '' : m));
+    if (dirty(storySummary)) storySummary = scrubText(storySummary);
+    if (Array.isArray(gameState.chronicle)) gameState.chronicle = gameState.chronicle.filter(x => !dirty(x));
+  } catch {}
+}
+
 function buildStatePrompt() {
+  ldScrubFakeKin();   // 가짜 혈연이 프롬프트에 실리기 전에 제거
   let s = '\n\n## 현재 게임 상태 (일관성 유지 필수):\n';
   if (STORY.id === 'idol' && gameState.idol) s += IDOL_SIM.stateLine(gameState.idol);
   // ★★관계 온도를 **매 턴 숫자로** 못 박는다(2026-08-04 유저: 소요가 자꾸 좋아하고, 전학생 리안이
