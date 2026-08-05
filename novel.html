@@ -2039,7 +2039,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v212</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v213</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7601,6 +7601,70 @@ const BUILTIN_STORIES = {
 // ★★저장소 용량 진단·정리 (2026-08-01 유저: 스토리 편집 중 QuotaExceededError)
 //   localStorage는 오리진당 약 5MB뿐인데 세이브·업로드 이미지·되감기가 전부 여기 산다.
 //   꽉 차면 저장이 **던지고** 편집 내용이 통째로 날아갔다 — 그걸 막고, 뭐가 먹는지 보여준다.
+// ═══★벌크 스토어 — 세이브·슬롯·되감기를 IndexedDB로 (2026-08-05 유저: "다른 사이트들은
+//   세이브 공간 찼다는 말조차 없어") ═══
+//   localStorage는 오리진당 ~5MB를 "전 스토리가 공유"라 아이돌 세이브(사진상 1.96MB)가
+//   연애일기 플레이 중 경고를 띄웠다. 프론티아류가 조용한 이유 = 본체를 5MB 금고에 안 둠.
+//   구조: 부팅 때 IDB 전체를 메모리 캐시로 로드 → 이후 전부 동기 API(레이스 0), 쓰기는
+//   write-through(캐시 즉시 + IDB 비동기). IDB 불가 환경은 localStorage 폴백(기존 동작).
+const BULK_RE = /^vn_save_|^nakin_save$|^vn_slot_|^vn_snaps_/;
+const _bulk = new Map();
+let _bulkDB = null;                 // null = IndexedDB 사용 불가(폴백 모드)
+function _bulkTx(mode) { return _bulkDB.transaction('kv', mode).objectStore('kv'); }
+function _bulkPutIDB(k, v) { try { _bulkTx('readwrite').put(v, k); } catch {} }
+function _bulkDelIDB(k) { try { _bulkTx('readwrite').delete(k); } catch {} }
+async function bulkInit() {
+  _bulkDB = await new Promise(res => {
+    try {
+      const rq = indexedDB.open('pandora_bulk', 1);
+      rq.onupgradeneeded = () => { try { rq.result.createObjectStore('kv'); } catch {} };
+      rq.onsuccess = () => res(rq.result);
+      rq.onerror = () => res(null);
+      rq.onblocked = () => res(null);
+    } catch { res(null); }
+  });
+  if (_bulkDB) {
+    await new Promise(res => {
+      try {
+        const rq = _bulkTx('readonly').openCursor();
+        rq.onsuccess = () => { const c = rq.result; if (c) { _bulk.set(String(c.key), String(c.value)); c.continue(); } else res(); };
+        rq.onerror = () => res();
+      } catch { res(); }
+    });
+    // ★1회 마이그레이션 — localStorage의 벌크 키를 IDB로 옮기고 5MB 금고에서 해방
+    const move = [];
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (BULK_RE.test(k)) move.push(k); }
+    let freed = 0;
+    for (const k of move) {
+      const v = localStorage.getItem(k);
+      if (v != null && !_bulk.has(k)) { _bulk.set(k, v); _bulkPutIDB(k, v); }
+      try { localStorage.removeItem(k); freed += (v || '').length; } catch {}
+    }
+    if (freed) { try { console.log('[bulk] 세이브 ' + move.length + '개를 IndexedDB로 이전, localStorage ' + Math.round(freed/1024) + 'KB 해방'); } catch {} }
+  } else {
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (BULK_RE.test(k)) _bulk.set(k, localStorage.getItem(k)); }
+  }
+}
+function bulkGet(k) { return _bulk.has(k) ? _bulk.get(k) : null; }
+// 조용한 저장 — 성공 true/실패 false. IDB 모드에선 사실상 항상 성공.
+function bulkSetSilent(k, v) {
+  v = String(v);
+  if (_bulkDB) { _bulk.set(k, v); _bulkPutIDB(k, v); return true; }
+  try { localStorage.setItem(k, v); _bulk.set(k, v); return true; } catch { return false; }
+}
+function bulkDel(k) {
+  _bulk.delete(k);
+  if (_bulkDB) _bulkDelIDB(k);
+  try { localStorage.removeItem(k); } catch {}
+}
+function bulkKeys(re) { return [..._bulk.keys()].filter(k => re.test(k)); }
+function bulkUsage() {
+  const rows = []; let total = 0;
+  _bulk.forEach((v, k) => { const n = (v || '').length + k.length; total += n; rows.push({ k, n }); });
+  rows.sort((x, y) => y.n - x.n);
+  return { rows, total };
+}
+
 function lsUsage() {
   const rows = [];
   let total = 0;
@@ -7620,6 +7684,7 @@ const LS_LABEL = k =>
   : k === 'nakin_save'      ? '세이브 — 낙인의 검'
   : /^vn_save_/.test(k)     ? '세이브 — ' + k.slice(8)
   : /^vn_snaps_/.test(k)    ? '되감기 — ' + k.slice(9)
+  : /^vn_slot_/.test(k)     ? '슬롯 ' + k.split('_').pop() + ' — ' + k.slice(8, k.lastIndexOf('_'))
   : /^vn_timeflow_/.test(k) ? '시간 흐름 — ' + k.slice(12)
   : /^vn_endings_/.test(k)  ? '엔딩 기록 — ' + k.slice(12)
   : k === 'vn_cfg'          ? '설정'
@@ -7629,14 +7694,15 @@ const LS_LABEL = k =>
 const LS_SAFE = k => /^vn_snaps_|^vn_bgm2$|^vn_timeflow_/.test(k);
 
 function openStorage() {
-  const { rows, total } = lsUsage();
+  const { rows, total } = lsUsage();               // localStorage(설정·내 스토리, 5MB 한도)
+  const B = bulkUsage();                           // IndexedDB(세이브·슬롯·되감기, 한도 사실상 없음)
   const mb = n => (n / 1024 / 1024).toFixed(2) + 'MB';
   const kb = n => n >= 1024 * 1024 ? mb(n) : (n / 1024).toFixed(0) + 'KB';
   let h = `<div class="rw-head">💾 저장 공간
-      <span class="rw-sub">쓴 용량 <b>${mb(total)}</b> — 브라우저 한도는 보통 5MB다.
-        꽉 차면 스토리 편집·세이브가 실패한다.</span>
+      <span class="rw-sub">세이브·되감기 <b>${mb(B.total)}</b> — 넉넉한 저장소(IndexedDB)라 <b>꽉 참 걱정 없음</b>.<br>
+        설정·내 스토리 <b>${mb(total)}</b> / 5MB(localStorage) — 이쪽만 한도가 있다.</span>
       <button class="rw-close" onclick="closeStorage()">✕</button></div>`;
-  rows.forEach(r => {
+  B.rows.concat(rows).forEach(r => {
     const safe = LS_SAFE(r.k);
     h += `<button class="rw-item" onclick="lsDrop('${r.k}')">
       <span class="rw-turn" style="color:${r.n > 300000 ? '#e0524a' : 'rgba(232,230,227,0.6)'}">${kb(r.n)}</span>
@@ -7668,7 +7734,8 @@ function lsDrop(k) {
                    : `「${LS_LABEL(k)}」를 지울까?
 ★이건 실제 데이터다 — 되돌릴 수 없다.`;
   if (!confirm(msg)) return;
-  try { localStorage.removeItem(k); } catch {}
+  if (BULK_RE.test(k)) bulkDel(k);
+  else try { localStorage.removeItem(k); } catch {}
   openStorage();
 }
 // ★쿼터 초과를 조용히 삼키지 않는다 — 무엇이 실패했는지 말하고 정리 화면을 띄운다.
@@ -7732,7 +7799,7 @@ function setActiveStory(id) {
 
 function saveInfoFor(id) {
   try {
-    const raw = localStorage.getItem(saveKeyFor(id));
+    const raw = bulkGet(saveKeyFor(id));
     if (!raw) return null;
     const s = JSON.parse(raw);
     if (!s.gameHistory || !s.gameHistory.length) return null;
@@ -7960,7 +8027,7 @@ function startStoryNew() {
 async function startStoryContinue() {
   if (!requireLogin()) return;
   // ★로컬에 세이브가 없으면 클라우드에서 되받는다(오프로드된 스토리를 다시 열 때)
-  if (detailStoryId && !localStorage.getItem(saveKeyFor(detailStoryId))) {
+  if (detailStoryId && !bulkGet(saveKeyFor(detailStoryId))) {
     syncStatus && syncStatus('클라우드에서 세이브를 가져오는 중…');
     const got = await pullSave(detailStoryId);
     if (!got) { alert('저장된 플레이를 찾지 못했습니다.'); return; }
@@ -8228,28 +8295,28 @@ async function offloadSaves(keepId) {
   const keep = keepId || (typeof STORY !== 'undefined' && STORY ? STORY.id : null);
   const keepKeys = new Set([saveKeyFor(keep)]);
   let moved = 0, freed = 0;
-  for (const k of lsKeys(/^vn_save_|^nakin_save$|^vn_slot_/)) {
+  for (const k of bulkKeys(/^vn_save_|^nakin_save$|^vn_slot_/)) {
     if (keepKeys.has(k)) continue;
-    const raw = localStorage.getItem(k);
+    const raw = bulkGet(k);
     if (!raw) continue;
     const cloudKey = /^vn_slot_/.test(k) ? k
                    : 'save:' + (k === 'nakin_save' ? 'nakin' : k.slice(8));
     let ok = false;
     try { ok = await syncPut(cloudKey, raw); } catch {}
     if (!ok) continue;                       // ★올리지 못했으면 절대 지우지 않는다
-    try { localStorage.removeItem(k); moved++; freed += raw.length; } catch {}
+    bulkDel(k); moved++; freed += raw.length;
   }
   return { moved, freed };
 }
 // 로컬에 없으면 클라우드에서 되찾는다(이어하기·슬롯 로드에서 쓴다)
 async function pullSave(id) {
   const k = saveKeyFor(id);
-  if (localStorage.getItem(k)) return true;
+  if (bulkGet(k)) return true;
   if (!hasSyncAuth()) return false;
   try {
     const v = await syncGet('save:' + id);
     if (!v) return false;
-    return lsSet(k, typeof v === 'string' ? v : JSON.stringify(v), '세이브 — ' + id);
+    return bulkSetSilent(k, typeof v === 'string' ? v : JSON.stringify(v));
   } catch { return false; }
 }
 async function syncPut(key, value) {
@@ -8280,12 +8347,12 @@ async function backupAll(manual) {
     await syncPut('stories', getLocalStories()); n++;
     await syncPut('uploads', getUploads()); n++;
     for (const id of Object.keys(allStories())) {
-      const raw = localStorage.getItem(saveKeyFor(id));
+      const raw = bulkGet(saveKeyFor(id));
       if (raw) { await syncPut('save:' + id, raw); n++; }
     }
     // ★슬롯 세이브도 올린다 — 전엔 백업 대상이 아니라, 로컬에서 지우면 그대로 사라졌다.
-    for (const k of lsKeys(/^vn_slot_/)) {
-      const raw = localStorage.getItem(k);
+    for (const k of bulkKeys(/^vn_slot_/)) {
+      const raw = bulkGet(k);
       if (raw) { await syncPut(k, raw); n++; }
     }
     await syncPut('cfg', localStorage.getItem('vn_cfg') || '{}'); n++;
@@ -8310,7 +8377,7 @@ async function restoreAll() {
     if (uploads) { localStorage.setItem('vn_uploads', JSON.stringify(uploads)); n++; }
     for (const id of Object.keys(allStories())) {
       const save = await syncGet('save:' + id);
-      if (save) { localStorage.setItem(saveKeyFor(id), JSON.stringify(save)); n++; }
+      if (save) { bulkSetSilent(saveKeyFor(id), JSON.stringify(save)); n++; }
     }
     const cfg = await syncGet('cfg');
     if (cfg) {
@@ -8341,7 +8408,7 @@ function scheduleAutoBackup() {
   // ★KV 쓰기 절약(2026-07-21 유저 KV 사용량 메일): 세이브는 매번(턴마다 변함), stories·uploads는
   //   실제로 바뀌었을 때만 쓴다(거의 안 변하는데 매 백업마다 3개씩 쓰던 낭비 제거). 디바운스 5→20초로 합침.
   _syncTimer = setTimeout(() => {
-    syncPut('save:' + STORY.id, localStorage.getItem(saveKeyFor(STORY.id)) || '{}').catch(() => {});
+    syncPut('save:' + STORY.id, bulkGet(saveKeyFor(STORY.id)) || '{}').catch(() => {});
     try { const st = JSON.stringify(getLocalStories()); if (st !== _lastSyncStories) { _lastSyncStories = st; syncPut('stories', st).catch(() => {}); } } catch {}
     try { const up = JSON.stringify(getUploads());     if (up !== _lastSyncUploads) { _lastSyncUploads = up; syncPut('uploads', up).catch(() => {}); } } catch {}
     // ★토큰 사용량 — 기기별로 따로 쌓이면 관리자 화면에서 합산이 안 된다. 변경 시에만 올린다.
@@ -9005,7 +9072,7 @@ function deleteLocalStory(id) {
   const local = getLocalStories();
   delete local[id];
   localStorage.setItem('vn_local_stories', JSON.stringify(local));
-  localStorage.removeItem(saveKeyFor(id));
+  bulkDel(saveKeyFor(id));
   renderMy(); renderHome();
 }
 
@@ -9174,14 +9241,14 @@ function autoSave() {
     apiKey: API_KEY,
     savedAt: Date.now()
   });
-  const put = () => localStorage.setItem(saveKeyFor(STORY.id), JSON.stringify(build()));
+  const put = () => { if (!bulkSetSilent(saveKeyFor(STORY.id), JSON.stringify(build()))) throw new Error('quota'); };
 
   try {
     put();
   } catch (e) {
     // ★여기서 그냥 터지면 그 턴 진행이 통째로 멈춘다. 단계적으로 공간을 확보하며 재시도.
     let ok = false;
-    try { localStorage.removeItem(snapKeyFor(STORY.id)); turnSnaps = []; put(); ok = true; } catch {}
+    try { bulkDel(snapKeyFor(STORY.id)); turnSnaps = []; put(); ok = true; } catch {}
     for (let i = 0; i < 8 && !ok; i++) {
       const cut = Math.max(40, Math.floor(gameHistory.length * 0.6));
       if (!trimHistory(cut) && dialogueLog.length <= 60) break;
@@ -9203,14 +9270,14 @@ function autoSave() {
 
 function loadSave() {
   try {
-    const raw = localStorage.getItem(saveKeyFor(STORY.id));
+    const raw = bulkGet(saveKeyFor(STORY.id));
     if (!raw) return null;
     return JSON.parse(raw);
   } catch { return null; }
 }
 
 function deleteSave() {
-  localStorage.removeItem(saveKeyFor(STORY.id));
+  bulkDel(saveKeyFor(STORY.id));
 }
 
 // 설정 영속화 — **항상 병합 저장**. 어떤 경로로 저장해도 다른 키가 지워지지 않는다.
@@ -9225,10 +9292,11 @@ function persistCfg() {
 }
 
 // Boot: restore shared provider config, then show the story select screen
-(function boot() {
+(async function boot() {
+  await bulkInit();   // ★세이브·슬롯·되감기를 IndexedDB→메모리로 (localStorage 5MB 탈출, 2026-08-05)
   try {
     const cfg = JSON.parse(localStorage.getItem('vn_cfg') || 'null')
-      || JSON.parse(localStorage.getItem('nakin_save') || 'null');  // legacy fallback
+      || JSON.parse(bulkGet('nakin_save') || 'null');  // legacy fallback
     if (cfg) {
       if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
       if (cfg.orKey) OPENROUTER_KEY = cfg.orKey;
@@ -9938,7 +10006,7 @@ function recTokens(inTok, outTok, isTurn, costUsd) {
   let saved = false;
   try { localStorage.setItem('vn_tokens', JSON.stringify(all)); saved = true; } catch {}
   if (!saved) {
-    try { localStorage.removeItem(snapKeyFor(STORY.id)); turnSnaps = []; } catch {}
+    try { bulkDel(snapKeyFor(STORY.id)); turnSnaps = []; } catch {}
     try { localStorage.setItem('vn_tokens', JSON.stringify(all)); saved = true; } catch {}
   }
   window._tokensDirty = true;
@@ -13171,7 +13239,7 @@ function renderSlots() {
   let html = '';
   for (let n = 1; n <= 3; n++) {
     let sv = null;
-    try { sv = JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch {}
+    try { sv = JSON.parse(bulkGet(slotKey(n)) || 'null'); } catch {}
     const meta = sv
       ? `${esc(sv.gameState?.time || '')} · ${esc(sv.gameState?.location || '')} · ${timeAgo(sv.savedAt)}`
       : '비어 있음';
@@ -13195,16 +13263,16 @@ function currentSavePayload() {
 
 function saveToSlot(n) {
   let had = false;
-  try { had = !!localStorage.getItem(slotKey(n)); } catch {}
+  had = !!bulkGet(slotKey(n));
   if (had && !confirm(`슬롯 ${n}을 덮어쓸까요?`)) return;
-  localStorage.setItem(slotKey(n), JSON.stringify(currentSavePayload()));
-  try { syncPut('slot' + n + ':' + STORY.id, localStorage.getItem(slotKey(n))).catch(() => {}); } catch {}
+  if (!bulkSetSilent(slotKey(n), JSON.stringify(currentSavePayload()))) { lsFull(slotKey(n), '슬롯 세이브'); return; }
+  try { syncPut('slot' + n + ':' + STORY.id, bulkGet(slotKey(n))).catch(() => {}); } catch {}
   renderSlots();
 }
 
 function loadFromSlot(n) {
   let sv = null;
-  try { sv = JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch {}
+  try { sv = JSON.parse(bulkGet(slotKey(n)) || 'null'); } catch {}
   if (!sv) return;
   if (!confirm(`슬롯 ${n}을 불러올까요? 현재 진행은 자동 저장에 남습니다.`)) return;
   toggleSlots();
@@ -13215,7 +13283,7 @@ function loadFromSlot(n) {
 
 function clearSlot(n) {
   if (!confirm(`슬롯 ${n}을 비울까요?`)) return;
-  localStorage.removeItem(slotKey(n));
+  bulkDel(slotKey(n));
   renderSlots();
 }
 
@@ -13535,11 +13603,11 @@ function persistSnaps() {
   while (json.length > SNAP_BYTES && arr.length > 1) { arr = arr.slice(1); json = JSON.stringify(arr); }
   // ② 실제로 써질 때까지 재시도 — 브라우저 쿼터는 다른 키(세이브 등)와 공유라 예측할 수 없다
   for (;;) {
-    try { localStorage.setItem(key, json); snapWarned = false; return arr.length; }
-    catch {
+    if (bulkSetSilent(key, json)) { snapWarned = false; return arr.length; }
+    {
       if (arr.length > 1) { arr = arr.slice(1); json = JSON.stringify(arr); continue; }
       // ③ 하나조차 못 넣는다 — 키를 비워 **낡은 스냅샷이 남는 것을 막는다**(그게 이번 사고의 증상)
-      try { localStorage.removeItem(key); } catch {}
+      bulkDel(key);
       if (!snapWarned) { snapWarned = true;
         try { showStatToast('되감기 저장 공간이 없다 — 이번 세션 안에서만 되돌릴 수 있다', true); } catch {}
       }
@@ -13549,7 +13617,7 @@ function persistSnaps() {
 }
 
 function loadSnaps() {
-  try { turnSnaps = JSON.parse(localStorage.getItem(snapKeyFor(STORY.id)) || '[]') || []; }
+  try { turnSnaps = JSON.parse(bulkGet(snapKeyFor(STORY.id)) || '[]') || []; }
   catch { turnSnaps = []; }
   // ★현재 진행보다 한참 뒤처진 스냅샷은 버린다 — 저장이 실패했던 구간의 잔재다.
   //   그걸 남겨두면 "되돌리기를 눌렀는데 한참 전으로만 간다"가 된다(2026-07-30 유저 지적).
