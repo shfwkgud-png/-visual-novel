@@ -1952,6 +1952,8 @@
       <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (~6초 · 최고품질)</option>
       <option value="google/gemini-3.1-pro-preview">Gemini 3.1 Pro Preview (~11초 · 최상품질)</option>
       <option value="google/gemini-3.5-flash">Gemini 3.5 Flash (~15초)</option>
+      <option value="google/gemini-3.6-flash">Gemini 3.6 Flash (최신 · 2.5 Pro 공식 이전처)</option>
+      <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (빠름 · 쿼터 넉넉 · 저렴)</option>
     </select>
     <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
     <select id="nimModelSel" style="display:none">
@@ -2039,7 +2041,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v218</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v219</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -9381,7 +9383,7 @@ function setProvider(p) {
   if (orM) orM.style.display = p === 'openrouter' ? 'block' : 'none';
   document.getElementById('provHint').textContent = p === 'gemini'
     ? 'Gemini API 키를 입력하세요'
-    : p === 'openrouter' ? 'OpenRouter 키(sk-or-v1-) 입력 + 모델 선택(2.5 Flash 빠름 / 2.5 Pro·3.1 Pro 고품질) — Vertex BYOK로 $300 크레딧 사용'
+    : p === 'openrouter' ? 'OpenRouter 키(sk-or-v1-) 입력 + 모델 선택(★3.x 권장: 3.6 Flash 최신·3.5 Flash Lite 빠름 — 2.5는 트라이얼 쿼터 429 잦음, 2026-08-06) — Vertex BYOK로 $300 크레딧 사용'
     : 'NVIDIA NIM — 모델 선택 + Worker 주소 확인';
   if (p === 'nim' && !document.getElementById('nimUrlInput').value) {
     document.getElementById('nimUrlInput').value = NIM_URL;
