@@ -2039,7 +2039,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v215</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v216</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3972,8 +3972,9 @@ function presentCharIds(activeCharIds) {
 function ldScrubFakeKin() {
   try {
     if (!(typeof STORY !== 'undefined' && STORY && STORY.id === 'lovediary' && gameState)) return;
-    const KIN = /(삼촌|조카|친척|외숙|이모부|고모부|큰아버지|작은아버지|혈육|가족)/;
-    const PAIR = /(호진|리안|하늘|만복)/;      // 백호진↔백리안 · 오하늘↔오만복 — 동성씨 함정 쌍
+    // ★그물 폭 주의(2026-08-05 유저 "부작용은 뭔데" 검토로 좁힘): '가족'은 정당한 서사("리안이 가족 얘기를 꺼냈다")까지 걸어 뺐고, '하늘'은 sky와 동음이라 성 붙은 '오하늘'만 잡는다.
+    const KIN = /(삼촌|조카|친척|외숙|이모부|고모부|큰아버지|작은아버지|혈육)/;
+    const PAIR = /(호진|리안|오하늘|만복)/;    // 백호진↔백리안 · 오하늘↔오만복 — 동성씨 함정 쌍
     const dirty = t => typeof t === 'string' && KIN.test(t) && PAIR.test(t);
     const met = gameState.metChars || {};
     for (const id of Object.keys(met)) {
