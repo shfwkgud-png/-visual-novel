@@ -2039,7 +2039,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v216</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v217</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -9978,7 +9978,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
     }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buf = '', body = '', blocked = false, gUsage = null;
+    let buf = '', body = '', blocked = false, gUsage = null, gFinish = null;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -9994,6 +9994,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
           if (j.usageMetadata) gUsage = j.usageMetadata;   // 토큰 사용량(마지막 청크가 최종값)
           const cand = j.candidates?.[0];
           const fr = cand?.finishReason;
+          if (fr) gFinish = fr;
           if (j.promptFeedback?.blockReason || fr === 'SAFETY' || fr === 'RECITATION') blocked = true;
           const dc = cand?.content?.parts?.[0]?.text;
           if (dc) { body += dc; if (onChunk) { try { onChunk(prefHead + body); } catch {} } }
@@ -10001,10 +10002,10 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
       }
     }
     if (gUsage) recTokens(gUsage.promptTokenCount, (gUsage.candidatesTokenCount || 0) + (gUsage.thoughtsTokenCount || 0), false);
-    if (!body.trim() && blocked) return { blocked: true };
+    if (!body.trim() && blocked) return { blocked: true, finishReason: gFinish };
     let raw = prefHead + body;
     if (prefill && !raw.trimStart().startsWith('{') && !raw.includes('```')) raw = '{"narration":"' + body;
-    return { text: raw };
+    return { text: raw, finishReason: gFinish };
   } catch (e) {
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
   } finally {
@@ -10069,7 +10070,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buf = '', full = '', usage = null;
+    let buf = '', full = '', usage = null, finishReason = null, chunkErr = null;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -10084,6 +10085,11 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
         try {
           const j = JSON.parse(payload);
           if (j.usage) usage = j.usage;   // 마지막 청크의 토큰 사용량(OpenRouter/NIM)
+          const _fr = j.choices?.[0]?.finish_reason; if (_fr) finishReason = _fr;
+          // OpenRouter는 업스트림 장애를 200 스트림 안의 error 청크로 흘린다 — 놓치면 "빈 성공"이 된다
+          const _ce = (j.choices?.[0]?.error && (j.choices[0].error.message || 'provider error'))
+                   || (j.error && (j.error.message || 'provider error'));
+          if (_ce) chunkErr = _ce;
           const dc = j.choices?.[0]?.delta?.content;
           if (dc) {
             full += dc;
@@ -10094,7 +10100,12 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     }
     if (usage) recTokens(usage.prompt_tokens, usage.completion_tokens, false,
       (usage.cost_details && usage.cost_details.upstream_inference_cost) || usage.cost || 0);   // BYOK=upstream이 $300 실소진액
-    return { text: full };
+    // ★빈 스트림 원인 분류(2026-08-06 유저 "정적 빈도 급증"): 지금까진 빈 응답도 {text:''}로
+    //   성공 취급 → 위에서 재시도 없이 정적 폴백. 사유를 실어 재시도·표시가 가능하게 한다.
+    if (!full.trim() && chunkErr) return { error: { message: chunkErr } };
+    if (!full.trim() && /content_filter|safety|prohibited|recitation/i.test(finishReason || ''))
+      return { blocked: true, finishReason };
+    return { text: full, finishReason };
   } catch (e) {
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
   } finally {
@@ -10396,6 +10407,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         return callGemini(activeCharIds, retryCount + 1);
       }
       hideThinking();
+      try { showStatToast('⚠ 응답이 차단됨(' + (result.finishReason || 'safety') + ') — 표현을 바꿔 다시 시도해보라', true); } catch {}
       showDialogue([{ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(잠시 정적이 흐른다...)', pose: 'upper' }]);
       enterInputMode();
       sendBtn.disabled = false;
@@ -10403,7 +10415,16 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
 
     let raw = result.text || '';
-    if (!raw.trim()) raw = '{}';
+    // ★빈 응답 방어(2026-08-06 유저 "2번에 한번 정적"): 성공인데 0자면 지금까진 재시도 없이
+    //   정적 폴백 직행이었다. 조용히 2회 재시도(1.2s·2.4s), 그래도 비면 사유를 토스트로 알린다.
+    if (!raw.trim()) {
+      if (retryCount < 2) {
+        await new Promise(r => setTimeout(r, 1200 * (retryCount + 1)));
+        return callGemini(activeCharIds, retryCount + 1);
+      }
+      try { showStatToast('⚠ 빈 응답 3회(사유: ' + (result.finishReason || '미상') + ') — 입력 표현을 바꿔보라', true); } catch {}
+      raw = '{}';
+    }
 
     let parsed;
     try {
