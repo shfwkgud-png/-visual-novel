@@ -2039,7 +2039,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v217</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v218</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7661,7 +7661,10 @@ async function bulkInit() {
     let freed = 0;
     for (const k of move) {
       const v = localStorage.getItem(k);
-      if (v != null && !_bulk.has(k)) { _bulk.set(k, v); _bulkPutIDB(k, v); }
+      if (v != null) {
+        if (!_bulk.has(k)) _bulk.set(k, v);        // IDB에 이미 있으면 IDB 값이 정본
+        _bulkPutIDB(k, _bulk.get(k));              // ★LS를 지우기 전에 IDB 실물 보장(워치독 늦장 오픈 레이스 대비)
+      }
       try { localStorage.removeItem(k); freed += (v || '').length; } catch {}
     }
     if (freed) { try { console.log('[bulk] 세이브 ' + move.length + '개를 IndexedDB로 이전, localStorage ' + Math.round(freed/1024) + 'KB 해방'); } catch {} }
@@ -9317,7 +9320,22 @@ function persistCfg() {
 
 // Boot: restore shared provider config, then show the story select screen
 (async function boot() {
-  await bulkInit();   // ★세이브·슬롯·되감기를 IndexedDB→메모리로 (localStorage 5MB 탈출, 2026-08-05)
+  // ★iOS PWA 워치독(2026-08-06 유저 "계속 로딩만 돌아"): WebKit은 백그라운드 복귀 직후
+  //   indexedDB.open이 **아무 이벤트도 안 쏘고 영영 매달리는** 버그가 있다 — 그러면 이 await가
+  //   안 끝나 앱이 로딩에 갇힌다. 4초 안에 안 열리면 localStorage 폴백으로 부팅을 계속한다
+  //   (세이브는 매턴 클라우드 백업이 있어 유실 없음, 다음 실행에서 IDB 재시도).
+  let _slow = false;
+  await Promise.race([
+    bulkInit(),
+    new Promise(r => setTimeout(() => { _slow = true; r(); }, 4000))
+  ]);
+  if (_slow && !_bulkDB) {
+    try {
+      _bulk.clear();
+      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (BULK_RE.test(k)) _bulk.set(k, localStorage.getItem(k)); }
+      console.warn('[bulk] IndexedDB 4초 무응답 — localStorage 폴백으로 부팅');
+    } catch {}
+  }
   try {
     const cfg = JSON.parse(localStorage.getItem('vn_cfg') || 'null')
       || JSON.parse(bulkGet('nakin_save') || 'null');  // legacy fallback
