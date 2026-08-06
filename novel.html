@@ -2041,7 +2041,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v221</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v222</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7815,6 +7815,9 @@ function allStories() {
     const b = BUILTIN_STORIES[id];
     if (b) for (const k of ['maxSprites', 'emoRemap', 'modeChoices', 'freeStartHint'])
       if (out[id][k] === undefined && b[k] !== undefined) out[id][k] = b[k];
+    // ★세계관 미수정 수정본은 원본 추적(2026-08-06): worldLore 스냅샷이 없으면 원본의 현재
+    //   세계관·프롬프트를 그대로 쓴다 — 원본 LORE 수정(시야 게이트 등)이 수정본 플레이에도 즉시 반영.
+    if (b && !out[id].worldLore) { out[id].worldLore = b.worldLore; out[id].worldPrompt = b.worldPrompt; }
   }
   return out;
 }
@@ -9075,7 +9078,14 @@ function publishStory() {
     genre: document.getElementById('cGenre').value.trim(),
     cover: cCoverUrl,
     customBgs: cCustomBgs,
-    worldLore: document.getElementById('cWorld').value.trim(),
+    // ★내장 편집 시 세계관을 원본 그대로 뒀거나 비웠으면 스냅샷을 저장하지 않는다(2026-08-06) —
+    //   스냅샷이 남으면 이후 원본 LORE 수정(시야 게이트 등)이 이 스토리 플레이에 영영 반영되지
+    //   않는다(v220 미적용 사고의 원인). 비면 allStories()가 원본의 현재 세계관을 추적한다.
+    worldLore: (() => {
+      const w = document.getElementById('cWorld').value.trim();
+      const b = cEditId && BUILTIN_STORIES[cEditId];
+      return (b && w === ((b.worldLore || '').trim())) ? undefined : (w || undefined);
+    })(),
     characters: cChars,
     protagonist: {
       name: document.getElementById('cProtagName').value.trim(),
@@ -10251,7 +10261,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   const charPrompt = presentIds.length > 0 ? swapName(getCharPrompt(presentIds, activeCharIds)) : '';
   // ★엔진 옵션 모듈 런타임 주입(2026-07-21): 스토리 타입에 맞는 것만 붙인다(연애 시뮬에 무협 RPG 안 딸려오게).
   const _sidNow = (STORY && STORY.id) || '';
-  const _isBuiltin = !!(STORY && STORY.worldPrompt);   // 내장 스토리=worldPrompt 상수 보유 / 유저 커스텀=장르 미상
+  const _isBuiltin = !!(STORY && BUILTIN_STORIES[STORY.id]);   // ★내장 명단 기준(2026-08-06): 편집기 수정본은 worldPrompt가 없어 창작 취급 → 연애물에 RPG 모듈이 오부착되던 버그
   let worldPrompt = swapName(WORLD_PROMPT);
   if (RPG_STORIES.has(_sidNow) || !_isBuiltin) worldPrompt += ENGINE_MOD_RPG;   // 전투·성장 스토리 + 커스텀(구behavior 보존)
   if (_sidNow !== 'lovediary') worldPrompt += ENGINE_MOD_CG;                     // lovediary만 자체 교사전용 cgBlock 사용
