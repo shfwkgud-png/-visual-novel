@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v224</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v225</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -9969,6 +9969,7 @@ async function summarizeIfNeeded() {
         method: 'POST', headers: _h,
         body: JSON.stringify((() => {
           const _b = { model: _isOR ? OPENROUTER_MODEL : NIM_MODEL, messages: [{ role: 'system', content: sysText }, { role: 'user', content: userText }], max_tokens: _isOR ? 1500 : 700, temperature: 0.3, stream: true };
+          if (/gemini-3/i.test(_b.model)) { delete _b.temperature; }   // ★3.x temperature 폐지 대응
           if (_isOR) { _b.provider = { only: ['google-vertex'] }; _b.reasoning = /2\.5-flash/i.test(OPENROUTER_MODEL) ? { enabled: false } : { effort: 'minimal' }; }   // Vertex $300 강제 + 추론 최소
           return _b;
         })())
@@ -10191,6 +10192,9 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   const headers = { 'Content-Type': 'application/json' };
   if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
   const reqBody = { model: mdl, messages: oai, max_tokens: maxTok, temperature: temp, top_p: 1.0, stream: true };
+  // ★Gemini 3.x: temperature/top_p/top_k 폐지(2026-08-06 유저 제보 — 모델이 자체 조절).
+  //   지금은 무시되지만 향후 400 위험 + 보낼 이유가 없다. 3.x에만 뺀다(2.5·타 모델은 유지).
+  if (/gemini-3/i.test(mdl)) { delete reqBody.temperature; delete reqBody.top_p; }
   if (isOR) {
     reqBody.provider = { only: ['google-vertex'] };   // ★$300 Vertex BYOK 강제 — 공유 유료 엔드포인트 폴백 차단(is_byok=true 보장)
     reqBody.reasoning = /2\.5-flash/i.test(mdl) ? { enabled: false } : { effort: 'minimal' };   // 2.5F=thinking off(3s) / pro·3.1·3.5=최소추론(속도↑·한글깨짐/외계어 방지)
