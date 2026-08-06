@@ -1863,6 +1863,14 @@
     <!-- STEP 2: 세계관 -->
     <div class="creator-step" id="cStep2" style="display:none">
       <div class="c-label">세계관 · 진행 규칙 <b>*</b></div>
+      <!-- ★내장 스토리 편집 시에만 표시: 원본은 자동 최신 유지, 이 칸은 그 위에 얹는 수정 레이어 -->
+      <div id="cWorldPatchNote" class="ib-note" style="display:none;padding:6px 2px 8px">
+        원본 세계관은 <b>자동으로 최신 유지</b>됩니다. 이 칸에는 <b>바꾸거나 덧붙일 내용만</b> 쓰세요 —
+        원본과 충돌하면 <b>이 칸이 우선</b> 적용됩니다.
+        <details style="margin-top:6px"><summary style="cursor:pointer">현재 원본 세계관 보기</summary>
+          <pre id="cWorldBase" style="white-space:pre-wrap;max-height:240px;overflow:auto;font-size:0.85em;opacity:0.8;margin:6px 0 0"></pre>
+        </details>
+      </div>
       <textarea id="cWorld" class="profile-input profile-textarea" style="height:200px" placeholder="세계관, 배경 설정, 스토리 진행 방식과 규칙을 자유롭게 작성하세요. AI가 이 내용을 기반으로 이야기를 진행합니다.
 
 예)
@@ -2041,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v222</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v223</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7817,6 +7825,7 @@ function allStories() {
       if (out[id][k] === undefined && b[k] !== undefined) out[id][k] = b[k];
     // ★세계관 미수정 수정본은 원본 추적(2026-08-06): worldLore 스냅샷이 없으면 원본의 현재
     //   세계관·프롬프트를 그대로 쓴다 — 원본 LORE 수정(시야 게이트 등)이 수정본 플레이에도 즉시 반영.
+    //   worldPatch가 있으면 setActiveStory의 패치 합성이 우선하므로 이 백필은 표시용으로만 쓰인다.
     if (b && !out[id].worldLore) { out[id].worldLore = b.worldLore; out[id].worldPrompt = b.worldPrompt; }
   }
   return out;
@@ -7837,7 +7846,17 @@ function setActiveStory(id) {
   STORY = s;
   CHARACTERS = s.characters || {};
   // Built-in packs carry a full worldPrompt; user-created ones store lore only
-  WORLD_PROMPT = s.worldPrompt || buildCustomWorldPrompt(s);
+  // ★worldPatch(2026-08-06): 내장 원본은 항상 최신, 유저 수정은 레이어로 그 위에.
+  const _pb = BUILTIN_STORIES[s.id];
+  if (_pb && s.worldPatch) {
+    WORLD_PROMPT = (_pb.worldLore || '')
+      + '\n\n## ★유저 수정사항 (아래 내용이 위 원본 설정과 충돌하면 아래가 우선한다)\n'
+      + s.worldPatch
+      + loreEndingsEventsBlock(s.events, s.endings)
+      + ENGINE_RULES_PROMPT;
+  } else {
+    WORLD_PROMPT = s.worldPrompt || buildCustomWorldPrompt(s);
+  }
   const tt = document.getElementById('titleText');
   if (tt && tt.childNodes[0]) tt.childNodes[0].nodeValue = s.title + ' ';
   return true;
@@ -8740,7 +8759,19 @@ function openCreator(editId) {
       document.getElementById('cTitle').value = s.title || '';
       document.getElementById('cDesc').value = s.desc || '';
       document.getElementById('cGenre').value = s.genre || '';
-      document.getElementById('cWorld').value = s.worldLore || '';
+      // ★내장 스토리 = 패치 모드(2026-08-06): 세계관 칸에는 수정 레이어(worldPatch)만 싣고
+      //   원본은 접이식으로 보여준다. 구형 스냅샷(worldLore)이 남아 있으면 그걸 표시(구동작 유지)
+      //   — 유저가 비우고 저장하면 패치 모드로 넘어온다.
+      const _wb = BUILTIN_STORIES[editId];
+      if (_wb) {
+        const _legacy = (s.worldLore || '') !== (_wb.worldLore || '') ? (s.worldLore || '') : '';
+        document.getElementById('cWorld').value = _legacy || s.worldPatch || '';
+        document.getElementById('cWorldPatchNote').style.display = _legacy ? 'none' : 'block';
+        document.getElementById('cWorldBase').textContent = _wb.worldLore || '';
+      } else {
+        document.getElementById('cWorld').value = s.worldLore || '';
+        document.getElementById('cWorldPatchNote').style.display = 'none';
+      }
       document.getElementById('cProtagName').value = s.protagonist?.name || '';
       document.getElementById('cProtagDesc').value = s.protagonist?.desc || '';
       document.getElementById('cLocation').value = s.initialState?.location || '';
@@ -9078,13 +9109,18 @@ function publishStory() {
     genre: document.getElementById('cGenre').value.trim(),
     cover: cCoverUrl,
     customBgs: cCustomBgs,
-    // ★내장 편집 시 세계관을 원본 그대로 뒀거나 비웠으면 스냅샷을 저장하지 않는다(2026-08-06) —
-    //   스냅샷이 남으면 이후 원본 LORE 수정(시야 게이트 등)이 이 스토리 플레이에 영영 반영되지
-    //   않는다(v220 미적용 사고의 원인). 비면 allStories()가 원본의 현재 세계관을 추적한다.
-    worldLore: (() => {
+    // ★내장 스토리 세계관 = 패치 레이어(2026-08-06 유저: "고치면 자동반영되게"): 원본은 항상
+    //   최신을 추적하고, 이 칸의 내용은 worldPatch로 저장돼 원본 위에 얹힌다(충돌 시 패치 우선).
+    //   스냅샷(worldLore 동결)은 더 이상 만들지 않는다 — v220 미적용 사고의 재발 방지.
+    //   창작 스토리는 종전대로 worldLore가 본문이다.
+    ...(() => {
       const w = document.getElementById('cWorld').value.trim();
       const b = cEditId && BUILTIN_STORIES[cEditId];
-      return (b && w === ((b.worldLore || '').trim())) ? undefined : (w || undefined);
+      if (!b) return { worldLore: w || undefined };
+      const legacy = (typeof allStories === 'function' && allStories()[cEditId]) || {};
+      const wasLegacy = (legacy.worldLore || '') && (legacy.worldLore || '') !== (b.worldLore || '');
+      if (wasLegacy && w && w !== (b.worldLore || '').trim()) return { worldLore: w };   // 구형 스냅샷 유지 편집
+      return { worldPatch: (w && w !== (b.worldLore || '').trim()) ? w : undefined };
     })(),
     characters: cChars,
     protagonist: {
