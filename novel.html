@@ -1865,8 +1865,8 @@
       <div class="c-label">세계관 · 진행 규칙 <b>*</b></div>
       <!-- ★내장 스토리 편집 시에만 표시: 원본은 자동 최신 유지, 이 칸은 그 위에 얹는 수정 레이어 -->
       <div id="cWorldPatchNote" class="ib-note" style="display:none;padding:6px 2px 8px">
-        원본 세계관은 <b>자동으로 최신 유지</b>됩니다. 이 칸에는 <b>바꾸거나 덧붙일 내용만</b> 쓰세요 —
-        원본과 충돌하면 <b>이 칸이 우선</b> 적용됩니다.
+        이 칸의 원문을 <b>그대로 고치거나 지우면 됩니다</b>. 이후 원본이 개선되면 자동으로 합쳐지고
+        (안 건드린 부분에만 반영), 같은 부분을 서로 고쳤으면 <b>당신 수정이 우선</b>합니다.
         <details style="margin-top:6px"><summary style="cursor:pointer">현재 원본 세계관 보기</summary>
           <pre id="cWorldBase" style="white-space:pre-wrap;max-height:240px;overflow:auto;font-size:0.85em;opacity:0.8;margin:6px 0 0"></pre>
         </details>
@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v223</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v224</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7807,6 +7807,55 @@ function lsFull(key, what) {
   try { openStorage(); } catch {}
   return false;
 }
+
+// ═══★세계관 3-way 병합(2026-08-06 유저: "도려낼 수 있어야 하는 거 아니냐") ═══
+// base=편집 당시 원본 / mine=유저 편집본 / theirs=현재 원본. 줄 단위 LCS 정렬로
+// 세 텍스트를 겹쳐, 유저가 안 건드린 부분엔 원본 개선이 흘러들고, 유저가 지운 건
+// 계속 지워져 있고, 같은 부분을 서로 고쳤으면 **유저가 이긴다**(게임은 유저 것).
+function merge3Lines(base, mine, theirs) {
+  if (mine === theirs || base === theirs) return mine;   // 원본 무변경(또는 동일) → 유저본
+  if (base === mine) return theirs;                      // 유저 무변경 → 최신 원본
+  const A = base.split('\n'), B = mine.split('\n'), C = theirs.split('\n');
+  const lcsPairs = (X, Y) => {           // 표준 LCS 역추적 → 오름차순 매치쌍 [xi, yi]
+    const m = X.length, k = Y.length;
+    const d = Array.from({ length: m + 1 }, () => new Uint16Array(k + 1));
+    for (let i = m - 1; i >= 0; i--) for (let j = k - 1; j >= 0; j--)
+      d[i][j] = X[i] === Y[j] ? d[i + 1][j + 1] + 1 : Math.max(d[i + 1][j], d[i][j + 1]);
+    const out = []; let i = 0, j = 0;
+    while (i < m && j < k) {
+      if (X[i] === Y[j]) { out.push([i, j]); i++; j++; }
+      else if (d[i + 1][j] >= d[i][j + 1]) i++; else j++;
+    }
+    return out;
+  };
+  const mB = new Map(lcsPairs(A, B));    // base줄 → mine줄
+  const mC = new Map(lcsPairs(A, C));    // base줄 → theirs줄
+  const out = [];
+  let ai = 0, bi = 0, ci = 0;
+  const flush = (aEnd, bEnd, cEnd) => {  // 앵커 사이 청크 결정
+    const aChunk = A.slice(ai, aEnd).join('\n');
+    const bChunk = B.slice(bi, bEnd).join('\n');
+    const cChunk = C.slice(ci, cEnd).join('\n');
+    let pick;
+    if (bChunk === aChunk) pick = cChunk;        // 유저 무변경 → 원본 변경 반영
+    else if (cChunk === aChunk) pick = bChunk;   // 원본 무변경 → 유저 변경 반영
+    else if (bChunk === cChunk) pick = bChunk;   // 같은 변경
+    else pick = bChunk;                          // ★충돌 → 유저 우선
+    if (pick.length) out.push(pick);
+    else if (aEnd === ai && (bEnd > bi || cEnd > ci) && pick.length) out.push(pick);
+  };
+  for (let i = 0; i <= A.length; i++) {
+    const atEnd = i === A.length;
+    const anchored = !atEnd && mB.has(i) && mC.has(i);
+    if (!anchored && !atEnd) continue;
+    const bTo = atEnd ? B.length : mB.get(i);
+    const cTo = atEnd ? C.length : mC.get(i);
+    flush(i, bTo, cTo);
+    if (!atEnd) { out.push(A[i]); ai = i + 1; bi = bTo + 1; ci = cTo + 1; }
+  }
+  return out.join('\n');
+}
+
 function getLocalStories() {
   try { return JSON.parse(localStorage.getItem('vn_local_stories') || '{}'); } catch { return {}; }
 }
@@ -7846,9 +7895,15 @@ function setActiveStory(id) {
   STORY = s;
   CHARACTERS = s.characters || {};
   // Built-in packs carry a full worldPrompt; user-created ones store lore only
-  // ★worldPatch(2026-08-06): 내장 원본은 항상 최신, 유저 수정은 레이어로 그 위에.
+  // ★worldBase(2026-08-06): 편집기에서 원문을 직접 고친 경우 — 3-way 병합(유저 우선)으로
+  //   유저 수정(삭제 포함)과 이후 원본 개선이 함께 산다.
   const _pb = BUILTIN_STORIES[s.id];
-  if (_pb && s.worldPatch) {
+  if (_pb && s.worldLore && s.worldBase) {
+    const merged = merge3Lines(s.worldBase, s.worldLore, _pb.worldLore || '');
+    WORLD_PROMPT = merged
+      + loreEndingsEventsBlock(s.events, s.endings)
+      + ENGINE_RULES_PROMPT;
+  } else if (_pb && s.worldPatch) {
     WORLD_PROMPT = (_pb.worldLore || '')
       + '\n\n## ★유저 수정사항 (아래 내용이 위 원본 설정과 충돌하면 아래가 우선한다)\n'
       + s.worldPatch
@@ -8764,9 +8819,16 @@ function openCreator(editId) {
       //   — 유저가 비우고 저장하면 패치 모드로 넘어온다.
       const _wb = BUILTIN_STORIES[editId];
       if (_wb) {
-        const _legacy = (s.worldLore || '') !== (_wb.worldLore || '') ? (s.worldLore || '') : '';
-        document.getElementById('cWorld').value = _legacy || s.worldPatch || '';
-        document.getElementById('cWorldPatchNote').style.display = _legacy ? 'none' : 'block';
+        // ★원문 직접 편집(2026-08-06): 세계관 칸에 "병합된 최신 원문"을 통으로 싣는다 —
+        //   아무 데나 지우고 고치면 된다. 저장 시 worldBase(현재 원본)와 함께 저장돼
+        //   이후 원본 개선이 3-way 병합으로 흘러든다(충돌 시 유저 우선).
+        let _view;
+        if (s.worldLore && s.worldBase) _view = merge3Lines(s.worldBase, s.worldLore, _wb.worldLore || '');
+        else if (s.worldPatch) _view = (_wb.worldLore || '') + String.fromCharCode(10, 10) + '## ★유저 수정사항 (원본과 충돌하면 이 섹션이 우선)' + String.fromCharCode(10) + s.worldPatch;
+        else if (s.worldLore && (s.worldLore !== (_wb.worldLore || ''))) _view = s.worldLore;   // 구형 스냅샷
+        else _view = _wb.worldLore || '';
+        document.getElementById('cWorld').value = _view;
+        document.getElementById('cWorldPatchNote').style.display = 'block';
         document.getElementById('cWorldBase').textContent = _wb.worldLore || '';
       } else {
         document.getElementById('cWorld').value = s.worldLore || '';
@@ -9109,18 +9171,17 @@ function publishStory() {
     genre: document.getElementById('cGenre').value.trim(),
     cover: cCoverUrl,
     customBgs: cCustomBgs,
-    // ★내장 스토리 세계관 = 패치 레이어(2026-08-06 유저: "고치면 자동반영되게"): 원본은 항상
-    //   최신을 추적하고, 이 칸의 내용은 worldPatch로 저장돼 원본 위에 얹힌다(충돌 시 패치 우선).
-    //   스냅샷(worldLore 동결)은 더 이상 만들지 않는다 — v220 미적용 사고의 재발 방지.
+    // ★내장 스토리 세계관 = 원문 직접 편집 + 3-way 병합(2026-08-06 유저: "도려낼 수 있어야").
+    //   유저본(worldLore)과 편집 당시 원본(worldBase)을 함께 저장 — 이후 원본 개선은 병합으로
+    //   흘러들고(유저가 안 건드린 부분), 유저의 수정·삭제는 계속 살아 있다(충돌 시 유저 우선).
+    //   칸을 원본 그대로 두면(또는 비우면) 아무것도 저장 안 함 = 순수 원본 추적 모드.
     //   창작 스토리는 종전대로 worldLore가 본문이다.
     ...(() => {
       const w = document.getElementById('cWorld').value.trim();
       const b = cEditId && BUILTIN_STORIES[cEditId];
       if (!b) return { worldLore: w || undefined };
-      const legacy = (typeof allStories === 'function' && allStories()[cEditId]) || {};
-      const wasLegacy = (legacy.worldLore || '') && (legacy.worldLore || '') !== (b.worldLore || '');
-      if (wasLegacy && w && w !== (b.worldLore || '').trim()) return { worldLore: w };   // 구형 스냅샷 유지 편집
-      return { worldPatch: (w && w !== (b.worldLore || '').trim()) ? w : undefined };
+      if (!w || w === (b.worldLore || '').trim()) return {};   // 원본 그대로/비움 → 추적 모드
+      return { worldLore: w, worldBase: b.worldLore || '', worldPatch: undefined };
     })(),
     characters: cChars,
     protagonist: {
