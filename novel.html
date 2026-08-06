@@ -2041,7 +2041,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v220</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v221</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7803,7 +7803,21 @@ function getLocalStories() {
   try { return JSON.parse(localStorage.getItem('vn_local_stories') || '{}'); } catch { return {}; }
 }
 // Local stories OVERRIDE built-ins with the same id (edited 낙인의 검 etc.)
-function allStories() { return { ...BUILTIN_STORIES, ...getLocalStories() }; }
+// ★단 편집기 저장본은 편집기 필드만 갖고 있다 — 편집기가 다루지 않는 엔진/표시 필드까지 잃으면
+//   v209 스프라이트 캡(maxSprites)이 풀려 3~4명이 떠 작아지고(2026-08-06 유저: "왜 또 여러명
+//   되면서 작아져"), 표정 리맵(emoRemap)·모드 선택지도 죽는다. 원본에서 이어받아 치유한다
+//   (이미 저장된 수정본도 읽는 순간 복구 — 유저 조작 불필요).
+function allStories() {
+  const local = getLocalStories();
+  const out = { ...BUILTIN_STORIES };
+  for (const id in local) {
+    out[id] = { ...local[id] };
+    const b = BUILTIN_STORIES[id];
+    if (b) for (const k of ['maxSprites', 'emoRemap', 'modeChoices', 'freeStartHint'])
+      if (out[id][k] === undefined && b[k] !== undefined) out[id][k] = b[k];
+  }
+  return out;
+}
 
 // Active story data. Kept under the old global names so the rest of the
 // engine (detectActiveChars, callGemini, status panel...) needs no changes.
@@ -10912,8 +10926,12 @@ function rebuildSprites(charIds, speakingId, emotion, pose) {
   charLayer.innerHTML = '';
   shownSprites = [];
   // 인원 캡(maxSprites) 적용 시 발화자가 퇴장당하지 않게 마지막에 생성(캡은 [0]부터 퇴장)
-  const _ids = [...(charIds || [])];
+  let _ids = [...(charIds || [])];
   if (speakingId) { const _si = _ids.indexOf(speakingId); if (_si !== -1) { _ids.splice(_si, 1); _ids.push(speakingId); } }
+  // ★복원 경로에도 인원 캡을 직접 적용(2026-08-06) — 옛 세이브/스냅샷이 3~4명을 기록했어도
+  //   뒤(=발화자 포함 최근)에서 캡 인원만 살린다. ensureSprite의 캡과 이중 방어.
+  const _rcap = (typeof STORY !== 'undefined' && STORY && STORY.maxSprites) || 4;
+  if (_ids.length > _rcap) _ids = _ids.slice(-_rcap);
   _ids.forEach(cid => {
     ensureSprite(cid);
     const sp = document.getElementById('sprite_' + cid);
