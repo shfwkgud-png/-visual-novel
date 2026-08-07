@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v232</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v233</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -7868,6 +7868,9 @@ function merge3Lines(base, mine, theirs) {
 }
 
 // ★v226 이전 단아 카드(레거시 마커) — 편집기 스냅샷이 이 텍스트면 '미수정'으로 보고 신판으로 자동 이행
+// ★v231 이전 이름들 — 카드 스냅샷이 이 이름을 갖고 있으면 '유저 미수정 구형 스냅샷'으로 보고
+//   최신 원본 카드로 교체한다(2026-08-06 유저: "이름이 왜 안 바뀌어 있지?").
+const LEGACY_CHAR_NAMES = new Set(["한소요", "백리안", "차무강", "남도범", "오만복", "강태풍", "정봄이", "공정표", "백호진", "독고 하라"]);
 const LEGACY_DANAH_P2 = "17세, 흑발 생머리에 흐트러짐 없는 교복 — \"완벽한 반장\"으로 이름난 전교권 우등생(선거는 곧, 유력 후보). ★본질은 지배욕과 승부욕: 항상 정점에 서야 하고, 반도 성적도 사람도 자기 통제 안에 있어야 직성이 풀린다. 학급 관리는 봉사가 아니라 본능. ★최대 무기이자 급소 = 프라이드: 자존심을 건드리면(공개 반박, 성적 추월, 무시) 냉정이 깨지고 이성을 잃은 채 달려든다. 반대로 그 자존심을 진심으로 인정·존중해주면 누구보다 쉽게 무너진다. ★패배 자체보다 \"내 의지대로 상황을 못 이끌었다\"는 무력감에 무너진다 — 내기에서 지면 며칠을 앓는다. ★길들일 수 없다: 굴복시키려 들수록 더 강하게 반발하거나 더 교묘하게 상대를 옭아맨다. 관계는 서로의 영역을 인정한 팽팽한 긴장 위에서만 성립 — 그래서 위험하고, 놓을 수 없다. Want: 정점의 자리 + 당신을 자기 통제 안에 두는 것(원한다는 사실은 은폐). Secret: \"학급 일지\"라 쓴 다이어리 — 반 관리 장부인 척, 당신이 전학 온 날부터의 기록으로만 채워진다(지각 횟수, 고른 빵, 스친 대화). 관리가 아니라 독점욕. ★호감이 깊어지면 \"복종처럼 보이는 지배\"가 시작된다: 당신만을 유일하게 인정하는 태도로 역으로 당신을 자기에게만 묶는 고도의 소유욕 — 완전한 굴복이 아니라 그녀식 소유. 자신이 인정한 단 한 사람 외의 접근은 섬뜩할 만큼 용납 못 한다(질투는 직접 목격했을 때만). Wound: \"가식적\"·\"그래봤자 아직 2등\" — 완벽한 얼굴이 그 자리에서 깨진다. 신체 tell: 동요하면 귓불부터 빨개진다(본인은 태연한 척). 도발 반응: ①프라이드 자극 → 냉정이 깨지며 날 선 정면 응전 ②진심 어린 인정·칭찬 → 반박하려다 말문이 막히고 귓불이 빨개짐 ③굴복 요구 → 웃으면서 더 교묘한 조건을 걸어 역으로 옭아맴 ④환한 미소로 서늘한 말(낙차의 여왕). 호칭: 이름 또는 \"너\". 말투: 단정한 존대, 프라이드가 걸리면 반말이 샌다. 대사 예: \"전학 온 지 2주. 지각 세 번. …왜 세고 있냐고는 묻지 말고.\"(무표정) / \"나랑 내기해. 네가 이기면 뭐든 들어줄게. …그럴 일이 없으니까 하는 말이지만.\"(웃음기 없는 눈) / \"그 애랑 있으면 재밌어? …아, 대답은 됐어. 표정이 다 말했으니까.\"(옅은 미소)";   // v226~228 텍스트(교정 전)
 const LEGACY_DANAH_P = "17세, 흑발 생머리에 흐트러짐 없는 교복 — \"완벽한 반장\"으로 이름난 우등생. 아직 반장은 아니다(새 학년이라 반이 리셋됐고, 곧 있을 선거가 첫 도전). 유력 후보지만 이겨서 증명해야 한다는 압박에 겉은 여유·속은 초조. ★지배적·영악·냉정 — 계산이 가장 빠르고 도발조차 계획이다. 화가 나도 목소리가 낮아질 뿐 허둥대지 않는다. ★집착을 대놓고 드러내지 않는다 — 다이어리·시선·통제된 \"우연\"으로만 새어 나오고, 들킬 것 같으면 더 차갑게 군다. Want: 완벽한 반장으로 인정받는 것 + 당신의 시선이 자기에게 머무는 것(원한다는 사실 자체를 숨긴다). Secret: \"학급 일지\"라 쓴 다이어리에 당신이 전학 온 날부터를 전부 적는다(지각 횟수, 고른 빵, 스친 대화 한 줄) — 관찰로 시작했는데 페이지가 당신으로만 찬다. 완벽주의가 아니라 독점욕. Wound: \"가식적\" — 그 순간만 완벽한 얼굴이 무너진다. 신체 tell: 동요하면 귓불부터 빨개진다(본인은 태연한 척). 도발 반응: ①얼어붙은 단문(\"...뭐?\") ②선택 강요 질문 ③한 걸음 다가서기 ④환한 미소로 서늘한 말(낙차의 여왕). 호칭: 이름 또는 \"너\". 말투: 단정한 존대, 감정이 새면 반말. 대사 예: \"전학 온 지 2주. 지각 세 번. …왜 세고 있냐고는 묻지 말고.\"(무표정) / \"그 애랑 있으면 재밌어? …아, 대답은 됐어. 표정이 다 말했으니까.\"(옅은 미소)";
 function getLocalStories() {
@@ -7892,11 +7895,25 @@ function allStories() {
     if (b && !out[id].worldLore) { out[id].worldLore = b.worldLore; out[id].worldPrompt = b.worldPrompt; }
     // ★인물 카드도 원본 추적(2026-08-06): 편집기 스냅샷이 없으면 원본 카드를 그대로 쓴다 —
     //   원본 카드 개편(단아 v226 등)이 수정본 플레이에도 즉시 반영.
-    if (b && !out[id].characters) out[id].characters = b.characters;
-    // 레거시 이행: v226 이전에 저장된 스냅샷의 단아 카드가 구판 그대로면(=유저 미수정) 신판으로 교체
-    else if (b && id === 'lovediary' && out[id].characters && out[id].characters.danah
-             && [LEGACY_DANAH_P, LEGACY_DANAH_P2].includes(out[id].characters.danah.personality)) {
-      out[id].characters = { ...out[id].characters, danah: b.characters.danah };
+    // ★인물 카드 3-way 추적(2026-08-06, 세계관 v224와 같은 철학):
+    //   카드별로 "유저가 고쳤나"를 판정해, 안 고친 카드는 최신 원본을 따라가고(이름 현실화·성격 개편이
+    //   즉시 반영), 고친 카드는 유저 것을 지킨다. 원본에만 있는 신규 카드(하라 등)는 항상 합류시킨다.
+    if (b) {
+      if (!out[id].characters) out[id].characters = b.characters;
+      else {
+        const mine = out[id].characters, base = out[id].charBase || null, merged = {};
+        for (const cid in b.characters) {
+          const bc = b.characters[cid], mc = mine[cid];
+          if (!mc) { merged[cid] = bc; continue; }                       // 신규 카드 → 합류
+          const untouched = base && base[cid]
+            ? JSON.stringify(base[cid]) === JSON.stringify(mc)           // 편집 당시 원본과 동일 = 미수정
+            : LEGACY_CHAR_NAMES.has(mc.name)                             // 구형 스냅샷: 옛 이름이면 미수정
+              || (cid === 'danah' && [LEGACY_DANAH_P, LEGACY_DANAH_P2].includes(mc.personality));
+          merged[cid] = untouched ? bc : mc;
+        }
+        for (const cid in mine) if (!(cid in merged)) merged[cid] = mine[cid];   // 유저가 추가한 카드 보존
+        out[id].characters = merged;
+      }
     }
   }
   return out;
@@ -9210,7 +9227,9 @@ function publishStory() {
     ...(() => {
       const b = cEditId && BUILTIN_STORIES[cEditId];
       if (b && JSON.stringify(cChars) === JSON.stringify(b.characters || {})) return {};
-      return { characters: cChars };
+      // ★charBase = 편집 당시 원본 카드(2026-08-06). 다음 로드 때 카드별 "미수정" 판정에 쓰여,
+      //   유저가 손대지 않은 카드는 최신 원본을 계속 따라간다(세계관 worldBase와 같은 역할).
+      return b ? { characters: cChars, charBase: b.characters || {} } : { characters: cChars };
     })(),
     protagonist: {
       name: document.getElementById('cProtagName').value.trim(),
