@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v235</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v236</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3987,8 +3987,17 @@ function presentCharIds(activeCharIds) {
       const t = (typeof turnCount === 'number' ? turnCount : 0) % rest.length;
       rest.push(...rest.splice(0, t));
     }
-    rest.sort((x, y) => (met[x] ? 1 : 0) - (met[y] ? 1 : 0));   // 안 만난 얼굴 우선(안정 정렬)
-    ids = ids.filter(id => on.has(id)).concat(rest).slice(0, CAP);
+    // ★관계가 쌓인 사람이 먼저다(2026-08-09 유저: "유단아는 왜 안 나오냐").
+    //   전엔 "안 만난 얼굴 우선"이라 **친해질수록 무대에서 밀려나는** 역효과가 났다 —
+    //   캐스트가 15명이 되며(하라 합류) 주요 인물이 통째로 사라졌다.
+    //   지금은 친밀도 높은 순 → 만난 적 있는 순 → 미소개(로테이션 순서 유지)로 세운다.
+    const aff = id => (met[id] && typeof met[id].intimacy === 'number') ? met[id].intimacy : (met[id] ? 1 : -1);
+    rest.sort((x, y) => aff(y) - aff(x));                      // 안정 정렬(동점은 로테이션 순서 유지)
+    // 단 미소개 인물도 최소 1명은 끼워 새 얼굴이 영영 안 나오는 일을 막는다
+    const capped = ids.filter(id => on.has(id)).concat(rest).slice(0, CAP);
+    const fresh = rest.find(id => !met[id]);
+    if (fresh && !capped.includes(fresh) && capped.length === CAP) capped[CAP - 1] = fresh;
+    ids = capped;
   }
   return ids;
 }
