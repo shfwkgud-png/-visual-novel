@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v251</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v252</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2574,7 +2574,7 @@ const MUHYEOP_LORE = `당신은 무협 비주얼 노벨 "회귀한 천마의 아
 - 외모: 흑발적안, 창백하고 수려함. 아직 내공은 전생의 3할
 - 성격: 겉은 냉소적인 마교 공자, 속은 배신의 상처와 복수심. 한 번 품은 사람은 끝까지 지킴
 - 목표: 갈원 일파 숙청 → 마교 장악 → 전생에 마교를 친 무림맹의 위선을 무너뜨림
-- ★오늘 밤, 전생 기억 속 '아버지 암살 미수 사건'이 일어난다. 회귀 후 첫 갈림길
+- ★1일차 밤, 전생 기억 속 '아버지 암살 미수 사건'이 일어난다(이후 일차라면 이미 발동한 타임라인이다). 회귀 후 첫 갈림길
 
 ## 스토리 원칙(무협 톤):
 - 사이다 회귀물: 전생 지식으로 위기를 기회로 뒤집는 쾌감. 단 정보는 조금씩 활용
@@ -2589,7 +2589,7 @@ const MUHYEOP_LORE = `당신은 무협 비주얼 노벨 "회귀한 천마의 아
 - 전생의 기억은 완전하지 않다: 주인공의 개입으로 사건이 어긋나기 시작하면 "모르는 미래"가 온다는 공포를 심을 것
 
 ## 숨은 타임라인:
-- 오늘 밤: 천마 암살 미수 (전생에선 호법 둘이 죽고 갈원이 영웅 행세)
+- 1일차 밤: 천마 암살 미수 (전생에선 호법 둘이 죽고 갈원이 영웅 행세)
 - 7일 후: 장로회의 — 후계 문제 공론화, 갈원파의 소공주 옹립 시도
 - 1개월 후: 무림맹 사절단 방문 (위진천의 간보기), 정마대전의 불씨
 - 3개월 후: 갈원의 거사 예정일 (전생보다 빨라질 수 있음)
@@ -2789,7 +2789,7 @@ const ACADEMY_LORE = `당신은 아카데미 빙의물 비주얼 노벨 "악역�
 - 소설 속 몰락 남작가의 삼남. 원작 1권에서 여주를 괴롭히다 남주에게 꺾여 퇴학, 2권에서 여명회에 이용당해 비참하게 죽는 단역 악역
 - 눈을 떠 보니 입학식 아침, 그 카일의 몸이었다
 - ★원작 지식이 무기: 사건의 순서, 히든 피스(유물·던전·조력자), 인물들의 비밀을 앎
-- ★오늘 입학식에서 '원작 첫 사건'이 일어난다 — 카일이 세라핀과 부딪혀 남주에게 찍히는 그 장면. 피할 것인가, 바꿀 것인가
+- ★1일차(입학식)에 '원작 첫 사건'이 일어난다 — 카일이 세라핀과 부딪혀 남주에게 찍히는 그 장면(2일차부터는 이미 지난 사건 — 그 여파를 다뤄라). 피할 것인가, 바꿀 것인가
 - 외모: 은발에 날카로운 인상(악역답게 생김). 몸은 허약한 편 — 단련 필요
 - 성격(빙의자): 원작을 정주행한 현대인의 눈치와 메타지식. 죽는 운명만은 피하겠다는 절실함
 - 목표: 생존 → 원작 붕괴를 관리하며 히든 피스 선점 → 파멸 플래그를 전부 꺾는다
@@ -2813,7 +2813,7 @@ const ACADEMY_LORE = `당신은 아카데미 빙의물 비주얼 노벨 "악역�
 - 원작이 뒤틀릴수록(주인공의 개입) 세계는 '수정력'으로 반발한다 — 예정된 사건이 다른 형태로 더 크게 일어남
 
 ## 숨은 타임라인:
-- 오늘: 입학식 — 원작 1화 '세라핀 충돌 사건' (개입 방식이 첫 갈림길)
+- 1일차: 입학식 — 원작 1화 '세라핀 충돌 사건' (개입 방식이 첫 갈림길)
 - 1개월 후: 신입생 서열전 (원작: 카일이 바론에게 붙어 세라핀을 괴롭히다 루카스에게 꺾임)
 - 3개월 후: 학원제 — 여명회의 성물 탈취 습격 (원작 1권 클라이맥스, 사상자 발생)
 - 6개월 후: 이졸데의 마력 폭주 징후 시작 (원작에선 여기서 죽음의 카운트다운)
@@ -4063,6 +4063,33 @@ function buildStatePrompt() {
       }
     } catch {}
   }
+  // ★경과일 일반 주입(2026-08-10 유저: "다른 스토리들도 싹 다?"): 세계관의 "오늘/첫날" 표기
+  //   시작 사건이 무시점으로 매 턴 실려 며칠이 지나도 첫날 프레이밍이 반복된다(연애일기 "오늘 전학"
+  //   = 아카데미 "오늘 입학식" = 같은 병). 타임루프는 하루 반복이 컨셉이라 제외.
+  if (STORY.id !== 'lovediary' && STORY.id !== 'timeloop') {
+    const _gd = /(\d+)\s*일차/.exec((gameState && gameState.time) || '');
+    if (_gd && parseInt(_gd[1], 10) >= 2) {
+      s += `★지금은 ${_gd[1]}일차다 — 세계관에 "오늘/첫날"로 적힌 시작 사건들은 1일차 기준이며 이미 지난 일이다. 첫날/첫 만남 프레이밍을 반복하지 마라. 진행 상황은 아래 상태 기록이 진실이다.` + '\n';
+    }
+  }
+  // ★단계별 상시 지시(2026-08-10 전 스토리 이식 — 원래 연애일기 전용이던 가이드 B-2 완결분).
+  //   블록 스코프 { }로 감싸 함수 뒤쪽의 const met 재선언과 충돌하지 않게 한다.
+  {
+    const met = gameState.metChars || {};
+    const known = Object.keys(met).filter(id => CHARACTERS[id]);
+    const lo = known.filter(id => (met[id].intimacy ?? 10) < 40);
+    // ★B-2 단계별 상시 지시(2026-08-09, 가이드 B 완결): 40미만 금지문만 있고 단계가 오른 인물의
+    //   행동 지침이 없어 "친해져도 태도가 그대로"였다. 40+/70+ 인물에게 단계 행동을 1줄로 상시 주입.
+    const hi = known.filter(id => (met[id].intimacy ?? 10) >= 40)
+      .map(id => `${met[id].name || id}=${(met[id].intimacy >= 70) ? '애정(독점욕·스킨십·단둘의 시간을 원함 — 그답게 표현)' : '신뢰(사적 대화·비밀 일부 공유·먼저 다가옴 허용)'}`);
+    if (hi.length) s += `★단계가 오른 사람: ${hi.join(' · ')}. 이 단계답게 행동시켜라(단 인물 성격의 문법으로).\n`;
+    if (lo.length) {
+      s += `★아직 남인 사람(호감도 40 미만) — **설렘·질투·독점욕·스킨십·고백 금지**. 그냥 반 친구다:
+  `
+         + lo.map(id => `${CHARACTERS[id].name} ${met[id].intimacy ?? 10}`).join(' · ') + `
+`;
+    }
+  }
   // ★스티키 무드 주입(2026-08-09, 가이드 E): 직전 응답에서 강한 감정(angry/sad/pain)을 보인
   //   인물은 2턴간 여운이 남는다 — 산문 "감정 관성"만으론 급반전이 계속 나와 기계화했다.
   try {
@@ -4134,21 +4161,8 @@ function buildStatePrompt() {
       if (typeof ldSchoolTimeActive === 'function' && ldSchoolTimeActive()) s += ldSeatLine() + '\n';
       s += ldSecretsFor(typeof _lastPresentIds !== 'undefined' ? _lastPresentIds : Object.keys(gameState.metChars || {}));
     } catch {}
-    const met = gameState.metChars || {};
-    const known = Object.keys(met).filter(id => CHARACTERS[id]);
-    const lo = known.filter(id => (met[id].intimacy ?? 10) < 40);
-    // ★B-2 단계별 상시 지시(2026-08-09, 가이드 B 완결): 40미만 금지문만 있고 단계가 오른 인물의
-    //   행동 지침이 없어 "친해져도 태도가 그대로"였다. 40+/70+ 인물에게 단계 행동을 1줄로 상시 주입.
-    const hi = known.filter(id => (met[id].intimacy ?? 10) >= 40)
-      .map(id => `${met[id].name || id}=${(met[id].intimacy >= 70) ? '애정(독점욕·스킨십·단둘의 시간을 원함 — 그답게 표현)' : '신뢰(사적 대화·비밀 일부 공유·먼저 다가옴 허용)'}`);
-    if (hi.length) s += `★단계가 오른 사람: ${hi.join(' · ')}. 이 단계답게 행동시켜라(단 인물 성격의 문법으로).\n`;
-    if (lo.length) {
-      s += `★아직 남인 사람(호감도 40 미만) — **설렘·질투·독점욕·스킨십·고백 금지**. 그냥 반 친구다:
-  `
-         + lo.map(id => `${CHARACTERS[id].name} ${met[id].intimacy ?? 10}`).join(' · ') + `
-`;
-    }
-    const unmet = Object.keys(CHARACTERS).filter(id => !met[id] && LD_CLASS_STUDENTS.includes(id));
+
+    const unmet = Object.keys(CHARACTERS).filter(id => !(gameState.metChars || {})[id] && LD_CLASS_STUDENTS.includes(id));   // met은 공통 블록으로 이동(v252) — 직접 조회
     if (unmet.length) {
       s += `★아직 **말도 안 섞어본** 사람 — 초면답게 다뤄라(이름을 부르거나 아는 척하지 마라):
   `
