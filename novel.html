@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v248</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v249</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4046,6 +4046,22 @@ function buildStatePrompt() {
   // ★★관계 온도를 **매 턴 숫자로** 못 박는다(2026-08-04 유저: 소요가 자꾸 좋아하고, 전학생 리안이
   //   반 애들을 원래 알던 것처럼 군다). LORE에 규칙을 더 쌓는 대신, 지금 상태를 직접 들이민다 —
   //   고정 규칙은 묻히지만 "지금 소요 호감도 12"는 안 묻힌다.
+  // ★단아 태도 세정기(2026-08-10 유저: v247인데도 "모기만한 소리로 죄송합니다" — 606턴 관성):
+  //   카드(톤 잠금)가 아무리 옳아도 metChars의 relationship/note에 "매달림·애원" 관성이 박혀 있으면
+  //   모델은 그 증거를 따른다. 삼촌 세정기와 같은 원리로 상태 층을 직접 고치고,
+  //   1회성 인스토리 재정렬(비굴함=계산된 연기였다 — 아키타입의 "복종조차 지배 방식" 그대로)을 건다.
+  if (STORY.id === 'lovediary') {
+    try {
+      const _d = gameState.metChars && gameState.metChars.danah;
+      const _BAD = /(매달|애원|버리지\s*마|울먹|조아리|모기만|비굴|눈물로|흐느|빌었)/;
+      if (_d) {
+        let _hit = false;
+        if (_BAD.test(_d.relationship || '')) { _d.relationship = '팽팽한 주도권 게임(내기 패배 이후 — 겉은 완벽한 순종, 속은 반격 준비)'; _hit = true; }
+        if (_BAD.test(_d.note || '')) { _d.note = '겉은 태연하게 시키는 대로 — 속으로는 다이어리에 반격 수순을 적는 중'; _hit = true; }
+        if (_hit && !gameState._danahRealigned) { gameState._danahRealigned = true; gameState.pendingBeat = { type: 'realign' }; }
+      }
+    } catch {}
+  }
   // ★스티키 무드 주입(2026-08-09, 가이드 E): 직전 응답에서 강한 감정(angry/sad/pain)을 보인
   //   인물은 2턴간 여운이 남는다 — 산문 "감정 관성"만으론 급반전이 계속 나와 기계화했다.
   try {
@@ -4074,7 +4090,10 @@ function buildStatePrompt() {
   //   비트가 걸려 있으면 1회성 연출 의무를 주입하고 소모한다.
   if (gameState.pendingBeat) {
     const _b = gameState.pendingBeat; delete gameState.pendingBeat;
-    if (_b.type === 'milestone') {
+    if (_b.type === 'realign') {
+      s += `★★단아 태도 재정렬(이번 턴, 1회) — 지금까지의 비굴해 보인 순종은 전부 **계산된 연기**였다. 다음 등장에서 그 전환을 보여라: 눈물 자국 없이 완벽하게 정돈된 얼굴, 태연한 말투, 그리고 순종 속에 감춰둔 수(다이어리에 늘어난 페이지, 계산된 눈빛)를 암시하는 한 컷. 이후 단아는 카드의 톤 — 겉은 태연한 복종, 속은 반격 준비 — 으로만 연기한다.
+`;
+    } else if (_b.type === 'milestone') {
       s += `★★이번 턴 의무 — ${_b.name}와의 관계가 '${_b.tier}' 단계로 올라섰다. 이 인물의 개인 이벤트(과거 고백, 단둘의 사건, 관계를 정의하는 순간)를 지금 이 턴에 발동하라. 잡담으로 넘기지 마라.\n`;
     } else {
       s += `★★정체 감지 — 몇 턴째 관계도 사건도 진전이 없다. 이번 턴엔 세계가 먼저 움직인다: ①진행 중 행사·일정의 다음 국면 ②장면 인물의 숨은 사정이 드러나는 단서 ③제3자의 개입(등장·호출·방해·목격) 중 하나를 배경 술렁임이 아니라 **실제 사건**으로 일으켜라.\n`;
