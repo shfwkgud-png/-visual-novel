@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v243</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v244</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4046,6 +4046,30 @@ function buildStatePrompt() {
   // ★★관계 온도를 **매 턴 숫자로** 못 박는다(2026-08-04 유저: 소요가 자꾸 좋아하고, 전학생 리안이
   //   반 애들을 원래 알던 것처럼 군다). LORE에 규칙을 더 쌓는 대신, 지금 상태를 직접 들이민다 —
   //   고정 규칙은 묻히지만 "지금 소요 호감도 12"는 안 묻힌다.
+  // ★스티키 무드 주입(2026-08-09, 가이드 E): 직전 응답에서 강한 감정(angry/sad/pain)을 보인
+  //   인물은 2턴간 여운이 남는다 — 산문 "감정 관성"만으론 급반전이 계속 나와 기계화했다.
+  try {
+    gameState._lastEmo = gameState._lastEmo || {};
+    for (let _k = gameHistory.length - 1; _k >= 0 && _k >= gameHistory.length - 2; _k--) {
+      const _h = gameHistory[_k];
+      if (!_h || _h.role !== 'assistant') continue;
+      const _d = JSON.parse(_h.content);
+      (Array.isArray(_d.dialogue) ? _d.dialogue : []).forEach(_dl => {
+        if (_dl && _dl.char_id && ['angry', 'sad', 'pain'].includes(_dl.emotion))
+          gameState._lastEmo[_dl.char_id] = { emo: _dl.emotion, turn: turnCount };
+      });
+      break;
+    }
+    const _EMO_KO = { angry: '분노', sad: '슬픔', pain: '고통' };
+    const _lines = [];
+    for (const _id in gameState._lastEmo) {
+      const _e = gameState._lastEmo[_id];
+      if (turnCount - _e.turn > 2) { delete gameState._lastEmo[_id]; continue; }
+      const _nm = (gameState.metChars[_id] && gameState.metChars[_id].name) || (CHARACTERS[_id] && CHARACTERS[_id].name);
+      if (_nm && turnCount - _e.turn >= 1) _lines.push(`${_nm}(${_EMO_KO[_e.emo]})`);
+    }
+    if (_lines.length) s += `★감정 여운 — ${_lines.join(' · ')}: 직전의 강한 감정이 아직 남아 있다. 계기 없이 아무 일 없듯 웃지 마라(풀리려면 계기·시간이 필요).\n`;
+  } catch {}
   // ★스토리 모멘텀 드라이버(2026-08-09, 유저 제공 가이드 story_engine_upgrade.md B 구현):
   //   비트가 걸려 있으면 1회성 연출 의무를 주입하고 소모한다.
   if (gameState.pendingBeat) {
@@ -4087,6 +4111,11 @@ function buildStatePrompt() {
     const met = gameState.metChars || {};
     const known = Object.keys(met).filter(id => CHARACTERS[id]);
     const lo = known.filter(id => (met[id].intimacy ?? 10) < 40);
+    // ★B-2 단계별 상시 지시(2026-08-09, 가이드 B 완결): 40미만 금지문만 있고 단계가 오른 인물의
+    //   행동 지침이 없어 "친해져도 태도가 그대로"였다. 40+/70+ 인물에게 단계 행동을 1줄로 상시 주입.
+    const hi = known.filter(id => (met[id].intimacy ?? 10) >= 40)
+      .map(id => `${met[id].name || id}=${(met[id].intimacy >= 70) ? '애정(독점욕·스킨십·단둘의 시간을 원함 — 그답게 표현)' : '신뢰(사적 대화·비밀 일부 공유·먼저 다가옴 허용)'}`);
+    if (hi.length) s += `★단계가 오른 사람: ${hi.join(' · ')}. 이 단계답게 행동시켜라(단 인물 성격의 문법으로).\n`;
     if (lo.length) {
       s += `★아직 남인 사람(호감도 40 미만) — **설렘·질투·독점욕·스킨십·고백 금지**. 그냥 반 친구다:
   `
@@ -9388,9 +9417,9 @@ function currentArtStyle() {
 
 // Map many emotion synonyms (the AI often invents its own) to the 8 base expressions
 const EMOTION_SYNONYMS = {
-  smile: ['smile','happy','joy','joyful','pleased','amused','smirk','grin','gentle','warm','playful','laugh','content'],
-  angry: ['angry','anger','rage','furious','cold','stern','serious','glare','displeased','hostile','fierce','cocky','arrogant','disdain'],
-  annoy: ['annoyed','irritated','annoy','exasperated','grumpy','pout','pouting','sulky','peeved','tsundere','huff'],
+  smile: ['smile','happy','joy','joyful','pleased','amused','smirk','grin','gentle','warm','playful','laugh','content','softening','relieved'],
+  angry: ['angry','anger','rage','furious','cold','stern','serious','glare','displeased','hostile','fierce','cocky','arrogant','disdain','threatening','menacing','intimidating'],
+  annoy: ['annoyed','irritated','annoy','exasperated','grumpy','pout','pouting','sulky','peeved','tsundere','huff','suspicious','doubtful','skeptical'],
   sad: ['sad','sorrow','sorrowful','cry','crying','tears','tearful','grief','melancholy','depressed','lonely','hurt_emotional','regret','disappointed'],
   pain: ['pain','painful','hurt','agony','suffering','wince','injured','exhausted','weak','dying'],
   pleasure: ['pleasure','seductive','flirty','aroused','lewd','ecstasy','horny','sultry','erotic','moaning','turned_on'],
@@ -10919,6 +10948,11 @@ function processResponse(data, activeCharIds, streamed) {
         if (!replaying && typeof _int === 'number' && typeof cur.intimacy === 'number' && _int !== cur.intimacy) {
           showStatToast(`${cur.name || base.name || id} 💗 ${_int > cur.intimacy ? '+' : ''}${Math.round(_int - cur.intimacy)}`,
                         _int < cur.intimacy);
+        }
+        // ★스티키 무드(2026-08-09, 가이드 E — 감정 관성의 기계화): 강한 감정이 나온 인물을 기록,
+        //   2턴 안에는 "여운" 지시가 주입된다(산문 "감정 관성" 규칙만으론 급반전이 계속 나왔음).
+        if (!replaying && typeof turnCount === 'number') {
+          gameState._lastEmo = gameState._lastEmo || {};
         }
         // ★관계 마일스톤 상태머신(2026-08-09, story_engine_upgrade.md B — 7/17 제안 후 미구현이었음):
         //   40/70 상향 돌파를 코드가 감지해 다음 턴에 "개인 이벤트 발동" 지시를 1회 주입한다.
