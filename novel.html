@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v241</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v242</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3723,16 +3723,33 @@ const LD_SECRETS = {
 };
 // 오늘 교시 한 줄: "[수요일 3교시] 과학* (익명 교사 — 한두 문장으로 흘리고 반 아이들의 작은 사건 하나만)"
 function ldNowClass(timeStr) {
-  const m = /([월화수목금])요일/.exec(timeStr || ''), p = /(\d)\s*교시/.exec(timeStr || '');
-  if (!m || !p) return '';
-  const row = LD_TIMETABLE[m[1]]; if (!row) return '';
-  const subj = row[Math.min(6, Math.max(0, parseInt(p[1], 10) - 1))];
+  const t = timeStr || '';
+  // ★관대한 파싱(2026-08-09 유저 "시간표도 하나도 안 지킨다"): "월요일"·"(월)"·"월" 전부 인식.
+  //   교시를 못 읽으면 **그날 시간표 전체**를, 요일도 못 읽으면 **주간 전체**를 폴백으로 준다 —
+  //   전엔 형식이 조금만 달라도 주입이 통째로 실패해 AI가 시간표를 아예 모르는 상태가 됐다.
+  const dm = /([월화수목금])\s*요일|\(\s*([월화수목금])\s*\)|(?:^|[\]\s])([월화수목금])(?=[\s\d])/.exec(t);
+  const day = dm ? (dm[1] || dm[2] || dm[3]) : null;
+  const pm = /(\d)\s*교시/.exec(t);
+  const fullWeek = () => Object.keys(LD_TIMETABLE)
+    .map(d => `${d}: ` + LD_TIMETABLE[d].map((x, k) => `${k + 1}${x}`).join(' ')).join(' / ');
+  const TAIL = ' ★하루에 이름 있는 교사는 2명뿐 — 이름 없는 교사(*) 교시에 그들을 끌어오지 마라.'
+             + ' ★교시는 순서대로만 흐른다(조회 → 1교시 → 쉬는 시간 → 2교시 …).';
+  if (!day) return '★주간 시간표 — ' + fullWeek() + TAIL;
+  const row = LD_TIMETABLE[day];
+  if (!row) return '★주간 시간표 — ' + fullWeek() + TAIL;
+  if (!pm) {
+    return `★오늘(${day}요일) 시간표: ` + row.map((x, k) => `${k + 1}교시 ${x}`).join(' · ') + TAIL;
+  }
+  const idx = Math.min(6, Math.max(0, parseInt(pm[1], 10) - 1));
+  const subj = row[idx];
   const anon = subj.includes('*');
-  return `★지금 ${m[1]}요일 ${p[1]}교시 = ${subj}` +
-    (anon ? ' (이름 없는 교사 — 수업은 한두 문장으로 흘리고 그 사이 반 아이들의 작은 사건 하나만 남겨라)'
-          : ' (이름 있는 교사가 진행한다)') +
-    '. ★하루에 이름 있는 교사는 2명뿐 — 익명 교시에 그들을 끌어오지 마라.';
+  return `★지금 ${day}요일 ${idx + 1}교시 = ${subj}`
+    + (anon ? ' (이름 없는 교사 — 수업은 한두 문장으로 흘리고 그 사이 반 아이들의 작은 사건 하나만 남겨라)'
+            : ' (이 교사가 진행한다)')
+    + `. 오늘 남은 교시: ` + row.slice(idx + 1).map((x, k) => `${idx + k + 2}${x}`).join(' ')
+    + TAIL;
 }
+
 // 주인공 기준 좌표 한 줄
 function ldSeatLine() {
   return '★좌석(고정, 6월 자리바꾸기 전까지): 주인공의 **옆자리(짝)=백서린 · 앞자리=한소윤·정다희 · 뒷자리=남준서·오재원**. ' +
