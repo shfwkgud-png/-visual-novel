@@ -2049,7 +2049,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v242</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v243</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4046,6 +4046,36 @@ function buildStatePrompt() {
   // ★★관계 온도를 **매 턴 숫자로** 못 박는다(2026-08-04 유저: 소요가 자꾸 좋아하고, 전학생 리안이
   //   반 애들을 원래 알던 것처럼 군다). LORE에 규칙을 더 쌓는 대신, 지금 상태를 직접 들이민다 —
   //   고정 규칙은 묻히지만 "지금 소요 호감도 12"는 안 묻힌다.
+  // ★스토리 모멘텀 드라이버(2026-08-09, 유저 제공 가이드 story_engine_upgrade.md B 구현):
+  //   비트가 걸려 있으면 1회성 연출 의무를 주입하고 소모한다.
+  if (gameState.pendingBeat) {
+    const _b = gameState.pendingBeat; delete gameState.pendingBeat;
+    if (_b.type === 'milestone') {
+      s += `★★이번 턴 의무 — ${_b.name}와의 관계가 '${_b.tier}' 단계로 올라섰다. 이 인물의 개인 이벤트(과거 고백, 단둘의 사건, 관계를 정의하는 순간)를 지금 이 턴에 발동하라. 잡담으로 넘기지 마라.\n`;
+    } else {
+      s += `★★정체 감지 — 몇 턴째 관계도 사건도 진전이 없다. 이번 턴엔 세계가 먼저 움직인다: ①진행 중 행사·일정의 다음 국면 ②장면 인물의 숨은 사정이 드러나는 단서 ③제3자의 개입(등장·호출·방해·목격) 중 하나를 배경 술렁임이 아니라 **실제 사건**으로 일으켜라.\n`;
+    }
+  }
+  // 정체 감지: 턴이 바뀔 때 1회 판정(친밀도 총변화·이벤트 배너·신규 인물 전부 정지 = 정체)
+  if (typeof turnCount === 'number' && gameState._flatChkTurn !== turnCount && STORY.id !== 'idol') {
+    gameState._flatChkTurn = turnCount;
+    const _met = gameState.metChars || {};
+    const _snap = gameState._intSnap || {};
+    let _moved = 0;
+    for (const _id in _met) {
+      if (!(_id in _snap)) { _moved += 5; continue; }            // 새 인물 등장 = 진전
+      _moved += Math.abs(((_met[_id].intimacy || 0)) - _snap[_id]);
+    }
+    const _ev = gameState.event || '';
+    if (_moved < 2 && _ev === (gameState._evSnap || '')) gameState._flatTurns = (gameState._flatTurns || 0) + 1;
+    else gameState._flatTurns = 0;
+    gameState._intSnap = {}; for (const _id in _met) gameState._intSnap[_id] = _met[_id].intimacy || 0;
+    gameState._evSnap = _ev;
+    if (gameState._flatTurns >= 5 && !gameState.pendingBeat) {
+      gameState._flatTurns = 0;
+      gameState.pendingBeat = { type: 'stagnation' };
+    }
+  }
   if (STORY.id === 'lovediary') {
     // ★코드로 옮긴 데이터를 "지금 필요한 만큼만" 주입(2026-08-09 LORE 감량)
     try {
@@ -10889,6 +10919,16 @@ function processResponse(data, activeCharIds, streamed) {
         if (!replaying && typeof _int === 'number' && typeof cur.intimacy === 'number' && _int !== cur.intimacy) {
           showStatToast(`${cur.name || base.name || id} 💗 ${_int > cur.intimacy ? '+' : ''}${Math.round(_int - cur.intimacy)}`,
                         _int < cur.intimacy);
+        }
+        // ★관계 마일스톤 상태머신(2026-08-09, story_engine_upgrade.md B — 7/17 제안 후 미구현이었음):
+        //   40/70 상향 돌파를 코드가 감지해 다음 턴에 "개인 이벤트 발동" 지시를 1회 주입한다.
+        //   엔진의 산문 규칙("구간이 바뀔 때 개인 이벤트를 발동시킬 것")만으론 안 지켜져
+        //   가이드가 진단한 "제자리 잡담 루프"가 왔다(유저 8/9: "스토리 지지부진").
+        if (!replaying && !_isMember && typeof _int === 'number' && typeof cur.intimacy === 'number') {
+          for (const _th of [40, 70]) if (cur.intimacy < _th && _int >= _th) {
+            gameState.pendingBeat = { type: 'milestone', name: cur.name || base.name || id,
+                                      tier: _th === 40 ? '신뢰 — 사적인 사이' : '애정 — 특별한 사이' };
+          }
         }
       }
     }
