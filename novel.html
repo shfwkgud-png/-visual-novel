@@ -2050,7 +2050,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v258</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v257</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2160,22 +2160,7 @@ let NIM_MODEL = 'qwen/qwen3-next-80b-a3b-instruct';   // ★기본=Qwen3-Next 80
 const NIM_MODEL_OLD_DEFAULTS = ['meta/llama-3.1-70b-instruct', 'deepseek-ai/deepseek-v4-pro', 'qwen/qwen3.5-122b-a10b', 'nvidia/nemotron-3-ultra-550b-a55b', 'mistralai/mistral-medium-3.5-128b', 'moonshotai/kimi-k2-instruct'];   // ★느린/EOL 구기본 → 새 기본(qwen3-next)으로 자동 승격
 
 const SUMMARY_INTERVAL = 8;
-const CONTEXT_RECENT = 10;   // 하한(최소 보장 턴) — 실제 포함량은 아래 recentWindowCount()가 예산으로 정함
-// ★동적 히스토리 윈도우(2026-08-11 유저: "원문 유지 10턴이 최선이냐?") — 고정 턴수는 둔하다.
-//   턴 길이가 제각각이라 "글자 예산"으로 자른다: 짧은 턴들이면 최대 20턴까지, 긴 턴들이면 예산까지.
-//   예산 28,000자 ≈ 14k 토큰 — 실질 기억 2배. 상한 20턴·하한 CONTEXT_RECENT(10) 보장.
-//   더 늘리면 규칙 준수력이 희석되고(긴 프롬프트에서 규칙 흘림) TPM 한도 압박이 커진다.
-const RECENT_CHAR_BUDGET = 28000;
-const RECENT_MAX_TURNS = 20;
-function recentWindowCount() {
-  let chars = 0, count = 0;
-  for (let i = gameHistory.length - 1; i >= 0 && count < RECENT_MAX_TURNS; i--) {
-    chars += (gameHistory[i].content || '').length;
-    if (chars > RECENT_CHAR_BUDGET && count >= CONTEXT_RECENT) break;
-    count++;
-  }
-  return Math.max(Math.min(CONTEXT_RECENT, gameHistory.length), count);
-}
+const CONTEXT_RECENT = 10;   // ★8→10(2026-08-11 유저: "몇 번 얘기하면 과거 까먹는다") — 원문 유지 구간 확대
 
 let gameState = {
   name: '카이든',
@@ -9982,7 +9967,7 @@ function buildMessages() {
     });
   }
 
-  const recent = gameHistory.slice(-recentWindowCount());
+  const recent = gameHistory.slice(-CONTEXT_RECENT);
   messages.push(...recent);
 
   return messages;
@@ -10164,10 +10149,9 @@ async function runDirector() {
 
 async function summarizeIfNeeded() {
   const unsummarized = gameHistory.length - summaryIndex;
-  const _win = recentWindowCount();
-  if (unsummarized < SUMMARY_INTERVAL + _win) return;
+  if (unsummarized < SUMMARY_INTERVAL + CONTEXT_RECENT) return;
 
-  const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - _win);
+  const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - CONTEXT_RECENT);
   if (toSummarize.length < 4) return;
 
   const existingCtx = storySummary ? `기존 요약:\n${storySummary}\n\n` : '';
@@ -10227,7 +10211,7 @@ async function summarizeIfNeeded() {
     }
     if (summary && summary.trim()) {
       storySummary = summary.trim();
-      summaryIndex = gameHistory.length - _win;
+      summaryIndex = gameHistory.length - CONTEXT_RECENT;
       autoSave();
     }
   } catch {
