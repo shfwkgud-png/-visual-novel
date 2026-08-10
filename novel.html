@@ -2050,7 +2050,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v257</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v259</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2160,7 +2160,31 @@ let NIM_MODEL = 'qwen/qwen3-next-80b-a3b-instruct';   // ★기본=Qwen3-Next 80
 const NIM_MODEL_OLD_DEFAULTS = ['meta/llama-3.1-70b-instruct', 'deepseek-ai/deepseek-v4-pro', 'qwen/qwen3.5-122b-a10b', 'nvidia/nemotron-3-ultra-550b-a55b', 'mistralai/mistral-medium-3.5-128b', 'moonshotai/kimi-k2-instruct'];   // ★느린/EOL 구기본 → 새 기본(qwen3-next)으로 자동 승격
 
 const SUMMARY_INTERVAL = 8;
-const CONTEXT_RECENT = 10;   // ★8→10(2026-08-11 유저: "몇 번 얘기하면 과거 까먹는다") — 원문 유지 구간 확대
+const CONTEXT_RECENT = 10;   // 하한(최소 보장). 실제 유지량은 모델 컨텍스트로 정한다 ↓
+// ★모델 컨텍스트를 실제로 쓴다(2026-08-11 유저: "모델마다 컨텍스트 한도가 있지 않나?").
+//   그동안 8~10턴만 원문 유지하고 나머지를 400자 요약으로 뭉갰다 — Gemini 3.x는 입력 100만 토큰인데
+//   실사용 24k(2.4%)였다. 기억 못 하는 게 당연했다. 이제 컨텍스트의 40%를 원문 히스토리에 쓴다.
+const MODEL_CTX_TOKENS = [
+  [/gemini-3|gemini-2\.5|gemini-pro-latest/i, 1000000],   // Gemini 2.5/3.x = 1M
+  [/qwen|llama|nemotron|mistral/i, 128000],
+];
+function modelCtxTokens() {
+  const m = (PROVIDER === 'openrouter') ? (typeof curORModel === 'function' ? curORModel() : OPENROUTER_MODEL)
+          : (PROVIDER === 'gemini') ? 'gemini-3' : (typeof NIM_MODEL !== 'undefined' ? NIM_MODEL : '');
+  for (const [re, tok] of MODEL_CTX_TOKENS) if (re.test(m)) return tok;
+  return 128000;
+}
+// 한글 기준 1자 ≈ 1토큰(보수적). 컨텍스트의 40%를 원문에 배정 — 나머지는 규칙·카드·상태·출력 몫.
+function recentWindowCount() {
+  const budgetChars = Math.floor(modelCtxTokens() * 0.40);
+  let chars = 0, count = 0;
+  for (let i = gameHistory.length - 1; i >= 0; i--) {
+    chars += (gameHistory[i].content || '').length;
+    if (chars > budgetChars && count >= CONTEXT_RECENT) break;
+    count++;
+  }
+  return Math.max(Math.min(CONTEXT_RECENT, gameHistory.length), count);
+}
 
 let gameState = {
   name: '카이든',
@@ -9967,7 +9991,7 @@ function buildMessages() {
     });
   }
 
-  const recent = gameHistory.slice(-CONTEXT_RECENT);
+  const recent = gameHistory.slice(-recentWindowCount());
   messages.push(...recent);
 
   return messages;
@@ -10149,9 +10173,10 @@ async function runDirector() {
 
 async function summarizeIfNeeded() {
   const unsummarized = gameHistory.length - summaryIndex;
-  if (unsummarized < SUMMARY_INTERVAL + CONTEXT_RECENT) return;
+  const _win = recentWindowCount();
+  if (unsummarized < SUMMARY_INTERVAL + _win) return;
 
-  const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - CONTEXT_RECENT);
+  const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - _win);
   if (toSummarize.length < 4) return;
 
   const existingCtx = storySummary ? `기존 요약:\n${storySummary}\n\n` : '';
@@ -10211,7 +10236,7 @@ async function summarizeIfNeeded() {
     }
     if (summary && summary.trim()) {
       storySummary = summary.trim();
-      summaryIndex = gameHistory.length - CONTEXT_RECENT;
+      summaryIndex = gameHistory.length - _win;
       autoSave();
     }
   } catch {
@@ -10727,7 +10752,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
           think: (_u.completion_tokens_details && _u.completion_tokens_details.reasoning_tokens) ?? null,
           ttfb: Math.round(result.timing.ttfb / 100) / 10,
           total: Math.round(result.timing.total / 100) / 10,
-          model: (PROVIDER === 'openrouter') ? curORModel().replace('google/', '') : PROVIDER
+          model: (PROVIDER === 'openrouter') ? curORModel().replace('google/', '') : PROVIDER,
+          keep: (typeof recentWindowCount === 'function') ? recentWindowCount() : null
         };
       }
     } catch {}
@@ -13853,7 +13879,7 @@ function renderStatusPanel() {
     h += `<div class="sit-block"><div class="sit-label">시간 · 장소</div><div class="sit-val">${esc(gameState.time || '-')} · ${esc(gameState.location)}</div></div>`;
     if (gameState.event) h += `<div class="sit-block"><div class="sit-label">현재 이벤트</div><div class="sit-val" style="color:var(--gold)">${esc(gameState.event)}</div></div>`;
     if (gameState._turnStats) { const t = gameState._turnStats;
-      h += `<div class="sit-block"><div class="sit-label">최근 턴 처리</div><div class="sit-val" style="font-size:0.85em;opacity:0.85">${t.model || ''} · 첫 글자 ${t.ttfb}s · 총 ${t.total}s${t.in != null ? ` · 입력 ${(t.in/1000).toFixed(1)}k` : ''}${t.think != null ? ` · <b>생각 ${(t.think/1000).toFixed(1)}k</b>` : ''}${t.out != null ? ` · 출력 ${(t.out/1000).toFixed(1)}k` : ''}</div></div>`;
+      h += `<div class="sit-block"><div class="sit-label">최근 턴 처리</div><div class="sit-val" style="font-size:0.85em;opacity:0.85">${t.model || ''} · 첫 글자 ${t.ttfb}s · 총 ${t.total}s${t.in != null ? ` · 입력 ${(t.in/1000).toFixed(1)}k` : ''}${t.think != null ? ` · <b>생각 ${(t.think/1000).toFixed(1)}k</b>` : ''}${t.out != null ? ` · 출력 ${(t.out/1000).toFixed(1)}k` : ''}${t.keep != null ? ` · 원문 ${t.keep}턴` : ''}</div></div>`;
     }
     // RPG: 스탯 5종 + 스킬 숙련도(xp 게이지)
     const st = p.stats || {};
