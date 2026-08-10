@@ -1963,6 +1963,7 @@
       <option value="google/gemini-3.6-flash">Gemini 3.6 Flash (최신 · 2.5 Pro 공식 이전처)</option>
       <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (빠름 · 쿼터 넉넉 · 저렴)</option>
     </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85em;opacity:0.85;margin-top:6px"><input type="checkbox" id="orOnlyStory"> 이 모델을 <b>지금 플레이 중인 스토리에만</b> 적용 (끄면 전역 기본)</label>
     <input type="text" id="nimUrlInput" placeholder="Worker 주소 (https://...workers.dev)" style="display:none">
     <select id="nimModelSel" style="display:none">
       <option value="qwen/qwen3-next-80b-a3b-instruct">Qwen3-Next 80B (추천 · 빠름 ~8s · 한국어 깨끗 · MoE)</option>
@@ -2049,7 +2050,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v255</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v256</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2144,6 +2145,14 @@ let PROVIDER = 'gemini';   // 'gemini' | 'nim' | 'openrouter'
 // ★OpenRouter(2026-07-22): OpenAI 호환. 유저 Vertex BYOK로 $300 크레딧 사용. Bearer 인증. NIM 경로 재사용.
 let OPENROUTER_KEY = '';
 let OPENROUTER_MODEL = 'google/gemini-2.5-flash';
+// ★스토리별 모델 오버라이드(2026-08-11 유저: "아카데미 로딩 유독 느림"+"Gemini 한도 재시도") —
+//   3.1 Pro '프리뷰'는 유료 계정도 분당 쿼터가 낮아, 생각 많은 RPG 스토리(아카데미)가 429에 걸린다.
+//   연애일기=3.1 Pro(작문) · 아카데미=3.6 Flash(쿼터·속도)처럼 스토리마다 다른 모델을 쓸 수 있게 한다.
+let OR_MODEL_BY_STORY = {};   // { storyId: 'google/gemini-3.6-flash' }
+function curORModel() {
+  try { if (typeof STORY !== 'undefined' && STORY && OR_MODEL_BY_STORY[STORY.id]) return OR_MODEL_BY_STORY[STORY.id]; } catch {}
+  return OPENROUTER_MODEL;
+}
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 let NIM_URL = 'https://aichat.pasokong99.workers.dev';
 let NIM_MODEL = 'qwen/qwen3-next-80b-a3b-instruct';   // ★기본=Qwen3-Next 80B(MoE 활성3B). 2026-07-21 실측: 8.3s(nemotron 15~20s의 절반↓)·한국어 깨끗(한자·일본어 혼입0)·JSON스키마 준수. 속도·한국어 균형 최적
@@ -8358,7 +8367,14 @@ function saveSettings() {
   if (PROVIDER === 'gemini') API_KEY = document.getElementById('apiKeyInput').value.trim();
   else if (PROVIDER === 'openrouter') {
     OPENROUTER_KEY = document.getElementById('orKeyInput').value.trim();
-    OPENROUTER_MODEL = document.getElementById('orModelSel').value || OPENROUTER_MODEL;
+    const _selModel = document.getElementById('orModelSel').value;
+    const _onlyThis = document.getElementById('orOnlyStory');
+    if (_onlyThis && _onlyThis.checked && typeof STORY !== 'undefined' && STORY) {
+      if (_selModel) OR_MODEL_BY_STORY[STORY.id] = _selModel;   // 이 스토리만 이 모델
+    } else {
+      OPENROUTER_MODEL = _selModel || OPENROUTER_MODEL;         // 전역 기본
+      if (_onlyThis && !_onlyThis.checked && typeof STORY !== 'undefined' && STORY) delete OR_MODEL_BY_STORY[STORY.id];
+    }
   } else {
     NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
     NIM_MODEL = document.getElementById('nimModelSel').value || NIM_MODEL;
@@ -8687,6 +8703,7 @@ async function restoreAll() {
       if (cfg.apiKey) { API_KEY = cfg.apiKey; document.getElementById('apiKeyInput').value = cfg.apiKey; }
       if (cfg.orKey) { OPENROUTER_KEY = cfg.orKey;
         const ork = document.getElementById('orKeyInput'); if (ork) ork.value = cfg.orKey; }   // 입력창에도 복원(저장돼 있음을 눈으로 확인)
+      if (cfg.orModelBy) OR_MODEL_BY_STORY = cfg.orModelBy;
       if (cfg.orModel) { OPENROUTER_MODEL = cfg.orModel;
         const orm = document.getElementById('orModelSel'); if (orm) orm.value = cfg.orModel; }
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
@@ -9626,7 +9643,7 @@ function persistCfg() {
     const prev = JSON.parse(localStorage.getItem('vn_cfg') || '{}') || {};
     localStorage.setItem('vn_cfg', JSON.stringify(Object.assign(prev, {
       provider: PROVIDER, nimUrl: NIM_URL, nimModel: NIM_MODEL,
-      apiKey: API_KEY, orKey: OPENROUTER_KEY, orModel: OPENROUTER_MODEL
+      apiKey: API_KEY, orKey: OPENROUTER_KEY, orModel: OPENROUTER_MODEL, orModelBy: OR_MODEL_BY_STORY
     })));
   } catch {}
 }
@@ -9656,6 +9673,7 @@ function persistCfg() {
       if (cfg.apiKey) document.getElementById('apiKeyInput').value = cfg.apiKey;
       if (cfg.orKey) OPENROUTER_KEY = cfg.orKey;
       if (cfg.orModel) OPENROUTER_MODEL = cfg.orModel;
+      if (cfg.orModelBy) OR_MODEL_BY_STORY = cfg.orModelBy;
       if (cfg.nimUrl) document.getElementById('nimUrlInput').value = cfg.nimUrl;
       if (cfg.nimModel) NIM_MODEL = NIM_MODEL_OLD_DEFAULTS.includes(cfg.nimModel) ? NIM_MODEL : cfg.nimModel;   // 구기본/EOL/다운 모델은 새 추천으로 승격
       if (cfg.provider) setProvider(cfg.provider);
@@ -9700,7 +9718,7 @@ function setProvider(p) {
     document.getElementById('nimUrlInput').value = NIM_URL;
   }
   if (p === 'nim') document.getElementById('nimModelSel').value = NIM_MODEL;
-  if (p === 'openrouter') { if (orK) orK.value = OPENROUTER_KEY; if (orM) orM.value = OPENROUTER_MODEL; }
+  if (p === 'openrouter') { if (orK) orK.value = OPENROUTER_KEY; if (orM) orM.value = curORModel(); const _oc = document.getElementById('orOnlyStory'); if (_oc) _oc.checked = !!(typeof STORY !== 'undefined' && STORY && OR_MODEL_BY_STORY[STORY.id]); }
   // ★즉시 저장(2026-07-21): NIM으로 바꾸고 저장버튼을 안 눌러도 유지 — vn_cfg의 provider만 머지
   try { const c = JSON.parse(localStorage.getItem('vn_cfg') || '{}'); c.provider = p; localStorage.setItem('vn_cfg', JSON.stringify(c)); } catch {}
 }
@@ -10158,9 +10176,9 @@ async function summarizeIfNeeded() {
       const res = await fetch(_isOR ? OPENROUTER_URL : NIM_URL, {
         method: 'POST', headers: _h,
         body: JSON.stringify((() => {
-          const _b = { model: _isOR ? OPENROUTER_MODEL : NIM_MODEL, messages: [{ role: 'system', content: sysText }, { role: 'user', content: userText }], max_tokens: _isOR ? (/gemini-3/i.test(OPENROUTER_MODEL) ? 4000 : 1500) : 700, temperature: 0.3, stream: true };   // 3.x는 thinking 포함이라 여유분
+          const _b = { model: _isOR ? curORModel() : NIM_MODEL, messages: [{ role: 'system', content: sysText }, { role: 'user', content: userText }], max_tokens: _isOR ? (/gemini-3/i.test(curORModel()) ? 4000 : 1500) : 700, temperature: 0.3, stream: true };   // 3.x는 thinking 포함이라 여유분
           if (/gemini-3/i.test(_b.model)) { delete _b.temperature; }   // ★3.x temperature 폐지 대응
-          if (_isOR) { _b.provider = { only: ['google-vertex'] }; _b.reasoning = /2\.5-flash/i.test(OPENROUTER_MODEL) ? { enabled: false } : { effort: 'minimal' }; }   // Vertex $300 강제 + 추론 최소
+          if (_isOR) { _b.provider = { only: ['google-vertex'] }; _b.reasoning = /2\.5-flash/i.test(_b.model) ? { enabled: false } : { effort: 'minimal' }; }   // Vertex $300 강제 + 추론 최소
           return _b;
         })())
       });
@@ -10378,7 +10396,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   // ★OpenRouter면 엔드포인트·모델·Bearer 인증 전환(OpenAI 호환이라 나머지는 동일)
   const isOR = PROVIDER === 'openrouter';
   const url = isOR ? OPENROUTER_URL : NIM_URL;
-  const mdl = isOR ? OPENROUTER_MODEL : model;
+  const mdl = isOR ? curORModel() : model;
   const headers = { 'Content-Type': 'application/json' };
   if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
   const reqBody = { model: mdl, messages: oai, max_tokens: maxTok, temperature: temp, top_p: 1.0, stream: true };
@@ -10707,7 +10725,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
           think: (_u.completion_tokens_details && _u.completion_tokens_details.reasoning_tokens) ?? null,
           ttfb: Math.round(result.timing.ttfb / 100) / 10,
           total: Math.round(result.timing.total / 100) / 10,
-          model: (typeof OPENROUTER_MODEL !== 'undefined' && PROVIDER === 'openrouter') ? OPENROUTER_MODEL.replace('google/', '') : PROVIDER
+          model: (PROVIDER === 'openrouter') ? curORModel().replace('google/', '') : PROVIDER
         };
       }
     } catch {}
