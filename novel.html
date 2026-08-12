@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v274</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v275</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10799,18 +10799,14 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     //   ★2026-08-12 재상향(유저 "악역의생존법 출력제한 있냐?" — 나레이션이 문장 중간에서 끊김):
     //   8000으로도 생각이 많은 턴에서 본문이 밀렸다. 상한은 예산일 뿐 실지출은 본문 분량(650~900자
     //   프롬프트 규칙)이 정하므로 비용 증가 없이 절단만 막는다.
-    //   ★2026-08-12 재정리: 상한을 "gemini-3이면"이 아니라 "추론이 켜져 있으면"으로 바꾼다. 상한이
-    //   필요한 이유는 3.x라서가 아니라 생각 토큰이 max_tokens를 같이 먹기 때문이다. 이 정정으로
-    //   2.5 Pro(추론 켜짐인데 상한을 안 올리던 누락)도 같이 보호되고, 추론을 끈 모델은 불필요한
-    //   16k를 안 잡는다.
-    const _thinkOff = /2\.5-flash|3\.6-flash/i.test(mdl);
-    if (!_thinkOff) reqBody.max_tokens = Math.max(maxTok, 16000);
+    //   ★2026-08-12 정정의 정정(실전 장애): 3.6도 enabled:false로 껐더니 Vertex가 400을 뱉었다 —
+    //   "Reasoning is mandatory for this endpoint and cannot be disabled." 즉 3.x는 추론이 강제이고
+    //   완전 오프는 2.5 Flash만 가능하다. 원래 코드가 3.x 전부를 minimal로 두던 건 실수가 아니라
+    //   제약이었던 것. 3.6의 체감 지연은 여기가 아니라 아래 폴백(지연 8초·하드 에러 시 2.5 Pro)으로 잡는다.
+    const _thinkOff = /2\.5-flash/i.test(mdl);   // 추론 완전 오프가 허용되는 건 2.5 Flash뿐
+    if (!_thinkOff) reqBody.max_tokens = Math.max(maxTok, 16000);   // 추론이 켜진 모델은 생각 토큰 몫까지 상한 확보
     reqBody.provider = { only: ['google-vertex'] };   // ★$300 Vertex BYOK 강제 — 공유 유료 엔드포인트 폴백 차단(is_byok=true 보장)
-    // ★2026-08-12 유저 지적: 이 정규식이 2.5-flash만 잡아서 3.6 Flash가 else(최소추론)로 새고 있었다.
-    //   3.6은 목록(pro·3.1·3.5)이 작성된 뒤에 추가된 모델이라, 아무도 정하지 않은 채 "추론 켜짐"을
-    //   그대로 물려받은 것 — 악역의 생존법이 유독 느리던 1순위 원인. 한글깨짐/외계어는 Gemini가
-    //   아니라 타 LLM(nemotron·qwen 등)에서 나던 증상이므로 Gemini 3.6은 완전히 끈다.
-    reqBody.reasoning = _thinkOff ? { enabled: false } : { effort: 'minimal' };   // 2.5F·3.6F=thinking off / pro·3.1·3.5=최소추론
+    reqBody.reasoning = _thinkOff ? { enabled: false } : { effort: 'minimal' };   // 2.5F=off / 3.x·pro=최소추론(강제)
     reqBody.stream_options = { include_usage: true };   // 마지막 청크에 usage(토큰 사용량) 포함 — 토큰 추적용
     reqBody.usage = { include: true };                  // OpenRouter 네이티브: cost·cost_details(실청구액)까지 포함
   }
@@ -10829,6 +10825,12 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     if (!res.ok) {
       let msg = 'HTTP ' + res.status;
       try { const j = await res.json(); msg = j.error?.message || j.detail || msg; } catch {}
+      // ★하드 에러 폴백(2026-08-12 실전 장애 "Reasoning is mandatory…" 400): 3.6이 죽어도
+      //   그 턴은 2.5 Pro로 살린다. 폴백까지 실패하면 그때 에러를 그대로 보여준다.
+      if (canSlowFallback) {
+        try { showStatToast(`⚠ 3.6 Flash 오류 — 이번 턴만 2.5 Pro로 전환 (${String(msg).slice(0, 70)})`, true); } catch {}
+        return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, SLOW_FALLBACK_MODEL);
+      }
       return { error: { code: res.status, message: msg } };
     }
     const reader = res.body.getReader();
@@ -10866,15 +10868,28 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
       (usage.cost_details && usage.cost_details.upstream_inference_cost) || usage.cost || 0);   // BYOK=upstream이 $300 실소진액
     // ★빈 스트림 원인 분류(2026-08-06 유저 "정적 빈도 급증"): 지금까진 빈 응답도 {text:''}로
     //   성공 취급 → 위에서 재시도 없이 정적 폴백. 사유를 실어 재시도·표시가 가능하게 한다.
-    if (!full.trim() && chunkErr) return { error: { message: chunkErr } };
+    if (!full.trim() && chunkErr) {
+      // 스트림 안 error 청크로만 죽은 경우(업스트림 장애)도 같은 폴백 — 출력이 없었으니 재시도 안전
+      if (canSlowFallback) {
+        try { showStatToast('⚠ 3.6 Flash 업스트림 장애 — 이번 턴만 2.5 Pro로 전환', true); } catch {}
+        return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, SLOW_FALLBACK_MODEL);
+      }
+      return { error: { message: chunkErr } };
+    }
     if (!full.trim() && /content_filter|safety|prohibited|recitation/i.test(finishReason || ''))
       return { blocked: true, finishReason };
     return { text: full, finishReason, usage, modelUsed: mdl, timing: { ttfb: _tFirst ? _tFirst - _t0 : 0, total: Date.now() - _t0 } };
   } catch (e) {
-    // ★지연 폴백: 첫 글자가 안 와서 우리가 끊은 경우에만 2.5 Pro로 그 턴을 다시 태운다.
-    //   진짜 타임아웃(120s)·네트워크 오류는 종전대로 에러를 돌려준다.
-    if (_slowAbort) {
-      try { showStatToast(`⏳ 3.6 Flash 응답이 ${SLOW_FALLBACK_MS / 1000}초를 넘겨 2.5 Pro로 이번 턴만 전환합니다`, true); } catch {}
+    // ★폴백(지연·네트워크 공통): 첫 글자가 나오기 전에 죽었다면 — 우리가 끊었든(_slowAbort)
+    //   연결이 죽었든 — 출력이 전혀 없었으므로 2.5 Pro 재시도가 안전하다. 첫 글자 이후에
+    //   끊긴 경우는 재생 파이프에 이미 텍스트가 들어가 있어 재시도가 이중 재생을 만들 수
+    //   있으니 종전대로 에러를 돌려준다.
+    if (canSlowFallback && !_tFirst) {
+      try {
+        showStatToast(_slowAbort
+          ? `⏳ 3.6 Flash 응답이 ${SLOW_FALLBACK_MS / 1000}초를 넘겨 2.5 Pro로 이번 턴만 전환합니다`
+          : '⚠ 3.6 Flash 연결 실패 — 이번 턴만 2.5 Pro로 전환', true);
+      } catch {}
       return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, SLOW_FALLBACK_MODEL);
     }
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
