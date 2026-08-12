@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v271</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v272</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2077,6 +2077,7 @@
     <div id="statusHeader">
       <div id="statusTabs">
         <button class="status-tab active" id="tabChars" onclick="switchStatusTab('chars')">만난 캐릭터</button>
+        <button class="status-tab" id="tabRoster" onclick="switchStatusTab('roster')" style="display:none">기초 편성</button>
         <button class="status-tab" id="tabSituation" onclick="switchStatusTab('situation')">현재 상황</button>
         <button class="status-tab" id="tabProfile" onclick="switchStatusTab('profile')">주인공</button>
       </div>
@@ -2359,7 +2360,7 @@ const ENGINE_RULES_PROMPT = `
     "faction": "주인공이 진영·소속·문파를 선택하거나 바꾼 턴에만 그 이름(예: '그란텀 제국', '독자 노선'). 그 외엔 반드시 null — 한 번 기록되면 주인공의 소속으로 영구 반영된다",
     "sim": "★아이돌 육성 스토리 「무대 뒤 3분」 전용 — 아래 「아이돌 육성 sim 필드」의 형식을 그대로 따르는 객체. 일정 행동을 했으면 action을, **대화로 곡 제목·완성도·대중성·팬덤명·무대의상·영입·광고계약을 정했으면 title / quality / appeal / fandom / stage / target / brand를 반드시 채운다**(이때 action은 없어도 된다). 다른 스토리에선 반드시 null",
     "chars": {
-      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "location": "이 인물의 현재 위치(예: 교실, 자소궁 — 변화 시만)", "tier": "이 인물의 경지/등급(첫 등장 시 정하고 이후 고정. 예: 절정)", "allegiance": "★이 인물의 **현재 소속**이 원래 소속에서 바뀐 턴에만 새 소속 이름(예: '그란텀 제국', '은사자반'). 그 외엔 반드시 생략 — 한 번 기록되면 상태창 인원표가 이 값을 따른다. 1부에서 쌓은 관계로 2부 국가전에서 다른 국가로 영입했거나, 반대로 이탈·전향한 경우가 여기 해당한다" }
+      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "location": "이 인물의 현재 위치(예: 교실, 자소궁 — 변화 시만)", "tier": "이 인물의 경지/등급(첫 등장 시 정하고 이후 고정. 예: 절정)", "allegiance": "★이 인물의 **현재 소속**이 원래 소속에서 바뀐 턴에만 새 소속 이름(예: '그란텀 제국', '은사자반'). 그 외엔 반드시 생략 — 한 번 기록되면 상태창 인원표가 이 값을 따른다. 반 이동은 자유롭지만 **국가를 넘는 영입은 앱이 카드의 「포섭:」 조건으로 검증한다** — 국가 대표·최측근과 포섭 불가 인물은 거절되고, 난이도별 친밀도(쉬움 40·가능 60·어려움 80)에 미달해도 거절된다. 그러니 말 한마디로 넘기지 말고 관계와 사건이 쌓인 뒤에만 보내라. 거절되면 그 인물은 원래 국가에 남는다" }
     },
     "player": {
       "abilities": ["새로 밝혀지거나 습득한 능력 (예: 중력 제어(초급))"],
@@ -11172,8 +11173,10 @@ function processResponse(data, activeCharIds, streamed) {
           tier: u.tier ?? cur.tier,
           // ★현재 소속(2026-08-12): 영입·이탈·전향으로 원소속을 떠난 인물을 기록. 상태창 인원표가
           //   이 값을 우선 쓰고, 없으면 CHARACTERS[id].camp(원래 소속)로 떨어진다. 한 번 정해지면
-          //   AI가 다시 보내지 않아도 유지된다(?? cur — 매 턴 재전송 요구 없이 영구 반영).
-          allegiance: u.allegiance ?? cur.allegiance
+          //   AI가 다시 보내지 않아도 유지된다(매 턴 재전송 요구 없이 영구 반영).
+          //   ★단, 국가를 넘는 변경은 gateAllegiance가 포섭 조건으로 거른다 — AI가 대화 분위기만
+          //     보고 "포섭: 불가"인 인물까지 넘겨버리는 걸 막는다(친밀도 클램프와 같은 취지).
+          allegiance: gateAllegiance(id, u.allegiance, cur, base, _int, replaying)
         };
         // ★호감도 델타 토스트 — **클램프된 실제 반영값**으로 띄운다(안 그러면 화면과 수치가 어긋난다)
         if (!replaying && typeof _int === 'number' && typeof cur.intimacy === 'number' && _int !== cur.intimacy) {
@@ -13823,6 +13826,7 @@ function toggleStatus() {
 function switchStatusTab(t) {
   statusTab = t;
   document.getElementById('tabChars').classList.toggle('active', t === 'chars');
+  document.getElementById('tabRoster').classList.toggle('active', t === 'roster');
   document.getElementById('tabSituation').classList.toggle('active', t === 'situation');
   document.getElementById('tabProfile').classList.toggle('active', t === 'profile');
   renderStatusPanel();
@@ -14011,6 +14015,51 @@ function campAxes(raw) {
     nation: hit ? hit[1] : null
   };
 }
+// ★영입 게이트(2026-08-12 유저: "그냥 대화로 이 국가로 와라 하면 반영이냐"):
+//   allegiance를 AI 재량에만 맡기면 카드에 "포섭: 불가"라고 적힌 루카스도 말 한마디로 넘어온다.
+//   친밀도에 −8/+6 클램프를 건 것과 같은 이유로 최종 판정은 코드가 갖는다.
+//   ★게이트는 **국가가 바뀔 때만** 건다 — 반 이동은 세계관상 진영과 별개라 자유다
+//     ("반은 소속 예고일 뿐 — 2부의 진영 선택(faction)과 별개", 세계관 프롬프트). 국가를 넘는
+//     순간이 진짜 영입이고, 그 조건은 이미 캐릭터 카드의 "포섭: X"에 적혀 있다.
+const RECRUIT_THRESHOLD = { '쉬움': 40, '가능': 60, '어려움': 80, '상호적': 60 };
+// ★국가 대표·최측근 고정(2026-08-12 유저: "각 국가 대표나 최측근은 못 움직이게"):
+//   진영의 기둥이 넘어오면 2부 국가전 구도 자체가 무너진다. 친밀도가 아무리 높아도 잠근다.
+//   판정 근거도 데이터에 이미 있다 — 리더는 "◈소속"의 "…루트 리더", 최측근은 role의 부관/종기사.
+function recruitLock(base) {
+  const s = String((base && base.personality) || '') + ' ' + String((base && base.role) || '');
+  if (/루트 리더/.test(s)) return '국가 대표';                          // 루카스·카산드라·모니카·모르가나
+  if (/부관|종기사|심복|최측근|호위무사/.test(s)) return '대표 최측근';   // 레이라·퍼시벌
+  return null;
+}
+function recruitRule(base) {
+  const lock = recruitLock(base);
+  if (lock) return { kind: 'locked', label: lock };
+  const t = ((String((base && base.personality) || '').match(/포섭:\s*([^—,|]+)/) || [])[1] || '').trim();
+  if (/불가/.test(t)) return { kind: 'blocked', label: t };            // 바론·그림자
+  if (/시작부터 아군/.test(t)) return { kind: 'free', label: t };       // 릴리아
+  if (/밀약|특수|조건부|경유로만/.test(t)) return { kind: 'flag', label: t };   // 비비안·노엘
+  for (const k in RECRUIT_THRESHOLD)                                   // 쉬움·가능·어려움·상호적
+    if (t.includes(k)) return { kind: 'intimacy', need: RECRUIT_THRESHOLD[k], label: t };
+  return { kind: 'intimacy', need: 60, label: t || '기준 없음' };       // 표기 없는 인물은 '가능' 취급
+}
+function gateAllegiance(id, proposed, cur, base, intimacy, quiet) {
+  if (!proposed) return cur.allegiance;
+  const from = campAxes(cur.allegiance || base.camp).nation;
+  const to = campAxes(proposed).nation;
+  if (!to || from === to) return proposed;   // 국가가 안 바뀌면(반 이동 등) 그대로 통과
+  const r = recruitRule(base), nm = cur.name || base.name || id;
+  const deny = why => { if (!quiet) { try { showStatToast(why, true); } catch {} } return cur.allegiance; };
+  if (r.kind === 'free') return proposed;
+  if (r.kind === 'locked') return deny(`🔒 ${nm}은(는) ${r.label} — 국가를 옮길 수 없다`);
+  if (r.kind === 'blocked') return deny(`⛔ ${nm} 영입 불가 — ${r.label}`);
+  if (r.kind === 'flag') {
+    const ok = gameState.flags && (gameState.flags['영입_' + id] || gameState.flags['영입_' + nm]);
+    return ok ? proposed : deny(`⛔ ${nm} 영입에는 별도 사건이 필요하다 — ${r.label}`);
+  }
+  const iv = typeof intimacy === 'number' ? intimacy : 0;
+  return iv >= r.need ? proposed
+       : deny(`⛔ ${nm} 영입 보류 — 친밀도 ${Math.round(iv)}/${r.need} (포섭: ${r.label})`);
+}
 function rosterBlock() {
   if (typeof CHARACTERS === 'undefined' || !CHARACTERS) return '';
   const met = gameState.metChars || {};
@@ -14065,6 +14114,59 @@ function rosterBlock() {
 }
 function renderStatusPanel() {
   const body = document.getElementById('statusBody');
+  // 편성 탭은 camp가 있는 스토리(악역의 생존법 등)에서만 노출한다
+  const _hasCamps = typeof CHARACTERS !== 'undefined' && CHARACTERS
+    && Object.keys(CHARACTERS).some(id => CHARACTERS[id] && CHARACTERS[id].camp);
+  const _tabR = document.getElementById('tabRoster');
+  if (_tabR) _tabR.style.display = _hasCamps ? '' : 'none';
+  if (statusTab === 'roster' && !_hasCamps) statusTab = 'chars';
+  // ★기초 편성 탭(2026-08-12 유저: "기초로 어떻게 나뉘어 있는지 하나 볼 수 있게"):
+  //   「만난 캐릭터」가 내가 아는 사람이라면, 이쪽은 만나든 안 만나든 세계가 원래 어떻게 짜여
+  //   있는지를 보여주는 편성표다. **원소속** 기준으로 반→국가 순 전원을 세우고, 영입 조건까지
+  //   같이 적어 2부 국가전 구도를 미리 읽을 수 있게 한다.
+  if (statusTab === 'roster') {
+    const met = gameState.metChars || {};
+    const ids = Object.keys(CHARACTERS).filter(id => CHARACTERS[id] && CHARACTERS[id].camp);
+    const groups = {};
+    ids.forEach(id => {
+      const ax = campAxes(CHARACTERS[id].camp);
+      const k = ax.cls || ax.nation || '무소속';
+      (groups[k] = groups[k] || []).push(id);
+    });
+    const keys = Object.keys(groups).sort((a, b) => {
+      const rank = c => /흑룡반/.test(c) ? 0 : /은사자반/.test(c) ? 1 : /금매반/.test(c) ? 2
+                    : /그란텀 제국/.test(c) ? 3 : /아를렌 왕국/.test(c) ? 4 : /리베라 연합/.test(c) ? 5
+                    : /완충령/.test(c) ? 6 : /성좌 교단/.test(c) ? 7 : /여명회/.test(c) ? 8 : 9;
+      return rank(a) - rank(b) || a.localeCompare(b);
+    });
+    let h = `<div class="char-meta" style="padding:2px 4px 10px;line-height:1.7">원래 편성 기준 — 만난 인물 여부와 무관합니다.<br>🔒 국가 이동 불가 · ⛔ 포섭 불가 · 🗝 특수 조건 · 숫자는 영입에 필요한 친밀도</div>`;
+    keys.forEach(k => {
+      const list = groups[k];
+      const nation = campAxes(CHARACTERS[list[0]].camp).nation;
+      h += `<div class="char-camp-h">⚑ ${esc(k)}` +
+           (nation && nation !== k ? ` <span style="opacity:0.55;font-size:0.92em">· ${esc(nation)}</span>` : '') +
+           ` <span style="opacity:0.55">${list.length}명</span></div>`;
+      list.forEach(id => {
+        const b = CHARACTERS[id], r = recruitRule(b);
+        const curA = met[id] && met[id].allegiance;
+        const toN = curA ? campAxes(curA).nation : null;
+        const movedTo = (toN && toN !== campAxes(b.camp).nation) ? toN : null;
+        const badge = r.kind === 'locked' ? `🔒 ${esc(r.label)}`
+                    : r.kind === 'blocked' ? '⛔ 포섭 불가'
+                    : r.kind === 'free'    ? '✔ 처음부터 아군'
+                    : r.kind === 'flag'    ? '🗝 특수 조건'
+                    : `친밀도 ${r.need}+`;
+        h += `<div class="sit-val" style="margin:4px 0 4px 6px;${met[id] ? '' : 'opacity:0.5;'}">` +
+             `${esc(b.name)} <span style="opacity:0.65;font-size:0.86em">${esc(b.role || '')}</span> ` +
+             `<span style="color:var(--gold);font-size:0.8em">${badge}</span>` +
+             (movedTo ? ` <span style="color:#7ec9a0;font-size:0.8em">→ ${esc(movedTo)} 영입됨</span>` : '') +
+             (met[id] ? '' : ` <span style="font-size:0.78em">(미면식)</span>`) +
+             `</div>`;
+      });
+    });
+    body.innerHTML = h;
+    return;
+  }
   if (statusTab === 'profile') {
     body.innerHTML =
       `<div class="sit-block"><div class="sit-label">이름</div>` +
