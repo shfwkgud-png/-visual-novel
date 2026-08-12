@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v277</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v278</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2178,8 +2178,13 @@ function modelCtxTokens() {
   return 128000;
 }
 // 한글 기준 1자 ≈ 1토큰(보수적). 컨텍스트의 40%를 원문에 배정 — 나머지는 규칙·카드·상태·출력 몫.
+// ★실효 상한(2026-08-12): 컨텍스트 한도만 보고 40%(1M 모델=40만 자)를 잡았더니, 진행이 쌓일수록
+//   매 턴 그 원문을 통째로 다시 보내 첫 글자까지의 대기(prefill)가 계속 길어졌다 — "답변이 너무 느려"의 몸통.
+//   한도가 아니라 '지연'이 진짜 제약이다. 12만 자면 80~120턴 원문이 그대로 남아 기억은 유지되고,
+//   전송·처리량은 최대 1/3로 줄어든다. 요약(SUMMARY_INTERVAL)이 그 앞을 이어받는다.
+const RECENT_CHARS_CAP = 120000;
 function recentWindowCount() {
-  const budgetChars = Math.floor(modelCtxTokens() * 0.40);
+  const budgetChars = Math.min(RECENT_CHARS_CAP, Math.floor(modelCtxTokens() * 0.40));
   let chars = 0, count = 0;
   for (let i = gameHistory.length - 1; i >= 0; i--) {
     chars += (gameHistory[i].content || '').length;
@@ -10795,6 +10800,12 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   // 폴백 대상은 3.6 Flash 원턴만 — 이미 폴백으로 들어온 호출(orModelOverride)은 재폴백하지 않는다
   const canSlowFallback = isOR && !orModelOverride && /gemini-3\.6-flash/i.test(mdl);
   let _tFirst = 0, _slowAbort = false, slowTimer = null;
+  // ★지연 임계는 입력 크기에 비례해야 한다(2026-08-12 유저 "지금 너무 답변이 느려. 이상해"):
+  //   고정 8초는 짧은 입력 기준이었다. 진행이 쌓여 입력이 10만 자를 넘으면 첫 글자까지 8초는 정상인데
+  //   그걸 '느림'으로 오판해 abort → 같은 거대 입력을 2.5 Pro(더 느림)로 처음부터 다시 처리 →
+  //   폴백이 오히려 지연을 키운다(캐시도 무효화). 입력 10만 자당 +6초, 상한 25초.
+  const _inChars = oai.reduce((n, m) => n + (m.content || '').length, 0);
+  const _slowMs = Math.min(25000, SLOW_FALLBACK_MS + Math.floor(_inChars / 100000) * 6000);
   const headers = { 'Content-Type': 'application/json' };
   if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
   const reqBody = { model: mdl, messages: oai, max_tokens: maxTok, temperature: temp, top_p: 1.0, stream: true };
@@ -10825,7 +10836,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     // 첫 글자가 안 오면 느린 것 — 끊고 2.5 Pro로 넘긴다(아래 catch에서 재시도)
     if (canSlowFallback) slowTimer = setTimeout(() => {
       if (!_tFirst) { _slowAbort = true; controller.abort(); }
-    }, SLOW_FALLBACK_MS);
+    }, _slowMs);
     const res = await fetch(url, {
       method: 'POST',
       headers,
@@ -11159,6 +11170,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
           in: _u.prompt_tokens ?? null,
           out: _u.completion_tokens ?? null,
           think: (_u.completion_tokens_details && _u.completion_tokens_details.reasoning_tokens) ?? null,
+          cached: (_u.prompt_tokens_details && _u.prompt_tokens_details.cached_tokens) ?? null,   // ★캐시 히트(2026-08-12): 낮으면 매턴 전체 재처리 = 지연 원인
           ttfb: Math.round(result.timing.ttfb / 100) / 10,
           total: Math.round(result.timing.total / 100) / 10,
           fin: result.finishReason || null,   // ★'length'면 출력 상한에 걸려 잘린 턴(2026-08-12)
@@ -14574,7 +14586,7 @@ function renderStatusPanel() {
     if (gameState.event) h += `<div class="sit-block"><div class="sit-label">현재 이벤트</div><div class="sit-val" style="color:var(--gold)">${esc(gameState.event)}</div></div>`;
     h += rosterBlock();
     if (gameState._turnStats) { const t = gameState._turnStats;
-      h += `<div class="sit-block"><div class="sit-label">최근 턴 처리</div><div class="sit-val" style="font-size:0.85em;opacity:0.85">${t.model || ''} · 첫 글자 ${t.ttfb}s · 총 ${t.total}s${t.in != null ? ` · 입력 ${(t.in/1000).toFixed(1)}k` : ''}${t.think != null ? ` · <b>생각 ${(t.think/1000).toFixed(1)}k</b>` : ''}${t.out != null ? ` · 출력 ${(t.out/1000).toFixed(1)}k` : ''}${t.keep != null ? ` · 원문 ${t.keep}턴` : ''}${t.fin ? ` · 종료 <b style="color:${/length|max_tokens/i.test(t.fin) ? '#ff7676' : 'inherit'}">${esc(t.fin)}</b>` : ''}</div></div>`;
+      h += `<div class="sit-block"><div class="sit-label">최근 턴 처리</div><div class="sit-val" style="font-size:0.85em;opacity:0.85">${t.model || ''} · 첫 글자 ${t.ttfb}s · 총 ${t.total}s${t.in != null ? ` · 입력 ${(t.in/1000).toFixed(1)}k` : ''}${t.cached != null ? ` <span style="opacity:0.7">(캐시 ${(t.cached/1000).toFixed(1)}k)</span>` : ''}${t.think != null ? ` · <b>생각 ${(t.think/1000).toFixed(1)}k</b>` : ''}${t.out != null ? ` · 출력 ${(t.out/1000).toFixed(1)}k` : ''}${t.keep != null ? ` · 원문 ${t.keep}턴` : ''}${t.fin ? ` · 종료 <b style="color:${/length|max_tokens/i.test(t.fin) ? '#ff7676' : 'inherit'}">${esc(t.fin)}</b>` : ''}</div></div>`;
     }
     // RPG: 스탯 5종 + 스킬 숙련도(xp 게이지)
     const st = p.stats || {};
