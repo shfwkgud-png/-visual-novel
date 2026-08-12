@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v272</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v273</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2078,6 +2078,7 @@
       <div id="statusTabs">
         <button class="status-tab active" id="tabChars" onclick="switchStatusTab('chars')">만난 캐릭터</button>
         <button class="status-tab" id="tabRoster" onclick="switchStatusTab('roster')" style="display:none">기초 편성</button>
+        <button class="status-tab" id="tabWar" onclick="switchStatusTab('war')" style="display:none">전황</button>
         <button class="status-tab" id="tabSituation" onclick="switchStatusTab('situation')">현재 상황</button>
         <button class="status-tab" id="tabProfile" onclick="switchStatusTab('profile')">주인공</button>
       </div>
@@ -2888,6 +2889,76 @@ const ACADEMY_EVENTS = [
   { t: '이졸데 폭주 징후', cond: '입학 6개월 후', d: "빙결화의 카운트다운이 시작된다 — 원작에선 여기서 죽음으로 향한다. 구하려면 북부대공가와 싸워야 한다" },
 ];
 const ACADEMY_WORLD_PROMPT = ACADEMY_LORE + loreEndingsEventsBlock(ACADEMY_EVENTS, ACADEMY_ENDINGS) + ENGINE_RULES_PROMPT;
+
+// ═════════ 2부 국가전 — 전황판 1단계 (2026-08-12, KOEI식 국가전 배선) ═════════
+// 유저 합의 설계: 각 세력이 영토(바둑알 노드)를 갖고, 비플레이어 세력도 자율로 결정·동맹·침공하며,
+// 전투는 참여/미참여 동일 공식(병력×장수보정×사기×지형×난수, 참여 시 선택지가 보정을 움직임).
+// 이 블록은 1단계 — 전황 "상태"의 탄생(initWar)과 열람(전황판 탭)만. 월간 틱·세력 AI·전투는 2·3단계.
+// 수치의 단일 진실원은 앱이다(아이돌 시뮬과 같은 원칙) — AI는 전황을 서사화만 한다.
+const WAR_NATIONS = {
+  '그란텀 제국': { color: '#c0392b', leader: '카산드라', tone: '실리·팽창 — 약점 보이면 문다' },
+  '아를렌 왕국': { color: '#2e6bb0', leader: '루카스', tone: '명예·방어 — 동맹을 깨지 않는다' },
+  '리베라 연합': { color: '#c8a227', leader: '모니카', tone: '상인 — 강자에 붙고 수지로 갈아탄다' },
+  '성좌 교단':   { color: '#d4d0c8', leader: '모르가나', tone: '고립 — 봉인 거점만 집착' },
+  '여명회':      { color: '#3b3b46', leader: '그림자', tone: '혼돈 — 1위 세력을 문다, 동맹 없음' },
+  '완충령':      { color: '#5fb37a', leader: '카일', tone: '중립 약소 — 독자 노선의 시작점' }
+};
+// 거점 16개 — 제국4·왕국4·연합3·교단2·여명회1·완충령2. x/y는 전황판 SVG(viewBox 100×74) 좌표.
+// terrain: 방어 보정(전투 3단계에서 사용) · cap: 수도(함락=세력 붕괴 트리거 예정).
+const WAR_TERRITORIES = {
+  kin_duchy:    { name: '북부대공령',       owner: '아를렌 왕국', x: 24, y: 9,  terrain: 1.2,  adj: ['kin_capital','kin_shrine','imp_north'] },
+  kin_capital:  { name: '아를렌 왕도',      owner: '아를렌 왕국', x: 14, y: 24, terrain: 1.3,  cap: true, adj: ['kin_duchy','kin_shrine','kin_south'] },
+  kin_shrine:   { name: '성검 성지',        owner: '아를렌 왕국', x: 31, y: 22, terrain: 1.15, adj: ['kin_duchy','kin_capital','kin_south','buf_academy'] },
+  kin_south:    { name: '남부 기사령',      owner: '아를렌 왕국', x: 22, y: 41, terrain: 1.0,  adj: ['kin_capital','kin_shrine','uni_market','buf_academy'] },
+  imp_north:    { name: '북부 요새선',      owner: '그란텀 제국', x: 72, y: 9,  terrain: 1.25, adj: ['kin_duchy','imp_capital','imp_forge'] },
+  imp_capital:  { name: '그란텀 황도',      owner: '그란텀 제국', x: 84, y: 23, terrain: 1.3,  cap: true, adj: ['imp_north','imp_forge','imp_plain'] },
+  imp_forge:    { name: '마도공방 지대',    owner: '그란텀 제국', x: 67, y: 26, terrain: 1.0,  adj: ['imp_north','imp_capital','buf_academy','imp_plain'] },
+  imp_plain:    { name: '동부 곡창',        owner: '그란텀 제국', x: 83, y: 43, terrain: 0.9,  adj: ['imp_capital','imp_forge','chu_abbey','dawn_hideout'] },
+  buf_academy:  { name: '로젠하임 아카데미', owner: '완충령',     x: 50, y: 32, terrain: 1.2,  adj: ['kin_shrine','kin_south','imp_forge','buf_barony'] },
+  buf_barony:   { name: '아르덴 남작령',    owner: '완충령',     x: 50, y: 49, terrain: 1.0,  cap: true, adj: ['buf_academy','chu_cathedral','chu_abbey','uni_market'] },
+  chu_cathedral:{ name: '대성좌청',         owner: '성좌 교단',  x: 40, y: 63, terrain: 1.25, cap: true, adj: ['buf_barony','chu_abbey','uni_mercen'] },
+  chu_abbey:    { name: '봉인 수도원',      owner: '성좌 교단',  x: 58, y: 63, terrain: 1.2,  adj: ['buf_barony','chu_cathedral','imp_plain','dawn_hideout'] },
+  uni_port:     { name: '자유항 리베라',    owner: '리베라 연합', x: 13, y: 60, terrain: 1.1,  cap: true, adj: ['uni_market','uni_mercen'] },
+  uni_market:   { name: '대상단 교역로',    owner: '리베라 연합', x: 26, y: 54, terrain: 0.9,  adj: ['uni_port','uni_mercen','kin_south','buf_barony'] },
+  uni_mercen:   { name: '회색 늑대 주둔지', owner: '리베라 연합', x: 28, y: 68, terrain: 1.1,  adj: ['uni_port','uni_market','chu_cathedral'] },
+  dawn_hideout: { name: '여명회 은거지',    owner: '여명회',     x: 85, y: 64, terrain: 1.3,  adj: ['imp_plain','chu_abbey'] }
+};
+// faction 문자열("제국", "그란텀 제국", "독자 노선"…)을 전황판 국가 키로 정규화
+function warNationOf(f) {
+  const s = String(f || '');
+  if (/제국|그란텀/.test(s)) return '그란텀 제국';
+  if (/왕국|아를렌/.test(s)) return '아를렌 왕국';
+  if (/연합|리베라/.test(s)) return '리베라 연합';
+  if (/교단|성좌/.test(s)) return '성좌 교단';
+  if (/여명/.test(s)) return '여명회';
+  if (/독자|완충|무소속/.test(s)) return '완충령';
+  return null;
+}
+function initWar() {
+  if (gameState.war) return;
+  const terr = {}; for (const id in WAR_TERRITORIES) terr[id] = WAR_TERRITORIES[id].owner;
+  gameState.war = {
+    month: 1,                                    // 개전 후 경과 월 — 월간 틱은 2단계에서 굴린다
+    playerFaction: warNationOf(gameState.faction) || '완충령',
+    terr,                                        // { 거점id: 현재 소유 국가 } — 소유 변경의 단일 진실원
+    nations: {                                   // 규모별 초기 국력 — 완충령은 의도된 약소(독자 노선 난이도)
+      '그란텀 제국': { troops: 42000, gold: 3200, morale: 70 },
+      '아를렌 왕국': { troops: 38000, gold: 2600, morale: 75 },
+      '리베라 연합': { troops: 26000, gold: 4200, morale: 65 },
+      '성좌 교단':   { troops: 12000, gold: 2000, morale: 80 },
+      '여명회':      { troops: 8000,  gold: 1500, morale: 60 },
+      '완충령':      { troops: 3000,  gold: 600,  morale: 55 }
+    },
+    relations: {                                 // 세력쌍 관계도(-100~100) — 동맹·개전 판단의 원료(2단계)
+      '그란텀 제국|아를렌 왕국': -50, '그란텀 제국|리베라 연합': -20, '그란텀 제국|성좌 교단': -10,
+      '아를렌 왕국|리베라 연합': -10, '아를렌 왕국|성좌 교단': 20,   '리베라 연합|성좌 교단': 0,
+      '여명회|그란텀 제국': -70, '여명회|아를렌 왕국': -70, '여명회|리베라 연합': -70, '여명회|성좌 교단': -80,
+      '완충령|그란텀 제국': 0, '완충령|아를렌 왕국': 0, '완충령|리베라 연합': 0, '완충령|성좌 교단': 10, '완충령|여명회': -40
+    },
+    alliances: [],                               // [['아를렌 왕국','성좌 교단'], …] — 2단계 세력 AI가 채운다
+    log: ['개전 — 학원제의 예언 유출로 3국 협정이 무너졌다']
+  };
+}
 
 // ───── 4. 사이버펑크: 네오서울 2087 ─────
 const CYBER_CHARACTERS = {
@@ -11120,6 +11191,13 @@ function processResponse(data, activeCharIds, streamed) {
     if (typeof s.faction === 'string' && s.faction.trim()) {
       gameState.faction = s.faction.trim();
       if (!replaying) showStatToast(`⚑ 진영: ${gameState.faction}`);
+      // ★개전(2026-08-12): 진영이 처음 기록되는 순간이 2부의 시작 — 전황판 상태를 1회 생성한다.
+      try {
+        if (typeof STORY !== 'undefined' && STORY && STORY.id === 'academy' && !gameState.war) {
+          initWar();
+          if (!replaying) showStatToast('⚔ 개전 — 상태창에 「전황」 탭이 열렸다');
+        }
+      } catch {}
     }
     if (s.flags) Object.assign(gameState.flags, s.flags);
     // Merge character relationship/status updates
@@ -13827,6 +13905,7 @@ function switchStatusTab(t) {
   statusTab = t;
   document.getElementById('tabChars').classList.toggle('active', t === 'chars');
   document.getElementById('tabRoster').classList.toggle('active', t === 'roster');
+  document.getElementById('tabWar').classList.toggle('active', t === 'war');
   document.getElementById('tabSituation').classList.toggle('active', t === 'situation');
   document.getElementById('tabProfile').classList.toggle('active', t === 'profile');
   renderStatusPanel();
@@ -14112,8 +14191,58 @@ function rosterBlock() {
   });
   return h + `</div>`;
 }
+// ★전황판(1단계 — 열람 전용): 대륙을 추상 노드(바둑알)로 그린다. 실측 지도가 아니라 관계도라
+//   모바일에서도 읽힌다. 소유는 war.terr가 단일 진실원 — 값만 바뀌면 색이 따라온다.
+function renderWarBoard() {
+  const w = gameState.war; if (!w) return '';
+  const NC = n => (WAR_NATIONS[n] && WAR_NATIONS[n].color) || '#888';
+  let h = `<div class="sit-block"><div class="sit-label">전황 — 개전 ${w.month}개월차</div>` +
+    `<div class="sit-val">내 진영: <b style="color:${NC(w.playerFaction)}">⚑ ${esc(w.playerFaction)}</b>` +
+    (w.alliances && w.alliances.length
+      ? ` · 동맹 ${w.alliances.map(a => a.join(' = ')).join(', ')}`
+      : ' · 체결된 동맹 없음') + `</div></div>`;
+  let edges = '', nodes = '';
+  const seen = new Set();
+  for (const id in WAR_TERRITORIES) {
+    (WAR_TERRITORIES[id].adj || []).forEach(o => {
+      const key = [id, o].sort().join('|');
+      if (seen.has(key) || !WAR_TERRITORIES[o]) return; seen.add(key);
+      const t = WAR_TERRITORIES[id], u = WAR_TERRITORIES[o];
+      edges += `<line x1="${t.x}" y1="${t.y}" x2="${u.x}" y2="${u.y}" stroke="rgba(212,175,55,0.22)" stroke-width="0.4"/>`;
+    });
+  }
+  for (const id in WAR_TERRITORIES) {
+    const t = WAR_TERRITORIES[id], own = w.terr[id] || t.owner, c = NC(own);
+    const mine = own === w.playerFaction;
+    nodes += `<g>` +
+      (t.cap ? `<circle cx="${t.x}" cy="${t.y}" r="4.4" fill="none" stroke="${c}" stroke-width="0.5" opacity="0.85"/>` : '') +
+      `<circle cx="${t.x}" cy="${t.y}" r="3" fill="${c}" stroke="${mine ? '#ffffff' : 'rgba(255,255,255,0.4)'}" stroke-width="${mine ? 0.7 : 0.35}"/>` +
+      `<text x="${t.x}" y="${t.y + 6.6}" text-anchor="middle" font-size="2.7" fill="rgba(255,255,255,0.82)">${esc(t.name)}</text>` +
+      `</g>`;
+  }
+  h += `<div class="sit-block"><svg viewBox="0 0 100 74" style="width:100%;display:block;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px">${edges}${nodes}</svg>` +
+       `<div class="char-meta" style="margin-top:4px">이중 테두리 = 수도 · 흰 테두리 = 내 진영 거점</div></div>`;
+  const cnt = {}; for (const id in w.terr) cnt[w.terr[id]] = (cnt[w.terr[id]] || 0) + 1;
+  h += `<div class="sit-block"><div class="sit-label">국력</div>`;
+  Object.keys(WAR_NATIONS).forEach(n => {
+    const s = w.nations[n]; if (!s) return;
+    h += `<div class="sit-val" style="margin:5px 0${n === w.playerFaction ? ';color:var(--gold)' : ''}">` +
+      `<span style="display:inline-block;width:0.8em;height:0.8em;border-radius:50%;background:${NC(n)};margin-right:6px;vertical-align:-1px"></span>` +
+      `${esc(n)} — 거점 ${cnt[n] || 0} · 병력 ${Math.round(s.troops / 1000)}k · 자금 ${s.gold}G · 사기 ${s.morale}` +
+      `<span style="opacity:0.55;font-size:0.85em"> · ${esc(WAR_NATIONS[n].tone)}</span></div>`;
+  });
+  h += `</div>`;
+  h += `<div class="sit-block"><div class="sit-label">전황 기록</div><div class="sit-val" style="line-height:1.9">` +
+       (w.log || []).slice(-8).map(x => `· ${esc(x)}`).join('<br>') + `</div></div>`;
+  return h;
+}
 function renderStatusPanel() {
   const body = document.getElementById('statusBody');
+  // 전황 탭은 개전 후(gameState.war 존재)에만 노출한다
+  const _tabW = document.getElementById('tabWar');
+  if (_tabW) _tabW.style.display = (gameState && gameState.war) ? '' : 'none';
+  if (statusTab === 'war' && !(gameState && gameState.war)) statusTab = 'chars';
+  if (statusTab === 'war') { body.innerHTML = renderWarBoard(); return; }
   // 편성 탭은 camp가 있는 스토리(악역의 생존법 등)에서만 노출한다
   const _hasCamps = typeof CHARACTERS !== 'undefined' && CHARACTERS
     && Object.keys(CHARACTERS).some(id => CHARACTERS[id] && CHARACTERS[id].camp);
