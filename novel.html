@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v273</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v274</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2900,7 +2900,7 @@ const WAR_NATIONS = {
   '아를렌 왕국': { color: '#2e6bb0', leader: '루카스', tone: '명예·방어 — 동맹을 깨지 않는다' },
   '리베라 연합': { color: '#c8a227', leader: '모니카', tone: '상인 — 강자에 붙고 수지로 갈아탄다' },
   '성좌 교단':   { color: '#d4d0c8', leader: '모르가나', tone: '고립 — 봉인 거점만 집착' },
-  '여명회':      { color: '#3b3b46', leader: '그림자', tone: '혼돈 — 1위 세력을 문다, 동맹 없음' },
+  '여명회':      { color: '#3b3b46', leader: '수령 불명(연락책 그림자)', tone: '혼돈 — 1위 세력을 문다, 동맹 없음' },
   '완충령':      { color: '#5fb37a', leader: '카일', tone: '중립 약소 — 독자 노선의 시작점' }
 };
 // 거점 16개 — 제국4·왕국4·연합3·교단2·여명회1·완충령2. x/y는 전황판 SVG(viewBox 100×74) 좌표.
@@ -2949,15 +2949,232 @@ function initWar() {
       '여명회':      { troops: 8000,  gold: 1500, morale: 60 },
       '완충령':      { troops: 3000,  gold: 600,  morale: 55 }
     },
-    relations: {                                 // 세력쌍 관계도(-100~100) — 동맹·개전 판단의 원료(2단계)
-      '그란텀 제국|아를렌 왕국': -50, '그란텀 제국|리베라 연합': -20, '그란텀 제국|성좌 교단': -10,
-      '아를렌 왕국|리베라 연합': -10, '아를렌 왕국|성좌 교단': 20,   '리베라 연합|성좌 교단': 0,
-      '여명회|그란텀 제국': -70, '여명회|아를렌 왕국': -70, '여명회|리베라 연합': -70, '여명회|성좌 교단': -80,
-      '완충령|그란텀 제국': 0, '완충령|아를렌 왕국': 0, '완충령|리베라 연합': 0, '완충령|성좌 교단': 10, '완충령|여명회': -40
-    },
-    alliances: [],                               // [['아를렌 왕국','성좌 교단'], …] — 2단계 세력 AI가 채운다
+    relations: (() => {                          // 세력쌍 관계도(-100~100) — 키는 정렬 쌍(warRelKey와 동일 규약)
+      const r = {}; const set = (a, b, v) => r[[a, b].sort().join('|')] = v;
+      set('그란텀 제국', '아를렌 왕국', -50); set('그란텀 제국', '리베라 연합', -20); set('그란텀 제국', '성좌 교단', -10);
+      set('아를렌 왕국', '리베라 연합', -10); set('아를렌 왕국', '성좌 교단', 20); set('리베라 연합', '성좌 교단', 0);
+      ['그란텀 제국', '아를렌 왕국', '리베라 연합'].forEach(n => set('여명회', n, -70)); set('여명회', '성좌 교단', -80);
+      ['그란텀 제국', '아를렌 왕국', '리베라 연합'].forEach(n => set('완충령', n, 0)); set('완충령', '성좌 교단', 10); set('완충령', '여명회', -40);
+      return r;
+    })(),
+    alliances: [],                               // [['아를렌 왕국','성좌 교단'], …] — 세력 AI가 채운다
     log: ['개전 — 학원제의 예언 유출로 3국 협정이 무너졌다']
   };
+}
+
+// ───── 2·3·4단계: 월간 틱 · 세력 자율 AI(결정·동맹·파기) · 전투 판정 · 장수 ─────
+// 흐름: AI가 월례 회의에서 방침 choices 제시 → 플레이어 선택 → state_update.war.action 기록 →
+//       앱이 한 달을 통째로 굴림(플레이어 행동→각 세력 자율 행동→전투→경제→외교) → 다음 턴
+//       프롬프트에 "지난달 전황 보고"가 실려 AI가 서사화. 수치는 전부 앱이 계산한다.
+// 장수 전투 평가(1~10) — 카드의 역할·설정에서 도출한 고정값. 소속은 항상 "현재 소속"
+// (영입 게이트를 통과한 allegiance 우선)이라, 영입한 인물은 그 나라 장수 풀에서 빠져 내 쪽에 선다.
+const WAR_GENERAL_POWER = { a401: 6, a402: 8, a403: 8, a404: 9, a405: 8, a406: 8, a407: 3, a408: 6, a409: 9, a410: 9, a411: 6, a412: 4, a413: 7, a414: 4, a415: 7, a416: 7, a417: 5, a418: 7, a419: 4, a420: 8 };
+function warRelKey(a, b) { return [a, b].sort().join('|'); }
+function warRel(w, a, b) { const v = w.relations[warRelKey(a, b)]; return typeof v === 'number' ? v : 0; }
+function warRelAdd(w, a, b, d) { const k = warRelKey(a, b); w.relations[k] = Math.max(-100, Math.min(100, (w.relations[k] || 0) + d)); }
+function warAllied(w, a, b) { return (w.alliances || []).some(p => p.includes(a) && p.includes(b)); }
+function warTerrOf(w, n) { return Object.keys(w.terr).filter(id => w.terr[id] === n); }
+function warAlive(w, n) { return warTerrOf(w, n).length > 0; }
+function warGenerals(n) {   // 국가 n의 생존 장수 [[id, 이름, 평가]…] — 현재 소속 기준, 강한 순
+  const met = (typeof gameState !== 'undefined' && gameState.metChars) || {};
+  return Object.keys(ACADEMY_CHARACTERS).filter(id => {
+    const m = met[id];
+    if (m && m.condition && String(m.condition).includes('사망')) return false;
+    return warNationOf((m && m.allegiance) || ACADEMY_CHARACTERS[id].camp) === n;
+  }).map(id => [id, (met[id] && met[id].name) || ACADEMY_CHARACTERS[id].name, WAR_GENERAL_POWER[id] || 4])
+    .sort((x, y) => y[2] - x[2]);
+}
+// ★전투 — 참여/미참여 동일 공식: 병력 × 장수보정 × 사기 × 지형(방어) × 난수(0.85~1.15) [× 출진 보정]
+function warBattle(w, atk, def, terrId, opt) {
+  const T = WAR_TERRITORIES[terrId], A = w.nations[atk], D = w.nations[def];
+  if (!T || !A || !D) return false;
+  const aTroops = Math.round(A.troops * 0.45);
+  const dTroops = Math.round(D.troops * 0.30) + (T.cap ? 2000 : 800);   // 수비엔 기본 수비대가 있다
+  const aGen = warGenerals(atk)[0], dGen = warGenerals(def)[0];
+  const rnd = () => 0.85 + Math.random() * 0.30;
+  let aPow = aTroops * (1 + (aGen ? aGen[2] : 3) * 0.035) * (A.morale / 70) * rnd();
+  let dPow = dTroops * (1 + (dGen ? dGen[2] : 3) * 0.035) * (D.morale / 70) * (T.terrain || 1) * (w._guard === def ? 1.25 : 1) * rnd();
+  let note = '';
+  const ally = Object.keys(WAR_NATIONS).find(x => x !== def && x !== atk && warAllied(w, def, x) && warAlive(w, x));
+  if (ally) { dPow *= 1.2; note += ` (동맹 ${ally} 원군)`; }
+  if (opt && opt.join && atk === w.playerFaction) {   // 주인공 출진 — 스탯이 공식에 들어간다
+    const st = (gameState.player && gameState.player.stats) || {};
+    const vals = Object.values(st).filter(v => typeof v === 'number');
+    const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 30;
+    const jb = 1 + Math.min(0.35, (avg / 100) * 0.5);
+    aPow *= jb; note += ` — 주인공 직접 출진(보정 ×${jb.toFixed(2)})`;
+  }
+  const win = aPow > dPow;
+  const aLoss = Math.round(aTroops * (win ? 0.10 + Math.random() * 0.08 : 0.25 + Math.random() * 0.10));
+  const dLoss = Math.round(dTroops * (win ? 0.25 + Math.random() * 0.10 : 0.10 + Math.random() * 0.08));
+  A.troops = Math.max(0, A.troops - aLoss); D.troops = Math.max(0, D.troops - dLoss);
+  A.morale = Math.max(20, Math.min(100, A.morale + (win ? 5 : -7)));
+  D.morale = Math.max(20, Math.min(100, D.morale + (win ? -7 : 5)));
+  warRelAdd(w, atk, def, -12);
+  let ev = `${atk} ⚔ ${def} — ${T.name} 공방전${note}: `;
+  if (win) {
+    w.terr[terrId] = atk;
+    ev += `${atk} 승리, ${T.name} 함락 (공격측 피해 ${aLoss} · 수비측 피해 ${dLoss})`;
+    if (T.cap) { D.morale = Math.max(20, D.morale - 13); ev += ' ★수도 함락'; }
+    if (!warAlive(w, def)) { D.troops = 0; ev += ` ★${def} 멸망 — 대륙 지도에서 지워졌다`; }
+  } else {
+    ev += `${def} 방어 성공 (공격측 피해 ${aLoss} · 수비측 피해 ${dLoss})`;
+  }
+  ev += ` [지휘 ${(aGen && aGen[1]) || '무명 장교'} vs ${(dGen && dGen[1]) || '무명 장교'}]`;
+  w.log.push(ev);
+  return win;
+}
+// ★플레이어 진영의 이달 방침(월례 회의 결정) 적용
+function warPlayerAction(w, a) {
+  const n = w.playerFaction, me = w.nations[n];
+  const t = String((a && a.type) || '');
+  if (/침공|공격|출병/.test(t)) {
+    const raw = String((a && a.target) || '').trim();
+    const terrId = WAR_TERRITORIES[raw] ? raw
+      : Object.keys(WAR_TERRITORIES).find(id => WAR_TERRITORIES[id].name === raw || (raw && WAR_TERRITORIES[id].name.includes(raw)));
+    if (!terrId) { w.log.push(`${n} — 침공 명령의 목표를 해석하지 못했다(${raw || '목표 없음'})`); return; }
+    const own = w.terr[terrId];
+    const adjOk = warTerrOf(w, n).some(id => (WAR_TERRITORIES[id].adj || []).includes(terrId));
+    if (own === n) w.log.push(`${n} — 침공 불발: ${WAR_TERRITORIES[terrId].name}은 이미 아군 거점`);
+    else if (!adjOk) w.log.push(`${n} — 침공 불발: ${WAR_TERRITORIES[terrId].name}은 아군 거점과 인접하지 않다`);
+    else if (warAllied(w, n, own)) w.log.push(`${n} — 침공 불발: 동맹(${own})의 거점은 칠 수 없다 (파기가 먼저다)`);
+    else warBattle(w, n, own, terrId, { join: !!(a && a.join) });
+  }
+  else if (/모병/.test(t)) { const spend = Math.min(me.gold, Math.max(200, Math.round(me.gold * 0.5))); me.gold -= spend; me.troops += spend * 6; w.log.push(`${n} — 모병령 (병력 +${spend * 6} · 자금 -${spend})`); }
+  else if (/방비|방어/.test(t)) { me.morale = Math.min(100, me.morale + 4); w._guard = n; w.log.push(`${n} — 방비 강화 (이번 달 방어 ×1.25 · 사기 +4)`); }
+  else if (/외교|동맹/.test(t)) {
+    const to = warNationOf(a && a.target);
+    if (!to || to === n || !warAlive(w, to)) { w.log.push(`${n} — 외교 사절의 목적지를 해석하지 못했다`); return; }
+    if (to === '여명회') { w.log.push(`${n} — 여명회는 협상 상대가 아니다. 사절은 돌아오지 않았다 (사기 -2)`); me.morale = Math.max(20, me.morale - 2); return; }
+    if (warAllied(w, n, to)) { warRelAdd(w, n, to, 5); w.log.push(`${n} ↔ ${to} 동맹 결속 강화`); }
+    else if (warRel(w, n, to) >= -10 || w._offer === to) { w.alliances.push([n, to]); warRelAdd(w, n, to, 25); w.log.push(`${n} ↔ ${to} 동맹 체결`); }
+    else { warRelAdd(w, n, to, 12); w.log.push(`${n} → ${to} 친선 사절 (관계 개선, 동맹까지는 신뢰가 더 필요)`); }
+  }
+  else if (/첩보/.test(t)) {
+    const to = warNationOf(a && a.target);
+    if (to && to !== n && warAlive(w, to)) { w.nations[to].morale = Math.max(20, w.nations[to].morale - 3); warRelAdd(w, n, to, -5); w.log.push(`${n} — ${to} 첩보 공작 (적 사기 -3 · 발각 위험으로 관계 악화)`); }
+    else w.log.push(`${n} — 첩보 목표를 해석하지 못했다`);
+  }
+  else { const inc = 300 + warTerrOf(w, n).length * 60; me.gold += inc; me.morale = Math.min(100, me.morale + 1); w.log.push(`${n} — 내정 개발 (자금 +${inc} · 사기 +1)`); }
+}
+// ★비플레이어 세력의 자율 행동 — 성향(리더 카드) 기반 규칙 AI. LLM 호출 없음.
+function warFactionAI(w, n) {
+  if (n === w.playerFaction || !warAlive(w, n)) return;
+  const me = w.nations[n], myTerr = warTerrOf(w, n);
+  const targets = [];   // [terrId, 소유국] — 인접한 비동맹 타국 거점
+  myTerr.forEach(id => (WAR_TERRITORIES[id].adj || []).forEach(o => {
+    const own = w.terr[o];
+    if (own !== n && warAlive(w, own) && !warAllied(w, n, own) && !targets.some(x => x[0] === o)) targets.push([o, own]);
+  }));
+  const power = me.troops * (me.morale / 70);
+  const alive = Object.keys(WAR_NATIONS).filter(x => warAlive(w, x));
+  const strongest = alive.filter(x => x !== n)
+    .sort((a, b) => w.nations[b].troops * warTerrOf(w, b).length - w.nations[a].troops * warTerrOf(w, a).length)[0];
+  let attacked = false;
+  if (n === '여명회') {          // 혼돈 — 1위 세력을 문다. 열세여도 확률적으로.
+    const t = targets.filter(x => x[1] === strongest);
+    if (t.length && Math.random() < 0.5) attacked = (warBattle(w, n, t[0][1], t[0][0]), true);
+  } else if (n === '성좌 교단') {   // 고립 — 봉인 수도원을 잃었을 때만 탈환전
+    const own = w.terr.chu_abbey;
+    if (own !== n && warAlive(w, own) && !warAllied(w, n, own)
+        && warTerrOf(w, n).some(id => (WAR_TERRITORIES[id].adj || []).includes('chu_abbey'))) {
+      warBattle(w, n, own, 'chu_abbey'); attacked = true;
+      w.log.push('성좌 교단 — 봉인 수도원 탈환 성전 선포');
+    }
+  } else {                        // 제국(공세)·왕국(신중)·연합(실리)·완충령(생존)
+    const aggr = n === '그란텀 제국' ? 1.35 : n === '리베라 연합' ? 1.1 : n === '완충령' ? 0.6 : 0.9;
+    const needRatio = n === '아를렌 왕국' ? 1.5 : 1.2;   // 왕국은 확실할 때만 창을 든다
+    const pick = targets.filter(x => warRel(w, n, x[1]) < -25)
+      .map(x => [power / Math.max(1, w.nations[x[1]].troops * (w.nations[x[1]].morale / 70)), x])
+      .filter(x => x[0] > needRatio).sort((a, b) => b[0] - a[0])[0];
+    if (pick && Math.random() < 0.5 * aggr) { warBattle(w, n, pick[1][1], pick[1][0]); attacked = true; }
+  }
+  if (!attacked) {   // 경제: 병력이 아쉬우면 모병, 아니면 개발 (조용한 달은 로그 생략 — 소음 방지)
+    if (me.gold > 800 && me.troops < 12000 + myTerr.length * 4000) {
+      const spend = Math.round(me.gold * 0.4); me.gold -= spend; me.troops += spend * 6;
+      w.log.push(`${n} — 모병령 (병력 +${spend * 6})`);
+    } else { me.gold += 150 + myTerr.length * 30; me.morale = Math.min(100, me.morale + 1); }
+  }
+  // 외교 — 위협받으면 동맹 모색: 공동의 적에게 함께 노출된 세력과 손을 잡는다
+  const threat = alive.find(x => x !== n && warRel(w, n, x) < -40 && w.nations[x].troops > me.troops * 1.4);
+  if (threat && !(w.alliances || []).some(p => p.includes(n))) {
+    const cand = alive.find(x => x !== n && x !== threat && x !== '여명회'
+      && !warAllied(w, n, x) && warRel(w, n, x) >= 0 && warRel(w, x, threat) < 0);
+    if (cand && cand !== w.playerFaction) {
+      w.alliances.push([n, cand]); warRelAdd(w, n, cand, 25);
+      w.log.push(`${n} ↔ ${cand} 동맹 체결 — 공동의 위협 ${threat}에 맞선다`);
+    } else if (cand === w.playerFaction && w._offer !== n) {
+      w._offer = n; w.log.push(`${n}이(가) ${w.playerFaction}에 동맹의 밀사를 보냈다`);
+    }
+  }
+  // 연합의 실리 파기 — 동맹이 반토막 약체가 되면 낮은 확률로 손절 (왕국은 명예상 절대 안 깬다)
+  if (n === '리베라 연합' && Math.random() < 0.08) {
+    const al = (w.alliances || []).find(p => p.includes(n));
+    if (al) {
+      const other = al[0] === n ? al[1] : al[0];
+      if (w.nations[other].troops < me.troops * 0.5) {
+        w.alliances = w.alliances.filter(p => p !== al); warRelAdd(w, n, other, -40);
+        w.log.push(`리베라 연합 — 수지가 맞지 않는 동맹(${other}) 일방 파기`);
+      }
+    }
+  }
+}
+// ★한 달 진행 — 순서: 플레이어 방침 → 각 세력 자율 행동 → 공동 경제 → 동맹 결속 → 월 증가
+function warTick(directive) {
+  const w = gameState.war; if (!w) return null;
+  const mark = w.log.length;
+  w._guard = null; w._offer = null;
+  try { if (directive && directive.action) warPlayerAction(w, directive.action); } catch (e) { w.log.push('군령 처리 오류: ' + e.message); }
+  Object.keys(WAR_NATIONS).forEach(n => { try { warFactionAI(w, n); } catch {} });
+  Object.keys(WAR_NATIONS).forEach(n => {
+    if (!warAlive(w, n)) { w.nations[n].troops = 0; return; }
+    const s = w.nations[n];
+    s.gold += 50 + warTerrOf(w, n).length * 40;             // 거점 수입
+    s.troops = Math.round(s.troops * 1.02);                  // 자연 충원
+  });
+  (w.alliances || []).forEach(p => warRelAdd(w, p[0], p[1], 3));   // 동맹 결속
+  w.month++;
+  w._report = w.log.slice(mark);                             // 다음 턴 프롬프트에 실릴 이달 보고
+  if (w.log.length > 60) w.log = w.log.slice(-60);
+  return w._report;
+}
+// state_update.war 수신 — action이 있는 턴이 "이 달의 결정"이고, 그 즉시 한 달이 흐른다
+function warApplyDirective(d, replaying) {
+  const w = gameState.war;
+  if (!w || !d || typeof d !== 'object' || !d.action) return;
+  // 재처리 가드(되감기·복원 재생): 같은 턴의 같은 명령이 두 번 흘러들면 한 달이 중복으로 흐른다.
+  // 전투에 난수가 들어 있어 중복 실행은 역사 자체를 바꾼다 — 스탬프로 1회만 반영한다.
+  const stamp = (typeof turnCount !== 'undefined' ? turnCount : 0) + '@' + JSON.stringify(d.action);
+  if (w._lastDir === stamp) return;
+  w._lastDir = stamp;
+  warTick(d);
+  if (!replaying) { try { showStatToast(`⚔ ${w.month - 1}개월차 전황 처리 완료 — 「전황」 탭 갱신`); } catch {} }
+}
+// ★매 턴 시스템 프롬프트에 실리는 전황 블록 — 앱이 계산한 단일 진실 + 회의·서사 규칙
+function warPromptBlock() {
+  const w = gameState.war; if (!w) return '';
+  const cnt = {}; Object.keys(w.terr).forEach(id => cnt[w.terr[id]] = (cnt[w.terr[id]] || 0) + 1);
+  let s = '\n## ★2부 국가전 — 전황 (앱이 계산한 단일 진실 — 이 수치·소유와 모순되게 쓰지 마라):\n';
+  s += `- 개전 ${w.month}개월차 · 주인공 진영: ${w.playerFaction}\n`;
+  Object.keys(WAR_NATIONS).forEach(n => {
+    const st = w.nations[n];
+    const gens = warGenerals(n).slice(0, 3).map(g => g[1]).join('·');
+    s += `- ${n}: ` + (warAlive(w, n)
+      ? `거점 ${cnt[n] || 0} · 병력 ${st.troops} · 자금 ${st.gold} · 사기 ${st.morale}${gens ? ' · 장수 ' + gens : ''}`
+      : '멸망') + '\n';
+  });
+  s += `- 거점 소유: ${Object.keys(WAR_TERRITORIES).map(id => `${WAR_TERRITORIES[id].name}=${w.terr[id]}`).join(' · ')}\n`;
+  if (w.alliances && w.alliances.length) s += `- 동맹: ${w.alliances.map(p => p.join('=')).join(', ')}\n`;
+  if (w._offer) s += `- ★${w._offer}이(가) 동맹을 제안해왔다 — 이번 회의에서 수락 여부를 물어라 (수락 = 외교/${w._offer})\n`;
+  if (w._report && w._report.length) {
+    s += '★지난달 전황 보고 — 이번 응답에서 반드시 서사화하라 (수치 나열 금지 — 전령·소문·회의 장면으로):\n';
+    w._report.forEach(x => s += `  · ${x}\n`);
+  }
+  s += `★월례 회의 규칙: 매달 진영 수뇌부 회의 장면에서 이달 방침을 choices로 제시하라 — [내정/모병/방비/외교(대상 국가)/첩보(대상 국가)/침공(인접 적 거점, 직접 출진 여부)] 중 전황에 맞는 3~4개. 플레이어가 방침을 정한 턴에만 state_update에 "war": {"action": {"type": "침공", "target": "거점명 또는 국가명", "join": true}} 를 기록하라 — 기록 즉시 앱이 한 달을 진행시키고 다음 턴에 전황 보고가 온다. 회의가 아닌 일상·개인 서사 턴에는 war를 절대 보내지 마라(시간이 멈춘 채 이야기만 흐른다).\n`;
+  s += '★침공은 아군 거점과 인접한 적 거점만 가능하고 동맹 거점은 칠 수 없다. 직접 출진(join:true) 전투는 반드시 전장 장면으로 서사화하라 — 주인공 스탯이 전투 보정에 들어가 있다. 미출진 전투는 보고로만 전한다.\n';
+  if (!warAlive(w, w.playerFaction)) s += '★★주인공 진영이 멸망했다 — 패전의 결말로 이야기를 정리하라.\n';
+  else if ((cnt[w.playerFaction] || 0) === Object.keys(WAR_TERRITORIES).length) s += '★★주인공 진영이 대륙 전 거점을 통일했다 — 진영 루트 엔딩 조건 충족, 대단원으로.\n';
+  return s;
 }
 
 // ───── 4. 사이버펑크: 네오서울 2087 ─────
@@ -4340,6 +4557,7 @@ function buildStatePrompt() {
     });
   }
   if (gameState.flags && Object.keys(gameState.flags).length) s += `플래그: ${JSON.stringify(gameState.flags)}\n`;
+  if (gameState.war) { try { s += warPromptBlock(); } catch {} }   // ★2부 국가전 — 전황·회의 규칙 주입
   // settled chronicle — hard anchor against long-play memory drift
   const chron = gameState.chronicle || [];
   if (chron.length) {
@@ -11199,6 +11417,8 @@ function processResponse(data, activeCharIds, streamed) {
         }
       } catch {}
     }
+    // ★월례 회의 방침(state_update.war.action) — 수신 즉시 앱이 한 달을 굴린다(전투·세력 AI 포함)
+    if (s.war && gameState.war) { try { warApplyDirective(s.war, replaying); } catch {} }
     if (s.flags) Object.assign(gameState.flags, s.flags);
     // Merge character relationship/status updates
     // ★아이돌 시뮬: AI는 "무슨 행동을 했는지"만 뱉고, 수치 계산은 여기서(결정론)
@@ -14228,8 +14448,13 @@ function renderWarBoard() {
     const s = w.nations[n]; if (!s) return;
     h += `<div class="sit-val" style="margin:5px 0${n === w.playerFaction ? ';color:var(--gold)' : ''}">` +
       `<span style="display:inline-block;width:0.8em;height:0.8em;border-radius:50%;background:${NC(n)};margin-right:6px;vertical-align:-1px"></span>` +
-      `${esc(n)} — 거점 ${cnt[n] || 0} · 병력 ${Math.round(s.troops / 1000)}k · 자금 ${s.gold}G · 사기 ${s.morale}` +
-      `<span style="opacity:0.55;font-size:0.85em"> · ${esc(WAR_NATIONS[n].tone)}</span></div>`;
+      `${esc(n)} — ` + (cnt[n]
+        ? `거점 ${cnt[n]} · 병력 ${Math.round(s.troops / 1000)}k · 자금 ${s.gold}G · 사기 ${s.morale}`
+        : '<b style="color:#ff7676">멸망</b>') +
+      `<span style="opacity:0.55;font-size:0.85em"> · ${esc(WAR_NATIONS[n].tone)}</span>` +
+      (() => { const g = warGenerals(n).slice(0, 3).map(x => esc(x[1])).join(' · ');
+        return g && cnt[n] ? `<div class="char-meta" style="margin:1px 0 0 1.35em">장수: ${g}</div>` : ''; })() +
+      `</div>`;
   });
   h += `</div>`;
   h += `<div class="sit-block"><div class="sit-label">전황 기록</div><div class="sit-val" style="line-height:1.9">` +
