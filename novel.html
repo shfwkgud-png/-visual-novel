@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v278</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v279</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10797,15 +10797,13 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   const isOR = PROVIDER === 'openrouter';
   const url = isOR ? OPENROUTER_URL : NIM_URL;
   const mdl = isOR ? (orModelOverride || curORModel()) : model;
-  // 폴백 대상은 3.6 Flash 원턴만 — 이미 폴백으로 들어온 호출(orModelOverride)은 재폴백하지 않는다
-  const canSlowFallback = isOR && !orModelOverride && /gemini-3\.6-flash/i.test(mdl);
+  // ★지연 폴백 폐지(2026-08-13 실측 확정 — 유저 계측: 폴백된 2.5 Pro가 첫 글자 72.5s·캐시 0):
+  //   "느려지면 2.5 Pro가 구해준다"는 전제가 실측으로 깨졌다. 큰 입력에서 2.5 Pro는 Flash보다
+  //   수 배 느리고, 모델을 바꾸는 순간 암시적 캐시도 무효가 돼 다음 턴까지 느려진다.
+  //   임계 조정(8s→비례식)으로도 발동 자체가 손해라 '느려서 끊는' 동작만 제거.
+  //   ★에러 폴백은 유지: HTTP 400/업스트림 장애/첫 글자 전 연결 사망(v275) — 출력 0이라 재시도 안전.
+  const canErrFallback = isOR && !orModelOverride && /gemini-3\.6-flash/i.test(mdl);
   let _tFirst = 0, _slowAbort = false, slowTimer = null;
-  // ★지연 임계는 입력 크기에 비례해야 한다(2026-08-12 유저 "지금 너무 답변이 느려. 이상해"):
-  //   고정 8초는 짧은 입력 기준이었다. 진행이 쌓여 입력이 10만 자를 넘으면 첫 글자까지 8초는 정상인데
-  //   그걸 '느림'으로 오판해 abort → 같은 거대 입력을 2.5 Pro(더 느림)로 처음부터 다시 처리 →
-  //   폴백이 오히려 지연을 키운다(캐시도 무효화). 입력 10만 자당 +6초, 상한 25초.
-  const _inChars = oai.reduce((n, m) => n + (m.content || '').length, 0);
-  const _slowMs = Math.min(25000, SLOW_FALLBACK_MS + Math.floor(_inChars / 100000) * 6000);
   const headers = { 'Content-Type': 'application/json' };
   if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
   const reqBody = { model: mdl, messages: oai, max_tokens: maxTok, temperature: temp, top_p: 1.0, stream: true };
@@ -10833,10 +10831,8 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   }
   try {
     const _t0 = Date.now();   // ★턴 계측(2026-08-11 유저: "아카데미 로딩 왜 유독 느리냐")
-    // 첫 글자가 안 오면 느린 것 — 끊고 2.5 Pro로 넘긴다(아래 catch에서 재시도)
-    if (canSlowFallback) slowTimer = setTimeout(() => {
-      if (!_tFirst) { _slowAbort = true; controller.abort(); }
-    }, _slowMs);
+    // (지연 abort 타이머 제거 — 2026-08-13. 큰 입력의 정상 대기를 느림으로 오판해 끊고
+    //  더 느린 2.5 Pro 콜드 스타트로 갈아타던 동작. 이제 Flash를 끝까지 기다린다.)
     const res = await fetch(url, {
       method: 'POST',
       headers,
@@ -10848,7 +10844,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
       try { const j = await res.json(); msg = j.error?.message || j.detail || msg; } catch {}
       // ★하드 에러 폴백(2026-08-12 실전 장애 "Reasoning is mandatory…" 400): 3.6이 죽어도
       //   그 턴은 2.5 Pro로 살린다. 폴백까지 실패하면 그때 에러를 그대로 보여준다.
-      if (canSlowFallback) {
+      if (canErrFallback) {
         try { showStatToast(`⚠ 3.6 Flash 오류 — 이번 턴만 2.5 Pro로 전환 (${String(msg).slice(0, 70)})`, true); } catch {}
         return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, SLOW_FALLBACK_MODEL);
       }
@@ -10891,7 +10887,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     //   성공 취급 → 위에서 재시도 없이 정적 폴백. 사유를 실어 재시도·표시가 가능하게 한다.
     if (!full.trim() && chunkErr) {
       // 스트림 안 error 청크로만 죽은 경우(업스트림 장애)도 같은 폴백 — 출력이 없었으니 재시도 안전
-      if (canSlowFallback) {
+      if (canErrFallback) {
         try { showStatToast('⚠ 3.6 Flash 업스트림 장애 — 이번 턴만 2.5 Pro로 전환', true); } catch {}
         return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, SLOW_FALLBACK_MODEL);
       }
@@ -10901,16 +10897,12 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
       return { blocked: true, finishReason };
     return { text: full, finishReason, usage, modelUsed: mdl, timing: { ttfb: _tFirst ? _tFirst - _t0 : 0, total: Date.now() - _t0 } };
   } catch (e) {
-    // ★폴백(지연·네트워크 공통): 첫 글자가 나오기 전에 죽었다면 — 우리가 끊었든(_slowAbort)
-    //   연결이 죽었든 — 출력이 전혀 없었으므로 2.5 Pro 재시도가 안전하다. 첫 글자 이후에
-    //   끊긴 경우는 재생 파이프에 이미 텍스트가 들어가 있어 재시도가 이중 재생을 만들 수
-    //   있으니 종전대로 에러를 돌려준다.
-    if (canSlowFallback && !_tFirst) {
-      try {
-        showStatToast(_slowAbort
-          ? `⏳ 3.6 Flash 응답이 ${SLOW_FALLBACK_MS / 1000}초를 넘겨 2.5 Pro로 이번 턴만 전환합니다`
-          : '⚠ 3.6 Flash 연결 실패 — 이번 턴만 2.5 Pro로 전환', true);
-      } catch {}
+    // ★네트워크 폴백: 첫 글자가 나오기 전에 연결이 죽었다면(120s 하드 타임아웃 포함) 출력이
+    //   전혀 없었으므로 2.5 Pro 재시도가 안전하다. 첫 글자 이후에 끊긴 경우는 재생 파이프에
+    //   이미 텍스트가 들어가 있어 재시도가 이중 재생을 만들 수 있으니 종전대로 에러를 돌려준다.
+    //   (지연 abort는 2026-08-13 폐지 — _slowAbort는 항상 false)
+    if (canErrFallback && !_tFirst) {
+      try { showStatToast('⚠ 3.6 Flash 연결 실패 — 이번 턴만 2.5 Pro로 전환', true); } catch {}
       return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, SLOW_FALLBACK_MODEL);
     }
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
