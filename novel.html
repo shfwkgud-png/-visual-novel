@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v270</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v271</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2359,7 +2359,7 @@ const ENGINE_RULES_PROMPT = `
     "faction": "주인공이 진영·소속·문파를 선택하거나 바꾼 턴에만 그 이름(예: '그란텀 제국', '독자 노선'). 그 외엔 반드시 null — 한 번 기록되면 주인공의 소속으로 영구 반영된다",
     "sim": "★아이돌 육성 스토리 「무대 뒤 3분」 전용 — 아래 「아이돌 육성 sim 필드」의 형식을 그대로 따르는 객체. 일정 행동을 했으면 action을, **대화로 곡 제목·완성도·대중성·팬덤명·무대의상·영입·광고계약을 정했으면 title / quality / appeal / fandom / stage / target / brand를 반드시 채운다**(이때 action은 없어도 된다). 다른 스토리에선 반드시 null",
     "chars": {
-      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "location": "이 인물의 현재 위치(예: 교실, 자소궁 — 변화 시만)", "tier": "이 인물의 경지/등급(첫 등장 시 정하고 이후 고정. 예: 절정)" }
+      "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "location": "이 인물의 현재 위치(예: 교실, 자소궁 — 변화 시만)", "tier": "이 인물의 경지/등급(첫 등장 시 정하고 이후 고정. 예: 절정)", "allegiance": "★이 인물의 **현재 소속**이 원래 소속에서 바뀐 턴에만 새 소속 이름(예: '그란텀 제국', '은사자반'). 그 외엔 반드시 생략 — 한 번 기록되면 상태창 인원표가 이 값을 따른다. 1부에서 쌓은 관계로 2부 국가전에서 다른 국가로 영입했거나, 반대로 이탈·전향한 경우가 여기 해당한다" }
     },
     "player": {
       "abilities": ["새로 밝혀지거나 습득한 능력 (예: 중력 제어(초급))"],
@@ -10478,7 +10478,12 @@ function recTokens(inTok, outTok, isTurn, costUsd) {
   try { scheduleAutoBackup(); } catch {}   // 클라우드에도 올려 기기 초기화·이관에 안 없어지게
 }
 
-async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onChunk = null, model = NIM_MODEL) {
+// ★지연 폴백(2026-08-12 유저: "원활할 땐 무조건 3.6flash, 느려질 때만 잠깐 2.5pro"):
+//   3.6 Flash로 먼저 쏘고, 첫 글자가 SLOW_FALLBACK_MS 안에 안 오면 끊고 2.5 Pro로 그 턴만 재시도한다.
+//   폴백은 턴 단위 — 다음 턴은 다시 3.6 Flash로 돌아간다(모델 설정 자체는 안 건드림).
+const SLOW_FALLBACK_MS = 8000;                      // 첫 글자 대기 한도(2.5F=3s·2.5P=6s 기준, 8s면 "느리다" 확정)
+const SLOW_FALLBACK_MODEL = 'google/gemini-2.5-pro';
+async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onChunk = null, model = NIM_MODEL, orModelOverride = null) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120000);   // 폴백 없음: 큐로 느려도 최대 120초 대기
   const oai = [{ role: 'system', content: systemContent }];
@@ -10486,7 +10491,10 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   // ★OpenRouter면 엔드포인트·모델·Bearer 인증 전환(OpenAI 호환이라 나머지는 동일)
   const isOR = PROVIDER === 'openrouter';
   const url = isOR ? OPENROUTER_URL : NIM_URL;
-  const mdl = isOR ? curORModel() : model;
+  const mdl = isOR ? (orModelOverride || curORModel()) : model;
+  // 폴백 대상은 3.6 Flash 원턴만 — 이미 폴백으로 들어온 호출(orModelOverride)은 재폴백하지 않는다
+  const canSlowFallback = isOR && !orModelOverride && /gemini-3\.6-flash/i.test(mdl);
+  let _tFirst = 0, _slowAbort = false, slowTimer = null;
   const headers = { 'Content-Type': 'application/json' };
   if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
   const reqBody = { model: mdl, messages: oai, max_tokens: maxTok, temperature: temp, top_p: 1.0, stream: true };
@@ -10501,13 +10509,27 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     //   ★2026-08-12 재상향(유저 "악역의생존법 출력제한 있냐?" — 나레이션이 문장 중간에서 끊김):
     //   8000으로도 생각이 많은 턴에서 본문이 밀렸다. 상한은 예산일 뿐 실지출은 본문 분량(650~900자
     //   프롬프트 규칙)이 정하므로 비용 증가 없이 절단만 막는다.
-    if (/gemini-3/i.test(mdl)) reqBody.max_tokens = Math.max(maxTok, 16000);
+    //   ★2026-08-12 재정리: 상한을 "gemini-3이면"이 아니라 "추론이 켜져 있으면"으로 바꾼다. 상한이
+    //   필요한 이유는 3.x라서가 아니라 생각 토큰이 max_tokens를 같이 먹기 때문이다. 이 정정으로
+    //   2.5 Pro(추론 켜짐인데 상한을 안 올리던 누락)도 같이 보호되고, 추론을 끈 모델은 불필요한
+    //   16k를 안 잡는다.
+    const _thinkOff = /2\.5-flash|3\.6-flash/i.test(mdl);
+    if (!_thinkOff) reqBody.max_tokens = Math.max(maxTok, 16000);
     reqBody.provider = { only: ['google-vertex'] };   // ★$300 Vertex BYOK 강제 — 공유 유료 엔드포인트 폴백 차단(is_byok=true 보장)
-    reqBody.reasoning = /2\.5-flash/i.test(mdl) ? { enabled: false } : { effort: 'minimal' };   // 2.5F=thinking off(3s) / pro·3.1·3.5=최소추론(속도↑·한글깨짐/외계어 방지)
+    // ★2026-08-12 유저 지적: 이 정규식이 2.5-flash만 잡아서 3.6 Flash가 else(최소추론)로 새고 있었다.
+    //   3.6은 목록(pro·3.1·3.5)이 작성된 뒤에 추가된 모델이라, 아무도 정하지 않은 채 "추론 켜짐"을
+    //   그대로 물려받은 것 — 악역의 생존법이 유독 느리던 1순위 원인. 한글깨짐/외계어는 Gemini가
+    //   아니라 타 LLM(nemotron·qwen 등)에서 나던 증상이므로 Gemini 3.6은 완전히 끈다.
+    reqBody.reasoning = _thinkOff ? { enabled: false } : { effort: 'minimal' };   // 2.5F·3.6F=thinking off / pro·3.1·3.5=최소추론
     reqBody.stream_options = { include_usage: true };   // 마지막 청크에 usage(토큰 사용량) 포함 — 토큰 추적용
     reqBody.usage = { include: true };                  // OpenRouter 네이티브: cost·cost_details(실청구액)까지 포함
   }
   try {
+    const _t0 = Date.now();   // ★턴 계측(2026-08-11 유저: "아카데미 로딩 왜 유독 느리냐")
+    // 첫 글자가 안 오면 느린 것 — 끊고 2.5 Pro로 넘긴다(아래 catch에서 재시도)
+    if (canSlowFallback) slowTimer = setTimeout(() => {
+      if (!_tFirst) { _slowAbort = true; controller.abort(); }
+    }, SLOW_FALLBACK_MS);
     const res = await fetch(url, {
       method: 'POST',
       headers,
@@ -10522,7 +10544,6 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = '', full = '', usage = null, finishReason = null, chunkErr = null;
-    const _t0 = Date.now(); let _tFirst = 0;   // ★턴 계측(2026-08-11 유저: "아카데미 로딩 왜 유독 느리냐")
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -10558,11 +10579,18 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     if (!full.trim() && chunkErr) return { error: { message: chunkErr } };
     if (!full.trim() && /content_filter|safety|prohibited|recitation/i.test(finishReason || ''))
       return { blocked: true, finishReason };
-    return { text: full, finishReason, usage, timing: { ttfb: _tFirst ? _tFirst - _t0 : 0, total: Date.now() - _t0 } };
+    return { text: full, finishReason, usage, modelUsed: mdl, timing: { ttfb: _tFirst ? _tFirst - _t0 : 0, total: Date.now() - _t0 } };
   } catch (e) {
+    // ★지연 폴백: 첫 글자가 안 와서 우리가 끊은 경우에만 2.5 Pro로 그 턴을 다시 태운다.
+    //   진짜 타임아웃(120s)·네트워크 오류는 종전대로 에러를 돌려준다.
+    if (_slowAbort) {
+      try { showStatToast(`⏳ 3.6 Flash 응답이 ${SLOW_FALLBACK_MS / 1000}초를 넘겨 2.5 Pro로 이번 턴만 전환합니다`, true); } catch {}
+      return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, SLOW_FALLBACK_MODEL);
+    }
     return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message } };
   } finally {
     clearTimeout(timeout);
+    if (slowTimer) clearTimeout(slowTimer);
   }
 }
 
@@ -10819,7 +10847,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
           ttfb: Math.round(result.timing.ttfb / 100) / 10,
           total: Math.round(result.timing.total / 100) / 10,
           fin: result.finishReason || null,   // ★'length'면 출력 상한에 걸려 잘린 턴(2026-08-12)
-          model: (PROVIDER === 'openrouter') ? curORModel().replace('google/', '') : PROVIDER,
+          // ★실제로 응답한 모델을 적는다 — 지연 폴백이 걸린 턴은 2.5 Pro로 찍혀야 원인이 보인다
+          model: result.modelUsed ? result.modelUsed.replace('google/', '')
+               : ((PROVIDER === 'openrouter') ? curORModel().replace('google/', '') : PROVIDER),
           keep: (typeof recentWindowCount === 'function') ? recentWindowCount() : null
         };
       }
@@ -11139,7 +11169,11 @@ function processResponse(data, activeCharIds, streamed) {
           condition: u.condition ?? cur.condition,
           note: u.note ?? cur.note,
           location: u.location ?? cur.location,
-          tier: u.tier ?? cur.tier
+          tier: u.tier ?? cur.tier,
+          // ★현재 소속(2026-08-12): 영입·이탈·전향으로 원소속을 떠난 인물을 기록. 상태창 인원표가
+          //   이 값을 우선 쓰고, 없으면 CHARACTERS[id].camp(원래 소속)로 떨어진다. 한 번 정해지면
+          //   AI가 다시 보내지 않아도 유지된다(?? cur — 매 턴 재전송 요구 없이 영구 반영).
+          allegiance: u.allegiance ?? cur.allegiance
         };
         // ★호감도 델타 토스트 — **클램프된 실제 반영값**으로 띄운다(안 그러면 화면과 수치가 어긋난다)
         if (!replaying && typeof _int === 'number' && typeof cur.intimacy === 'number' && _int !== cur.intimacy) {
@@ -13950,6 +13984,85 @@ function saveProfile() {
 
 function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
 
+// ★반/국가 인원표(2026-08-12 유저: "상태창에 각 반별 인원이 안 나온다. 국가전 가면 국가마다도"):
+//   1부는 반(흑룡반·은사자반·금매반), 2부 국가전은 국가로 묶인다 — 코드는 하나다. 묶는 기준이
+//   "고정된 반"이 아니라 **현재 소속**이기 때문:
+//     현재 소속 = metChars[id].allegiance(영입·이탈로 바뀐 값) || CHARACTERS[id].camp(원래 소속)
+//   그래서 1부에서 친해진 인물이 2부에 다른 국가로 영입되면 AI가 allegiance만 갱신해도 표가 따라온다.
+//   영입으로 원소속을 떠난 인물은 이름과 함께 따로 표시해 "누가 넘어왔는지"가 보이게 한다.
+// camp 문자열은 두 축을 한 줄에 담고 있다("은사자반 · 아를렌 왕국", "그란텀 제국 (교수)").
+// 반(1부 단위)과 국가(2부 단위)를 각각 뽑아 쓰는 축을 상황에 따라 고른다.
+// camp 문자열이 국가를 늘 정식 명칭으로 쓰지는 않는다("왕국 출신", "교단 장학생") — 우선순위를
+// 둔 패턴으로 정규화한다. 위에서부터 먼저 걸리는 쪽이 그 인물의 국가다.
+const ROSTER_NATION_PATTERNS = [
+  [/그란텀|제국/, '그란텀 제국'],
+  [/아를렌|왕국/, '아를렌 왕국'],
+  [/리베라|연합/, '리베라 연합'],
+  [/성좌|교단/, '성좌 교단'],
+  [/여명회/, '여명회'],
+  [/완충령|무국적|무소속/, '완충령·무소속']
+];
+function campName(c) { return String(c || '').split(/[·(]/)[0].trim() || '기타'; }
+function campAxes(raw) {
+  const s = String(raw || '');
+  const hit = ROSTER_NATION_PATTERNS.find(([re]) => re.test(s));
+  return {
+    cls: (s.match(/[가-힣A-Za-z]+반/) || [])[0] || null,           // 흑룡반·은사자반·금매반
+    nation: hit ? hit[1] : null
+  };
+}
+function rosterBlock() {
+  if (typeof CHARACTERS === 'undefined' || !CHARACTERS) return '';
+  const met = gameState.metChars || {};
+  const ids = Object.keys(CHARACTERS).filter(id => CHARACTERS[id] && CHARACTERS[id].camp);
+  if (!ids.length) return '';   // camp 없는 스토리(낙인의 검 등)는 표 자체를 안 띄운다
+  const curCamp = id => (met[id] && met[id].allegiance) || CHARACTERS[id].camp;
+  // ★2부(국가전) 판정: 주인공이 진영을 골랐거나, 반이 아니라 국가로 소속이 옮겨진 인물이 생겼으면.
+  //   그 순간부터 표의 축이 반 → 국가로 통째로 바뀐다.
+  const warMode = !!gameState.faction || ids.some(id => {
+    const a = met[id] && met[id].allegiance; if (!a) return false;
+    const ax = campAxes(a); return !!ax.nation && !ax.cls;
+  });
+  // 2부에서 현재 소속에 국가가 안 잡히면(AI가 반 이름만 준 경우 등) 원래 소속의 국가로 떨어뜨린다 —
+  // "은사자반" 같은 1부 단위가 국가별 표에 그대로 남는 걸 막는다.
+  const keyOf = id => {
+    const cur = campAxes(curCamp(id));
+    if (warMode) return cur.nation || campAxes(CHARACTERS[id].camp).nation || '소속 미정';
+    return cur.cls || cur.nation || '무소속';
+  };
+  const groups = {};
+  ids.forEach(id => { const k = keyOf(id); (groups[k] = groups[k] || []).push(id); });
+  const keys = Object.keys(groups).sort((a, b) => {
+    // 반이 먼저(1부 단위), 그 다음 국가·기타 — 2부에선 반 그룹이 없으므로 국가 순서만 남는다
+    const rank = c => /흑룡반/.test(c) ? 0 : /은사자반/.test(c) ? 1 : /금매반/.test(c) ? 2
+                  : /그란텀 제국/.test(c) ? 3 : /아를렌 왕국/.test(c) ? 4 : /리베라 연합/.test(c) ? 5
+                  : /완충령/.test(c) ? 6 : /성좌 교단/.test(c) ? 7 : /여명회/.test(c) ? 8 : 9;
+    return rank(a) - rank(b) || a.localeCompare(b);
+  });
+  const myRaw = (gameState.faction) || (gameState.flags && (gameState.flags['반'] || gameState.flags['소속반'])) || null;
+  const myAx = campAxes(myRaw);
+  const myKey = (warMode ? (myAx.nation || myAx.cls) : (myAx.cls || myAx.nation)) || null;
+  let h = `<div class="sit-block"><div class="sit-label">${warMode ? '국가별 인원' : '반별 인원'}</div>`;
+  keys.forEach(k => {
+    const list = groups[k];
+    const metN = list.filter(id => met[id]).length;
+    const dead = list.filter(id => met[id] && met[id].condition && String(met[id].condition).includes('사망')).length;
+    // 영입·전향: 원래 소속을 같은 축으로 환산했을 때 지금 그룹과 다른 인물
+    const moved = list.filter(id => {
+      if (!(met[id] && met[id].allegiance)) return false;
+      const ax = campAxes(CHARACTERS[id].camp);
+      return ((warMode ? (ax.nation || '소속 미정') : (ax.cls || ax.nation || '무소속'))) !== k;
+    });
+    const mine = myKey && k === myKey;
+    h += `<div class="sit-val" style="margin:5px 0${mine ? ';color:var(--gold)' : ''}">` +
+         `⚑ ${esc(k)}${mine ? ' <span style="font-size:0.8em">(내 소속)</span>' : ''} <b style="color:var(--gold)">${list.length}명</b>` +
+         `<span style="opacity:0.6;font-size:0.88em"> · 면식 ${metN}</span>` +
+         (dead ? `<span style="color:#ff7676;font-size:0.88em"> · 사망 ${dead}</span>` : '') +
+         (moved.length ? `<span style="color:#7ec9a0;font-size:0.88em"> · 영입 ${moved.length}(${moved.map(id => esc((met[id] && met[id].name) || CHARACTERS[id].name || id)).join(', ')})</span>` : '') +
+         `</div>`;
+  });
+  return h + `</div>`;
+}
 function renderStatusPanel() {
   const body = document.getElementById('statusBody');
   if (statusTab === 'profile') {
@@ -13974,6 +14087,7 @@ function renderStatusPanel() {
     h += `<div class="sit-block"><div class="sit-label">기본 정보</div><div class="sit-val">${esc(gameState.name)}${p.tier ? ` · <b style="color:var(--gold)">${esc(p.tier)}</b>` : ''} · ${esc(gameState.status)}${gameState.faction ? ` · <b style="color:var(--gold)">⚑ ${esc(gameState.faction)}</b>` : ''}${isIdol ? '' : ` · 평판 ${gameState.rep}`} · ${moneyHtml}</div></div>`;
     h += `<div class="sit-block"><div class="sit-label">시간 · 장소</div><div class="sit-val">${esc(gameState.time || '-')} · ${esc(gameState.location)}</div></div>`;
     if (gameState.event) h += `<div class="sit-block"><div class="sit-label">현재 이벤트</div><div class="sit-val" style="color:var(--gold)">${esc(gameState.event)}</div></div>`;
+    h += rosterBlock();
     if (gameState._turnStats) { const t = gameState._turnStats;
       h += `<div class="sit-block"><div class="sit-label">최근 턴 처리</div><div class="sit-val" style="font-size:0.85em;opacity:0.85">${t.model || ''} · 첫 글자 ${t.ttfb}s · 총 ${t.total}s${t.in != null ? ` · 입력 ${(t.in/1000).toFixed(1)}k` : ''}${t.think != null ? ` · <b>생각 ${(t.think/1000).toFixed(1)}k</b>` : ''}${t.out != null ? ` · 출력 ${(t.out/1000).toFixed(1)}k` : ''}${t.keep != null ? ` · 원문 ${t.keep}턴` : ''}${t.fin ? ` · 종료 <b style="color:${/length|max_tokens/i.test(t.fin) ? '#ff7676' : 'inherit'}">${esc(t.fin)}</b>` : ''}</div></div>`;
     }
