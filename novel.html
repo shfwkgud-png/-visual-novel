@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v284</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v285</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4539,10 +4539,11 @@ function buildStatePrompt() {
   }
   s += `주인공: ${gameState.name} | 신분 ${gameState.status}${gameState.faction ? ' | ⚑진영 ' + gameState.faction : ''} | 평판 ${gameState.rep} | 골드 ${gameState.gold} | 위치 ${gameState.location} | ${gameState.time || ''}${gameState.player && gameState.player.tier ? ' | 경지 ' + gameState.player.tier : ''}\n`;
   if (gameState.faction) s += `★주인공의 진영 = ${gameState.faction} (확정 — 임의로 되돌리지 마라). 같은 진영 인물은 아군의 결, 타 진영은 견제·긴장, 적대 진영의 리더와는 대립 서사로 다뤄라. 진영 변경은 유저의 명시적 선택으로만.\n`;
-  // ★메타 봉인 상시 주입(2026-08-13 유저: "소설이라는 걸 아무도 모르는 거 아니었음?" — 데릭이 '원작 소설의
-  //   각본'을 입에 담음): 규칙이 LORE에 있어도 진행 세이브의 과거 기록에 옛 설정(모르가나·여명회 메타인지)으로
-  //   쓰인 대사가 쌓여 있으면 AI가 규칙보다 제 문체를 모방한다. 매턴 동적 주입이 히스토리 모방을 이긴다.
-  if (STORY && STORY.id === 'academy') {
+  // ★메타 봉인 교정 주입(2026-08-13): 규칙은 LORE에 있지만, v283 이전 세이브의 과거 기록엔 옛 설정
+  //   (모르가나·여명회 메타인지)으로 쓰인 대사가 쌓여 있어 AI가 규칙보다 제 문체를 모방한다.
+  //   ★구세대 세이브(era 스탬프 없음)에만 붙는 교정약 — 새 게임(era>=284)은 LORE만으로 충분해 주입 0
+  //   (유저 "프롬프트 너무 복잡해지지 않냐" 반영: 상시 비용화하지 않고 필요한 세이브에만).
+  if (STORY && STORY.id === 'academy' && !(gameState.era >= 284)) {
     s += `★메타 봉인: NPC는 '소설·원작·각본·작가·빙의·회귀'라는 개념을 모른다 — 대사에 절대 올리지 마라(그들이 아는 최대치는 '예언'). 과거 대화에 그런 NPC 대사가 있었다면 그건 예언 지식을 과시한 허세였던 것으로 재해석하고 다시는 반복하지 마라. 이 개념들은 주인공의 속마음·나레이션에서만 허용.\n`;
   }
   if (gameState.player) {
@@ -10142,6 +10143,7 @@ function startGame(isContinue) {
       flags: (STORY.truthVariants ? { 진상변형: 'ABCDE'[Math.floor(Math.random() * STORY.truthVariants)] } : {}),
       metChars: {},
       chronicle: [], director: null,
+      era: 284,   // ★세이브 세대 표기(2026-08-13): 구세대 세이브 전용 교정 주입을 새 게임에서 안 붙이기 위한 스탬프
       player: { abilities: [], injuries: (ini.injuries || []).slice(), note: '' }
     };
     if (STORY.id === 'idol') gameState.idol = IDOL_SIM.init();
