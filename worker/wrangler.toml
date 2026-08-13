@@ -14,4 +14,7 @@ binding = "R2_IMG"
 bucket_name = "pandora-img"
 
 [vars]
+# Web Push VAPID (응답 완료 알림, 2026-08-14 — 개인 프로젝트라 vars 보관)
+VAPID_PUBLIC = "BAwiI9sB57SF8E5gvYXTwVI811dqSP8AuafMxviofDaUw9SUYwmvdT2AyvFa6C6l21x0UXLl90pl2VOfGM3iVj0"
+VAPID_PRIVATE_JWK = '{"kty":"EC","x":"DCIj2wHntIXwTmC9hdPBUjzXV2pI_wC5p8zG-Kh8NpQ","y":"w9SUYwmvdT2AyvFa6C6l21x0UXLl90pl2VOfGM3iVj0","crv":"P-256","d":"zZTQwieETypcBJnPTlIYU0zLe-Js1w7ktC_u3NfRN04"}'
 GOOGLE_CLIENT_ID = "888890730020-j136s19u4euq7sp0et4vb418b0mqar80.apps.googleusercontent.com"

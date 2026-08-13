@@ -12,7 +12,7 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,X-OR-Key,Range',
+  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,X-OR-Key,X-Push-Sub,Range',
   'Access-Control-Expose-Headers': 'Content-Range,Accept-Ranges,Content-Length',
 };
 
@@ -50,6 +50,29 @@ async function verifyToken(token, env) {
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+}
+
+// ===== WEB PUSH (응답 완료 알림, 2026-08-14) =====
+// payload 없는 푸시라 암호화 불필요 — VAPID JWT(ES256)만 서명해 푸시 서비스에 POST.
+// SW 쪽 push 핸들러가 일반 문구 알림을 띄운다(앱이 보이면 침묵).
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function sendPush(subJson, env) {
+  try {
+    const sub = JSON.parse(subJson);
+    const ep = new URL(sub.endpoint);
+    const jwk = JSON.parse(env.VAPID_PRIVATE_JWK);
+    const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+    const now = Math.floor(Date.now() / 1000);
+    const h = b64u(te.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+    const c = b64u(te.encode(JSON.stringify({ aud: ep.origin, exp: now + 43200, sub: 'mailto:shfwkgud@gmail.com' })));
+    const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, te.encode(h + '.' + c));
+    const jwt = h + '.' + c + '.' + b64u(sig);
+    const r = await fetch(sub.endpoint, {
+      method: 'POST',
+      headers: { 'Authorization': `vapid t=${jwt}, k=${env.VAPID_PUBLIC}`, 'TTL': '120', 'Content-Length': '0' },
+    });
+    return r.status;   // 201=수락
+  } catch (e) { return 'err:' + String(e).slice(0, 80); }
 }
 
 // Resolve the caller's storage namespace: account token first, legacy passphrase second.
@@ -103,10 +126,15 @@ export default {
           return new Response(t, { status: up.status, headers: { ...CORS, 'Content-Type': 'application/json' } });
         }
         const [toClient, toPark] = up.body.tee();
+        // ★푸시 구독(선택): 클라이언트가 X-Push-Sub(b64 JSON)를 실어 보내면 완주 시점에 알림 발송
+        //   (유저 "답변 완성되면 진동 정도는 줘야" — 2026-08-14). 무상태: 구독을 저장하지 않는다.
+        let pushSub = null;
+        try { const ps = req.headers.get('X-Push-Sub'); if (ps) pushSub = decodeURIComponent(escape(atob(ps))); } catch {}
         ctx.waitUntil((async () => {
           try {
             const txt = await new Response(toPark).text();   // 클라이언트가 끊겨도 여긴 완주된다
             await env.PANDORA_KV.put('gen:' + gid, txt, { expirationTtl: 900 });
+            if (pushSub) await sendPush(pushSub, env);       // 완주 알림(SW가 가시성 보고 침묵/배너 결정)
           } catch {}
         })());
         return new Response(toClient, { status: 200, headers: { ...CORS, 'Content-Type': 'text/event-stream' } });

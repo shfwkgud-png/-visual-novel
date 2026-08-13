@@ -1974,6 +1974,8 @@
       <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B (폴백용)</option>
     </select>
 
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.85em;opacity:0.85;margin-top:10px"><input type="checkbox" id="notifDoneChk" onchange="toggleDoneNotif(this.checked)"> 📳 응답 완료 알림 — 백그라운드에서 답변이 완성되면 폰 알림(진동)</label>
+    <div style="font-size:0.72em;opacity:0.55;margin:2px 0 0 24px">홈 화면에 추가한 앱에서만 동작 · 앱을 보고 있을 땐 울리지 않음</div>
     <button class="start-btn" onclick="saveSettings()">저장</button>
     <button id="settingsCloseBtn" onclick="closeSettings()">닫기</button>
   </div>
@@ -2051,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v290</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v291</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -8767,10 +8769,48 @@ function quickContinue(id) {
 // ===== AI SETTINGS MODAL =====
 function openSettings() {
   document.getElementById('apiScreen').style.display = 'flex';
+  try { document.getElementById('notifDoneChk').checked = localStorage.getItem('vn_notif_done') === '1'; } catch {}
 }
 function closeSettings() {
   document.getElementById('apiScreen').style.display = 'none';
 }
+
+// ===== 응답 완료 푸시 알림 (2026-08-14 유저 "답변 완성되면 진동 정도는") =====
+// iOS는 웹 진동 API가 없고 백그라운드 탭은 얼어붙는다 → 릴레이 워커가 생성 완주 시 Web Push를 쏘고
+// sw.js가 배너(진동 동반)를 띄운다. 앱이 보이는 중엔 SW가 침묵하고 페이지에 신호만 보낸다.
+const VAPID_PUBLIC = 'BAwiI9sB57SF8E5gvYXTwVI811dqSP8AuafMxviofDaUw9SUYwmvdT2AyvFa6C6l21x0UXLl90pl2VOfGM3iVj0';
+function pushSubB64() { try { const s = localStorage.getItem('vn_push_sub'); return (s && localStorage.getItem('vn_notif_done') === '1') ? btoa(unescape(encodeURIComponent(s))) : ''; } catch { return ''; } }
+async function toggleDoneNotif(on) {
+  try {
+    if (!on) { localStorage.setItem('vn_notif_done', '0'); showStatToast('응답 완료 알림 끔', false); return; }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      showStatToast('⚠ 이 브라우저는 푸시를 지원하지 않습니다 (홈 화면에 추가한 앱에서 켜보세요)', true);
+      document.getElementById('notifDoneChk').checked = false; return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { showStatToast('⚠ 알림 권한이 거부됨 — 설정에서 허용 필요', true); document.getElementById('notifDoneChk').checked = false; return; }
+    const reg = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    const raw = Uint8Array.from(atob(VAPID_PUBLIC.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: raw });
+    localStorage.setItem('vn_push_sub', JSON.stringify(sub.toJSON()));
+    localStorage.setItem('vn_notif_done', '1');
+    showStatToast('📳 응답 완료 알림 켜짐 — 백그라운드에서 완성되면 알려드립니다', false);
+  } catch (e) {
+    showStatToast('⚠ 알림 설정 실패: ' + String(e).slice(0, 60), true);
+    try { document.getElementById('notifDoneChk').checked = false; } catch {}
+  }
+}
+// 부팅 시: SW 등록(픽업·알림 공용) + 포그라운드 완료 신호(안드로이드 진동 시도 — iOS는 무시됨)
+try {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.addEventListener('message', ev => {
+      if (ev.data && ev.data.type === 'gen-done') { try { navigator.vibrate && navigator.vibrate(40); } catch {} }
+    });
+  }
+} catch {}
 function saveSettings() {
   if (PROVIDER === 'gemini') API_KEY = document.getElementById('apiKeyInput').value.trim();
   else if (PROVIDER === 'openrouter') {
@@ -10866,7 +10906,10 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   const canErrFallback = isOR && !orModelOverride && /gemini-3\.6-flash/i.test(mdl);
   let _tFirst = 0, _slowAbort = false, slowTimer = null;
   const headers = { 'Content-Type': 'application/json' };
-  if (useRelay) { if (OPENROUTER_KEY) headers['X-OR-Key'] = OPENROUTER_KEY; }   // 워커가 Authorization을 대신 단다
+  if (useRelay) {
+    if (OPENROUTER_KEY) headers['X-OR-Key'] = OPENROUTER_KEY;   // 워커가 Authorization을 대신 단다
+    const _psb = pushSubB64(); if (_psb) headers['X-Push-Sub'] = _psb;   // 완주 시 워커가 푸시 발송(알림 토글 켠 경우)
+  }
   else if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
   const reqBody = { model: mdl, messages: oai, max_tokens: maxTok, temperature: temp, top_p: 1.0, stream: true };
   // ★Gemini 3.x: temperature/top_p/top_k 폐지(2026-08-06 유저 제보 — 모델이 자체 조절).
