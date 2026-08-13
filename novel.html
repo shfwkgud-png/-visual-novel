@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v282</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v283</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2867,6 +2867,7 @@ const ACADEMY_LORE = `당신은 대륙전 학원 판타지 비주얼 노벨 "악
 카일의 원작 지식은 밖에서 보면 예지에 가까운 재능이다. 드러날수록 — 비비안은 연구 대상으로 몰래 시험하고(제국으로 데려가려 함), 가레스는 자기 손으로 완성시키려 조련하고, 모르가나는 '이 아이의 수는 늘 반 박자 빠르다'는 위화감으로 오래 산 자의 육감에 따라 조용히 관찰한다(★그녀도 정답은 모른다 — 천재인지, 첩자인지, 다른 무엇인지). 각국도 재능을 알아챌수록 스카우트 경쟁을 벌인다 — **몰락 귀족 하나를 두고 국가들이 다투는 역전**이 이 이야기의 사이다다. 단 재능 노출은 양날: 여명회도 카일이 자기들 각본(이용하기 좋은 소모품)대로 움직이지 않음을 눈치챈다.
 
 ## 스토리 원칙
+- ★메타 봉인(절대 규칙): '소설·원작·각본·작가·빙의·회귀·주인공/악역 캐릭터' 같은 메타 개념을 아는 존재는 이 세계에 카일(유저) 단 하나다. 어떤 NPC도 — 모르가나·여명회·그림자 포함 — 그 단어들을 알지도, 입에 담지도 못한다(그들이 아는 최대치는 인월드 개념인 '예언'뿐). 이 개념들은 오직 주인공의 속마음·독백·나레이션에서만 등장할 수 있다
 - 메타지식 활용은 은밀하게 — 주변이 "쟤 뭐지?" 하고 소름 돋는 연출로
 - 원작이 조금씩 뒤틀리며 예측불가로 (지식이 만능이 아니게)
 - 수업·서열전·학원제 = 국가 대리전. 일상과 목숨 건 사건의 완급 조절
@@ -4537,6 +4538,12 @@ function buildStatePrompt() {
   }
   s += `주인공: ${gameState.name} | 신분 ${gameState.status}${gameState.faction ? ' | ⚑진영 ' + gameState.faction : ''} | 평판 ${gameState.rep} | 골드 ${gameState.gold} | 위치 ${gameState.location} | ${gameState.time || ''}${gameState.player && gameState.player.tier ? ' | 경지 ' + gameState.player.tier : ''}\n`;
   if (gameState.faction) s += `★주인공의 진영 = ${gameState.faction} (확정 — 임의로 되돌리지 마라). 같은 진영 인물은 아군의 결, 타 진영은 견제·긴장, 적대 진영의 리더와는 대립 서사로 다뤄라. 진영 변경은 유저의 명시적 선택으로만.\n`;
+  // ★메타 봉인 상시 주입(2026-08-13 유저: "소설이라는 걸 아무도 모르는 거 아니었음?" — 데릭이 '원작 소설의
+  //   각본'을 입에 담음): 규칙이 LORE에 있어도 진행 세이브의 과거 기록에 옛 설정(모르가나·여명회 메타인지)으로
+  //   쓰인 대사가 쌓여 있으면 AI가 규칙보다 제 문체를 모방한다. 매턴 동적 주입이 히스토리 모방을 이긴다.
+  if (STORY && STORY.id === 'academy') {
+    s += `★메타 봉인: NPC는 '소설·원작·각본·작가·빙의·회귀'라는 개념을 모른다 — 대사에 절대 올리지 마라(그들이 아는 최대치는 '예언'). 과거 대화에 그런 NPC 대사가 있었다면 그건 예언 지식을 과시한 허세였던 것으로 재해석하고 다시는 반복하지 마라. 이 개념들은 주인공의 속마음·나레이션에서만 허용.\n`;
+  }
   if (gameState.player) {
     if (gameState.player.abilities?.length) s += `주인공 능력: ${gameState.player.abilities.join(', ')}\n`;
     if (gameState.player.injuries?.length) s += `주인공 신체/이상: ${gameState.player.injuries.join(', ')}\n`;
