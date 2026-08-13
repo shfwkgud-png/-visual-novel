@@ -2051,7 +2051,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v280</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v281</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10788,15 +10788,51 @@ function recTokens(inTok, outTok, isTurn, costUsd) {
 //   폴백은 턴 단위 — 다음 턴은 다시 3.6 Flash로 돌아간다(모델 설정 자체는 안 건드림).
 const SLOW_FALLBACK_MS = 8000;                      // 첫 글자 대기 한도(2.5F=3s·2.5P=6s 기준, 8s면 "느리다" 확정)
 const SLOW_FALLBACK_MODEL = 'google/gemini-2.5-pro';
+// ★보관본 SSE 전문 파서(2026-08-13 백그라운드 릴레이): 워커가 KV에 보관한 스트림 전문을
+//   본문·usage·finish로 복원한다(fetchNim의 스트림 루프와 동일한 규칙).
+function parseSseTranscript(sse) {
+  let full = '', usage = null, finishReason = null, mdl = '';
+  for (const line of String(sse).split('\n')) {
+    const t = line.trim();
+    if (!t.startsWith('data:')) continue;
+    const payload = t.slice(5).trim();
+    if (payload === '[DONE]') continue;
+    try {
+      const j = JSON.parse(payload);
+      if (j.usage) usage = j.usage;
+      if (j.model) mdl = j.model;
+      const fr = j.choices?.[0]?.finish_reason; if (fr) finishReason = fr;
+      const dc = j.choices?.[0]?.delta?.content; if (dc) full += dc;
+    } catch {}
+  }
+  return { text: full, finishReason, usage, modelUsed: mdl || 'relay', timing: { ttfb: 0, total: 0 } };
+}
+
 async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onChunk = null, model = NIM_MODEL, orModelOverride = null, _errRetry = 0) {
+  // ★백그라운드 보관본 지름길: 복귀 픽업이 워커 보관본을 찾아두면(regenerate 경유) 네트워크 없이
+  //   그 결과를 그대로 반환 — 재생성·재과금 없이 기존 파이프라인(파싱·렌더)을 태운다.
+  if (window._parkedResult && typeof onChunk === 'function') {
+    const p = window._parkedResult; window._parkedResult = null;
+    try { onChunk(p.text); } catch {}
+    try { if (p.usage) recTokens(p.usage.prompt_tokens, p.usage.completion_tokens, false,
+      (p.usage.cost_details && p.usage.cost_details.upstream_inference_cost) || p.usage.cost || 0); } catch {}
+    return p;
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120000);   // 폴백 없음: 큐로 느려도 최대 120초 대기
   const oai = [{ role: 'system', content: systemContent }];
   messages.forEach(m => oai.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }));
   // ★OpenRouter면 엔드포인트·모델·Bearer 인증 전환(OpenAI 호환이라 나머지는 동일)
   const isOR = PROVIDER === 'openrouter';
-  const url = isOR ? OPENROUTER_URL : NIM_URL;
   const mdl = isOR ? (orModelOverride || curORModel()) : model;
+  // ★백그라운드 릴레이(2026-08-13 유저 "백그라운드 두고 나가면 생성 에러"): 본편 호출(onChunk 有)의
+  //   1차 시도는 워커 /gen 경유 — 워커가 스트림을 중계하며 서버 쪽에서 끝까지 읽어 KV에 보관하므로
+  //   iOS가 탭을 얼려도 생성은 완주된다. 재시도·Pro 폴백은 직행(워커 장애가 앱을 못 잠그게).
+  const useRelay = isOR && typeof onChunk === 'function' && !orModelOverride && _errRetry === 0
+                && typeof SYNC_URL !== 'undefined' && typeof crypto !== 'undefined' && !!crypto.randomUUID;
+  const _genId = useRelay ? crypto.randomUUID() : null;
+  if (useRelay) window._pendingGen = { id: _genId, t: Date.now() };
+  const url = useRelay ? (SYNC_URL + '/gen?id=' + _genId) : (isOR ? OPENROUTER_URL : NIM_URL);
   // ★지연 폴백 폐지(2026-08-13 실측 확정 — 유저 계측: 폴백된 2.5 Pro가 첫 글자 72.5s·캐시 0):
   //   "느려지면 2.5 Pro가 구해준다"는 전제가 실측으로 깨졌다. 큰 입력에서 2.5 Pro는 Flash보다
   //   수 배 느리고, 모델을 바꾸는 순간 암시적 캐시도 무효가 돼 다음 턴까지 느려진다.
@@ -10805,7 +10841,8 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
   const canErrFallback = isOR && !orModelOverride && /gemini-3\.6-flash/i.test(mdl);
   let _tFirst = 0, _slowAbort = false, slowTimer = null;
   const headers = { 'Content-Type': 'application/json' };
-  if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
+  if (useRelay) { if (OPENROUTER_KEY) headers['X-OR-Key'] = OPENROUTER_KEY; }   // 워커가 Authorization을 대신 단다
+  else if (isOR) { if (OPENROUTER_KEY) headers['Authorization'] = 'Bearer ' + OPENROUTER_KEY; try { headers['HTTP-Referer'] = location.origin; } catch {} headers['X-Title'] = 'PANDORA'; }
   const reqBody = { model: mdl, messages: oai, max_tokens: maxTok, temperature: temp, top_p: 1.0, stream: true };
   // ★Gemini 3.x: temperature/top_p/top_k 폐지(2026-08-06 유저 제보 — 모델이 자체 조절).
   //   지금은 무시되지만 향후 400 위험 + 보낼 이유가 없다. 3.x에만 뺀다(2.5·타 모델은 유지).
@@ -10910,6 +10947,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     }
     if (!full.trim() && /content_filter|safety|prohibited|recitation/i.test(finishReason || ''))
       return { blocked: true, finishReason };
+    if (_genId && window._pendingGen && window._pendingGen.id === _genId) window._pendingGen = null;   // 완주 — 보관본 픽업 불필요
     return { text: full, finishReason, usage, modelUsed: mdl, timing: { ttfb: _tFirst ? _tFirst - _t0 : 0, total: Date.now() - _t0 } };
   } catch (e) {
     // ★네트워크 폴백: 첫 글자가 나오기 전에 연결이 죽었다면(120s 하드 타임아웃 포함) 출력이
@@ -10997,11 +11035,34 @@ document.addEventListener('visibilitychange', () => {
       if (typeof sendBtn !== 'undefined' && sendBtn && sendBtn.disabled) window._bgDuringGen = true;
     } else if (window._bgDuringGen) {
       window._bgDuringGen = false;
-      setTimeout(() => {   // 대기 중이던 fetch가 성공/실패로 정착할 시간을 준 뒤 판단
-        if (window._genFailed && typeof sendBtn !== 'undefined' && sendBtn && !sendBtn.disabled) {
-          window._genFailed = false;
-          try { regenerate(); } catch {}
+      setTimeout(async () => {   // 대기 중이던 fetch가 성공/실패로 정착할 시간을 준 뒤 판단
+        if (!(window._genFailed && typeof sendBtn !== 'undefined' && sendBtn && !sendBtn.disabled)) return;
+        window._genFailed = false;
+        // ★워커 보관본 픽업(2026-08-13): 끊긴 그 생성이 서버(워커 waitUntil)에서 완주돼 KV에
+        //   보관돼 있으면 재생성 없이 그대로 주워온다. 아직 생성 중이면 3초 간격으로 기다린다.
+        const p = window._pendingGen;
+        if (p && p.id) {
+          try { showThinking(); sendBtn.disabled = true; } catch {}
+          for (let i = 0; i < 30; i++) {   // 최대 ~90초(서버에서 아직 굽는 중일 수 있다)
+            try {
+              const r = await fetch(SYNC_URL + '/gen?id=' + p.id);
+              if (r.ok) {
+                const parsed = parseSseTranscript(await r.text());
+                if (parsed.text && parsed.text.trim()) {
+                  window._pendingGen = null;
+                  window._parkedResult = parsed;   // fetchNim이 이걸 집어 파이프라인을 그대로 태운다
+                  try { showStatToast('📦 백그라운드에서 완성된 응답을 이어받았습니다', false); } catch {}
+                  try { regenerate(); } catch {}
+                  return;
+                }
+                break;   // 보관본이 비어 있음(업스트림 에러 전문) → 재생성
+              }
+            } catch {}
+            await new Promise(rs => setTimeout(rs, 3000));
+          }
+          window._pendingGen = null;
         }
+        try { regenerate(); } catch {}
       }, 700);
     }
   } catch {}

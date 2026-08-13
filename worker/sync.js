@@ -11,8 +11,8 @@
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,Range',
+  'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,X-OR-Key,Range',
   'Access-Control-Expose-Headers': 'Content-Range,Accept-Ranges,Content-Length',
 };
 
@@ -73,10 +73,51 @@ async function tokenHash(token) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
     const url = new URL(req.url);
+
+    // ---- GENERATION RELAY (2026-08-13, 유저 "백그라운드 두고 나가면 생성 에러") ----
+    // iOS는 앱 이탈 시 탭을 얼려 브라우저→OpenRouter 직행 스트림이 끊긴다. 워커가 중계하면서
+    // 업스트림을 tee — 한쪽은 클라이언트로 그대로 흘리고, 한쪽은 waitUntil로 클라이언트가 죽어도
+    // 끝까지 읽어 KV에 보관(15분). 복귀한 클라이언트가 GET으로 보관본을 주워 재생성 없이 이어간다.
+    //   POST /gen?id=<uuid>  body=OpenRouter 요청 그대로, X-OR-Key=사용자 키 → SSE 중계
+    //   GET  /gen?id=<uuid>  → 보관된 SSE 전문(완주 시) / 404(아직·없음)
+    if (url.pathname === '/gen') {
+      const gid = (url.searchParams.get('id') || '');
+      if (!/^[a-zA-Z0-9-]{8,64}$/.test(gid)) return new Response('bad id', { status: 400, headers: CORS });
+      if (req.method === 'POST') {
+        const orKey = req.headers.get('X-OR-Key') || '';
+        if (!orKey) return new Response('key required', { status: 400, headers: CORS });
+        const body = await req.text();
+        if (body.length > 2000000) return new Response('too large', { status: 413, headers: CORS });
+        const up = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + orKey,
+                     'HTTP-Referer': 'https://shfwkgud-png.github.io', 'X-Title': 'PANDORA' },
+          body,
+        });
+        if (!up.ok || !up.body) {
+          const t = await up.text();
+          return new Response(t, { status: up.status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+        }
+        const [toClient, toPark] = up.body.tee();
+        ctx.waitUntil((async () => {
+          try {
+            const txt = await new Response(toPark).text();   // 클라이언트가 끊겨도 여긴 완주된다
+            await env.PANDORA_KV.put('gen:' + gid, txt, { expirationTtl: 900 });
+          } catch {}
+        })());
+        return new Response(toClient, { status: 200, headers: { ...CORS, 'Content-Type': 'text/event-stream' } });
+      }
+      if (req.method === 'GET') {
+        const v = await env.PANDORA_KV.get('gen:' + gid);
+        if (v === null) return new Response('not ready', { status: 404, headers: CORS });
+        return new Response(v, { status: 200, headers: { ...CORS, 'Content-Type': 'text/plain; charset=utf-8' } });
+      }
+      return new Response('bad method', { status: 405, headers: CORS });
+    }
 
     // ---- AUTH ----
     if (url.pathname === '/auth/register' && req.method === 'POST') {
