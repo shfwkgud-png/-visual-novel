@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v303</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v304</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11568,8 +11568,30 @@ function fixIdolDayWords(data) {
   if (Array.isArray(data.choices)) data.choices = data.choices.map(c => typeof c === 'string' ? fix(c) : c);
   if (hit) { try { showStatToast(`🗓 ${now}요일 기준으로 맞췄다`, true); } catch {} }
 }
+// ★화자 필드 교정(2026-08-16 유저 화면: 이름 자리에 'a407'이 뜨고 스프라이트 실종).
+//   실측: AI가 speaker에 캐릭터 ID를, char_id엔 null을 넣어 필드를 뒤바꿔 출력했다.
+//   프롬프트로 부탁하는 대신 앱이 강제 교정한다 — ID로 이름을 찾아 speaker에 넣고, 비어 있던
+//   char_id를 채워 스프라이트도 정상 표시되게 한다(모델이 흔들려도 화면은 안 깨지게).
+function fixSpeakerIds(data) {
+  const dl = data && data.dialogue;
+  if (!Array.isArray(dl)) return;
+  const roster = (typeof CHARACTERS !== 'undefined' && CHARACTERS) || {};
+  const met = (typeof gameState !== 'undefined' && gameState && gameState.metChars) || {};
+  const nameOf = id => (roster[id] && roster[id].name) || (met[id] && met[id].name) || null;
+  dl.forEach(d => {
+    const sp = String(d.speaker || '').trim();
+    if (!sp) return;
+    const nm = nameOf(sp);            // speaker 자리에 들어온 값이 로스터의 ID인가
+    if (nm) {
+      d.speaker = nm;
+      if (!d.char_id) d.char_id = sp;  // 비었으면 그 ID를 char_id로 승격(스프라이트 복구)
+    }
+  });
+}
+
 function processResponse(data, activeCharIds, streamed) {
   hideThinking();
+  try { fixSpeakerIds(data); } catch {}   // ★speaker에 ID가 온 경우 이름으로 교정
   window._timeSkipNote = null;   // one-shot consumed
   try { fixIdolDayWords(data); } catch {}   // ★AI가 쓴 요일을 앱 기준으로 교정(아래 함수 주석 참고)
   // ★주인공 대사 필터는 회귀위험(대사 실종)으로 롤백(2026-07-21) — 유저 정정: 핵심은 밀도지 대필 아님
