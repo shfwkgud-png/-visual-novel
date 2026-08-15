@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v302</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v301</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10914,8 +10914,18 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     const _thinkOff = /2\.5-flash/i.test(mdl);   // 추론 완전 오프가 허용되는 건 2.5 Flash뿐
     if (!_thinkOff) reqBody.max_tokens = Math.max(maxTok, 16000);   // 추론이 켜진 모델은 생각 토큰 몫까지 상한 확보
     reqBody.provider = { only: ['google-vertex'] };   // ★$300 Vertex BYOK 강제 — 공유 유료 엔드포인트 폴백 차단(is_byok=true 보장)
-    // (2026-08-16 롤백: safety_settings top-level 파라미터가 요청 실패의 의심 원인 —
-    //  유저가 하루종일 응답 불가. 작동 복구 우선으로 제거. 필터 해제는 검증 후 다른 방식으로 재시도)
+    // ★안전 필터 해제(2026-08-14 유저 "NSFW 규제 걸려있냐? \n\n 뜨면서 말 반복"): Gemini 직접 경로엔
+    //   safetySettings OFF가 있었는데 OpenRouter 경로엔 없어 Vertex 기본 필터가 그대로 걸렸다.
+    //   Gemini는 필터에 부딪히면 같은 문장을 반복하거나 출력이 깨지는 패턴을 보인다 — 그 증상의 원인.
+    //   OpenRouter는 Google 프로바이더에 safety_settings를 패스스루한다. 400이 나면 _orNoSafety로 빼고 재시도.
+    if (!window._orNoSafety) reqBody.safety_settings = [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'OFF' },
+      { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
+    ];
+    reqBody.reasoning = _thinkOff ? { enabled: false } : { effort: 'minimal' };   // 2.5F=off / 3.x·pro=최소추론(강제)
     reqBody.stream_options = { include_usage: true };   // 마지막 청크에 usage(토큰 사용량) 포함 — 토큰 추적용
     reqBody.usage = { include: true };                  // OpenRouter 네이티브: cost·cost_details(실청구액)까지 포함
   }
@@ -10932,6 +10942,12 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     if (!res.ok) {
       let msg = 'HTTP ' + res.status;
       try { const j = await res.json(); msg = j.error?.message || j.detail || msg; } catch {}
+      // ★safety_settings 거부(400) 시 1회 자동 제거 후 재시도 — 모델·프로바이더가 미지원인 경우 대비
+      if (res.status === 400 && /safety|unknown field|invalid.*param/i.test(msg) && !window._orNoSafety) {
+        window._orNoSafety = true;
+        try { showStatToast('안전설정 파라미터 미지원 — 제외하고 재시도합니다', true); } catch {}
+        return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, orModelOverride, _errRetry);
+      }
       // ★하드 에러 폴백(2026-08-12 실전 장애 "Reasoning is mandatory…" 400): 3.6이 죽어도 턴을 살린다.
       //   ★2026-08-13 개선(유저 "업스트림 장애 팝업 자꾸 뜸"): 429/5xx(일시 장애)는 곧장 Pro 콜드가
       //   아니라 같은 Flash로 1.5초 후 1회 재시도(캐시 보존·Pro 초저속 회피). 재시도도 죽거나
@@ -11380,6 +11396,30 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       try { showStatToast('⚠ 빈 응답 3회(사유: ' + (result.finishReason || '미상') + ') — 입력 표현을 바꿔보라', true); } catch {}
       raw = '{}';
     }
+
+    // ★수신 손실 복구(2026-08-16 유저 "왜 자꾸 이렇게 짤려"): 계측 실측 — 모델은 out=1013토큰을
+    //   생성(fin=stop)했는데 앱에 도착한 원문은 528자(≈350토큰)뿐이었다. 릴레이(v281) 경유 중 스트림
+    //   일부가 유실된 것. 워커가 같은 응답의 '전문'을 KV에 보관하므로, 받은 원문이 완결되지 않았으면
+    //   보관본을 받아 대체한다(재생성·재과금 없음).
+    try {
+      const _gid = window._pendingGen && window._pendingGen.id;
+      const _tail = String(raw || '').trimEnd();
+      const _incomplete = _tail && !_tail.endsWith('}');
+      if (_gid && _incomplete) {
+        for (let _k = 0; _k < 3; _k++) {
+          const _r = await fetch(SYNC_URL + '/gen?id=' + _gid);
+          if (_r.ok) {
+            const _full = parseSseTranscript(await _r.text());
+            if (_full.text && _full.text.length > raw.length) {
+              raw = _full.text;
+              try { showStatToast('🔧 끊긴 응답을 서버 보관본으로 복구했습니다', false); } catch {}
+            }
+            break;
+          }
+          await new Promise(rs => setTimeout(rs, 1200));
+        }
+      }
+    } catch {}
 
     let parsed;
     try {
