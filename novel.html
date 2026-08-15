@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v298</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v299</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10212,6 +10212,9 @@ function startGame(isContinue) {
     if (STORY.id === 'idol') gameState.idol = IDOL_SIM.init();
   try { document.body.dataset.story = STORY.id || ''; } catch {}
     gameHistory = []; storySummary = ''; summaryIndex = 0; turnCount = 0;
+    // ★되감기 스냅샷도 새 판에서 비운다(2026-08-15): 스토리별 키라 안 지우면 지난 판 기록이
+    //   '어디로 되돌릴까' 목록에 그대로 남아 되돌릴 수 없는 지점을 보여준다.
+    try { turnSnaps = []; bulkDel(snapKeyFor(STORY.id)); } catch {}
     dialogueLog = []; lastBg = null;
     window._modeChosen = false; window._freeMode = false; window._startPhase = null;   // 시작 플로우 상태 초기화
     // ★스토리 전환 잔재 완전 청소(이전 작품 대사/스프라이트/CG가 새 작품에 뜨던 버그)
@@ -14955,9 +14958,13 @@ function loadSnaps() {
   //   그걸 남겨두면 "되돌리기를 눌렀는데 한참 전으로만 간다"가 된다(2026-07-30 유저 지적).
   try {
     const cur = (typeof turnCount === 'number') ? turnCount : 0;
-    if (cur && turnSnaps.length) {
+    if (turnSnaps.length) {
       const newest = turnSnaps[turnSnaps.length - 1].turn || 0;
-      if (cur - newest > SNAP_MAX) turnSnaps = [];   // 보관 개수보다 더 벌어졌다 = 이어질 수 없는 잔재
+      // 보관 개수보다 더 벌어졌다 = 이어질 수 없는 잔재
+      if (cur && cur - newest > SNAP_MAX) turnSnaps = [];
+      // ★새 판 시작으로 진행이 되감긴 경우(2026-08-15 유저: 되감기 목록에 '0턴 계속' 위로 지난 판
+      //   17턴 기록이 남음): 스냅샷이 현재 진행보다 '앞서' 있으면 지난 판의 것이다 — 되돌릴 수 없다.
+      else if (newest > cur) turnSnaps = [];
     }
   } catch {}
 }
