@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v305</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v306</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -9996,6 +9996,23 @@ function setNameplate(name, charId) {
 }
 
 let dialogueQueue = [];
+// ★수신 시점 기록(2026-08-18 유저 스샷 실측): 기록(dialogueLog)은 '화면에 재생된 만큼'이 아니라
+//   '응답으로 받은 만큼' 쌓는다. 전엔 표시될 때만 기록해서, 응답이 이미 다 도착했어도 아직 안 넘긴
+//   대사는 ◀ 기록넘김에 존재하지 않았다(실측: 기록 285/285가 이전 턴 나레이션 한 줄뿐,
+//   방금 읽은 모니카·릴리아·데릭 대사는 통째로 없음). 배경·표정은 실제 재생될 때 갱신한다.
+//   _log는 큐 항목 → 기록 항목 참조(열거 불가라 저장·직렬화에 안 섞인다). 이미 붙어 있으면 재기록 안 함
+//   → 기록 모드 보류분(_pendingDialogues)이 다시 큐에 들어와도 중복되지 않는다.
+function enqueueLine(d) {
+  if (d && !d._log && !replaying && !d.isPlayerLine) {
+    const L = { speaker: d.speaker, text: d.text, isPlayer: false, char_id: d.char_id || null,
+                emotion: d.emotion || 'normal', pose: d.pose || 'upper',
+                bgFile: currentBgFile, sprites: [...shownSprites] };
+    dialogueLog.push(L);
+    try { Object.defineProperty(d, '_log', { value: L, enumerable: false, writable: true, configurable: true }); }
+    catch { d._log = L; }
+  }
+  dialogueQueue.push(d);
+}
 let isShowing = false;
 let waitingForTap = false;
 let inputMode = false;
@@ -11255,7 +11272,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       const fresh = txt.slice(from, upto).trim();
       if (!fresh) return;
       splitNarration(fresh).forEach(c => {
-        dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: c, pose: 'upper' });
+        enqueueLine({ speaker: '나레이터', char_id: null, emotion: 'normal', text: c, pose: 'upper' });
         pushed++;
       });
       stream.narrEmitted = upto;
@@ -11274,7 +11291,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       window._pendingPlayerLine = null;
       if (u.narration !== null) { emitNarr(u.narration, true); stream.narrDone = true; }
       else if (u.narrationPartial) emitNarr(u.narrationPartial, false);
-      u.dialogues.forEach(d => { if (!_isNarrDup(d)) dlgToChunks(d).forEach(c => { dialogueQueue.push(c); pushed++; }); });
+      u.dialogues.forEach(d => { if (!_isNarrDup(d)) dlgToChunks(d).forEach(c => { enqueueLine(c); pushed++; }); });
       stream.dlgCount = u.dialogues.length;
       showNextDialogue();
       return;
@@ -11285,7 +11302,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       else if (u.narrationPartial) emitNarr(u.narrationPartial, false);
     }
     for (let k = stream.dlgCount; k < u.dialogues.length; k++) {
-      if (!_isNarrDup(u.dialogues[k])) dlgToChunks(u.dialogues[k]).forEach(c => { dialogueQueue.push(c); pushed++; });
+      if (!_isNarrDup(u.dialogues[k])) dlgToChunks(u.dialogues[k]).forEach(c => { enqueueLine(c); pushed++; });
     }
     stream.dlgCount = Math.max(stream.dlgCount, u.dialogues.length);
     // ★수동 모드 존중(2026-07-23 유저 승인): 대기('···') 중 새 대사가 도착해도 AUTO일 때만 자동 재생.
@@ -11339,7 +11356,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     if (stream.active && (result.error || result.blocked || !((result.text || '').trim()))) {
       window._stream = null;
       window._genFailed = true;   // ★스트림 중단(백그라운드 등) — 앱 복귀 시 자동 재생성 대상
-      dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(이야기의 흐름이 잠시 흐트러졌다…)', pose: 'upper' });
+      enqueueLine({ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(이야기의 흐름이 잠시 흐트러졌다…)', pose: 'upper' });
       if (stream.waiting) { stream.waiting = false; showNextDialogue(); }
       sendBtn.disabled = false;
       return;
@@ -11769,14 +11786,14 @@ function processResponse(data, activeCharIds, streamed) {
     if (!streamed.narrDone && data.narration && data.narration.trim()) {
       const rest = String(data.narration).slice(streamed.narrEmitted || 0).trim();
       if (rest) splitNarration(rest).forEach(c =>
-        dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: c, pose: 'upper' }));
+        enqueueLine({ speaker: '나레이터', char_id: null, emotion: 'normal', text: c, pose: 'upper' }));
     }
     // ★완료 보정에도 narration 복제 가드 — 스트림 파서가 dialogue를 못 읽고 끝나면
     //   dlgCount=0이라 여기서 복제분이 필터 없이 들어와 같은 문장이 2번 표시됐음(얘기중복 잔존 경로)
     const _sn = s => String(s || '').replace(/\s+/g, ' ').trim();
     const _snN = _sn(data.narration);
     (data.dialogue || []).slice(streamed.dlgCount).filter(d => !(_snN && _sn(d.text) === _snN)).forEach(d =>
-      dlgToChunks(d).forEach(c => dialogueQueue.push(c)));
+      dlgToChunks(d).forEach(c => enqueueLine(c)));
     window._pendingChoices = data.choices || null;
     window._activeCharIds = activeCharIds;
     window._stream = null;
@@ -11800,7 +11817,7 @@ function processResponse(data, activeCharIds, streamed) {
 
   if (data.narration && data.narration.trim()) {
     splitNarration(data.narration).forEach(chunk => {
-      dialogueQueue.push({ speaker: '나레이터', char_id: null, emotion: 'normal', text: chunk, pose: 'upper' });
+      enqueueLine({ speaker: '나레이터', char_id: null, emotion: 'normal', text: chunk, pose: 'upper' });
     });
   }
 
@@ -11817,9 +11834,9 @@ function processResponse(data, activeCharIds, streamed) {
     data.dialogue.forEach(d => {
       const chunks = splitNarration(d.text || '');
       if (chunks.length <= 1) {
-        dialogueQueue.push(d);
+        enqueueLine(d);
       } else {
-        chunks.forEach(c => dialogueQueue.push({ ...d, text: c }));
+        chunks.forEach(c => enqueueLine({ ...d, text: c }));
       }
     });
   }
@@ -12127,7 +12144,12 @@ function showNextDialogue() {
   // Log full scene state so history can restore bg + sprites + expression.
   // ★isPlayerLine(유저 입력 에코)은 입력 시점에 이미 isPlayer:true로 기록됨 —
   //   여기서 또 넣으면 백로그·기록넘김에 같은 유저 대사가 2번 보임(얘기중복 버그)
-  if ((!replaying || window._replayFill) && !d.isPlayerLine) {
+  if (d._log) {
+    // 이미 수신 시점에 기록됨 — 실제 재생된 화면 상태(배경·스프라이트·표정)로 덮어쓴다
+    d._log.emotion = emo; d._log.pose = pose;
+    d._log.bgFile = currentBgFile; d._log.sprites = [...shownSprites];
+  } else if ((!replaying || window._replayFill) && !d.isPlayerLine) {
+    // 안전망: enqueueLine을 안 거친 경로(이어하기 재생 복구 등)
     dialogueLog.push({
       speaker: d.speaker, text: d.text, isPlayer: false,
       char_id: d.char_id || null, emotion: emo, pose: pose,
@@ -14886,7 +14908,8 @@ function showDialogue(dialogues) {
   // If the player is browsing history while this arrives, don't stomp the
   // history view — hold it and play when they return to the present.
   if (historyMode) { window._pendingDialogues = dialogues; return; }
-  dialogueQueue = dialogues;
+  dialogueQueue = [];
+  (dialogues || []).forEach(enqueueLine);   // 보류분 재생도 같은 경로 — _log가 있으면 중복 기록 안 됨
   showNextDialogue();
 }
 
