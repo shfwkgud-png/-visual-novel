@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v304</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v305</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10306,6 +10306,16 @@ function restoreAndReplay(save, checkTimeflow) {
     try {
       const data = JSON.parse(lastAssistant.content);
       const chars = detectActiveChars(gameHistory.slice(-6));
+      // ★기록 복구(2026-08-18): 저장이 재생 전에 돌아 이 턴 대사가 dialogueLog에 없는
+      //   구세이브를 구제한다. 마지막 응답을 그대로 재생하는 경우에만, 마지막 유저
+      //   입력 이후 기록을 비우고 재생분을 다시 채운다(중복도 유실도 없음).
+      try {
+        if (gameHistory[gameHistory.length - 1] === lastAssistant) {
+          let _cut = dialogueLog.length;
+          while (_cut > 0 && !dialogueLog[_cut - 1].isPlayer) _cut--;
+          if (_cut > 0) { dialogueLog.splice(_cut); window._replayFill = true; }
+        }
+      } catch {}
       replaying = true;
       processResponse({ ...data, state_update: null }, chars);
     } catch {
@@ -12050,7 +12060,13 @@ function showNextDialogue() {
       isShowing = false; waitingForTap = false;
       return;
     }
+    // ★재생 완료 시점 저장(2026-08-18): autoSave는 processResponse 직후 =
+    //   그 턴 대사가 아직 dialogueLog에 안 쌓인 시점에 돌아서, 세이브의 기록에는
+    //   그 턴이 통째로 빠졌다. ◀ 기록넘김에서 "내 입력 → 마지막 답"으로 중간이
+    //   사라진 진범 — 재생이 끝난 뒤 한 번 더 저장해 기록을 온전히 남긴다.
     replaying = false;
+    window._replayFill = false;
+    try { autoSave(); } catch {}   // 이어하기 복구분도 여기서 확정 저장된다
     if (window._pendingEnding) {
       const e = window._pendingEnding;
       window._pendingEnding = null;
@@ -12111,7 +12127,7 @@ function showNextDialogue() {
   // Log full scene state so history can restore bg + sprites + expression.
   // ★isPlayerLine(유저 입력 에코)은 입력 시점에 이미 isPlayer:true로 기록됨 —
   //   여기서 또 넣으면 백로그·기록넘김에 같은 유저 대사가 2번 보임(얘기중복 버그)
-  if (!replaying && !d.isPlayerLine) {
+  if ((!replaying || window._replayFill) && !d.isPlayerLine) {
     dialogueLog.push({
       speaker: d.speaker, text: d.text, isPlayer: false,
       char_id: d.char_id || null, emotion: emo, pose: pose,
