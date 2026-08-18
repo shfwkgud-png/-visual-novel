@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v309</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v310</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10057,6 +10057,13 @@ function enqueueLine(d) {
 // ★표시 취소분 기록 회수(2026-08-18): 기록은 수신 시점(enqueueLine)에 미리 들어가므로,
 //   표시 단계에서 걸러지는 줄(빈 텍스트·유저 입력 에코·연속 중복)은 기록에서도 빼야
 //   화면과 기록이 어긋나지 않는다. 안 빼면 화면엔 한 줄인데 기록엔 두 줄로 남는다.
+// ★에코 비교용 정규화: 공백뿐 아니라 문장부호·따옴표·괄호까지 지운다.
+//   모델은 유저가 친 날것의 문장을 맞춤법·구두점을 고쳐 되뱉는 습성이 있어, 공백만 지운
+//   비교로는 같은 문장을 다른 문장으로 판정했다(2026-08-18 실측 2/4건 누출).
+function _echoNorm(s) {
+  return String(s || '').replace(/[\s.,!?;:…·~\-"'‘’“”「」『』()\[\]]/g, '');
+}
+
 function dropLogEntry(d) {
   if (!d || !d._log) return;
   const i = dialogueLog.lastIndexOf(d._log);
@@ -12153,8 +12160,12 @@ function showNextDialogue() {
   if (!String(d.text || '').trim()) { dropLogEntry(d); if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); } return showNextDialogue(); }
   // ★모델이 유저의 직전 입력을 자기 dialogue(speaker=주인공)로 되뱉는 에코 차단(2026-07-22 유저 스샷:
   //   기록 9=입력 시 정상 기록, 기록 14=모델 에코로 같은 대사 중복). 입력 기록(isPlayerLine)은 통과.
+  // ★2026-08-18 강화: 공백만 지우고 비교해서, 모델이 **구두점·띄어쓰기를 다듬어** 되뱉으면 뚫렸다.
+  //   실측(세이브) — 주인공 화자 대사 17건 중 에코 4건, 그중 2건이 통과:
+  //     입력 '웃기지도않네. 시선이아주끈적하구만' vs 에코 '웃기지도 않네. 시선이 아주 끈적하구만.'
+  //   유저가 "항상은 아닌데 이런다"고 한 게 이 50% 누출이다. 구두점까지 지우고 비교한다.
   if (!d.isPlayerLine && playerName && String(d.speaker || '').trim() === playerName &&
-      String(d.text || '').replace(/\s+/g, '') === String(window._genText || '').replace(/\s+/g, '')) { dropLogEntry(d); return showNextDialogue(); }
+      _echoNorm(d.text) && _echoNorm(d.text) === _echoNorm(window._genText)) { dropLogEntry(d); return showNextDialogue(); }
   // ★연속 중복 차단(2026-07-23 유저 "가끔 대화 두 번"): 스트림 카운트와 완료 보정 슬라이스가 어긋나면
   //   같은 대사가 이중 푸시됨 — 소스 불문, 직전 표시줄과 화자+내용이 동일하면 표시·기록 없이 스킵
   const _dupKey = String(d.speaker || '') + '|' + String(d.text || '').replace(/\s+/g, ' ').trim();
