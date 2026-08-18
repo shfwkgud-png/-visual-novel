@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v306</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v308</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -9976,7 +9976,20 @@ const statusPanel = document.getElementById('statusPanel');
 
 // Set nameplate name + avatar based on speaker
 let currentSpeakerCharId = null;
+// ★화자 id → 이름 해석(2026-08-18): 로스터(CHARACTERS)와 이미 만난 인물(metChars) 양쪽을 본다.
+//   fixSpeakerIds·enqueueLine·setNameplate·백로그가 같은 규칙을 쓰도록 한 곳으로 모았다.
+function resolveSpeakerName(sp) {
+  const _id = String(sp || '').trim();
+  if (!_id) return null;
+  const roster = (typeof CHARACTERS !== 'undefined' && CHARACTERS) || {};
+  const met = (typeof gameState !== 'undefined' && gameState && gameState.metChars) || {};
+  return (roster[_id] && roster[_id].name) || (met[_id] && met[_id].name) || null;
+}
+
 function setNameplate(name, charId) {
+  // ★표시 직전 방어 — 이미 id로 기록된 구항목(기록넘김)도 이름으로 보이게 한다
+  const _rn = resolveSpeakerName(name);
+  if (_rn) { if (!charId) charId = String(name).trim(); name = _rn; }
   // Protagonist has no face sprite — never show an avatar for the player
   if (name && name === playerName) charId = null;
   currentSpeakerCharId = charId || null;
@@ -10003,6 +10016,19 @@ let dialogueQueue = [];
 //   _log는 큐 항목 → 기록 항목 참조(열거 불가라 저장·직렬화에 안 섞인다). 이미 붙어 있으면 재기록 안 함
 //   → 기록 모드 보류분(_pendingDialogues)이 다시 큐에 들어와도 중복되지 않는다.
 function enqueueLine(d) {
+  // ★화자 id 교정(2026-08-18 유저 스샷: 'a412'·'a403'이 이름 자리에 노출):
+  //   스트리밍 경로는 응답이 끝나기 전에 부분 파싱분을 큐로 직행시켜 fixSpeakerIds(processResponse
+  //   진입에서만 실행)를 못 거친다. 모델이 speaker에 id를 쓰는 빈도가 실측 27%(135줄 중 36줄)라
+  //   네임플레이트·기록에 id가 그대로 떴고, 완료 보정분은 이름으로 들어와 중복차단 키(화자|본문)가
+  //   어긋나 **같은 대사가 id로 한 번, 이름+스프라이트로 또 한 번** 재생됐다.
+  //   큐가 유일한 통로이므로 여기서 이름으로 통일하면 두 증상이 함께 사라진다.
+  if (d) {
+    const _sp = String(d.speaker || '').trim();
+    if (_sp) {
+      const _nm = resolveSpeakerName(_sp);
+      if (_nm) { d.speaker = _nm; if (!d.char_id) d.char_id = _sp; }
+    }
+  }
   if (d && !d._log && !replaying && !d.isPlayerLine) {
     const L = { speaker: d.speaker, text: d.text, isPlayer: false, char_id: d.char_id || null,
                 emotion: d.emotion || 'normal', pose: d.pose || 'upper',
@@ -10012,6 +10038,16 @@ function enqueueLine(d) {
     catch { d._log = L; }
   }
   dialogueQueue.push(d);
+}
+
+// ★표시 취소분 기록 회수(2026-08-18): 기록은 수신 시점(enqueueLine)에 미리 들어가므로,
+//   표시 단계에서 걸러지는 줄(빈 텍스트·유저 입력 에코·연속 중복)은 기록에서도 빼야
+//   화면과 기록이 어긋나지 않는다. 안 빼면 화면엔 한 줄인데 기록엔 두 줄로 남는다.
+function dropLogEntry(d) {
+  if (!d || !d._log) return;
+  const i = dialogueLog.lastIndexOf(d._log);
+  if (i !== -1) dialogueLog.splice(i, 1);
+  d._log = null;
 }
 let isShowing = false;
 let waitingForTap = false;
@@ -11602,13 +11638,10 @@ function fixIdolDayWords(data) {
 function fixSpeakerIds(data) {
   const dl = data && data.dialogue;
   if (!Array.isArray(dl)) return;
-  const roster = (typeof CHARACTERS !== 'undefined' && CHARACTERS) || {};
-  const met = (typeof gameState !== 'undefined' && gameState && gameState.metChars) || {};
-  const nameOf = id => (roster[id] && roster[id].name) || (met[id] && met[id].name) || null;
   dl.forEach(d => {
     const sp = String(d.speaker || '').trim();
     if (!sp) return;
-    const nm = nameOf(sp);            // speaker 자리에 들어온 값이 로스터의 ID인가
+    const nm = resolveSpeakerName(sp);            // speaker 자리에 들어온 값이 로스터의 ID인가
     if (nm) {
       d.speaker = nm;
       if (!d.char_id) d.char_id = sp;  // 비었으면 그 ID를 char_id로 승격(스프라이트 복구)
@@ -12101,15 +12134,15 @@ function showNextDialogue() {
   const d = dialogueQueue.shift();
   // ★빈 텍스트 항목(모델이 text="" 뱉거나 청크 분할 부산물)은 표시·기록 없이 건너뛴다.
   //   이게 기록에 '빈 페이지'로 남던 원인(기록 52 공백). sfx만 있으면 재생은 하고 넘긴다.
-  if (!String(d.text || '').trim()) { if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); } return showNextDialogue(); }
+  if (!String(d.text || '').trim()) { dropLogEntry(d); if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); } return showNextDialogue(); }
   // ★모델이 유저의 직전 입력을 자기 dialogue(speaker=주인공)로 되뱉는 에코 차단(2026-07-22 유저 스샷:
   //   기록 9=입력 시 정상 기록, 기록 14=모델 에코로 같은 대사 중복). 입력 기록(isPlayerLine)은 통과.
   if (!d.isPlayerLine && playerName && String(d.speaker || '').trim() === playerName &&
-      String(d.text || '').replace(/\s+/g, '') === String(window._genText || '').replace(/\s+/g, '')) return showNextDialogue();
+      String(d.text || '').replace(/\s+/g, '') === String(window._genText || '').replace(/\s+/g, '')) { dropLogEntry(d); return showNextDialogue(); }
   // ★연속 중복 차단(2026-07-23 유저 "가끔 대화 두 번"): 스트림 카운트와 완료 보정 슬라이스가 어긋나면
   //   같은 대사가 이중 푸시됨 — 소스 불문, 직전 표시줄과 화자+내용이 동일하면 표시·기록 없이 스킵
   const _dupKey = String(d.speaker || '') + '|' + String(d.text || '').replace(/\s+/g, ' ').trim();
-  if (_dupKey === window._lastShownKey) return showNextDialogue();
+  if (_dupKey === window._lastShownKey) { dropLogEntry(d); return showNextDialogue(); }
   window._lastShownKey = _dupKey;
   if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); }
   isShowing = true;
@@ -14926,10 +14959,11 @@ function renderBacklog() {
   dialogueLog.forEach(entry => {
     const div = document.createElement('div');
     div.className = 'log-entry';
+    const _nm = entry.isPlayer ? null : resolveSpeakerName(entry.speaker);   // 구기록의 id 노출 방어
     if (entry.isPlayer) {
       div.innerHTML = `<div class="log-speaker">${entry.speaker || playerName}</div><div class="log-text log-player">${entry.text}</div>`;
     } else {
-      div.innerHTML = `<div class="log-speaker">${entry.speaker}</div><div class="log-text">${entry.text}</div>`;
+      div.innerHTML = `<div class="log-speaker">${_nm || entry.speaker}</div><div class="log-text">${entry.text}</div>`;
     }
     body.appendChild(div);
   });
