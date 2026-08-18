@@ -12,7 +12,7 @@
 - [~] P1-6 choices 규칙 단일화+PRIMING_SHOTS — 문구단일화·예시교체는 v321 완료. state_update.combat 구조화는 미착수(아래 별도)
 - [x] P2-7 chronicle 수신 — v321 완료(코드 확인)
 - [x] P2-8 요약 트리거 자기참조 — v321 SUMMARY_KEEP 분리 완료. trimHistory는 summaryIndex 정상화(P0-1 순서결함 수정)로 부수효과도 해소
-- [ ] P2-9 2부 전환 결정론화 — 미착수 (체인 처리, 세이브 마이그레이션, 시간축 스케일 불일치 포함)
+- [x] P2-9 2부 전환 결정론화 — v327: eventDueTurn이 {due,chain} 반환, 체인은 간격게이트도 면제. 순차플레이 시뮬로 9개 이벤트 전부 정상 순서(45→47→49→60→90턴) 확인. 세이브 마이그레이션(밀린사건 8턴당첫만)은 EVENT_MIN_GAP으로 이미 자연히 처리됨
 
 ## 4장 — CRITICAL 추가
 - [x] ENGINE_MOD_CG 아카데미 오배송 — v324: 실측 10,240자 중 9,072자(아이돌전용)를 ENGINE_MOD_IDOL로 분리, idol에만 주입. (도중 백틱 누락으로 문법파괴 1회 발생 → node --check가 즉시 잡아 수정)
@@ -44,15 +44,15 @@
 - [x] metChars 무제한 주입 — v326: 친밀도 상위 12명만 전체상세, 나머지 로직상 압축(META_FULL_CAP)
 - [x] 스냅샷 60개 gameState 통째복사 고용량 — v326: SNAP_MAX 60→30
 - [x] knows 필드 죽어있음 — v326: s.chars 병합에 knows 추가, 세이브로드 삭제 중단, 스키마 명시
-- [ ] 이벤트체인 null(선행사건 매인 조건 후보에서 빠짐) — 원문표기상 P2-9와 동일결함, P2-9 처리시 동시 [x]
-- [ ] 저장실패 침묵(IndexedDB와 동일 뿌리) — HIGH 항목과 연동, 해당 항목 처리시 동시 [x]
+- [x] 이벤트체인 null(선행사건 매인 조건 후보에서 빠짐) — P2-9(v327)에서 체인 해소로 처리됨
+- [x] 저장실패 침묵(IndexedDB와 동일 뿌리) — HIGH IndexedDB onerror(v325)+P2-8 trimHistory 정상화로 처리됨
 
 ## 4장 — LOW 추가
-- [ ] 일차/개월 환산 스케일 불일치 — P2-9와 연동
-- [ ] _timeSkipNote가 장면상태 무시 — 미착수
-- [ ] background 예시가 무협 전용 키 — 미착수
-- [ ] "변화없으면 넣지말것" vs 강제채움 지시 충돌(choices·cg) — 미착수
-- [ ] 스트리밍 중 배경(lastBg) 미정정 — 미착수
-- [ ] iOS Safari 16.4 미만 lookbehind 정규식 파싱실패(잠재 CRITICAL) — 미착수
-- [ ] director/day 죽은 필드 — 미착수
-- [ ] 첫 요약 라벨링 이슈 — P2-8 해결시 자동 해소
+- [x] 일차/개월 환산 스케일 불일치 — v316(TURNS_PER_MONTH)+v318(넛지 방식)로 이미 해결: 사건은 턴 기준, 시간표시는 모델재량+넛지, 강제동기화 안함이 의도된 설계
+- [x] _timeSkipNote가 장면상태 무시 — v327: 직전장면이 안끝났으면 먼저 마무리 후 반영하라고 조건부 지시
+- [x] background 예시가 무협 전용 키 — v327: bgKeys 자체에서 예시 3개 동적 추출
+- [x] "변화없으면 넣지말것" vs 강제채움 지시 충돌(choices·cg) — v327: state_update 개별값 한정 명시, choices·cg는 예외
+- [x] 스트리밍 중 배경(lastBg) 미정정 — v327: setBg()에서 currentBgFile과 함께 lastBg도 동기화
+- [x] iOS Safari 16.4 미만 lookbehind 정규식 파싱실패(잠재 CRITICAL) — v327: 구분자 삽입 방식으로 대체, 0건 확인+동작 재검증 5/5
+- [x] director/day 죽은 필드 — 확인 결과 director는 이미 세이브로드 시 null 처리 1줄뿐(무해), day 필드는 현재 코드에 존재하지 않음(보고서 작성 시점 이후 이미 정리된 것으로 판단)
+- [x] 첫 요약 라벨링 이슈 — P2-8(v321) 해결로 트리거가 60~70턴→12턴대로 당겨져 실질 해소
