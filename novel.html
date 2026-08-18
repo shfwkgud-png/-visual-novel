@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v313</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v314</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11154,12 +11154,19 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
 // begin while the model is still writing (huge perceived-latency win).
 function extractStreamUnits(buf) {
   const BS = '\\';
-  const out = { narration: null, narrationPartial: null, dialogues: [], background: null };
+  const out = { narration: null, narrationPartial: null, dialogues: [], background: null, cg: null, mood: null };
   // ★배경도 스트리밍 중에 뽑는다(2026-08-18 재점검): 전엔 background가 응답 완료 후에만
   //   반영돼, 장면이 바뀌는 턴이면 **새 장면 대사가 옛 배경 위에서** 재생됐고 그때 남은
   //   기록의 bgFile도 옛 배경으로 굳어 기록넘김의 배경이 어긋났다.
   const bgm = buf.match(/"background"\s*:\s*"([^"]*)"/);
   if (bgm) out.background = bgm[1];
+  // ★cg·mood도 같은 이유로 스트리밍 중에 뽑는다(2026-08-18 재점검, 원칙3).
+  //   전엔 응답 완료 후에만 적용돼 성애 장면에서 **CG 없이 대사만 흐르다 끝에 갑자기** 떴다.
+  //   showEventCG는 같은 씬키면 무시하고 Ambient.setMood도 같은 값이면 무해해 중복 호출이 안전하다.
+  const cgm2 = buf.match(/"cg"\s*:\s*"([^"]*)"/);
+  if (cgm2) out.cg = cgm2[1];
+  const mdm = buf.match(/"mood"\s*:\s*"([^"]*)"/);
+  if (mdm) out.mood = mdm[1];
   // narration: complete once its closing unescaped quote has arrived
   const nm = buf.match(/"narration"\s*:\s*"/);
   if (nm) {
@@ -11336,7 +11343,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
 
   // STREAMING PLAYBACK: begin showing narration/dialogue while the model is
   // still writing. State (bg/mood/state_update/choices) applies at completion.
-  const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false, bgDone: false };
+  const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false, bgDone: false, cgDone: false, moodDone: false };
   const canStream = !historyMode && !replaying;   // ★제미나이도 스트리밍(2026-07-21) — 두 프로바이더 공통
   window._stream = canStream ? stream : null;
   const onChunk = !canStream ? null : (buf) => {
@@ -11377,6 +11384,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       stream.narrEmitted = 0;
       hideThinking();
       if (u.background) { stream.bgDone = true; try { setBg(u.background); } catch {} }   // 대사보다 배경이 먼저
+      if (u.cg) { stream.cgDone = true; try { showEventCG(u.cg); } catch {} }              // CG도 대사와 함께
+      if (u.mood) { stream.moodDone = true; try { Ambient.setMood(u.mood); } catch {} }
       dialogueQueue = [];
       resetTurnLineKeys();   // 새 턴 시작 — 이전 턴 투입 기록은 버린다
       resetSprites();
@@ -11392,6 +11401,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
     // 활성 중: 배경(늦게 도착할 수 있다) → narration 잔여분 → 신규 dialogue
     if (u.background && !stream.bgDone) { stream.bgDone = true; try { setBg(u.background); } catch {} }
+    if (u.cg && !stream.cgDone) { stream.cgDone = true; try { showEventCG(u.cg); } catch {} }
+    if (u.mood && !stream.moodDone) { stream.moodDone = true; try { Ambient.setMood(u.mood); } catch {} }
     if (!stream.narrDone) {
       if (u.narration !== null) { emitNarr(u.narration, true); stream.narrDone = true; }
       else if (u.narrationPartial) emitNarr(u.narrationPartial, false);
