@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v320</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v321</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2165,6 +2165,7 @@ let NIM_MODEL = 'qwen/qwen3-next-80b-a3b-instruct';   // ★기본=Qwen3-Next 80
 const NIM_MODEL_OLD_DEFAULTS = ['meta/llama-3.1-70b-instruct', 'deepseek-ai/deepseek-v4-pro', 'qwen/qwen3.5-122b-a10b', 'nvidia/nemotron-3-ultra-550b-a55b', 'mistralai/mistral-medium-3.5-128b', 'moonshotai/kimi-k2-instruct'];   // ★느린/EOL 구기본 → 새 기본(qwen3-next)으로 자동 승격
 
 const SUMMARY_INTERVAL = 8;
+const SUMMARY_KEEP = 16;   // 요약하지 않고 원문으로 남길 최근 항목 수(전송 창과 별개 축)
 const CONTEXT_RECENT = 10;   // 하한(최소 보장). 실제 유지량은 모델 컨텍스트로 정한다 ↓
 // ★모델 컨텍스트를 실제로 쓴다(2026-08-11 유저: "모델마다 컨텍스트 한도가 있지 않나?").
 //   그동안 8~10턴만 원문 유지하고 나머지를 400자 요약으로 뭉갰다 — Gemini 3.x는 입력 100만 토큰인데
@@ -2322,7 +2323,7 @@ const ENGINE_RULES_PROMPT = `
 - 매 응답은 이야기를 '의미 있게' 진전시켜라(한 장면이 실제로 굴러가야 함 — 제자리 한 마디 교환으로 끝내지 말 것). 그러고도 플레이어가 다음에 행동/대사할 여지를 남기고 끝낼 것
 - **choices 두 개는 질적으로 다른 방향일 것** (예: 안전vs위험, 이성vs감정, 정면돌파vs우회, 진실vs거짓말). 서로 비슷하거나 밋밋한 예/아니오 쌍 금지 — 선택이 갈림길처럼 느껴져야 함
 - ★choices에 감정 온도를 실어라: "~에 대해 더 물어본다"류 정보 확인 선택지 2연발 금지. 적어도 하나는 관계나 상황을 흔드는 대담한·위험한·설레는 쪽으로, 고르는 순간 심장이 반응하게 쓸 것
-- ★★**choices를 절대 생략하지 마라.** 빈 배열·null도 금지. 응답마다 **최소 2개**를 반드시 채워라.
+- ★★**choices 규칙(이 항목이 유일한 기준 — 다른 곳의 서술과 어긋나면 이쪽을 따른다)**: 판정이 걸린 장면(전투·충돌·추격·결투)에서는 **빈 배열 []**로 두어 플레이어가 직접 행동을 입력하게 하고, **그 외 모든 장면에서는 최소 2개**를 반드시 채워라(생략·null 금지).
   choices가 없으면 유저 화면엔 입력창만 남아 갈 곳을 잃는다(2026-07-28 유저 지적: "가끔 선택지 안 나오고 채팅만 입력됨").
   장면이 어떤 상태든 — 정적이든 회의든 이동 중이든 — 다음 한 걸음 두 갈래는 언제나 만들 수 있다.
 
@@ -10612,7 +10613,7 @@ const PRIMING_SHOTS = [
       dialogue: [],
       background: null,
       state_update: { rep: 0, gold: 0, location: null, status: null, flags: {} },
-      choices: []
+      choices: ['확인했다, 시작하자', '설정을 먼저 점검한다']
     })
   }
 ];
@@ -10761,11 +10762,17 @@ function recentStoryText(n) {
 // (총감독 시스템 제거됨 — 2026-08-14. 연대기(chronicle)는 요약 패스가 생성한다.)
 
 async function summarizeIfNeeded() {
+  // ★요약 게이트 자기참조 제거(2026-08-18 감사 확증). 전엔 보존 창을 recentWindowCount()로
+  //   잡았는데, 원문 총량이 예산(12만 자) 미만이면 그 함수가 gameHistory.length를 그대로
+  //   돌려준다 → 조건이 `len - summaryIndex < 8 + len`, 즉 `summaryIndex > -8`이라 **항상 참**.
+  //   실측: gameHistory 120개(약 60턴)까지 요약이 단 한 번도 발화하지 않았다. 그동안
+  //   storySummary·chronicle이 둘 다 비고, trimHistory도 summaryIndex=0이라 0을 반환해
+  //   HISTORY_MAX(60)까지 사문이 됐다(세이브가 300KB까지 불어난 몸통).
+  //   → 전송 창(문자 예산)과 요약 경계(턴 수)를 다른 축으로 분리한다.
   const unsummarized = gameHistory.length - summaryIndex;
-  const _win = recentWindowCount();
-  if (unsummarized < SUMMARY_INTERVAL + _win) return;
+  if (unsummarized < SUMMARY_INTERVAL + SUMMARY_KEEP) return;
 
-  const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - _win);
+  const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - SUMMARY_KEEP);
   if (toSummarize.length < 4) return;
 
   const existingCtx = storySummary ? `기존 요약:\n${storySummary}\n\n` : '';
@@ -10825,7 +10832,7 @@ async function summarizeIfNeeded() {
     }
     if (summary && summary.trim()) {
       storySummary = summary.trim();
-      summaryIndex = gameHistory.length - _win;
+      summaryIndex = gameHistory.length - SUMMARY_KEEP;
       // ★연대기 추출(2026-08-14, 폐지된 감독 패스에서 이관): '실제로 일어난 일'만 기록한다.
       //   구 감독처럼 지시·해석·다음 전개를 만들지 않는다 — 기록원 역할로만 한정.
       try {
@@ -11915,6 +11922,7 @@ function processResponse(data, activeCharIds, streamed) {
     // ★월례 회의 방침(state_update.war.action) — 수신 즉시 앱이 한 달을 굴린다(전투·세력 AI 포함)
     if (s.war && gameState.war) { try { warApplyDirective(s.war, replaying); } catch {} }
     if (s.flags) Object.assign(gameState.flags, s.flags);
+
     // Merge character relationship/status updates
     // ★아이돌 시뮬: AI는 "무슨 행동을 했는지"만 뱉고, 수치 계산은 여기서(결정론)
     if (!replaying && STORY.id === 'idol' && gameState.idol && s.sim && typeof s.sim === 'object') {
@@ -12028,6 +12036,27 @@ function processResponse(data, activeCharIds, streamed) {
       gameState.metChars[d.char_id] = { name: b.name, role: b.role, relationship: '만남', intimacy: 10, condition: '멀쩡함', note: '' };
     }
   });
+
+  // ★chronicle 수신(2026-08-18 감사 확증): 출력 스키마가 매 턴 chronicle을 요구하고
+  //   규칙문은 "이것이 장기 기억이다. 기록 안 하면 몇 턴 뒤 그 사실은 소멸한다"고 약속하는데,
+  //   정작 앱에 data.chronicle을 읽는 코드가 없어 **전량 폐기**되고 있었다. 유저가 대화로 정한
+  //   설정·약속·비밀이 생성 즉시 사라지던 원인. 재생 중엔 받지 않는다(중복 누적 방지).
+  if (!replaying && Array.isArray(data.chronicle)) {
+    try {
+      gameState.chronicle = gameState.chronicle || [];
+      const _seen = new Set(gameState.chronicle.map(x => String(x).replace(/\s+/g, '')));
+      data.chronicle.forEach(c => {
+        if (typeof c !== 'string') return;
+        const t = c.trim();
+        if (!t) return;
+        const k = t.replace(/\s+/g, '');
+        if (_seen.has(k)) return;
+        _seen.add(k);
+        gameState.chronicle.push(t);
+      });
+      if (gameState.chronicle.length > 60) gameState.chronicle = gameState.chronicle.slice(-60);
+    } catch {}
+  }
 
   // ★시간 진행 보장 호출(2026-08-18): 모델이 time을 갱신한 턴이면 위에서 카운터가 0으로 리셋됐고,
   //   갱신하지 않은 턴이 TIME_SLOT_MAX번 쌓이면 여기서 앱이 다음 시간대로 민다. 재생 중엔 건너뛴다
