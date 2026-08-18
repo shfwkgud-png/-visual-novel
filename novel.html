@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v317</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v318</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -4659,6 +4659,8 @@ function buildStatePrompt() {
     s += '\n## 연대기 (이미 확정된 과거 — 절대 모순되게 쓰지 말 것):\n';
     chron.slice(-30).forEach(c => { s += `- ${c}\n`; });
   }
+  try { s += timeFlowNudge(); } catch {}
+
   // ★도래한 사건을 실제로 일으키게 한다(2026-08-18). 폐지된 총감독과 다른 점: 총감독은 AI가
   //   스스로 지어낸 지시로 장면·배역을 강탈했지만, 이건 **스토리에 미리 적혀 있는 이벤트 트리**를
   //   제때 꺼내는 것뿐이다. 내용은 스토리 데이터 그대로이고, 반응 방식은 여전히 전적으로 플레이어 몫.
@@ -11785,14 +11787,37 @@ function fixSpeakerIds(data) {
 //   발동된 사건 0개. 스토리가 없는 게 아니라 **닿을 수 없는 곳에 있었다**.
 //   모델이 시간을 갱신하면 그대로 따르고, 같은 시간대에 TIME_SLOT_MAX턴을 머물면 앱이 밀어준다.
 const TIME_SLOTS = ['아침', '오전', '오후', '저녁', '밤'];
-const TIME_SLOT_MAX = 3;   // 한 시간대에 머무는 최대 턴 수(넘으면 다음 시간대로)
+// ★시간 흐름 재설계(2026-08-18, v315 실패 교정). v315는 턴만 세서 3턴마다 앱이 시간대를 밀었다 —
+//   앱은 **장면 맥락을 모른다**(방에서 대화 중인지, 전투 중인지, 막 자리를 떴는지). 그래서 밤에
+//   방에서 얘기하다 아침이 오는 사고가 났다. 정체를 고치려다 반대쪽으로 부순 것이고, 애초에 앱이
+//   판단할 권한이 없는 걸 앱이 판단하게 만든 게 잘못이었다.
+//   → 지금 구조: **앱은 '같은 시간대가 몇 턴째'라는 사실만 알려주고, 넘길지는 모델이 정한다.**
+//   앱의 강제 진행은 아주 느슨한 백스톱으로만 남긴다(아래 STALE_BACKSTOP 참고).
+const TIME_SLOT_NUDGE = 3;      // 이 턴수부터 프롬프트로 "장면이 끝났으면 넘겨라"라고 알린다
+const TIME_SLOT_BACKSTOP = 10;  // 여기까지 안 넘어가고 **장소까지 바뀌었으면** 그때만 앱이 민다
+
+function tickTimeSlot() { gameState._slotTurns = (gameState._slotTurns || 0) + 1; }
+function resetTimeSlot() { gameState._slotTurns = 0; gameState._slotMoved = false; }
+
+// 프롬프트에 실어 보낼 한 줄 — 사실 전달 + 판단 위임(강제 아님)
+function timeFlowNudge() {
+  const cur = String((gameState && gameState.time) || '');
+  if (!/\d+\s*일차/.test(cur)) return '';        // 일차 표기가 없는 스토리는 관여하지 않는다
+  const n = gameState._slotTurns || 0;
+  if (n < TIME_SLOT_NUDGE) return '';
+  return `
+- ⏳ 지금 시간대(${cur})가 ${n}턴째 이어지고 있다. **장면이 매듭지어졌으면**(대화가 끝났거나 자리를 옮겼거나 하려던 걸 마쳤으면) time을 다음 시간대로 넘겨라: 아침→오전→오후→저녁→밤→다음날 아침. 아직 같은 자리에서 같은 순간이 이어지는 중이라면 넘기지 말 것 — 대화 도중에 갑자기 아침이 오면 안 된다.`;
+}
+
+// 백스톱: 모델이 계속 무시하고, **장소까지 바뀌었는데도** 시간대가 그대로면 그때만 민다.
+// 장소 이동 = 장면이 실제로 바뀌었다는 유일하게 앱이 알 수 있는 증거다.
 function advanceTimeSlotIfStale() {
   const cur = String((gameState && gameState.time) || '');
   const m = /(\d+)\s*일차\s*(\S+)?/.exec(cur);
-  if (!m) return null;                       // 일차 표기가 없는 스토리는 건드리지 않는다
-  gameState._slotTurns = (gameState._slotTurns || 0) + 1;
-  if (gameState._slotTurns < TIME_SLOT_MAX) return null;
-  gameState._slotTurns = 0;
+  if (!m) return null;
+  if ((gameState._slotTurns || 0) < TIME_SLOT_BACKSTOP) return null;
+  if (!gameState._slotMoved) return null;          // 장면이 바뀐 증거가 없으면 손대지 않는다
+  resetTimeSlot();
   let day = parseInt(m[1], 10) || 1;
   let i = TIME_SLOTS.indexOf(m[2] || '');
   if (i < 0) i = TIME_SLOTS.indexOf('오전');
@@ -11827,12 +11852,16 @@ function processResponse(data, activeCharIds, streamed) {
     const s = data.state_update;
     if (s.rep) gameState.rep += s.rep;
     if (s.gold) gameState.gold += s.gold;
-    if (s.location) gameState.location = s.location;
+    if (s.location) {
+      // 장소가 실제로 바뀐 턴을 기록해 둔다 — 백스톱이 '장면이 바뀌었다'를 판단하는 유일한 근거
+      if (s.location !== gameState.location) gameState._slotMoved = true;
+      gameState.location = s.location;
+    }
     if (s.status) gameState.status = s.status;
     // ★아이돌: **주차는** 시뮬이 소유한다(AI가 주차를 모른 채 밀면 요일이 엉킨다 — 2026-07-26).
     //   단 주 안의 요일·시각은 AI/유저가 바꿀 수 있다 — 대괄호 안 주차 표기만 떼고 나머지를 받는다.
     const _isIdol = (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' && gameState.idol);
-    if (s.time && !_isIdol) { gameState.time = s.time; gameState._slotTurns = 0; }
+    if (s.time && !_isIdol) { gameState.time = s.time; resetTimeSlot(); }
     else if (s.time && _isIdol) {
       IDOL_SIM.setDayFrom(gameState.idol, s.time); syncIdolTime();
     }
@@ -11971,7 +12000,8 @@ function processResponse(data, activeCharIds, streamed) {
   //   (같은 턴을 다시 재생하며 시간이 두 번 흐르면 안 된다).
   if (!replaying) {
     try {
-      const _adv = advanceTimeSlotIfStale();
+      tickTimeSlot();                                  // 같은 시간대에 머문 턴수 누적
+      const _adv = advanceTimeSlotIfStale();           // 백스톱(10턴+장소이동)에서만 실제로 민다
       if (_adv) showStatToast('🕐 ' + _adv);
     } catch {}
   }
