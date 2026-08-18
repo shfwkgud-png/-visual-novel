@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v312</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v313</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10045,7 +10045,7 @@ function enqueueLine(d) {
   //   세 줄이 그대로 두 번 재생된다. 큐 입구에서 이번 턴 투입분을 기억해 막는다.
   //   짧은 문장(10자 이하)은 정당한 반복("응.", "…")이 있을 수 있어 대상에서 뺀다.
   if (d && !d.isPlayerLine) {
-    const _tk = String(d.speaker || '') + '|' + String(d.text || '').replace(/\s+/g, ' ').trim();
+    const _tk = String(d.speaker || '') + '|' + _echoNorm(d.text);
     if (_tk.length > 11) {
       if (_turnLineKeys.has(_tk)) return;
       _turnLineKeys.add(_tk);
@@ -10070,6 +10070,29 @@ function enqueueLine(d) {
 //   비교로는 같은 문장을 다른 문장으로 판정했다(2026-08-18 실측 2/4건 누출).
 function _echoNorm(s) {
   return String(s || '').replace(/[\s.,!?;:…·~\-"'‘’“”「」『』()\[\]]/g, '');
+}
+
+// ★동일성 판정 단일 규칙(2026-08-18 전체 재점검): 텍스트가 같은지 보는 판정이 코드 5곳에
+//   흩어져 각자 '공백만 제거'로 비교하고 있었다. 모델은 같은 문장을 구두점·띄어쓰기만 바꿔
+//   내놓기 때문에(에코가 이 이유로 뚫렸다) 전부 같은 구멍을 갖는다 — 하나로 통일한다.
+function _sameText(a, b) {
+  const x = _echoNorm(a), y = _echoNorm(b);
+  return !!x && x === y;
+}
+
+// ★나레이션 복제 판정(2026-08-18): 기존엔 narration **전체**와 일치할 때만 걸렀다.
+//   narration은 splitNarration으로 문장 단위로 쪼개져 표시되므로, 그중 한 문장이 dialogue에
+//   복제되면 화면에는 같은 문장이 나레이터(스프라이트 없음)로 한 번, 캐릭터(스프라이트 있음)로
+//   한 번 — 유저가 본 "이미지 없이 한 번, 이미지 껴서 한 번 더"가 이 경로다. 문장 단위로 본다.
+function _isNarrationEcho(text, narration) {
+  const t = _echoNorm(text);
+  if (!t || t.length < 6) return false;          // 너무 짧으면 우연 일치 위험
+  const n = _echoNorm(narration);
+  if (!n) return false;
+  if (t === n) return true;
+  return String(narration || '')
+    .split(/(?<=[.!?…。])\s+|\u000a+/)
+    .some(sent => _sameText(sent, text));
 }
 
 function dropLogEntry(d) {
@@ -11131,7 +11154,12 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
 // begin while the model is still writing (huge perceived-latency win).
 function extractStreamUnits(buf) {
   const BS = '\\';
-  const out = { narration: null, narrationPartial: null, dialogues: [] };
+  const out = { narration: null, narrationPartial: null, dialogues: [], background: null };
+  // ★배경도 스트리밍 중에 뽑는다(2026-08-18 재점검): 전엔 background가 응답 완료 후에만
+  //   반영돼, 장면이 바뀌는 턴이면 **새 장면 대사가 옛 배경 위에서** 재생됐고 그때 남은
+  //   기록의 bgFile도 옛 배경으로 굳어 기록넘김의 배경이 어긋났다.
+  const bgm = buf.match(/"background"\s*:\s*"([^"]*)"/);
+  if (bgm) out.background = bgm[1];
   // narration: complete once its closing unescaped quote has arrived
   const nm = buf.match(/"narration"\s*:\s*"/);
   if (nm) {
@@ -11308,7 +11336,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
 
   // STREAMING PLAYBACK: begin showing narration/dialogue while the model is
   // still writing. State (bg/mood/state_update/choices) applies at completion.
-  const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false };
+  const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false, bgDone: false };
   const canStream = !historyMode && !replaying;   // ★제미나이도 스트리밍(2026-07-21) — 두 프로바이더 공통
   window._stream = canStream ? stream : null;
   const onChunk = !canStream ? null : (buf) => {
@@ -11316,9 +11344,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     const u = extractStreamUnits(buf);
     // ★모델 스키마 위반 방어(스트림 경로): narration을 dialogue로도 복제하는 모델이 있어
     //   같은 문장이 연속 2번 표시됨 — 정규화 동일 텍스트는 dialogue 쪽을 스킵(processResponse에도 동일 가드)
-    const _dnorm = s => String(s || '').replace(/\s+/g, ' ').trim();
-    const _narrN = _dnorm(u.narration ?? u.narrationPartial);
-    const _isNarrDup = d => _narrN && _dnorm(d.text) === _narrN;
+    const _narrSrc = u.narration ?? u.narrationPartial;
+    const _isNarrDup = d => _isNarrationEcho(d.text, _narrSrc);
     let pushed = 0;
     // ★부분 narration 선표시(2026-07-20 UX): 닫는 따옴표를 기다리지 않고 완성 문장 단위로 큐잉 —
     //   stream.narrEmitted = 이미 내보낸 글자 수. 완성 시 잔여 전부 방출.
@@ -11349,6 +11376,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       stream.active = true;
       stream.narrEmitted = 0;
       hideThinking();
+      if (u.background) { stream.bgDone = true; try { setBg(u.background); } catch {} }   // 대사보다 배경이 먼저
       dialogueQueue = [];
       resetTurnLineKeys();   // 새 턴 시작 — 이전 턴 투입 기록은 버린다
       resetSprites();
@@ -11362,7 +11390,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       showNextDialogue();
       return;
     }
-    // 활성 중: narration 잔여분 + 신규 dialogue 방출
+    // 활성 중: 배경(늦게 도착할 수 있다) → narration 잔여분 → 신규 dialogue
+    if (u.background && !stream.bgDone) { stream.bgDone = true; try { setBg(u.background); } catch {} }
     if (!stream.narrDone) {
       if (u.narration !== null) { emitNarr(u.narration, true); stream.narrDone = true; }
       else if (u.narrationPartial) emitNarr(u.narrationPartial, false);
@@ -11853,9 +11882,7 @@ function processResponse(data, activeCharIds, streamed) {
     }
     // ★완료 보정에도 narration 복제 가드 — 스트림 파서가 dialogue를 못 읽고 끝나면
     //   dlgCount=0이라 여기서 복제분이 필터 없이 들어와 같은 문장이 2번 표시됐음(얘기중복 잔존 경로)
-    const _sn = s => String(s || '').replace(/\s+/g, ' ').trim();
-    const _snN = _sn(data.narration);
-    (data.dialogue || []).slice(streamed.dlgCount).filter(d => !(_snN && _sn(d.text) === _snN)).forEach(d =>
+    (data.dialogue || []).slice(streamed.dlgCount).filter(d => !_isNarrationEcho(d.text, data.narration)).forEach(d =>
       dlgToChunks(d).forEach(c => enqueueLine(c)));
     window._pendingChoices = data.choices || null;
     window._activeCharIds = activeCharIds;
@@ -11887,10 +11914,8 @@ function processResponse(data, activeCharIds, streamed) {
 
   // ★모델 스키마 위반 방어: narration과 동일 텍스트를 dialogue에도 복제하는 모델(llama 등)이
   //   있어 같은 문장이 2번 표시됨 — 정규화 후 동일하면 dialogue 쪽을 버린다(얘기중복 버그)
-  const _norm = s => String(s || '').replace(/\s+/g, ' ').trim();
-  const _narrNorm = _norm(data.narration);
-  if (data.dialogue && _narrNorm) {
-    data.dialogue = data.dialogue.filter(d => _norm(d.text) !== _narrNorm);
+  if (data.dialogue && data.narration) {
+    data.dialogue = data.dialogue.filter(d => !_isNarrationEcho(d.text, data.narration));
   }
 
   if (data.dialogue) {
@@ -12178,7 +12203,7 @@ function showNextDialogue() {
       _echoNorm(d.text) && _echoNorm(d.text) === _echoNorm(window._genText)) { dropLogEntry(d); return showNextDialogue(); }
   // ★연속 중복 차단(2026-07-23 유저 "가끔 대화 두 번"): 스트림 카운트와 완료 보정 슬라이스가 어긋나면
   //   같은 대사가 이중 푸시됨 — 소스 불문, 직전 표시줄과 화자+내용이 동일하면 표시·기록 없이 스킵
-  const _dupKey = String(d.speaker || '') + '|' + String(d.text || '').replace(/\s+/g, ' ').trim();
+  const _dupKey = String(d.speaker || '') + '|' + _echoNorm(d.text);
   if (_dupKey === window._lastShownKey) { dropLogEntry(d); return showNextDialogue(); }
   window._lastShownKey = _dupKey;
   if (d.sfx) { SFX.play(d.sfx); FX.forSfx(d.sfx); }
@@ -12218,6 +12243,10 @@ function showNextDialogue() {
     // 이미 수신 시점에 기록됨 — 실제 재생된 화면 상태(배경·스프라이트·표정)로 덮어쓴다
     d._log.emotion = emo; d._log.pose = pose;
     d._log.bgFile = currentBgFile; d._log.sprites = [...shownSprites];
+    // ★표시 직전에 교정된 화자·char_id도 기록에 반영한다(2026-08-18 재점검).
+    //   여기서 speaker(id→이름)·char_id(이름↔id 엇갈림)를 고쳐놓고 기록엔 옛 값이 남아,
+    //   기록넘김에서 화자 이름이나 스프라이트가 화면과 달랐다.
+    d._log.speaker = d.speaker; d._log.char_id = d.char_id || null;
   } else if ((!replaying || window._replayFill) && !d.isPlayerLine) {
     // 안전망: enqueueLine을 안 거친 경로(이어하기 재생 복구 등)
     dialogueLog.push({
