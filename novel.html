@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v310</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v311</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10031,6 +10031,14 @@ function enqueueLine(d) {
       const _nm = resolveSpeakerName(_sp);
       if (_nm) { d.speaker = _nm; if (!d.char_id) d.char_id = _sp; }
     }
+  }
+  // ★유저 입력 에코를 **큐 입구에서** 버린다(2026-08-18).
+  //   표시 시점에서만 막으면, 기록은 수신 시점(아래)에 이미 들어가므로 둘이 어긋난다 —
+  //   유저 실측 "화면에도 두 개 떴다가 뒤로 돌려보면 하나". 여기서 버리면 화면·기록 모두
+  //   애초에 생기지 않아 불일치가 구조적으로 불가능해진다. (표시 시점 차단은 안전망으로 유지)
+  if (d && !d.isPlayerLine && playerName && String(d.speaker || '').trim() === playerName) {
+    const _en = _echoNorm(d.text);
+    if (_en && _en === _echoNorm(window._genText)) return;
   }
   // ★통째 재투입 차단(2026-08-18): 표시 시점 차단(_lastShownKey)은 직전 한 줄만 본다.
   //   스트림이 A·B·C를 방출한 뒤 완료 보정이 A·B·C를 다시 넣으면 A는 직전(C)과 달라 통과해
