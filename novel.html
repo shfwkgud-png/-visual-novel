@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v337</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v338</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10557,7 +10557,10 @@ function restoreAndReplay(save, checkTimeflow) {
   //   우연히 같으면 정당한 줄이 중복차단에 걸릴 수 있었다. 히스토리는 잘라도(컷) 이 두 키는
   //   안 지워지고 있었다.
   try { resetTurnLineKeys(); window._lastShownKey = null; } catch {}
-  loadSnaps();                      // 되감기 스냅샷 복원
+  // ★loadSnaps는 turnCount 복원 '뒤'로 옮겼다(2026-08-19 유저 "시점 되감기가 아예 없어졌다").
+  //   여기(진입 첫머리)서 부르면 아직 turnCount=0(모듈 초기값)이라, loadSnaps의 새 판 잔재
+  //   정리(`newest > cur`)가 정상 스냅샷 전부를 "지난 판 것"으로 오판해 삭제했다 —
+  //   새로고침 후 이어하기할 때마다 되감기가 전멸하고 있었다. (H-9 트림 순서결함과 동일 계열)
   gameHistory = save.gameHistory || [];
   histDropped = save.histDropped || 0;
   dlogDropped = save.dlogDropped || 0;
@@ -10585,6 +10588,7 @@ function restoreAndReplay(save, checkTimeflow) {
   summaryIndex = save.summaryIndex || 0;
   lastBg = save.lastBg || null;
   turnCount = save.turnCount || 0;
+  loadSnaps();   // ★turnCount가 이 세이브의 값이 된 뒤에야 잔재 판별이 올바르다(위 주석 참고)
   // ★트림을 summaryIndex 복원 '뒤'로 옮겼다(2026-08-18 감사 확증, 데이터손상급).
   //   trimHistory()는 전역 summaryIndex를 기준으로 자를 위치를 정하는데, 이 함수 시작 시점의
   //   summaryIndex는 아직 이 세이브 것이 아니라 이전 세션/이전 스토리에서 남은 값이다.
