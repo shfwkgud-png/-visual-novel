@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v334</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v335</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10522,6 +10522,14 @@ function startGame(isContinue) {
     dialogueQueue = []; window._pendingDialogues = null; window._pendingChoices = null;
     window._pendingPlayerLine = null; window._present = null; historyMode = false; document.body.classList.remove('history-mode');
     window._genText = ''; window._fateRoll = null;   // ★이전 스토리의 생성 pill 텍스트/주사위 잔재 제거(다른 작품에 이전 대화 뜨던 버그)
+    // ★새로하기 누수 청소(2026-08-19 유저 확증 "새로하기해도 이전 데이터가 영향"):
+    //   _pendingEvent — 이전 판의 미확정 사건이 남으면 dueEventNow가 최우선 반환해 **새 게임
+    //   1턴부터 그 사건("서열전을 일으켜라")이 주입**됐다. _timeSkipNote — 소비 전 새로하기 시
+    //   첫 턴에 "자리 비운 사이 N시간"이 주입. _genFailed — 복귀 자동재생성 오발동.
+    //   histDropped/dlogDropped — 기록·되감기 오프셋 오염. 나머지는 폴백·복원 잔재.
+    window._pendingEvent = null; window._timeSkipNote = null; window._genFailed = false;
+    window._lastChoices = null; window._fbGenTurn = null; window._replayFill = false;
+    histDropped = 0; dlogDropped = 0;
     charLayer.innerHTML = ''; shownSprites = []; charLayer.dataset.count = '0';
     hideEventCG(); currentBgFile = null;
     const oldCb = document.getElementById('choiceBox'); if (oldCb) oldCb.remove();
