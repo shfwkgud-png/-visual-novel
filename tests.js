@@ -254,6 +254,21 @@ T('combat: 판정 턴 입력창 강제 + 8턴 백스톱 + 종료 복귀', () => 
   assert(SRC.includes("if (s.combat && !gameState.combat) gameState._combatStart = turnCount;"), '_combatStart 기록 소멸');
 });
 
+// ═══ 5-B. 언어적 대치(청문회 등)에서 선택지 실종 방지 (v341) ═══
+T('combat: 언어적 대치는 판정 예외 + event 전환 시 굳은 combat 해제', () => {
+  // ① 프롬프트: 청문회·심문·설전 같은 언어적 대치는 combat이 아니라 choices 필수임을 명시
+  assert(SRC.includes('말과 입장으로 겨루는 대치는 combat이 아니다'),
+    '언어적 대치 예외(choices 필수) 규정 소멸 — 청문회에서 선택지 실종 재발');
+  assert(/청문회·심문·재판·설전·협상 등 말·입장으로 겨루는 대치는 여기에 해당하지 않는다/.test(SRC),
+    'combat 필드 스펙의 언어적 대치 제외 소멸');
+  // ② 엔진 안전망: event(청문회 등)로 장면 전환 시, 모델이 combat 미언급이면 굳은 전투 해제
+  const i = SRC.indexOf('gameState.event = s.event;');
+  assert(i > 0, 'event 처리부 소멸');
+  const seg = SRC.slice(i, i + 500);
+  assert(seg.includes('_evChanged') && seg.includes('gameState.combat = false'),
+    'event 전환 시 굳은 combat 자동해제 소멸 — 이전 전투 combat이 청문회로 굳음 재발');
+});
+
 // ═══ 6. 시간 장치 폐지 (v337) — 재도입 감지 ═══
 T('시간: 앱이 시간을 쓰는 코드 0건 (v337 폐지 유지)', () => {
   assert(!/function advanceTimeSlotIfStale/.test(SRC), '강제 진행 함수 부활');
