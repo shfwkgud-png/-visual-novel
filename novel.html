@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v338</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v339</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11700,14 +11700,45 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         showStatToast('⚠ 출력이 상한에 걸려 잘렸습니다 — 상태 패널의 "최근 턴 처리"에서 확인', true);
     } catch {}
 
-    // If playback already started, don't retry/replace — close out gracefully.
+    // If playback already started but the stream errored/emptied mid-way, first try to
+    // recover the FULL response from the worker's KV park (v281 relay reads to completion
+    // server-side even if the client stream dies). Only give up if recovery fails.
     if (stream.active && (result.error || result.blocked || !((result.text || '').trim()))) {
-      window._stream = null;
-      window._genFailed = true;   // ★스트림 중단(백그라운드 등) — 앱 복귀 시 자동 재생성 대상
-      enqueueLine({ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(이야기의 흐름이 잠시 흐트러졌다…)', pose: 'upper' });
-      if (stream.waiting) { stream.waiting = false; showNextDialogue(); }
-      sendBtn.disabled = false;
-      return;
+      // ★끊긴 스트림 보관본 복구(2026-08-19 유저 "종종 출력 잘림"): 3.6-flash가 첫 글자 뒤
+      //   중간에 끊기면 여기서 바로 포기해 부분 출력 + "(흐름이 흐트러졌다…)"로 잘렸다.
+      //   워커 보관본(전문)이 있으면 result.text로 갈아끼우고 정상 완료 경로로 흘려보낸다 —
+      //   스트림 완료 처리가 '이미 표시된 것 이후만' 덧붙이므로 이중 재생 없이 뒷부분이 채워진다.
+      let _recovered = null;
+      if (!result.blocked) {
+        try {
+          const _gid = window._pendingGen && window._pendingGen.id;
+          if (_gid && typeof SYNC_URL !== 'undefined') {
+            for (let _k = 0; _k < 3; _k++) {
+              const _r = await fetch(SYNC_URL + '/gen?id=' + _gid);
+              if (_r.ok) {
+                const _full = parseSseTranscript(await _r.text());
+                if (_full && _full.text && _full.text.trim().endsWith('}') &&
+                    _full.text.length > String(result.text || '').length) _recovered = _full.text;
+                break;
+              }
+              await new Promise(rs => setTimeout(rs, 1200));
+            }
+          }
+        } catch {}
+      }
+      if (_recovered) {
+        window._pendingGen = null;
+        try { showStatToast('🔧 끊긴 응답을 서버 보관본으로 복구했습니다', false); } catch {}
+        result = { text: _recovered, finishReason: 'stop', usage: result.usage, modelUsed: result.modelUsed };
+        // 아래 정상 완료 경로로 낙하 — streamed 상태가 살아 있어 뒷부분만 덧붙는다
+      } else {
+        window._stream = null;
+        window._genFailed = true;   // ★복구 실패 — 앱 복귀 시 자동 재생성 대상
+        enqueueLine({ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(이야기의 흐름이 잠시 흐트러졌다…)', pose: 'upper' });
+        if (stream.waiting) { stream.waiting = false; showNextDialogue(); }
+        sendBtn.disabled = false;
+        return;
+      }
     }
 
     if (result.error) {
