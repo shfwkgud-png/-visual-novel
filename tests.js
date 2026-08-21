@@ -269,6 +269,28 @@ T('combat: 언어적 대치는 판정 예외 + event 전환 시 굳은 combat �
     'event 전환 시 굳은 combat 자동해제 소멸 — 이전 전투 combat이 청문회로 굳음 재발');
 });
 
+// ═══ 5-C. cg 씬키 오선택 방지 — 실측 의미 사전 71키 전수 커버 + s_ 접촉금지 (v343) ═══
+T('cg: 씬키별 실측 의미 사전이 71키 전부 커버 + cgBlock 주입 + s_ 접촉금지', () => {
+  // 씬키 의미 사전(실측 기반)이 존재하고, 유효 씬키 71개를 하나도 빠짐없이 정의해야 한다.
+  //   누락된 키는 cgBlock에서 "이름만" 노출돼 모델이 오선택(커플 밀착에 솔로 s_sit_spread) 재발.
+  const m = SRC.match(/const CG_SCENE_MEANINGS = \{([\s\S]*?)\n\};/);
+  assert(m, 'CG_SCENE_MEANINGS 상수 소멸');
+  const dict = m[1];
+  const keys = [];
+  ['CG_SCENES_BASE', 'CG_SCENES_EXTRA'].forEach(n => {
+    const mm = SRC.match(new RegExp('const ' + n + ' = \\[([^\\]]*)\\];'));
+    mm[1].split(',').forEach(x => { const k = x.trim().replace(/['"]/g, ''); if (k) keys.push(k); });
+  });
+  assert(keys.length === 71, '유효 씬키 수 변화(' + keys.length + ') — 사전 커버 재점검 필요');
+  const missing = keys.filter(k => !new RegExp('\\b' + k + '\\s*:').test(dict));
+  assert(missing.length === 0, '씬키 의미 누락(이름 노출→오선택 재발): ' + missing.join(', '));
+  // cgBlock이 이름이 아니라 의미 사전을 주입하는가
+  assert(SRC.includes('CG_SCENE_MEANINGS[k]'), 'cgBlock이 씬키 의미를 주입하지 않음(이름만 노출)');
+  // s_ 접촉금지 규칙 유지
+  assert(/파트너와 몸이 닿는 장면엔 s_ 절대 금지/.test(SRC),
+    's_ 접촉금지 규정 소멸 — 커플 밀착에 솔로 씬키 재발');
+});
+
 // ═══ 6. 시간 장치 폐지 (v337) — 재도입 감지 ═══
 T('시간: 앱이 시간을 쓰는 코드 0건 (v337 폐지 유지)', () => {
   assert(!/function advanceTimeSlotIfStale/.test(SRC), '강제 진행 함수 부활');

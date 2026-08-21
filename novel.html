@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v341</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v343</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11562,9 +11562,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       `\n\n## cg 필드 — 성애 장면 CG(전신 일러스트) 표시 규칙(중요):` +
       `\n- 여캐와의 성적 장면이 진행되는 턴마다 반드시 cg를 채워라. 그 순간의 행위·체위에 맞는 씬키를 골라 "캐릭터ID/씬키"로. 행위가 바뀌면 씬키도 바꿔라. 장면이 끝나면 null.` +
       `\n- 유효 캐릭터ID: ${[...cgm.full, ...cgm.base].join(', ')}` +
-      `\n- 유효 씬키(모든 위 캐릭터): ${CG_SCENES_BASE.join(', ')}` +
-      (cgm.full.length ? `\n- 추가 씬키(${cgm.full.join(', ')} 만 가능): ${CG_SCENES_EXTRA.join(', ')}` : '') +
-      `\n- s_ 접두 씬키 = 여캐 단독 노출/자위 포즈(전희·탈의 단계에 사용). 목록에 없는 키·캐릭터를 지어내지 말 것(이미지가 없다).`;
+      `\n- 유효 씬키(각 "키=실제 뜻" — 방금 장면의 행위·체위와 정확히 일치하는 키를 골라라, 이름만 보고 짐작 금지): ${CG_SCENES_BASE.map(k => k + '=' + (CG_SCENE_MEANINGS[k] || k)).join(' · ')}` +
+      (cgm.full.length ? `\n- 추가 씬키(${cgm.full.join(', ')} 만 가능): ${CG_SCENES_EXTRA.map(k => k + '=' + (CG_SCENE_MEANINGS[k] || k)).join(' · ')}` : '') +
+      `\n- ★s_ 접두 = 여캐가 파트너와 몸이 안 닿은 "혼자만의" 순간(자위·노출·유혹 포즈)에만. 올라타거나 껴안거나 밀착·삽입 등 파트너와 몸이 닿는 장면엔 s_ 절대 금지 — 반드시 위 커플 체위에서 골라라(예: 무릎 위에 올라타 밀착 → cowgirl_front, 뒤에서 안김 → standing_behind). 목록에 없는 키·캐릭터를 지어내지 말 것(이미지가 없다).`;
   }
   // ★프롬프트 캐싱 구조(2026-07-21 리서치: static-first, dynamic-last). 매 턴 동일한 '월드/규칙/명단'은
   //   시스템에 고정 프리픽스로 두어 implicit caching(Gemini 2.5+ 무료 자동, 최대 75%↓·지연↓)이 걸리게 하고,
@@ -13399,6 +13399,35 @@ let currentBgFile = null;
 // AI에게 유효 조합을 그대로 주입한다. base(41종)=전 CG캐릭 공통, extra(30종)=full 캐릭만.
 const CG_SCENES_BASE = ['ahegao_fucked','bound_sex','bukkake','chair_sex','cowgirl_creampie','cowgirl_front','creampie_drip','cum_covered','cum_in_mouth','cum_on_ass','cunnilingus','deepthroat','doggy_pov','exhib_flash','facesitting','facial','fellatio_pov','footjob_cum','full_nelson','handjob_cum','mating_press_pov','missionary_pov','paizuri_pov','prone_bone','reverse_cow_side','s_ahegao_solo','s_allfours','s_fingering','s_kneel','s_lingerie','s_selffondle','s_shower','s_spread','s_spreadpussy','s_stand','sixtynine','spooning','standing_behind','thigh_cum','titfuck_cum','wall_front'];
 const CG_SCENES_EXTRA = ['ahegao_depraved','cowgirl_povdown','cowgirl_povup','cum_inside_pov','cum_on_breasts','cum_on_tongue','cum_walk','doggy_front','doggy_side','double_peace_ahegao','facial_heavy','fellatio_side','footjob','gokkun','handjob_pov','mating_press_sd','missionary_close','missionary_side','paizuri_side','reverse_cow_pov','s_ass','s_bed_invite','s_dildo','s_frontassup','s_onside','s_sit_spread','s_squat','s_wall','suspended','titfuck_facial'];
+// ★씬키 실측 의미(2026-08-21 v702 고은비 71장 전수 확인). 모델이 이름만 보고 오선택하지
+//   않게(커플 밀착 장면에 솔로 s_sit_spread가 뜬 유저 신고) 각 씬키의 실제 상황을 준다.
+//   cgBlock이 "씬키=뜻" 형식으로 주입한다. 71키 전부 커버(누락 시 fallback=키 이름).
+const CG_SCENE_MEANINGS = {
+  // 삽입 체위(커플)
+  missionary_pov:'정상위(여캐 눕고 정면)', missionary_close:'정상위 밀착포옹', missionary_side:'정상위 측면',
+  cowgirl_front:'기승위 정면(여캐가 위에 올라탐)', cowgirl_povup:'기승위 올려다본POV', cowgirl_povdown:'기승위 내려다본POV', cowgirl_creampie:'기승위+질내사정',
+  reverse_cow_pov:'역기승위(등 보임)POV', reverse_cow_side:'역기승위 측면',
+  doggy_pov:'후배위 뒤에서POV', doggy_side:'후배위 측면', doggy_front:'후배위 정면각도', prone_bone:'엎드려 눌러삽입',
+  mating_press_pov:'정상위 다리접어 눌러POV', mating_press_sd:'다리접어 눌러 측면',
+  full_nelson:'뒤에서 팔다리벌려 들어삽입', standing_behind:'서서 뒤에서삽입', spooning:'옆으로누워 뒤에서삽입',
+  suspended:'들어올려 매달아삽입', wall_front:'벽에밀착 정면삽입', chair_sex:'의자 위 삽입', bound_sex:'결박한채 삽입',
+  // 오럴·손발·가슴
+  fellatio_pov:'펠라티오POV', fellatio_side:'펠라 측면', deepthroat:'목깊이 펠라',
+  cunnilingus:'여캐가 받는 오럴(쿤니)', facesitting:'여캐가 남자얼굴에 앉음', sixtynine:'69 서로오럴',
+  paizuri_pov:'가슴사이(파이즈리)POV', paizuri_side:'가슴사이 측면', titfuck_cum:'가슴삽입+사정', titfuck_facial:'가슴삽입후 얼굴사정',
+  handjob_cum:'손자극+사정', handjob_pov:'손자극POV', footjob:'발 자극', footjob_cum:'발자극+사정', thigh_cum:'허벅지사이+사정',
+  // 사정/직후
+  facial:'얼굴 사정', facial_heavy:'얼굴 과다사정', creampie_drip:'질내사정 흘러내림', cum_inside_pov:'질내사정POV',
+  cum_in_mouth:'입안 사정', cum_on_tongue:'혀에 사정', gokkun:'정액 삼킴', cum_on_breasts:'가슴 사정',
+  cum_on_ass:'엉덩이 사정', cum_covered:'온몸 정액', cum_walk:'정액흘리며 서있기', bukkake:'다수 사정',
+  // 표정/노출
+  ahegao_fucked:'삽입당하며 아헤가오', ahegao_depraved:'타락한 아헤가오', double_peace_ahegao:'양손브이+아헤가오', exhib_flash:'옷열어 노출',
+  // 솔로(파트너 없이 여캐 혼자)
+  s_stand:'혼자 서서노출', s_kneel:'혼자 무릎꿇음', s_squat:'혼자 쪼그려앉음', s_spread:'혼자 누워 다리벌림', s_sit_spread:'혼자 앉아 다리벌림',
+  s_spreadpussy:'혼자 성기벌림', s_fingering:'혼자 손자위', s_dildo:'혼자 딜도자위', s_selffondle:'혼자 가슴만짐',
+  s_ass:'혼자 엉덩이강조', s_allfours:'혼자 네발기기', s_frontassup:'혼자 엎드려 엉덩이치켜', s_onside:'혼자 옆으로누움',
+  s_wall:'혼자 벽에기댐', s_shower:'혼자 샤워', s_lingerie:'혼자 란제리', s_bed_invite:'혼자 침대유혹', s_ahegao_solo:'혼자 아헤가오',
+};
 const CG_MANIFEST = {
   murim:   { full: ['dayeon','dodo','haran','hyeolmae','hyeolmoran','hyeonachal','maegyo','moyongcheong','ryuaeng','seorihan','soha','sohyeeum','yaseolran','yeon'],
              base: ['baekrisang','cheongram','chwibong','dangyerin','gokbiyeon','jegalyeong','jeonghyeonsatae','namgungwan','paengarin','sohalam','yeocheong'] },
