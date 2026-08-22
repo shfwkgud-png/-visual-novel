@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v343</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v344</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3385,6 +3385,15 @@ const HERO_CHARACTERS = {
   v710: { name: '러키', role: '신인 히어로', personality: '갓 데뷔한 행운 능력 히어로 소녀. 순수한 히어로 팬심으로 이 바닥에 들어옴 — 아직은' },
   v711: { name: '윤국장', role: '관리국 국장', personality: '능력관리국 수장. 국가와 기업 사이의 줄타기꾼. 주인공 같은 변수를 카드로 쓰려 함' },
   v712: { name: '딜러', role: '뒷세계 브로커', personality: '능력 강화 약물과 정보를 파는 브로커. 히어로와 빌런 모두가 그의 고객' },
+  // ── 확장 8인(2026-08-21): 경쟁 기획사 오라(AURA) 4 + 빌런 조직 블러드하운드 4 ──
+  v713: { name: '도현우', role: '오라 대표', personality: '스타포스 라이벌 2위 기획사 「오라」 대표. 백대표의 옛 수제자였다가 배신하고 독립. 젠틀맨 가면 뒤에 스타포스 몰락을 노리는 야심가' },
+  v714: { name: '라디언트', role: '오라 간판 히어로', personality: '본명 서아린. 오라의 얼굴, 랭킹 3위 빛 히어로. 세이렌의 옛 동료. 완벽한 미소 뒤에 흔들리는 완벽주의' },
+  v715: { name: '한지우', role: '오라 스카우터', personality: '오라 수석 스카우터. 고은비의 대학 선배이자 라이벌. 주인공에게 스타포스보다 좋은 조건을 내밀며 쟁탈전을 건다' },
+  v716: { name: '나비', role: '오라 신인 히어로', personality: '오라의 신인 나비 히어로. 밝고 순수하지만 회사에 소모되는 중 — 러키의 어두운 거울' },
+  v717: { name: '파열', role: '빌런 조직 보스', personality: '본명 강철우. 빌런 조직 「블러드하운드」 보스. 전직 히어로였으나 사고 은폐로 버려져 타락. 타이탄의 과거를 안다' },
+  v718: { name: '베놈', role: '독 능력 빌런', personality: '본명 독희. 블러드하운드 간부, 독 능력 팜파탈. 히어로 산업에 복수하려 하며 주인공을 유혹하고 시험한다' },
+  v719: { name: '프로스트', role: '냉기 암살자', personality: '본명 서리. 블러드하운드의 냉기 암살자. 냉혹하고 과묵하다. 조직에 빚으로 묶인 검은 과거를 감춤' },
+  v720: { name: '마리', role: '해커 빌런', personality: '블러드하운드의 천재 해커(성인). 정보로 세상을 조롱한다. 스타포스의 감춰진 진실에 접근하는 열쇠를 쥔다' },
 };
 const HERO_LORE = `당신은 히어로물 비주얼 노벨 "가면의 시대"의 게임 마스터입니다.
 
@@ -3393,8 +3402,10 @@ const HERO_LORE = `당신은 히어로물 비주얼 노벨 "가면의 시대"의
 
 **세력:**
 - 스타포스: 히어로 기획사 제국. 히어로는 상품, 시민은 시청자
+- 오라(AURA): 스타포스의 라이벌 2위 기획사. 더 세련되고 착한 이미지지만 실은 더 교묘하다. 주인공을 두고 스타포스와 스카우트 전쟁을 벌인다 (대표 도현우·간판 라디언트·스카우터 한지우·신인 나비)
 - 능력관리국: 국가 기관. 무허가 각성자를 단속함 — 미등록 능력 사용은 범죄
 - 언더그라운드: 등록을 거부한 각성자들. 자경단부터 범죄조직까지
+- 블러드하운드: 언더그라운드의 진짜 빌런 조직. 그러나 그들도 산업이 버리고 짓밟은 각성자들이다 (보스 파열·독 베놈·암살자 프로스트·해커 마리)
 - 빌런들: 진짜 악당도 있지만, 산업이 '만들어낸' 빌런도 있다
 
 **주인공: (플레이어 이름) — 무허가 각성자**
@@ -3417,6 +3428,8 @@ const HERO_LORE = `당신은 히어로물 비주얼 노벨 "가면의 시대"의
 - 세이렌은 그 실험의 유일한 아동 피험체 생존자 — 백대표가 평생 약점(실험 기록)을 쥐고 그녀를 간판으로 부려왔다. 그녀의 방송용 미소는 감옥이다
 - 빌런 이레의 정체: 실험 희생 아동의 여동생. 그녀의 '테러' 목표는 스타포스 타워 지하의 증거 서버 — 사람을 죽인 적은 한 번도 없다 (조작된 누명)
 - 주인공의 [과부하]는 대각성 유출 물질의 직접 감염 계열 — 세이렌과 같은 뿌리. 그래서 관리국이 '위험등급'으로 분류하려 든다
+- 오라 대표 도현우는 백대표의 옛 수제자다. 헬리오스의 비밀 일부를 알고 그걸 무기로 스타포스를 무너뜨리려 한다. 라디언트(서아린)는 세이렌과 같은 실험 계열 출신일 가능성이 있다 (단서로만 흘릴 것)
+- 블러드하운드 보스 파열(강철우)은 타이탄의 사고를 대신 뒤집어쓰고 버려진 전직 히어로 — 타이탄 은폐 사건의 산 증인이다. 해커 마리는 이레의 타워 침투에 필요한 증거 서버 정보를 쥔 조력자가 될 수 있다
 
 ## 숨은 타임라인:
 - 3일 후: 관리국의 공식 소환장 (무허가 능력 사용 청문)
@@ -11558,12 +11571,16 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       `\n- 씬키 의미: s_lingerie=란제리 차림, s_kneel·s_onside=단독 나체(전희 단계), fellatio_pov=오럴, titfuck_cum=가슴 사이, mating_press_pov·missionary_pov·cowgirl_front·doggy_side=삽입 체위, creampie_drip=질내사정 직후, facial=얼굴 사정. doggy_ntr·facial_oral은 하늘(haneul) 전용 특수 맥락.` +
       `\n- 목록에 없는 씬키·캐릭터를 지어내지 마라(이미지가 없어 표시 안 됨).`;
   } else if (cgm) {
+    // ★hero(가면의시대)는 41 대표씬키만 사용(유사 각도는 앱이 variant로 랜덤 표시). 그 외 스토리는 71 전체.
+    const _heroScenes = (STORY.id === 'hero') ? HERO_CG_SCENES : null;
+    const _baseList = _heroScenes || CG_SCENES_BASE;
+    const _extraList = _heroScenes ? [] : CG_SCENES_EXTRA;
     cgBlock =
       `\n\n## cg 필드 — 성애 장면 CG(전신 일러스트) 표시 규칙(중요):` +
       `\n- 여캐와의 성적 장면이 진행되는 턴마다 반드시 cg를 채워라. 그 순간의 행위·체위에 맞는 씬키를 골라 "캐릭터ID/씬키"로. 행위가 바뀌면 씬키도 바꿔라. 장면이 끝나면 null.` +
       `\n- 유효 캐릭터ID: ${[...cgm.full, ...cgm.base].join(', ')}` +
-      `\n- 유효 씬키(각 "키=실제 뜻" — 방금 장면의 행위·체위와 정확히 일치하는 키를 골라라, 이름만 보고 짐작 금지): ${CG_SCENES_BASE.map(k => k + '=' + (CG_SCENE_MEANINGS[k] || k)).join(' · ')}` +
-      (cgm.full.length ? `\n- 추가 씬키(${cgm.full.join(', ')} 만 가능): ${CG_SCENES_EXTRA.map(k => k + '=' + (CG_SCENE_MEANINGS[k] || k)).join(' · ')}` : '') +
+      `\n- 유효 씬키(각 "키=실제 뜻" — 방금 장면의 행위·체위와 정확히 일치하는 키를 골라라, 이름만 보고 짐작 금지): ${_baseList.map(k => k + '=' + (CG_SCENE_MEANINGS[k] || k)).join(' · ')}` +
+      (_extraList.length ? `\n- 추가 씬키(${cgm.full.join(', ')} 만 가능): ${_extraList.map(k => k + '=' + (CG_SCENE_MEANINGS[k] || k)).join(' · ')}` : '') +
       `\n- ★s_ 접두 = 여캐가 파트너와 몸이 안 닿은 "혼자만의" 순간(자위·노출·유혹 포즈)에만. 올라타거나 껴안거나 밀착·삽입 등 파트너와 몸이 닿는 장면엔 s_ 절대 금지 — 반드시 위 커플 체위에서 골라라(예: 무릎 위에 올라타 밀착 → cowgirl_front, 뒤에서 안김 → standing_behind). 목록에 없는 키·캐릭터를 지어내지 말 것(이미지가 없다).`;
   }
   // ★프롬프트 캐싱 구조(2026-07-21 리서치: static-first, dynamic-last). 매 턴 동일한 '월드/규칙/명단'은
@@ -13434,7 +13451,7 @@ const CG_MANIFEST = {
   academy: { full: ['a401','a402','a403','a405','a406','a408','a410','a412','a414','a415','a417','a419','a422','aluna'], base: [] },   // aluna=로라(2026-08-12 로스터 등록 — R2 실물은 종전부터 존재). a415/a417/a419/a422=강호행 CG 재활용(하란/류앵/매교/야설란, v286)
   isekai:  { full: ['is501','is502','is503','is504','is507','is508','is510','is512'], base: [] },
   muhyeop: { full: ['w201','w203','w204','w205','w210','w214'], base: [] },
-  hero:    { full: ['v701','v702','v704','v708','v710'], base: [] },   // 가면의시대 여캐 5인(세이렌·고은비·이레·그림자매·러키). 전원 성인, 71컷 full. R2 nsfw_hero_{id}_{씬키}(2026-08-20)
+  hero:    { full: ['v701','v702','v704','v708','v710','v714','v715','v716','v718','v719','v720'], base: [] },   // 가면의시대 여캐 11인. 기존5(세이렌·고은비·이레·그림자매·러키)+확장6(라디언트·한지우·나비·베놈·프로스트·마리). ★hero는 HERO_CG_SCENES(41 대표씬키)만 사용, 새6명은 CG_VARIANTS로 유사각도 랜덤(2026-08-22)
   // lovediary: 성인 교사 2인만(학생=미성년 CG 금지, 로어에 명문화). full=extra씬키까지 허용.
   lovediary: { full: ['haneul','hyeran','sera'], base: [] }
 };
@@ -13449,6 +13466,12 @@ const CG_VARIANTS = {   // "story/charId/sceneId" → 변형 개수(2 이상이�
 };
 // 세라는 mating_press_pov 미보유(유저 판정으로 제외) — 해당 씬키 발화 시 대체 씬키로 폴백
 const CG_SCENE_BLOCK = { 'lovediary/sera/mating_press_pov': 'sera/missionary_pov' };
+
+// ★가면의시대(hero) 전용 씬키셋 — 71컷을 41 대표로 묶고 유사 각도는 variant로 랜덤(2026-08-22 유저 결정).
+//   기존5인+새6인 모두 이 41 대표만 발화. 새6인은 HERO_VARIANT_SCENES로 표시 때 각도 랜덤(연애일기 방식).
+const HERO_CG_SCENES = ['missionary_pov','cowgirl_front','cowgirl_creampie','reverse_cow_pov','doggy_pov','prone_bone','mating_press_pov','standing_behind','spooning','full_nelson','suspended','wall_front','chair_sex','bound_sex','fellatio_pov','deepthroat','paizuri_pov','titfuck_cum','handjob_cum','footjob','cunnilingus','facesitting','sixtynine','thigh_cum','facial','cum_in_mouth','creampie_drip','cum_covered','cum_walk','bukkake','ahegao_fucked','exhib_flash','s_spread','s_ass','s_fingering','s_stand','s_selffondle','s_shower','s_lingerie','s_bed_invite','s_ahegao_solo'];
+const HERO_VARIANT_SCENES = { missionary_pov:3, cowgirl_front:3, reverse_cow_pov:2, doggy_pov:3, mating_press_pov:2, fellatio_pov:2, paizuri_pov:2, titfuck_cum:2, handjob_cum:2, footjob:2, facial:2, cum_in_mouth:3, creampie_drip:2, cum_covered:3, ahegao_fucked:3, s_spread:3, s_ass:3, s_fingering:2, s_stand:5 };
+['v714','v715','v716','v718','v719','v720'].forEach(c => Object.entries(HERO_VARIANT_SCENES).forEach(([s,n]) => { CG_VARIANTS[`hero/${c}/${s}`] = n; }));
 
 // 아이돌: 자산 등급에 따라 같은 장소라도 다른 배경을 쓴다(office2.webp 등). 파일 없으면 기본으로 폴백.
 function idolBgTierKey(key) {
