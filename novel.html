@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v344</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v345</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -3422,6 +3422,7 @@ const HERO_LORE = `당신은 히어로물 비주얼 노벨 "가면의 시대"의
 - 능력 배틀은 능력 조합·기지 중심으로 구체적이게. [과부하]의 반동은 항상 대가로
 - 정의의 회색지대: 합법이 정의가 아니고, 빌런이 다 악이 아님
 - 여캐 인연: 간판 히어로의 가면 벗은 얼굴, 스카우터와의 계약 밀당, 빌런 소녀와의 위험한 공조
+- ★시간 개념 없음: state_update의 time 필드는 항상 null로 둬라(채우지 마라). 서사에서도 '오전/오후/밤/N일차' 같은 시간대를 배너로 표시하거나 굳이 언급하지 마라 — 이 이야기는 시계가 아니라 사건·장면의 연쇄로 흐른다(현대 도시물이라 시간대가 필요하면 '해 질 무렵', '늦은 밤' 같은 분위기 묘사로만 자연스럽게)
 
 ## GM 전용 비밀 (직접 노출 금지 — 단서→의심→확증 3단계로만):
 - 20년 전 '대각성'은 자연현상이 아니라 스타포스의 전신 '헬리오스 연구소'의 각성 물질 유출 사고다. 백대표는 그 연구소의 젊은 연구원이었다
@@ -8176,7 +8177,7 @@ const BUILTIN_STORIES = {
     genre: '히어로물',
     characters: HERO_CHARACTERS,
     protagonist: { name: '서준', desc: '' },
-    initialState: { status: '무허가 각성자', rep: 0, gold: 40, location: '지하철 7호선 사고 현장', time: '1일차 저녁', injuries: ['능력 반동(전신 근육통)'] },
+    initialState: { status: '무허가 각성자', rep: 0, gold: 40, location: '지하철 7호선 사고 현장', injuries: ['능력 반동(전신 근육통)'] },   // time 없음 — 시간 개념 미사용(2026-08-22)
     startBg: 'management_bureau',
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 지하철 붕괴 사고 직후의 아수라장. 무허가 각성자 ${n}이(가) 능력 [과부하] 폭주로 시민들을 구해낸 직후, 그 영상이 실시간으로 퍼지는 장면으로 시작해줘. 스타포스 스카우터 고은비가 접근해오는 것으로 첫 만남을 만들어줘.`,
     startPromptText: '지하철 사고에서 능력이 폭주해 사람들을 구한 {이름}에게 스카우터 고은비가 접근하는 장면으로 시작해줘.',
@@ -13638,7 +13639,9 @@ window.addEventListener('orientationchange', () => setTimeout(layoutTopStack, 22
 function updateSceneBanner() {
   const el = document.getElementById('sceneBanner');
   if (!el) return;
-  const t = (gameState && gameState.time) ? String(gameState.time).trim() : '';
+  // ★가면의시대(hero)는 시간 개념 없음 — 상단 🕐 오전/오후/밤·N일차 배너 숨김(2026-08-22 유저 지시)
+  const _noTime = (typeof STORY !== 'undefined' && STORY && STORY.id === 'hero');
+  const t = (!_noTime && gameState && gameState.time) ? String(gameState.time).trim() : '';
   const ev = (gameState && gameState.event) ? String(gameState.event).trim() : '';
   // 아이돌: 경영 게임이라 자금·주차·남은 일정이 상시 보여야 한다(유저 지적 2026-07-25 — 화면에 자본이 없음)
   let biz = '';
