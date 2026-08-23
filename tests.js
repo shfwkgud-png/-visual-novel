@@ -269,6 +269,58 @@ T('combat: 언어적 대치는 판정 예외 + event 전환 시 굳은 combat �
     'event 전환 시 굳은 combat 자동해제 소멸 — 이전 전투 combat이 청문회로 굳음 재발');
 });
 
+// ═══ 5-E. 전수감사 수정 묶음 (v346) ═══
+T('감사: 로스터 중복 키 0건(김나연 lv106 복구) + 전 스토리 startBg 실존', () => {
+  // ① 같은 CHARACTERS 블록 안에서 키 중복 = 뒤 키가 이겨 인물이 통째로 소멸(김나연 lv107 사고)
+  const blocks = SRC.match(/const [A-Z]+_CHARACTERS = \{[\s\S]*?\n\};/g) || [];
+  assert(blocks.length >= 15, 'CHARACTERS 블록 추출 실패');
+  for (const b of blocks) {
+    const keys = [...b.matchAll(/\n  ([a-z]+\d+|[a-z_]+):\s*\{ name:/g)].map(m => m[1]);
+    const dup = keys.filter((k, i) => keys.indexOf(k) !== i);
+    assert(dup.length === 0, '로스터 키 중복(인물 소멸): ' + dup.join(','));
+  }
+  assert(/lv106: \{ name: '김나연'/.test(SRC), '김나연 lv106 소멸(중복 키 사고 재발)');
+  // ② startBg가 실제 파일로 존재해야 함(alley 404 사고 재발 방지). 스토리 블록만 매칭(id 바로 뒤 title)
+  //   + customBgs 재사용 큐레이션(hollowinn 등)은 블록 안 키 정의로 해석.
+  const fs2 = require('fs');
+  const sbs = [...SRC.matchAll(/id: '(\w+)',\s*\n\s*title:/g)];
+  assert(sbs.length >= 15, '스토리 블록 추출 실패(' + sbs.length + ')');
+  const missing = [];
+  for (const m of sbs) {
+    const sid = m[1];
+    const block = SRC.slice(m.index, m.index + 4000);
+    const sb = block.match(/startBg: '([\w]+)'/);
+    if (!sb) continue;
+    const key = sb[1];
+    if (new RegExp(`customBgs:[\\s\\S]{0,1500}\\b${key}:`).test(block)) continue;   // customBgs로 배선됨
+    const cand = [`sd_samples/backgrounds/${sid}/${key}.webp`, `sd_samples/backgrounds/${sid}/${key}.png`, `background/${key}.webp`];
+    if (!cand.some(p => fs2.existsSync(p))) missing.push(`${sid}:${key}`);
+  }
+  assert(missing.length === 0, 'startBg 파일 없음(첫 화면 404): ' + missing.join(', '));
+});
+T('감사: PANDORA pose 리맵 + injuries 교체 + CG규칙 게이트 + 성장 토스트', () => {
+  assert(/PANDORA_STORIES\.has\(STORY\.id\)\) \{\s*\n\s*pose = 'upper'/.test(SRC),
+    'PANDORA pose→upper 리맵 소멸(스프라이트 실종 재발)');
+  assert(SRC.includes('p.injuries = _next'), 'injuries 전체교체(회복 경로) 소멸 — 부상 영구화 재발');
+  assert(/CG_MANIFEST\[_sidNow\]\)\) worldPrompt \+= ENGINE_MOD_CG/.test(SRC),
+    'CG규칙 매니페스트 게이트 소멸 — 에셋 없는 스토리에 cg 지시 재발');
+  assert(SRC.includes('📊 ${_statChg'), '스탯 변화 토스트 소멸');
+  assert(SRC.includes('진행 중 이벤트: ${gameState.event}'), 'event 재주입 소멸 — 모델이 이벤트 잊음 재발');
+  assert(SRC.includes('⚔ 판정 중 — 어떻게 움직일지 직접 입력'), '판정 입력모드 신호 소멸');
+});
+
+// ═══ 5-D. 판정 턴 주사위 가시화 (v346) ═══
+T('판정: combat 턴 주사위를 앱이 직접 표시(산문 의존 금지)', () => {
+  // 유저 신고(2026-08-22): "주사위 결과도 안 뜨고 다 실패했다고만 뜸" — 표기가 모델 산문에만
+  // 의존하면 누락된다. handlePlayerInput이 combat 턴에 값을 즉시 굴려 토스트로 보여줘야 한다.
+  const i = SRC.indexOf('async function handlePlayerInput');
+  const seg = SRC.slice(i, i + 26000);
+  assert(seg.includes('window._fateRoll = null'), '주사위 재굴림 소멸');
+  assert(/if \(gameState && gameState\.combat\) \{[\s\S]{0,200}_fateRoll = 1 \+ Math\.floor/.test(seg),
+    'combat 턴 즉시 굴림 소멸 — 주사위 안 보임 재발');
+  assert(seg.includes('운명 주사위 ${window._fateRoll}/100'), '주사위 토스트 표시 소멸');
+});
+
 // ═══ 5-C. cg 씬키 오선택 방지 — 실측 의미 사전 71키 전수 커버 + s_ 접촉금지 (v343) ═══
 T('cg: 씬키별 실측 의미 사전이 71키 전부 커버 + cgBlock 주입 + s_ 접촉금지', () => {
   // 씬키 의미 사전(실측 기반)이 존재하고, 유효 씬키 71개를 하나도 빠짐없이 정의해야 한다.
