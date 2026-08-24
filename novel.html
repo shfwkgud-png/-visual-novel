@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v348</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v349</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10360,6 +10360,7 @@ function autoSave() {
   }
 
   const build = () => ({
+    dataVersion: SAVE_DATA_VERSION,   // ★세이브 구조 버전 도장(2026-08-24) — 구조 변경 시 마이그레이션 체인으로 승격
     histDropped, dlogDropped,     // ★되감기 기준점 — 없으면 새로고침 후 자르기가 안 먹는다
     gameHistory,
     gameState,
@@ -10402,11 +10403,46 @@ function autoSave() {
   try { scheduleAutoBackup(); } catch {}
 }
 
+// ═══ 세이브 데이터 버전 체계 (2026-08-24, VN 프레임워크 책 Ch.119·223 — "첫 저장 형식부터 준비하라") ═══
+// 앱 버전(v348…)과 별개로 **세이브 구조의 버전**. 구조를 바꿀 때마다 +1 하고 SAVE_MIGRATIONS에
+// "이전 버전 → 다음 버전" 변환기를 등록한다. 도장 없는 구세이브 = v1로 간주.
+const SAVE_DATA_VERSION = 1;
+// { 1: save => ({...save, 바뀐필드, dataVersion: 2}), 2: ... } — 순차 체인으로 현재 버전까지 승격
+const SAVE_MIGRATIONS = {};
+function migrateSave(save, storyId) {
+  if (!save || typeof save !== 'object') return null;
+  let v = save.dataVersion || 1;
+  // ★미래 버전 거부(멀티기기: 구버전 앱(PWA 캐시)이 신버전 세이브를 읽다 조용히 깨지는 사고 방지)
+  if (v > SAVE_DATA_VERSION) {
+    try { showStatToast('⚠ 이 세이브는 더 새로운 버전의 앱에서 저장됐습니다 — 메뉴에서 "최신 버전으로 갱신" 후 이어해주세요', true); } catch {}
+    return null;
+  }
+  if (v === SAVE_DATA_VERSION) return save;
+  // 변환 전 원본 백업(책 원칙: 마이그레이션 실패가 원본을 파괴하면 안 된다) — 버전당 1회만
+  try {
+    const bk = saveKeyFor(storyId) + '_premig_v' + v;
+    if (!bulkGet(bk)) bulkSetSilent(bk, JSON.stringify(save));
+  } catch {}
+  try {
+    while (v < SAVE_DATA_VERSION) {
+      const fn = SAVE_MIGRATIONS[v];
+      if (!fn) { save.dataVersion = SAVE_DATA_VERSION; break; }   // 변환기 없는 구간 = 구조 동일(도장만 갱신)
+      save = fn(save);
+      const nv = save.dataVersion || (v + 1);
+      if (nv <= v) throw new Error('마이그레이션이 버전을 올리지 않음: ' + v);
+      v = nv;
+    }
+    return save;
+  } catch (e) {
+    try { console.error('[세이브 마이그레이션 실패]', e); showStatToast('⚠ 세이브 변환 실패 — 원본은 보존됐습니다', true); } catch {}
+    return null;   // 절반 변환된 세이브로 진행 금지(원본은 _premig 백업에 있음)
+  }
+}
 function loadSave() {
   try {
     const raw = bulkGet(saveKeyFor(STORY.id));
     if (!raw) return null;
-    return JSON.parse(raw);
+    return migrateSave(JSON.parse(raw), STORY.id);
   } catch { return null; }
 }
 

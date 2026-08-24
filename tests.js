@@ -269,6 +269,49 @@ T('combat: 언어적 대치는 판정 예외 + event 전환 시 굳은 combat �
     'event 전환 시 굳은 combat 자동해제 소멸 — 이전 전투 combat이 청문회로 굳음 재발');
 });
 
+// ═══ 5-F. 세이브 데이터 버전·마이그레이션 (v349 — 책 Ch.119·223) ═══
+T('세이브버전: 도장·레거시 승격·미래 거부·체인·백업 (실행 검증)', () => {
+  // build()에 도장이 찍히는가
+  assert(SRC.includes('dataVersion: SAVE_DATA_VERSION'), 'autoSave build()에 dataVersion 도장 소멸');
+  // migrateSave 실행 검증 — SAVE_DATA_VERSION=3, 체인 1→2→3을 주입해 시뮬레이션
+  const code = grabFn('migrateSave');
+  const stored = {};
+  const sb = runSandbox(code + '\n', {
+    SAVE_DATA_VERSION: 3,
+    SAVE_MIGRATIONS: {
+      1: s => Object.assign({}, s, { fieldA: 'added', dataVersion: 2 }),
+      2: s => Object.assign({}, s, { fieldB: 'added', dataVersion: 3 }),
+    },
+    saveKeyFor: id => 'vn_save_' + id,
+    bulkGet: k => stored[k] || null,
+    bulkSetSilent: (k, v) => { stored[k] = v; return true; },
+    showStatToast: () => {},
+  });
+  // ① 레거시(도장 없음)=v1 간주 → 체인 통과 → v3 승격 + 필드 추가
+  const legacy = { gameHistory: [1, 2], turnCount: 5 };
+  const m1 = sb.migrateSave(legacy, 'hero');
+  assert(m1 && m1.dataVersion === 3, '레거시 승격 실패: ' + JSON.stringify(m1 && m1.dataVersion));
+  assert(m1.fieldA === 'added' && m1.fieldB === 'added', '마이그레이션 체인 미적용');
+  assert(m1.turnCount === 5, '기존 필드 소실');
+  // ② 변환 전 원본 백업이 남았는가
+  assert(stored['vn_save_hero_premig_v1'], '마이그레이션 전 원본 백업 없음(원본 파괴 위험)');
+  assert(JSON.parse(stored['vn_save_hero_premig_v1']).turnCount === 5, '백업 내용 불일치');
+  // ③ 미래 버전 거부(구버전 앱이 신버전 세이브를 읽는 멀티기기 사고)
+  const future = { dataVersion: 99, gameHistory: [] };
+  assert(sb.migrateSave(future, 'hero') === null, '미래 버전 세이브를 거부하지 않음');
+  // ④ 현재 버전은 무변환 통과
+  const cur = { dataVersion: 3, turnCount: 9 };
+  assert(sb.migrateSave(cur, 'hero') === cur, '현재 버전 세이브가 그대로 통과하지 않음');
+  // ⑤ 변환기 실패 시 null(절반 변환 금지) — 1→2 변환기가 throw
+  const sb2 = runSandbox(code + '\n', {
+    SAVE_DATA_VERSION: 2,
+    SAVE_MIGRATIONS: { 1: () => { throw new Error('boom'); } },
+    saveKeyFor: id => 'k' + id, bulkGet: () => null, bulkSetSilent: () => true,
+    showStatToast: () => {}, console: { error: () => {} },
+  });
+  assert(sb2.migrateSave({ turnCount: 1 }, 'x') === null, '변환 실패가 절반 상태로 통과됨');
+});
+
 // ═══ 5-E. 전수감사 수정 묶음 (v346) ═══
 T('감사: 로스터 중복 키 0건(김나연 lv106 복구) + 전 스토리 startBg 실존', () => {
   // ① 같은 CHARACTERS 블록 안에서 키 중복 = 뒤 키가 이겨 인물이 통째로 소멸(김나연 lv107 사고)
