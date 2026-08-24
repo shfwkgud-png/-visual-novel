@@ -11,8 +11,17 @@ const path = require('path');
 
 const SRC = fs.readFileSync(path.join(__dirname, 'novel.html'), 'utf8');
 const results = [];
+const asyncJobs = [];   // async 테스트(fn이 Promise 반환)는 출력 전에 전부 대기
 function T(name, fn) {
-  try { fn(); results.push(['PASS', name]); }
+  try {
+    const r = fn();
+    if (r && typeof r.then === 'function') {
+      const slot = ['PASS', name]; results.push(slot);
+      asyncJobs.push(r.catch(e => { slot[0] = 'FAIL'; slot[1] = name + ' — ' + (e && e.message || e); }));
+      return;
+    }
+    results.push(['PASS', name]);
+  }
   catch (e) { results.push(['FAIL', name + ' — ' + (e && e.message || e)]); }
 }
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
@@ -269,6 +278,87 @@ T('combat: 언어적 대치는 판정 예외 + event 전환 시 굳은 combat �
     'event 전환 시 굳은 combat 자동해제 소멸 — 이전 전투 combat이 청문회로 굳음 재발');
 });
 
+// ═══ 5-G. 분리 응답 파이프라인 (v350 — 속도 수술) ═══
+T('분리: splitPipeOn 스위치·idol 제외 (실행 검증)', () => {
+  const code = grabFn('splitPipeOn');
+  const mk = (cfg, sid) => runSandbox(code + '\n', {
+    localStorage: { getItem: () => JSON.stringify(cfg) },
+    STORY: { id: sid },
+  }).splitPipeOn();
+  assert(mk({}, 'hero') === true, '기본값이 ON이 아님');
+  assert(mk({ splitPipe: false }, 'hero') === false, 'vn_cfg.splitPipe=false 스위치가 안 먹음(롤백 불가)');
+  assert(mk({}, 'idol') === false, 'idol(sim 결합)이 분리 대상에서 제외되지 않음');
+});
+T('분리: 사건 커밋 함수 — 확인 시 커밋·미확인 시 tries+1 (실행 검증)', () => {
+  const code = grabFn('commitPendingEventFrom');
+  const sb = runSandbox(code + '\n', {
+    gameState: { firedEvents: [], firedEventTurns: {} },
+    turnCount: 7,
+  });
+  sb.window._pendingEvent = { t: '개전 선포', tries: 0 };
+  sb.commitPendingEventFrom({ state_update: { event: '개전 선포' } });
+  assert(sb.gameState.firedEvents.includes('개전 선포'), 'event 확인 커밋 실패');
+  assert(sb.gameState.firedEventTurns['개전 선포'] === 7, '발동 턴 기록 실패');
+  assert(sb.window._pendingEvent === null, '커밋 후 pending 미해제');
+  sb.window._pendingEvent = { t: '학원제', tries: 0 };
+  sb.commitPendingEventFrom({ state_update: {} });
+  assert(sb.window._pendingEvent.tries === 1, '미확인 시 tries+1 실패');
+});
+T('분리: stateOnly 경로가 렌더를 건드리지 않음 + 배선 존재', () => {
+  const pr = grabFn('processResponse');
+  // stateOnly 가드: 초입 화면 처리와 렌더 경로를 모두 우회하는지(위치 검사)
+  const gEnter = pr.indexOf('if (!stateOnly) {');
+  const gExit = pr.indexOf('if (stateOnly) {');
+  const stateBlock = pr.indexOf('if (data.state_update) {');
+  const renderBlock = pr.indexOf('if (streamed) {');
+  assert(gEnter >= 0 && gExit > 0, 'stateOnly 가드 소멸');
+  assert(gEnter < stateBlock && stateBlock < gExit && gExit < renderBlock,
+    'stateOnly 가드 순서 붕괴(화면가드→state공유→렌더전 탈출이어야)');
+  // combat 최상위 승격
+  assert(pr.includes("typeof data.combat === 'boolean'"), '본편 combat 최상위 처리 소멸(판정 게이트 지연)');
+  // 후행 발사·병합·대기 배선
+  assert(SRC.includes('fireStateExtract(userMessageForExtract()'), '후행 추출 발사 소멸');
+  assert(SRC.includes('h.content = JSON.stringify(merged)'), 'gameHistory 병합 저장 소멸(복원 호환 붕괴)');
+  assert(SRC.includes('window._splitExtractPending, new Promise'), '다음 턴 전 후행 대기 소멸(옛 상태로 프롬프트)');
+  assert(SRC.includes('window._splitExtractPending && window._pendingChoices == null'), '소비 지점 폴백 억제 소멸(선택지 이중 생성)');
+  // 후행이 본편 소유 필드를 침범하지 못함
+  assert(SRC.includes('delete sx.state_update.combat'), '후행 combat 차단 소멸(판정 게이트 경합)');
+});
+T('분리: fireStateExtract — 추출→적용→병합→선택지 (실행 검증)', async () => {
+  const code = grabFn('userMessageForExtract') + '\n' + grabFn('commitPendingEventFrom') + '\n' + grabFn('fireStateExtract');
+  const calls = { proc: null, choices: 'NOT_CALLED', saved: 0 };
+  const hist = [
+    { role: 'user', content: '(그녀에게 다가간다)' },
+    { role: 'assistant', content: JSON.stringify({ narration: '그녀가 웃었다', dialogue: [{ speaker: '나비', char_id: 'v716', text: '왔네?' }] }) },
+  ];
+  const sb = runSandbox(code + '\n', {
+    turnCount: 3, gameHistory: hist,
+    gameState: { rep: 1, gold: 10, metChars: { v716: { intimacy: 20 } }, firedEvents: [], firedEventTurns: {} },
+    CHARACTERS: { v716: { name: '나비' } },
+    RPG_STORIES: new Set(['hero']), STORY: { id: 'hero' },
+    dialogueQueue: [], historyMode: false,
+    sendBtn: { disabled: false },
+    document: { getElementById: () => null },
+    llmSmall: async () => JSON.stringify({
+      state_update: { chars: { v716: { intimacy: 24 } }, combat: true },
+      choices: ['말을 건다', '떠본다'], chronicle: ['나비가 주인공을 기억한다'],
+    }),
+    processResponse: (d, a, s, so) => { calls.proc = { d, so }; },
+    showChoices: c => { calls.choices = c; },
+    autoSave: () => { calls.saved++; },
+    setTimeout: (f, ms) => f(),
+  });
+  await sb.fireStateExtract('(그녀에게 다가간다)', JSON.parse(hist[1].content), ['v716'], 1);
+  assert(calls.proc && calls.proc.so === true, 'stateOnly 적용 호출 안 됨');
+  assert(calls.proc.d.state_update.chars.v716.intimacy === 24, '추출 상태 미전달');
+  assert(!('combat' in calls.proc.d.state_update), '후행 combat이 삭제되지 않음');
+  const merged = JSON.parse(hist[1].content);
+  assert(merged.state_update && merged.choices && merged.chronicle, 'gameHistory 병합 실패: ' + hist[1].content.slice(0, 80));
+  assert(Array.isArray(calls.choices) && calls.choices.length === 2, '선택지 표시 안 됨: ' + JSON.stringify(calls.choices));
+  assert(calls.saved >= 1, '후행 적용 후 autoSave 안 됨');
+  assert(sb.window._splitExtractPending === null, 'pending 미해제');
+});
+
 // ═══ 5-F. 세이브 데이터 버전·마이그레이션 (v349 — 책 Ch.119·223) ═══
 T('세이브버전: 도장·레거시 승격·미래 거부·체인·백업 (실행 검증)', () => {
   // build()에 도장이 찍히는가
@@ -451,8 +541,10 @@ T('chronicle: processResponse가 data.chronicle을 읽는다', () => {
   assert(SRC.includes('Array.isArray(data.chronicle)'), 'chronicle 수신 소멸(P2-7 재발)');
 });
 
-// ═══ 결과 출력 ═══
-const fails = results.filter(r => r[0] === 'FAIL');
-for (const [st, name] of results) console.log((st === 'PASS' ? '  ✓ ' : '  ✗ ') + name);
-console.log('\n' + (results.length - fails.length) + '/' + results.length + ' 통과' + (fails.length ? ' — ★실패 ' + fails.length + '건' : ''));
-process.exit(fails.length ? 1 : 0);
+// ═══ 결과 출력 (async 테스트 완료 대기 후) ═══
+Promise.all(asyncJobs).then(() => {
+  const fails = results.filter(r => r[0] === 'FAIL');
+  for (const [st, name] of results) console.log((st === 'PASS' ? '  ✓ ' : '  ✗ ') + name);
+  console.log('\n' + (results.length - fails.length) + '/' + results.length + ' 통과' + (fails.length ? ' — ★실패 ' + fails.length + '건' : ''));
+  process.exit(fails.length ? 1 : 0);
+});

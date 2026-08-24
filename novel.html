@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v349</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v350</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2068,6 +2068,7 @@
   <button onclick="Ambient.toggle(); syncTopMenu()"><span id="tmBgmLabel">배경음악</span><i id="tmBgmDot"></i></button>
   <button onclick="closeTopMenu(); toggleSlots()">세이브 슬롯</button>
   <button onclick="closeTopMenu(); refreshApp()">최신 버전으로 갱신</button>
+  <button onclick="toggleSplitPipe(); syncTopMenu()"><span id="tmSplitLabel">⚡빠른 응답</span><i id="tmSplitDot"></i></button>
   <button onclick="closeTopMenu(); exitToMain()">홈으로</button>
 </div>
 <div id="sceneBanner" onclick="openIdolBoard()"></div>
@@ -11597,6 +11598,11 @@ document.addEventListener('visibilitychange', () => {
 async function callGemini(activeCharIds = [], retryCount = 0) {
   showThinking();
   sendBtn.disabled = true;
+  // ★분리 모드: 직전 턴의 후행 상태 추출이 아직 도는 중이면 잠깐 기다린다(최대 6초) —
+  //   이번 프롬프트의 [현재 상태]가 최신이 되도록. 6초를 넘기면 옛 상태로 진행(진행이 우선).
+  if (window._splitExtractPending) {
+    try { await Promise.race([window._splitExtractPending, new Promise(r => setTimeout(r, 6000))]); } catch {}
+  }
   window._genFailed = false;   // ★백그라운드 중단 감지 초기화(복귀 시 자동 재생성 판단용)
   // Hide input while the AI is generating/outputting
   inputBar.style.display = 'none';
@@ -11678,7 +11684,14 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     // ★예시 키를 이 스토리 목록에서 직접 뽑는다(2026-08-18 감사 확증): 전엔 무협 전용 키(market_street
     //   등)를 모든 스토리에 하드코딩해서, "목록에서만 골라라"면서 정작 그 목록에 없는 키 4개를
     //   예시로 줬다(아카데미엔 market_street 자체가 없다).
-    + (bgKeys ? `\n\n## background 필드 — 장소가 바뀌면 반드시 갱신하되, 아래 이 스토리의 배경 키 목록에서만 정확히 골라라(목록에 없는 이름을 쓰면 배경이 안 바뀐다, 예: ${bgKeys.split(', ').slice(0, 3).join(', ')} 등):\n${bgKeys}` : '');
+    + (bgKeys ? `\n\n## background 필드 — 장소가 바뀌면 반드시 갱신하되, 아래 이 스토리의 배경 키 목록에서만 정확히 골라라(목록에 없는 이름을 쓰면 배경이 안 바뀐다, 예: ${bgKeys.split(', ').slice(0, 3).join(', ')} 등):\n${bgKeys}` : '')
+    // ★분리 응답 모드(2026-08-24 속도 수술): 상태·선택지·연대기는 후행 소형 호출이 처리 —
+    //   본편은 산문·연출만 출력해 첫 글자와 완료가 빨라진다. vn_cfg.splitPipe=false로 즉시 구방식.
+    + (splitPipeOn() ? `\n\n## ★★분리 응답 모드(이번 응답에 적용 — 위의 출력 형식 규정보다 우선):
+- 이번 응답에서 "state_update"·"choices"·"chronicle" 필드는 통째로 생략하라(별도 시스템이 이 장면을 읽고 대신 기록한다 — 네가 채워도 무시된다).
+- 출력 JSON = { "narration", "dialogue": [...], "background", "mood", "ending", "cg", "combat" } 만.
+- "combat"은 최상위 불리언 필드다 — 규칙은 기존 state_update.combat과 동일(몸으로 겨루는 물리 판정 장면만 true, 청문회·설전 등 언어적 대치는 false, 판정이 끝나면 false).
+- 상태 일관성(관계·사망 불가역·부상 반영·친밀도 구간 태도·⚔판정 표기·RPG 경지 위계)은 서사 속에서 계속 지켜라 — 기록만 생략하는 것이다.` : '');
   // 매 턴 바뀌는 동적 컨텍스트(등장인물 카드 + 현재 상태) — 마지막 유저 입력 앞에 붙여 프리픽스 안정화(원본 히스토리는 불변)
   const dynamicCtx = charPrompt + buildStatePrompt();
   const messages = buildMessages();
@@ -11970,34 +11983,15 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     // ★사건 확정 지점(2026-08-18): 응답이 실제로 도착한 턴에만 기록한다. 전엔 프롬프트를
     //   조립하는 순간 확정해서, 429 한 번이나 [다시 답변] 한 번에 메인 사건이 통째로
     //   사라졌다(재조립 때 간격 게이트에 걸려 프롬프트에서도 빠지므로 회복 불가였다).
-    try {
-      const _pe = window._pendingEvent;
-      if (_pe && _pe.t) {
-        // ★반영 확인(2026-08-18 감사 확증, P0-3): 응답이 성공했다고 무조건 커밋하지 않는다.
-        //   모델이 state_update.event로 "이 사건을 열었다"고 확인한 턴에만 확정한다.
-        //   확인이 없으면 다음 턴에도 같은 사건을 다시 주입(_pendingEvent 유지) — 단
-        //   3번 넘게 시도해도 모델이 계속 무시하면 서사가 그 사건에 무한정 묶이지 않도록
-        //   포기하고 넘어간다(포기도 기록해 재발동은 안 시킨다).
-        const _s = (parsed && parsed.state_update) || {};
-        const _confirmed = _s.event === _pe.t
-          || (Array.isArray(parsed.chronicle) && parsed.chronicle.some(c => typeof c === 'string' && c.includes(_pe.t)));
-        if (_confirmed || (_pe.tries || 0) >= 2) {   // 응답 받은 턴 기준 3회(0·1·2)까지 시도 후 포기
-          gameState.firedEvents = gameState.firedEvents || [];
-          if (!gameState.firedEvents.includes(_pe.t)) gameState.firedEvents.push(_pe.t);
-          // ★체인 조건용 발동 턴 기록(2026-08-18 감사 확증, P2-9) — '학원제 직후' 같은 조건이
-          //   이 턴 번호 + 2로 스스로를 풀 수 있게 한다.
-          gameState.firedEventTurns = gameState.firedEventTurns || {};
-          gameState.firedEventTurns[_pe.t] = turnCount;
-          gameState._lastEventTurn = turnCount;
-          window._pendingEvent = null;
-        } else {
-          // ★확인 실패 — 응답을 실제로 받은 이 턴에만 tries +1(재시도 횟수와 무관, 검토 결함A)
-          _pe.tries = (_pe.tries || 0) + 1;
-        }
-      }
-    } catch {}
+    // ★분리 파이프라인(2026-08-24): 본편 응답에 state_update가 없으면(분리 모드 응답) 사건 커밋을
+    //   후행 추출 결과 도착 시점으로 미룬다 — event 확인이 후행 데이터에 있기 때문.
+    if (parsed && parsed.state_update) { try { commitPendingEventFrom(parsed); } catch {} }
     recTokens(0, 0, true);   // 토큰 추적: 본편 턴 카운트(사용량은 fetch단에서 합산)
     processResponse(parsed, activeCharIds, stream.active ? stream : null);
+    // ★분리 모드: 상태·선택지·연대기를 후행 소형 호출로 추출(본편은 이미 화면에 흐르는 중)
+    if (splitPipeOn() && parsed && !parsed.state_update) {
+      try { fireStateExtract(userMessageForExtract(), parsed, activeCharIds, gameHistory.length - 1); } catch {}
+    }
     autoSave();
     summarizeIfNeeded();
 
@@ -12012,6 +12006,114 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   } finally {
     sendBtn.disabled = false;
   }
+}
+
+// ═══════════ 분리 응답 파이프라인 (2026-08-24 — "다른 RP챗은 빠른데 나는 느림" 수술) ═══════════
+// 본편 호출 = 산문·대사·연출만(화면에 즉시 흐름) / 상태·선택지·연대기 = 후행 소형 호출.
+// 안전장치: ①후행 결과를 gameHistory의 본편 JSON에 병합 저장 → 복원·리플레이 경로 무변화
+// ②스위치(vn_cfg.splitPipe=false로 즉시 구방식 복귀) ③후행 실패=상태 변화 없이 진행(다음 턴에 이어짐).
+function splitPipeOn() {
+  try { const c = JSON.parse(localStorage.getItem('vn_cfg') || '{}'); if (c.splitPipe === false) return false; } catch {}
+  const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || '';
+  return sid !== 'idol';   // 아이돌은 sim(경영 수치)이 state_update에 묶여 있어 분리 제외(안전)
+}
+function userMessageForExtract() {
+  for (let i = gameHistory.length - 1; i >= 0; i--) if (gameHistory[i].role === 'user') return String(gameHistory[i].content || '').slice(0, 1200);
+  return '';
+}
+// 사건 커밋(P0-3): 모델이 event/chronicle로 "이 사건을 열었다"고 확인한 턴에만 확정.
+// 분리 모드에서는 후행 추출 결과 도착 시 호출된다.
+function commitPendingEventFrom(parsed) {
+  const _pe = window._pendingEvent;
+  if (!_pe || !_pe.t) return;
+  const _s = (parsed && parsed.state_update) || {};
+  const _confirmed = _s.event === _pe.t
+    || (Array.isArray(parsed.chronicle) && parsed.chronicle.some(c => typeof c === 'string' && c.includes(_pe.t)));
+  if (_confirmed || (_pe.tries || 0) >= 2) {   // 응답 받은 턴 기준 3회(0·1·2)까지 시도 후 포기
+    gameState.firedEvents = gameState.firedEvents || [];
+    if (!gameState.firedEvents.includes(_pe.t)) gameState.firedEvents.push(_pe.t);
+    gameState.firedEventTurns = gameState.firedEventTurns || {};   // 체인 조건용 발동 턴(P2-9)
+    gameState.firedEventTurns[_pe.t] = turnCount;
+    gameState._lastEventTurn = turnCount;
+    window._pendingEvent = null;
+  } else {
+    _pe.tries = (_pe.tries || 0) + 1;   // 확인 실패 — 응답을 실제로 받은 턴에만 +1(결함A)
+  }
+}
+// 후행 상태 추출: 본편 산문을 읽고 state_update·choices·chronicle을 소형 모델로 뽑는다.
+async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
+  const myTurn = turnCount;
+  const job = (async () => {
+    // 이번 턴 장면 전문(산문+대사)
+    const scene = ((mainData.narration || '') + '\n' +
+      (mainData.dialogue || []).map(d => `${d.speaker}: ${d.text || ''}`).join('\n')).slice(0, 4500);
+    // 현재 상태 요약(추출 근거 — 변화량 계산·일관성용)
+    const met = gameState.metChars || {};
+    const present = (activeCharIds || []).filter(id => CHARACTERS[id])
+      .map(id => `${id}=${CHARACTERS[id].name}(친밀도 ${(met[id] && met[id].intimacy) ?? '?'})`).join(' · ');
+    const rpg = (typeof RPG_STORIES !== 'undefined' && RPG_STORIES.has(STORY.id));
+    const sys = `너는 텍스트 RPG의 상태 기록관이다. 방금 진행된 장면을 읽고 상태 변화·선택지·확정 사실만 JSON으로 추출하라(코드블록 없이 순수 JSON).
+★절대 규칙: 장면에 실제 근거가 있는 변화만 기록하라 — 장면에 없는 사건·수치 변화를 지어내면 안 된다. 변화가 없으면 필드를 생략하라.
+출력 형식:
+{
+ "state_update": {
+  "rep": 평판 변화량(없으면 생략), "gold": 재화 변화량(없으면 생략),
+  "location": "이동했으면 새 위치", "status": "신분이 바뀌었으면", "time": "시간이 흘렀으면 'N일차 아침|오전|오후|저녁|밤'",
+  "event": "새 이벤트가 시작·전환됐으면 한 줄(진행 중이던 게 끝났으면 null)",
+  "faction": "주인공이 진영·소속을 선택/변경한 턴에만",
+  "chars": { "캐릭터ID": { "relationship": "관계 요약", "intimacy": 0~100(장면의 교감에 맞게 소폭 조정), "condition": "신체·정신 상태", "note": "특이사항", "knows": "이 인물이 새로 알게 된 비밀(있을 때만)" } },
+  "player": { "abilities": ["새 능력(있을 때만)"], "injuries": ["현재 남은 부상 전체(치유된 건 제외) — 변화 턴에만"], "note": "현재 상황 요약" },${rpg ? `
+  "player".stats/skills/tier: 훈련·전투·성장이 실제로 있었던 턴에만( stats {"근력":1~100...}, skills {"스킬명":{"rank":"입문|초급|중급|상급|절정|초월","xp":0~100}}, tier "경지" ),
+  각 chars 안에 "tier"(첫 등장 인물의 경지 확정 시),` : ''}
+  "flags": { "비밀·진행 플래그": 값 } (변화 시만)
+ },
+ "choices": ["선택지1","선택지2","(선택)3","(선택)4"],
+ "chronicle": ["이번 턴에 새로 확정된 사실 0~3줄(관계 변화·밝혀진 비밀·한 약속·유저가 정한 설정)"]
+ }
+choices 규칙: 지금 이 장면에서 주인공이 실제로 할 수 있는 구체적 행동·대사 2~4개. ①장면에 실제 있는 인물·사물만 ②"계속" 같은 추상 버튼 금지 ③서로 다른 방향(안전vs위험, 이성vs감정) ④적어도 하나는 관계나 상황을 흔드는 대담한 쪽. ★단 장면이 물리적 판정(전투 등) 한복판이면 choices를 빈 배열로.
+combat 필드는 넣지 마라(본편이 처리한다). 대상 캐릭터ID는 장면 인물 목록의 ID만 사용.`;
+    const usr = `[주인공] 평판 ${gameState.rep} · 골드 ${gameState.gold}${gameState.event ? ` · 진행 중 이벤트: ${gameState.event}` : ''}
+[장면 인물] ${present || '없음'}
+[플레이어 입력] ${userText || '(없음)'}
+[이번 턴 장면]
+${scene}`;
+    const raw = await llmSmall(sys, usr, 2500, 0.3);
+    if (!raw) return null;
+    const m = String(raw).match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    let sx;
+    try { sx = JSON.parse(m[0]); } catch { return null; }
+    return sx;
+  })();
+  window._splitExtractPending = job;
+  let sx = null;
+  try { sx = await job; } catch {}
+  if (window._splitExtractPending === job) window._splitExtractPending = null;
+  // 턴이 넘어갔으면(유저가 이미 다음 입력) 상태만 조용히 적용하고 선택지는 버린다
+  const stale = (turnCount !== myTurn);
+  if (sx && sx.state_update && typeof sx.state_update === 'object') {
+    delete sx.state_update.combat;   // combat은 본편 소유 — 후행이 판정 게이트를 흔들지 못하게
+    try { processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, activeCharIds, null, true); } catch {}
+    try { commitPendingEventFrom(sx); } catch {}
+    // ★핵심 안전장치: 본편 JSON에 병합 저장 → 세이브·복원·리플레이가 기존 형태 그대로를 본다
+    try {
+      const h = gameHistory[histIdx];
+      if (h && h.role === 'assistant') {
+        const merged = JSON.parse(h.content);
+        merged.state_update = sx.state_update;
+        if (Array.isArray(sx.chronicle)) merged.chronicle = sx.chronicle;
+        if (Array.isArray(sx.choices)) merged.choices = sx.choices;
+        h.content = JSON.stringify(merged);
+      }
+    } catch {}
+    try { autoSave(); } catch {}
+  }
+  if (stale) return;
+  // 선택지 표시(도착 시점 검증 — genFallbackChoices와 동일 계약)
+  const ch = (sx && Array.isArray(sx.choices)) ? sx.choices : null;
+  if (dialogueQueue.length > 0 || historyMode) { window._pendingChoices = ch; return; }   // 재생 중이면 소진 시점이 표시
+  if (document.getElementById('choiceBox') || sendBtn.disabled) return;
+  showChoices(ch);   // null이면 showChoices가 폴백 생성 경로를 태운다
 }
 
 // ===== TEXT CHUNKING =====
@@ -12140,7 +12242,11 @@ function fixSpeakerIds(data) {
 //   (tickTimeSlot·resetTimeSlot·timeFlowNudge·advanceTimeSlotIfStale·TIME_SLOT_* 전부 제거.
 //    세이브의 _slotTurns 잔재는 무해 — 아무도 안 읽는다.)
 
-function processResponse(data, activeCharIds, streamed) {
+function processResponse(data, activeCharIds, streamed, stateOnly) {
+  // ★stateOnly(2026-08-24 분리 파이프라인): 후행 상태 추출 결과만 적용하는 모드.
+  //   화면(배경·CG·무드·대사 큐)은 본편이 이미 처리했으므로 건드리지 않고,
+  //   state_update·chronicle 적용부만 공유한 뒤 렌더 경로 진입 전에 빠져나간다.
+  if (!stateOnly) {
   hideThinking();
   try { fixSpeakerIds(data); } catch {}   // ★speaker에 ID가 온 경우 이름으로 교정
   window._timeSkipNote = null;   // one-shot consumed
@@ -12157,6 +12263,14 @@ function processResponse(data, activeCharIds, streamed) {
   if (data.mood) Ambient.setMood(data.mood);
   window._pendingEnding = (data.ending && typeof data.ending === 'string') ? data.ending : null;
 
+  // ★분리 모드: 본편이 combat을 최상위 불리언으로 보낸다(state_update가 후행이라 판정 게이트의
+  //   즉시성을 위해 승격). 기존 state_update.combat 파싱과 같은 규칙.
+  if (typeof data.combat === 'boolean') {
+    if (data.combat && !gameState.combat) gameState._combatStart = turnCount;
+    gameState.combat = data.combat;
+    if (!data.combat) gameState._combatStart = null;
+  }
+
   // ★AI가 sim을 빼먹어도 대사로 정한 건 반영한다(2026-07-27). 응답 스키마에 sim이 없어서
   //   모델이 산문 지시를 무시하고 sim을 아예 안 내던 게 3연속 실패의 원인이었다.
   //   스키마는 고쳤지만, 준수 여부에 게임 진행을 인질로 잡히지 않게 폴백을 남긴다.
@@ -12169,6 +12283,7 @@ function processResponse(data, activeCharIds, streamed) {
       showStatToast(`🎲 운명 주사위 ${window._fateRoll}/100`); window._diceToastShown = true;
     }
   } catch {}
+  }   // ← !stateOnly (화면·연출 처리 끝. 이하 상태 적용부는 stateOnly와 공유)
   if (data.state_update) {
     const s = data.state_update;
     // ★재화·평판 변화 가시화(2026-08-24 전수감사: 친밀도·진영·주사위는 토스트인데 돈·평판만 무음이었음)
@@ -12377,6 +12492,9 @@ function processResponse(data, activeCharIds, streamed) {
       if (gameState.chronicle.length > 60) gameState.chronicle = gameState.chronicle.slice(-60);
     } catch {}
   }
+
+  // ★stateOnly: 상태·연대기 적용 완료 — 렌더 경로(대사 큐 리셋·choices·재생)는 본편 몫이므로 여기서 종료
+  if (stateOnly) { try { updateStatusUI(); } catch {} return; }
 
   if (streamed) {
     // playback already ran from the stream — append only what it missed
@@ -12710,6 +12828,9 @@ function showNextDialogue() {
     //    이 분기가 showChoices를 건너뛰어 v157 보장이 정작 필요할 때 안 걸리고 있었다)
     // ★null(필드 누락)과 [](모델이 의도적으로 비움)을 구분해서 넘긴다 — || [] 로 뭉개면
     //   전투 중 '선택지 없음' 지시가 앱 보장 선택지로 덮여버린다(2026-08-18 유저 스샷).
+    // ★분리 모드: 후행 추출이 아직 도는 중이면 폴백 선택지를 만들지 않고 입력창만 연다 —
+    //   후행이 도착하면 fireStateExtract가 진짜 선택지를 표시한다(이중 생성·경합 방지).
+    if (window._splitExtractPending && window._pendingChoices == null) { enterInputMode(); return; }
     showChoices(window._pendingChoices);
     return;
   }
@@ -13751,6 +13872,19 @@ function syncTopMenu() {
   const dot = document.getElementById('tmBgmDot'), lab = document.getElementById('tmBgmLabel');
   if (dot) dot.classList.toggle('on', on);
   if (lab) lab.textContent = on ? '배경음악 끄기' : '배경음악 켜기';
+  // ⚡분리 응답 모드(2026-08-24 속도 수술) 토글 상태 — 문제 시 유저가 즉시 구방식 복귀 가능
+  const sOn = splitPipeOn();
+  const sDot = document.getElementById('tmSplitDot'), sLab = document.getElementById('tmSplitLabel');
+  if (sDot) sDot.classList.toggle('on', sOn);
+  if (sLab) sLab.textContent = sOn ? '⚡빠른 응답 켜짐' : '⚡빠른 응답 꺼짐';
+}
+function toggleSplitPipe() {
+  try {
+    const c = JSON.parse(localStorage.getItem('vn_cfg') || '{}') || {};
+    c.splitPipe = !(c.splitPipe !== false);   // 기본 on → 누르면 off → 다시 on
+    localStorage.setItem('vn_cfg', JSON.stringify(c));
+    showStatToast(c.splitPipe === false ? '⚡빠른 응답 꺼짐 — 기존 방식으로 응답합니다' : '⚡빠른 응답 켜짐 — 산문이 먼저, 상태는 뒤에서 처리됩니다');
+  } catch {}
 }
 // ★상단 적층(상단바 → 배너 → 선택지)을 실측으로 쌓는다.
 //   하드코딩 px으로 두면 버튼이 줄바꿈되거나 배너가 뜰 때마다 서로를 덮는다
