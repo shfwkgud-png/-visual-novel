@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v350</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v351</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10353,6 +10353,9 @@ function trimHistory(keep) {
 }
 
 function autoSave() {
+  // ★복원 도중 저장 금지(2026-08-24, 책 Ch.116): 복원이 덜 끝난 전역이 세이브를 덮는 사고 차단.
+  //   복원 완료 후의 '재생 완료 시점 저장'은 플래그 해제 뒤라 정상 동작한다.
+  if (window._isRestoring) return;
   // 평상시 상한 유지 — 여기서 미리 줄여두면 용량 초과 자체가 잘 안 난다
   if (gameHistory.length > HISTORY_MAX) trimHistory(HISTORY_MAX);
   if (dialogueLog.length > DIALOG_MAX) {
@@ -10612,6 +10615,19 @@ function startGame(isContinue) {
 // Restore a save payload into the running game and replay the last scene.
 // Used by 이어하기 and by save-slot loading.
 function restoreAndReplay(save, checkTimeflow) {
+  // ★복원 단일 루틴 보강(2026-08-24, 책 Ch.116 "절반 복원 금지"): 복원 도중 autoSave가 돌면
+  //   덜 복원된 전역이 세이브를 덮는다 — _isRestoring 동안 저장 차단, 실패 시 홈으로(절반 상태 진행 금지).
+  window._isRestoring = true;
+  try {
+    restoreAndReplayInner(save, checkTimeflow);
+  } catch (e) {
+    try { console.error('[복원 실패]', e); showStatToast('⚠ 이어하기 실패 — 세이브 손상 가능성. 홈으로 돌아갑니다', true); } catch {}
+    try { exitToMain(); } catch {}
+  } finally {
+    window._isRestoring = false;
+  }
+}
+function restoreAndReplayInner(save, checkTimeflow) {
   window._startPhase = 'playing';   // 이어하기는 본편 진행 중 — 시작 플로우 상태머신 스킵
   // ★세이브 로드도 턴 경계다(2026-08-18 감사 확증) — 저장 직전 마지막 줄과 불러온 뒤 첫 줄이
   //   우연히 같으면 정당한 줄이 중복차단에 걸릴 수 있었다. 히스토리는 잘라도(컷) 이 두 키는

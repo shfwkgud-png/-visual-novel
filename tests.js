@@ -59,18 +59,28 @@ T('iOS: lookbehind 정규식 0건', () => {
 
 // ═══ 2. 순서 버그(3연발 유형): 복원 함수가 복원 전 전역을 읽지 않는가 ═══
 T('순서: restoreAndReplay에서 trimHistory가 summaryIndex 복원 뒤', () => {
-  const body = grabFn('restoreAndReplay');
+  const body = grabFn('restoreAndReplayInner');
   const a = body.indexOf('summaryIndex = save.summaryIndex');
   const b = body.indexOf('trimHistory(');
   assert(a >= 0 && b >= 0, '앵커 없음');
   assert(a < b, 'trimHistory가 summaryIndex 복원보다 앞에 있음(H-9 재발)');
 });
 T('순서: restoreAndReplay에서 loadSnaps가 turnCount 복원 뒤', () => {
-  const body = grabFn('restoreAndReplay');
+  const body = grabFn('restoreAndReplayInner');
   const a = body.indexOf('turnCount = save.turnCount');
   const b = body.indexOf('loadSnaps()');
   assert(a >= 0 && b >= 0, '앵커 없음');
   assert(a < b, 'loadSnaps가 turnCount 복원보다 앞에 있음(v338 버그 재발)');
+});
+T('순서: 복원 래퍼 — 저장 차단·절반 복원 방지 (v351, 책 Ch.116)', () => {
+  const w = grabFn('restoreAndReplay');
+  assert(w.includes('window._isRestoring = true') && /finally\s*\{[\s\S]*?_isRestoring = false/.test(w),
+    '복원 중 플래그 관리 소멸');
+  assert(w.includes('catch (e)') && w.includes('exitToMain'),
+    '복원 실패 시 절반 상태 진행 차단 소멸');
+  const a = grabFn('autoSave');
+  assert(a.includes('if (window._isRestoring) return'),
+    '복원 도중 autoSave 차단 소멸(덜 복원된 전역이 세이브를 덮는 사고 재발)');
 });
 T('순서: loadSnaps 동작 — 복원 후 보존/잔재 정리', () => {
   const code = grabFn('loadSnaps');
@@ -276,6 +286,71 @@ T('combat: 언어적 대치는 판정 예외 + event 전환 시 굳은 combat �
   const seg = SRC.slice(i, i + 500);
   assert(seg.includes('_evChanged') && seg.includes('gameState.combat = false'),
     'event 전환 시 굳은 combat 자동해제 소멸 — 이전 전투 combat이 청문회로 굳음 재발');
+});
+
+// ═══ 5-H. 배선 무결성 게이트 (v351 — 책 Ch.145·149·150: 등록↔참조 차집합) ═══
+// "만들었는데 배선 누락"(라디언트 webp 사고)을 사람 기억이 아니라 기계가 잡는다.
+function grabRoster(cname) {
+  const m = SRC.match(new RegExp('const ' + cname + '_CHARACTERS = \\{([\\s\\S]*?)\\n\\};'));
+  assert(m, cname + ' 로스터 블록 추출 실패');
+  return [...m[1].matchAll(/\n\s{2}(\w+):\s*\{\s*name:/g)].map(x => x[1]);
+}
+const PANDORA_ROSTER_PREFIX = { murim: 'MURIM', academy: 'ACADEMY', isekai: 'ISEKAI', muhyeop: 'MUHYEOP', lovediary: 'LOVEDIARY', idol: 'IDOL', hollowinn: 'HOLLOWINN', hero: 'HERO' };
+T('배선: PANDORA 전 로스터 → 초상(1_calm.webp) 실존', () => {
+  const fs2 = require('fs');
+  const missing = [];
+  for (const [sid, pre] of Object.entries(PANDORA_ROSTER_PREFIX)) {
+    for (const cid of grabRoster(pre)) {
+      if (!fs2.existsSync(`sd_samples/characters/${sid}/${cid}/2d/1_calm.webp`)) missing.push(`${sid}/${cid}`);
+    }
+  }
+  assert(missing.length === 0, '로스터에 있는데 초상 webp 없음(채팅에 이름만 뜸): ' + missing.join(', '));
+});
+T('배선: STORY_BG_FILES 전 키 → 배경 webp 실존 + customBgs url 실존', () => {
+  const fs2 = require('fs');
+  const m = SRC.match(/const STORY_BG_FILES = \{([\s\S]*?)\n\};/);
+  assert(m, 'STORY_BG_FILES 추출 실패');
+  const missing = [];
+  for (const sm of m[1].matchAll(/(\w+):\s*\[([^\]]*)\]/g)) {
+    const sid = sm[1];
+    for (const k of sm[2].split(',').map(x => x.trim().replace(/['"]/g, '')).filter(Boolean)) {
+      if (!fs2.existsSync(`sd_samples/backgrounds/${sid}/${k}.webp`)) missing.push(`${sid}/${k}`);
+    }
+  }
+  for (const um of SRC.matchAll(/url: '(sd_samples\/[^']+\.webp)'/g)) {
+    if (!fs2.existsSync(um[1])) missing.push('customBgs:' + um[1]);
+  }
+  assert(missing.length === 0, '배선된 배경 키의 파일 없음: ' + missing.join(', '));
+});
+T('배선: CG_MANIFEST 캐릭 → 로스터 존재 + (로컬 보유 시) NSFW 폴더 실존', () => {
+  const fs2 = require('fs');
+  const m = SRC.match(/const CG_MANIFEST = \{([\s\S]*?)\n\};/);
+  assert(m, 'CG_MANIFEST 추출 실패');
+  const bad = [];
+  for (const sm of m[1].matchAll(/(\w+):\s*\{ full: \[([^\]]*)\](?:,\s*\n?\s*base: \[([^\]]*)\])?/g)) {
+    const sid = sm[1];
+    const ids = (sm[2] + ',' + (sm[3] || '')).split(',').map(x => x.trim().replace(/['"]/g, '')).filter(Boolean);
+    const pre = PANDORA_ROSTER_PREFIX[sid];
+    const roster = pre ? grabRoster(pre) : null;
+    for (const cid of ids) {
+      if (roster && !roster.includes(cid)) bad.push(`${sid}/${cid}(로스터에 없음)`);
+      // NSFW 원본은 gitignore(로컬 전용) — 스토리 폴더가 로컬에 있을 때만 폴더 단위 검증
+      if (fs2.existsSync(`sd_samples/nsfw/${sid}`) && !fs2.existsSync(`sd_samples/nsfw/${sid}/${cid}`)) bad.push(`${sid}/${cid}(NSFW 폴더 없음)`);
+    }
+  }
+  assert(bad.length === 0, 'CG 배선 불일치: ' + bad.join(', '));
+});
+T('배선: 전 스토리 startChars ⊂ 해당 로스터', () => {
+  const bad = [];
+  for (const sm of SRC.matchAll(/id: '(\w+)',\s*\n\s*title:[\s\S]{0,4000}?startChars: \[([^\]]*)\]/g)) {
+    const sid = sm[1];
+    const pre = PANDORA_ROSTER_PREFIX[sid];
+    const chars = sm[2].split(',').map(x => x.trim().replace(/['"]/g, '')).filter(Boolean);
+    if (!pre) continue;   // 비PANDORA는 로스터 형식이 다양 — PANDORA만 게이트
+    const roster = grabRoster(pre);
+    for (const c of chars) if (!roster.includes(c)) bad.push(`${sid}:${c}`);
+  }
+  assert(bad.length === 0, 'startChars가 로스터에 없음(첫 장면 스프라이트 실종): ' + bad.join(', '));
 });
 
 // ═══ 5-G. 분리 응답 파이프라인 (v350 — 속도 수술) ═══
