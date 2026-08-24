@@ -307,6 +307,9 @@ T('감사: PANDORA pose 리맵 + injuries 교체 + CG규칙 게이트 + 성장 �
   assert(SRC.includes('📊 ${_statChg'), '스탯 변화 토스트 소멸');
   assert(SRC.includes('진행 중 이벤트: ${gameState.event}'), 'event 재주입 소멸 — 모델이 이벤트 잊음 재발');
   assert(SRC.includes('⚔ 판정 중 — 어떻게 움직일지 직접 입력'), '판정 입력모드 신호 소멸');
+  // v347: iOS PWA 스냅샷 복원으로 열흘간 v291 플레이 사고 — 복귀 시 ETag 비교로 새 버전 감지
+  assert(SRC.includes('function checkAppUpdate'), '자동 버전 감지 소멸 — 구버전 고착 재발');
+  assert(/visibilitychange.*checkAppUpdate|checkAppUpdate, 1200/.test(SRC), '복귀 시 버전 체크 소멸');
 });
 
 // ═══ 5-D. 판정 턴 주사위 가시화 (v346) ═══

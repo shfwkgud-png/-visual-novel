@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v346</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v347</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11481,6 +11481,27 @@ function dlgToChunks(d) {
 // ★백그라운드 복귀 자동 재생성(2026-07-21): iOS는 앱 이탈 시 JS·네트워크를 얼려 스트리밍 응답을 끊는다.
 //   생성 중(sendBtn disabled) 백그라운드로 나갔다가(_bgDuringGen) 응답이 실패로 끝나면(_genFailed),
 //   앱 복귀 시 "흐트러졌다"로 방치하지 말고 조용히 다시 생성한다.
+// ★자동 버전 감지(2026-08-24 — 유저가 열흘간 v291로 플레이한 사고): iOS 홈화면 PWA는 다시 열 때
+//   리로드 없이 스냅샷을 복원하므로, 수동 갱신을 안 누르면 영영 구버전이다. 부팅 때 자기 ETag를
+//   기준으로 잡고, 복귀(visibilitychange)마다 서버 ETag와 비교 — 다르면 갱신 배너를 띄운다.
+async function checkAppUpdate() {
+  try {
+    if (location.protocol === 'file:') return;
+    const r = await fetch(location.pathname + '?vchk=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+    const et = r.headers.get('ETag');
+    if (!et) return;
+    if (!window._bootETag) { window._bootETag = et; return; }
+    if (et === window._bootETag || window._updBannerShown) return;
+    window._updBannerShown = true;
+    const b = document.createElement('div');
+    b.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);left:50%;transform:translateX(-50%);z-index:9999;background:#1c1c22;color:#fff;border:1px solid #e11d48;border-radius:10px;padding:10px 14px;font-size:14px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,0.5)';
+    b.innerHTML = '<span>🆕 새 버전이 나왔습니다</span><button style="background:#e11d48;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:13px" onclick="refreshApp()">갱신</button><button style="background:none;border:none;color:#888;font-size:16px" onclick="this.parentNode.remove()">✕</button>';
+    document.body.appendChild(b);
+  } catch {}
+}
+setTimeout(checkAppUpdate, 4000);   // 부팅 기준 ETag 확보
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(checkAppUpdate, 1200); });
+
 document.addEventListener('visibilitychange', () => {
   try {
     if (document.hidden) {
