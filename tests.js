@@ -310,6 +310,9 @@ T('감사: PANDORA pose 리맵 + injuries 교체 + CG규칙 게이트 + 성장 �
   // v347: iOS PWA 스냅샷 복원으로 열흘간 v291 플레이 사고 — 복귀 시 ETag 비교로 새 버전 감지
   assert(SRC.includes('function checkAppUpdate'), '자동 버전 감지 소멸 — 구버전 고착 재발');
   assert(/visibilitychange.*checkAppUpdate|checkAppUpdate, 1200/.test(SRC), '복귀 시 버전 체크 소멸');
+  // v348: refreshApp이 히스토리에 구버전을 쌓아 엣지 스와이프로 v291 부활하던 함정
+  assert(/function refreshApp\(\) \{[\s\S]{0,400}location\.replace\(/.test(SRC), 'refreshApp replace 소멸 — 히스토리에 구버전 쌓임 재발');
+  assert(SRC.includes("addEventListener('pageshow'"), 'bfcache 부활 방어(pageshow) 소멸 — 스와이프로 구버전 부활 재발');
 });
 
 // ═══ 5-D. 판정 턴 주사위 가시화 (v346) ═══

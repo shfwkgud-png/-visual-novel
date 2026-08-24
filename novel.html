@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v347</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v348</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10472,7 +10472,9 @@ function enterApp() {
 // Game state is in localStorage, so 이어하기 restores after reload.
 function refreshApp() {
   const base = location.href.split('?')[0];
-  location.href = base + '?v=' + Date.now();
+  // ★replace로 이동(2026-08-24): location.href는 히스토리에 구버전을 쌓아, iOS 엣지 스와이프
+  //   (뒤로가기)로 열흘 전 페이지가 부활하는 함정이 됐다(유저 스샷: v291이 v346 뒤에 숨어있음).
+  location.replace(base + '?v=' + Date.now());
 }
 
 // ===== PROVIDER TOGGLE =====
@@ -11501,6 +11503,22 @@ async function checkAppUpdate() {
 }
 setTimeout(checkAppUpdate, 4000);   // 부팅 기준 ETag 확보
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(checkAppUpdate, 1200); });
+// ★bfcache 부활 방어(2026-08-24 유저 스샷: 엣지 스와이프로 v291이 v346 뒤에서 부활): 뒤로가기
+//   스택에서 살아난 페이지(e.persisted)는 구버전 사본일 수 있다 — 서버 ETag와 다르고 생성 중이
+//   아니면 그 자리에서 최신으로 교체한다(replace라 스택도 더 안 쌓임). 진행 상태는 매 턴 저장이라 안전.
+window.addEventListener('pageshow', e => {
+  if (!e.persisted) return;
+  setTimeout(async () => {
+    try {
+      const r = await fetch(location.pathname + '?vchk=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+      const et = r.headers.get('ETag');
+      if (et && window._bootETag && et !== window._bootETag &&
+          !(typeof sendBtn !== 'undefined' && sendBtn && sendBtn.disabled)) {
+        location.replace(location.pathname + '?v=' + Date.now());
+      }
+    } catch {}
+  }, 300);
+});
 
 document.addEventListener('visibilitychange', () => {
   try {
