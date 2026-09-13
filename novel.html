@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v353</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v354</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2366,7 +2366,7 @@ const ENGINE_RULES_PROMPT = `
     "status": "새 신분 (변화 없으면 null)",
     "time": "현재 시간대 (예: '3일차 오후', 표기는 'N일차 아침|오전|오후|저녁|밤'). 서사 속에서 시간이 실제로 흘렀을 때만 자연스럽게 갱신하고, 같은 순간이 이어지는 중이면 null. 시간은 이야기의 흐름을 따라간다 — 억지로 밀거나 붙잡지 마라",
     "event": "현재 진행 중인 이벤트·일정 한 줄 (예: '반장 선거', '축제 전야'. 시작·전환 시에만, 변화 없으면 null)",
-    "faction": "주인공이 진영·소속·문파를 선택하거나 바꾼 턴에만 그 이름(예: '그란텀 제국', '독자 노선'). 그 외엔 반드시 null — 한 번 기록되면 주인공의 소속으로 영구 반영된다",
+    "faction": "주인공이 진영·소속·문파를 선택하거나 바꾼 턴에만 그 이름(예: '그란텀 제국', '독자 노선'). 그 외엔 반드시 null — 한 번 기록되면 주인공의 소속으로 영구 반영된다. ★faction은 '어느 세력 편에 서는가'다 — 반·조·분반·기숙사·동아리·부서처럼 조직 내부의 소속 단위는 faction이 아니라 flags에 기록하라",
     "combat": "이번 턴이 몸으로 겨루는 물리적 판정 장면(전투·추격·결투·몸싸움·신체 위기)이면 true, 그 판정이 끝나면 false. ★청문회·심문·재판·설전·협상 등 말·입장으로 겨루는 대치는 여기에 해당하지 않는다(false로 두고 choices를 채워라 — 선택지가 가장 필요한 장면이다). 그 외 평범한 턴엔 넣지 않아도 된다(기본 false). ★전투가 끝났거나 장면이 바뀌면(청문회·회의 등으로 전환) 반드시 false를 보내라 — 안 보내면 선택지가 계속 감춰진다. true인 동안 앱이 선택지를 감추고 플레이어의 직접 입력을 받는다",
     "chars": {
       "f106": { "relationship": "관계 요약(예: 첫 조력자, 동행 중)", "intimacy": 0~100 친밀도 수치, "condition": "신체·정신 상태(예: 멀쩡함/왼팔 부상/사망)", "note": "특이사항(약속·감정 등)", "location": "이 인물의 현재 위치(예: 교실, 자소궁 — 변화 시만)", "knows": "★이 인물이 확실히 아는 비밀·정보를 짧게(변화 시만, 예: '주인공이 밤에 금서고에 다녀간 것을 봤다'). 극적 아이러니용 — 다른 인물은 이걸 모르는 채로 행동해야 한다" }
@@ -2941,7 +2941,8 @@ const ACADEMY_LORE = `당신은 대륙전 학원 판타지 비주얼 노벨 "악
 
 ## 숨은 타임라인
 ★시기가 되면 세계가 먼저 움직인다 — 상세 일정은 이벤트 트리를 따르라(학원제가 1부의 끝).
-★2부(개전) 진입 시 반드시 진영 선택을 choices로 제시하고, 선택을 state_update.faction에 기록하라.
+★2부(개전) 진입 시 반드시 진영 선택을 choices로 제시하고, 선택을 state_update.faction에 기록하라. 그때 event는 '개전 — 진영 선택'으로 세팅하라(전황판이 이 선언으로 열린다).
+★★1부의 반 배정(흑룡반·은사자반·금매반)은 절대 faction이 아니다 — state_update.flags의 '반'에만 기록하고 faction은 null로 두어라. 반은 소속 예고일 뿐 국가전 진영과 별개다.
 1부에서 쌓은 관계·포섭이 2부의 아군과 적을 정한다 — 포섭하지 못한 인연과는 적으로 재회한다`;
 const ACADEMY_ENDINGS = [
   { t: '붉은 새벽', cond: '제국 루트 — 진영=제국으로 개전을 통과하고 카산드라와 대륙 재편을 완수', d: '황녀의 옆자리에서 낡은 질서를 태운다 (제국 루트 엔딩)' },
@@ -2956,7 +2957,7 @@ const ACADEMY_ENDINGS = [
 ];
 const ACADEMY_EVENTS = [
   { t: '입학식 — 세라핀 충돌', cond: '1일차', d: "원작 1화 사건 — 개입 방식이 첫 갈림길 (2일차부터는 이미 지난 사건, 그 여파를 다룬다)" },
-  { t: '반 배정', cond: '1일차 (입학식 직후)', d: "주인공은 완충령 출신이라 배정 관례가 없다 — 학장이 직접 선택권을 준다. ★choices로 제시: 흑룡반(제국계)/은사자반(왕국계)/금매반(연합계). 선택은 state_update.flags의 '반'에 기록하고 릴리아도 같은 반이 된다. 반 아이들의 첫인상이 이때 갈린다" },
+  { t: '반 배정', cond: '1일차 (입학식 직후)', d: "주인공은 완충령 출신이라 배정 관례가 없다 — 학장이 직접 선택권을 준다. ★choices로 제시: 흑룡반(제국계)/은사자반(왕국계)/금매반(연합계). 선택은 state_update.flags의 '반'에 기록하고 릴리아도 같은 반이 된다(★faction에는 절대 쓰지 마라 — faction은 2부 개전 전용이다). 반 아이들의 첫인상이 이때 갈린다" },
   { t: '신입생 서열전', cond: '입학 1개월 후', d: "국가 대리전(신입생 한정). 원작: 카일이 바론에게 붙었다 루카스에게 꺾임 — 각국이 결과를 보고 주인공에 대한 태도(스카우트·경계)를 정한다. ★상급생 바론은 참가자가 아니라 배후의 텃세로 개입한다(신입생 앞잡이를 세워 판을 흔든다)" },
   { t: '본가의 소환장', cond: '입학 2개월 후 (서열전 여파 무렵)', d: "이스카가 학비 재검토를 명분으로 카일을 부른다(직접 오거나 서신). 실체는 장부 심문 — 그녀는 카일을 보지 않지만 돈의 흐름은 귀신같이 본다(최근 지출 이상을 짚는다). ★거래 제안: 필요한 자금·물자를 이자와 담보로 빌려줄 수 있다(감정 없이 수지타산으로만). 가족의 냉대와 첫 거래 관계의 시작" },
   { t: '학원제 — 여명회 습격', cond: '입학 3개월 후', d: "금서 구역의 예언 원본 탈취 시도. 예언 일부(원작대로면 멸망)가 유출되며 3국 협정이 흔들린다 — 개전의 도화선, 1부의 끝" },
@@ -3010,6 +3011,27 @@ function warNationOf(f) {
   if (/여명/.test(s)) return '여명회';
   if (/독자|완충|무소속/.test(s)) return '완충령';
   return null;
+}
+// ★진영 오기록 라우팅(2026-09-13): 아카데미의 '반'은 1부 소속 단위일 뿐 진영이 아니다.
+//   반 이름이 국가계와 1:1이라(흑룡반=제국계) 모델이 1일차 반 선택을 state_update.faction에 써버린다 → 전황판 오개전.
+const ACADEMY_CLASS_RE = /(흑룡반|은사자반|금매반)/;
+function routeFactionValue(storyId, raw) {
+  const v = String(raw == null ? '' : raw).trim();
+  if (!v) return null;
+  if (storyId === 'academy') {
+    const m = v.match(ACADEMY_CLASS_RE);
+    if (m) return { kind: 'class', value: m[1] };   // → flags['반']으로 보낸다
+  }
+  return { kind: 'faction', value: v };
+}
+// ★개전 판정(2026-09-13): 전황판을 여는 조건은 '진영이 기록됐다'가 아니라 '개전이 선언됐다'다.
+const WAR_OPEN_RE = /개전|국가전|전쟁\s*(발발|선포|개시)|선전포고/;
+function warDeclared(gs, s) {
+  if (gs && gs.flags && gs.flags['개전']) return true;
+  if (s && typeof s.event === 'string' && WAR_OPEN_RE.test(s.event)) return true;
+  if (gs && typeof gs.event === 'string' && WAR_OPEN_RE.test(gs.event)) return true;
+  if (s && s.war) return true;                       // 월례 회의 방침이 왔다 = 이미 2부
+  return false;
 }
 function initWar() {
   if (gameState.war) return;
@@ -10420,9 +10442,34 @@ function autoSave() {
 // ═══ 세이브 데이터 버전 체계 (2026-08-24, VN 프레임워크 책 Ch.119·223 — "첫 저장 형식부터 준비하라") ═══
 // 앱 버전(v348…)과 별개로 **세이브 구조의 버전**. 구조를 바꿀 때마다 +1 하고 SAVE_MIGRATIONS에
 // "이전 버전 → 다음 버전" 변환기를 등록한다. 도장 없는 구세이브 = v1로 간주.
-const SAVE_DATA_VERSION = 1;
+const SAVE_DATA_VERSION = 2;
 // { 1: save => ({...save, 바뀐필드, dataVersion: 2}), 2: ... } — 순차 체인으로 현재 버전까지 승격
-const SAVE_MIGRATIONS = {};
+const SAVE_MIGRATIONS = {
+  // v1→v2 (2026-09-13): 아카데미 오개전 복구.
+  //   구버전 엔진은 faction이 처음 기록되는 순간을 개전으로 봤고, 1일차 반 배정(흑룡반=제국계라 모델이
+  //   faction에 씀)이 그걸 트리거해 전황판이 열려버렸다. 실제 개전은 학원제(입학 3개월 후) 직후라 한참 뒤다.
+  //   → 초반(30턴 미만)에 열린 전황은 사고로 보고 접고, 그 이후 것은 정상 개전으로 도장을 찍는다.
+  //   원본은 migrateSave의 _premig_v1 백업에 그대로 남는다.
+  1: (save) => {
+    try {
+      const gs = save.gameState;
+      if (gs) {
+        gs.flags = gs.flags || {};
+        if (gs.war) {
+          if ((save.turnCount || 0) < 30) { delete gs.war; delete gs.flags['개전']; }
+          else gs.flags['개전'] = true;
+        }
+        // 반 이름이 진영 칸에 눌러앉은 세이브 정리 — 진영이 아니라 1부 소속 단위다
+        if (typeof gs.faction === 'string') {
+          const m = gs.faction.match(/(흑룡반|은사자반|금매반)/);
+          if (m) { gs.flags['반'] = m[1]; gs.faction = null; }
+        }
+      }
+    } catch {}
+    save.dataVersion = 2;
+    return save;
+  }
+};
 function migrateSave(save, storyId) {
   if (!save || typeof save !== 'object') return null;
   let v = save.dataVersion || 1;
@@ -12346,16 +12393,29 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
     }
     // ★진영 선택(2026-08-11): 선택이 상태로 남지 않으면 몇 턴 뒤 소멸한다 — 구조화 필드로 영구화
     if (typeof s.faction === 'string' && s.faction.trim()) {
-      gameState.faction = s.faction.trim();
-      if (!replaying) showStatToast(`⚑ 진영: ${gameState.faction}`);
-      // ★개전(2026-08-12): 진영이 처음 기록되는 순간이 2부의 시작 — 전황판 상태를 1회 생성한다.
-      try {
-        if (typeof STORY !== 'undefined' && STORY && STORY.id === 'academy' && !gameState.war) {
+      const _fr = routeFactionValue(STORY.id, s.faction);
+      if (_fr && _fr.kind === 'class') {
+        // 1부의 반 배정이 faction으로 잘못 온 경우 — 진영이 아니라 소속 단위로 기록한다
+        gameState.flags = gameState.flags || {};
+        gameState.flags['반'] = _fr.value;
+        if (!replaying) showStatToast(`🎓 반: ${_fr.value}`);
+      } else if (_fr) {
+        gameState.faction = _fr.value;
+        if (!replaying) showStatToast(`⚑ 진영: ${gameState.faction}`);
+      }
+    }
+    // ★개전(2026-08-12 → 2026-09-13 수정): 전황판은 '개전 선언 + 진영 확정'이 모두 갖춰질 때만 1회 생성한다.
+    //   예전엔 faction이 처음 기록되는 순간을 2부 시작으로 봤는데, 1일차 반 배정이 그걸 트리거했다.
+    try {
+      if (typeof STORY !== 'undefined' && STORY && STORY.id === 'academy') {
+        gameState.flags = gameState.flags || {};
+        if (warDeclared(gameState, s)) gameState.flags['개전'] = true;
+        if (!gameState.war && gameState.flags['개전'] && gameState.faction) {
           initWar();
           if (!replaying) showStatToast('⚔ 개전 — 상태창에 「전황」 탭이 열렸다');
         }
-      } catch {}
-    }
+      }
+    } catch {}
     // ★월례 회의 방침(state_update.war.action) — 수신 즉시 앱이 한 달을 굴린다(전투·세력 AI 포함)
     if (s.war && gameState.war) { try { warApplyDirective(s.war, replaying); } catch {} }
     if (s.flags) Object.assign(gameState.flags, s.flags);

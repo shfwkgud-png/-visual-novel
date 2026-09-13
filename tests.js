@@ -535,6 +535,62 @@ T('판정: combat 턴 주사위를 앱이 직접 표시(산문 의존 금지)', 
   assert(seg.includes('운명 주사위 ${window._fateRoll}/100'), '주사위 토스트 표시 소멸');
 });
 
+// ═══ 5-I. 반 배정이 전황판을 열어버리는 오개전 (v354) ═══
+// 흑룡반=제국계라 모델이 1일차 반 선택을 faction에 기록 → "faction 첫 기록=개전" 규칙이 2부를 열었다.
+T('개전: 반 선택은 진영이 아니다 + 개전 판정은 선언 기반', () => {
+  const c1 = (SRC.match(/const ACADEMY_CLASS_RE = [^\n]+/) || [])[0];
+  const c2 = (SRC.match(/const WAR_OPEN_RE = [^\n]+/) || [])[0];
+  assert(c1 && c2, '개전 게이트 상수 소멸');
+  const sb = runSandbox(c1 + '\n' + c2 + '\n' + grabFn('routeFactionValue') + grabFn('warDeclared'));
+  // ① 반 이름은 진영이 아니라 소속 단위로 라우팅
+  for (const v of ['흑룡반', '은사자반 · 아를렌 왕국', '금매반(연합계)']) {
+    const r = sb.routeFactionValue('academy', v);
+    assert(r && r.kind === 'class', '반 선택이 진영으로 샜다: ' + v);
+  }
+  // ② 정식 진영은 그대로 통과
+  const r2 = sb.routeFactionValue('academy', '그란텀 제국');
+  assert(r2 && r2.kind === 'faction' && r2.value === '그란텀 제국', '정식 진영 라우팅 깨짐');
+  // ③ 아카데미 전용 규칙 — 타 스토리에서는 '~반'도 진영일 수 있다
+  assert(sb.routeFactionValue('murim', '흑룡반').kind === 'faction', '아카데미 전용 규칙이 타 스토리 오염');
+  // ④ 개전 판정: 진영 기록만으로는 절대 true가 아니다(이 버그의 핵심)
+  assert(sb.warDeclared({ flags: {}, event: '반 배정' }, { faction: '그란텀 제국' }) === false,
+    '반 배정 턴에 개전 판정 — 전황판 오개전 재발');
+  assert(sb.warDeclared({ flags: {}, event: null }, { event: '개전 — 진영 선택' }) === true, '개전 이벤트 미인식');
+  assert(sb.warDeclared({ flags: {}, event: '개전 — 진영 선택' }, {}) === true, '진행 중 개전 이벤트 미인식');
+  assert(sb.warDeclared({ flags: { '개전': true }, event: null }, {}) === true, '개전 플래그 영구화 미인식');
+  assert(sb.warDeclared({ flags: {}, event: null }, { war: { action: '진격' } }) === true, '전황 지시 백업 경로 소멸');
+});
+T('개전: 엔진 게이트가 개전선언+진영 둘 다 요구 + 프롬프트도 반↔진영 분리', () => {
+  const i = SRC.indexOf("전황판은 '개전 선언 + 진영 확정'");
+  assert(i > 0, '개전 게이트 주석/로직 소멸');
+  const seg = SRC.slice(i, i + 700);
+  assert(/warDeclared\(gameState, s\)/.test(seg), 'warDeclared 게이트 미사용');
+  assert(/flags\['개전'\] && gameState\.faction/.test(seg), 'initWar 조건이 진영 기록만으로 되돌아감');
+  assert(SRC.includes('1부의 반 배정(흑룡반·은사자반·금매반)은 절대 faction이 아니다'), '반→faction 금지 프롬프트 소멸');
+  assert(/조직 내부의 소속 단위는 faction이 아니라 flags에 기록하라/.test(SRC), 'faction 필드 스펙의 소속단위 제외 소멸');
+});
+
+T('개전: 오개전 세이브 복구 마이그레이션 v1→v2 (실행 검증)', () => {
+  const m = SRC.match(/const SAVE_MIGRATIONS = \{[\s\S]*?\n\};/);
+  assert(m, 'SAVE_MIGRATIONS 블록 추출 실패');
+  const sb = runSandbox(m[0].replace('const SAVE_MIGRATIONS', 'var SAVE_MIGRATIONS'));
+  const mig = sb.SAVE_MIGRATIONS && sb.SAVE_MIGRATIONS[1];
+  assert(typeof mig === 'function', 'v1→v2 변환기 없음');
+  // ① 1일차 오개전 세이브 — 잘못 열린 전황판을 접고 반 이름을 제자리로
+  const bad = mig({ turnCount: 3, gameState: { war: { month: 1 }, faction: '흑룡반 · 그란텀 제국', flags: {} } });
+  assert(!bad.gameState.war, '오개전 전황판이 그대로 남음');
+  assert(bad.gameState.flags['반'] === '흑룡반' && !bad.gameState.faction, '반 이름이 진영 칸에 그대로');
+  assert(bad.dataVersion === 2, '버전 도장 안 찍힘');
+  // ② 진짜 개전 세이브 — 진행을 절대 지우지 않는다
+  const good = mig({ turnCount: 120, gameState: { war: { month: 4 }, faction: '그란텀 제국', flags: {} } });
+  assert(good.gameState.war && good.gameState.war.month === 4, '정상 개전 진행이 삭제됨(치명)');
+  assert(good.gameState.flags['개전'] === true, '정상 개전 세이브에 개전 도장 미기록');
+  assert(good.gameState.faction === '그란텀 제국', '정상 진영 소실');
+  // ③ 전황과 무관한 세이브는 무해 통과
+  const plain = mig({ turnCount: 2, gameState: { flags: {} } });
+  assert(!plain.gameState.war && plain.dataVersion === 2, '무관 세이브 손상');
+});
+
 // ═══ 5-C. cg 씬키 오선택 방지 — 실측 의미 사전 71키 전수 커버 + s_ 접촉금지 (v343) ═══
 T('cg: 씬키별 실측 의미 사전이 71키 전부 커버 + cgBlock 주입 + s_ 접촉금지', () => {
   // 씬키 의미 사전(실측 기반)이 존재하고, 유효 씬키 71개를 하나도 빠짐없이 정의해야 한다.
