@@ -674,9 +674,23 @@ T('BGM: academy 곡 등록 + 시간대/감정 매칭 + 끝나면 다른 곡 랜�
   assert(cat('academy', '3일차 밤', 'romance') === 'emotional' && cat('academy', '3일차 오후', 'sad') === 'emotional', '감정 장면 서정곡 매칭 실패');
   assert(cat('lovediary', '3일차 밤', 'calm') === 'daily', '타 스토리 무드 매핑 오염');
   const amb = SRC.slice(SRC.indexOf('const Ambient = (() => {'), SRC.indexOf('// ===== SCREEN FX'));
-  assert(/a\.loop = \(n <= 1\)/.test(amb) && /addEventListener\('ended'/.test(amb) && /playTrack\(cat, n, pick\)/.test(amb),
+  assert(/addEventListener\('ended'/.test(amb) && /playTrack\(cat, n, key\)/.test(amb),
     '곡 종료 시 랜덤 이어재생 소멸(한 곡 무한반복으로 회귀)');
-  assert(/while \(p === last\)/.test(amb), '방금 곡 연속 재생 방지 소멸');
+  // 유저 지정: 웬만하면 The Architect's Lullaby가 자주 — 실제 추첨 분포로 검증
+  const j = amb.indexOf('  function pickTrackKey(');
+  const pk = amb.slice(j, amb.indexOf('\n  }\n', j) + 4);
+  const fav = (amb.match(/const FAVOR = [^\n]+/) || [])[0];
+  assert(pk && fav, '선호곡 추첨 코드 소멸');
+  const sb2 = runSandbox('var TRACKS = { academy: { day:5, dusk:3, night:6, emotional:2 } }; var sid = () => "academy";\n' + fav + '\n' + pk);
+  let lull = 0, last = '', repeat = 0;
+  for (let k = 0; k < 4000; k++) {
+    const key = sb2.pickTrackKey('day', 5, last);
+    if (key.startsWith('emotional_')) lull++;
+    if (key === last) repeat++;
+    last = key;
+  }
+  assert(lull / 4000 > 0.45, "Architect's Lullaby 비율이 낮음(자주 나오게 지정): " + (lull / 40).toFixed(1) + '%');
+  assert(repeat === 0, '같은 곡 연속 재생 ' + repeat + '회');
 });
 
 // ═══ 5-C. cg 씬키 오선택 방지 — 실측 의미 사전 71키 전수 커버 + s_ 접촉금지 (v343) ═══

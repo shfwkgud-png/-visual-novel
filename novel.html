@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v356</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v357</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10977,19 +10977,24 @@ const Ambient = (() => {
     }
     return MOOD_MAP[mood];
   }
-  function pickTrack(n, last) {
-    if (n <= 1) return 1;
-    let p; do { p = 1 + Math.floor(Math.random() * n); } while (p === last);
-    return p;
+  // 스토리별 "웬만하면 자주" 곡 — 어느 장면이든 이 확률로 그 곡 묶음이 대신 나온다(유저 지정 2026-09-15)
+  const FAVOR = { academy: { cat: 'emotional', p: 0.55 } };   // The Architect's Lullaby
+  function pickTrackKey(cat, n, lastKey) {
+    const tr = TRACKS[sid()] || {}, fav = FAVOR[sid()];
+    let pc = cat, pn = n;
+    if (fav && cat !== fav.cat && tr[fav.cat] && Math.random() < fav.p) { pc = fav.cat; pn = tr[fav.cat]; }
+    const opts = [];
+    for (let k = 1; k <= pn; k++) if (`${pc}_${k}` !== lastKey) opts.push(`${pc}_${k}`);   // 방금 곡은 후보에서 뺀다
+    return opts.length ? opts[Math.floor(Math.random() * opts.length)] : `${pc}_1`;
   }
-  // 한 곡 재생 — 끝나면 같은 카테고리의 다른 곡을 랜덤으로 이어 튼다(곡이 1개뿐이면 반복)
-  function playTrack(cat, n, last) {
-    const pick = pickTrack(n, last);
-    const a = new Audio(base + encodeURIComponent(`bgm_${sid()}_${cat}_${pick}`));
-    a.loop = (n <= 1); a.volume = 0; a.preload = 'auto';
+  // 한 곡 재생 — 끝나면 같은 분위기에서 다른 곡을 랜덤으로 이어 튼다(고를 곡이 1개뿐이면 반복)
+  function playTrack(cat, n, lastKey) {
+    const key = pickTrackKey(cat, n, lastKey);
+    const a = new Audio(base + encodeURIComponent(`bgm_${sid()}_${key}`));
+    a.loop = (n <= 1 && !FAVOR[sid()]); a.volume = 0; a.preload = 'auto';
     a.addEventListener('ended', () => {
       if (cur !== a || !enabled) return;
-      cur = playTrack(cat, n, pick);
+      cur = playTrack(cat, n, key);
     });
     a.play().then(() => ramp(a, VOL, 2500)).catch(() => {});   // 자동재생 차단 시 조용히 무시(터치 후 재시도)
     return a;
@@ -11009,7 +11014,7 @@ const Ambient = (() => {
     lastMood = mood;
     if (cat === curCat && cur && !cur.paused) return;  // 같은 카테고리 유지(재추첨 안 함)
     const old = cur;
-    const a = playTrack(cat, n, 0);
+    const a = playTrack(cat, n, '');
     if (old) ramp(old, 0, 2200, () => { try { old.pause(); old.src = ''; } catch {} });
     cur = a; curCat = cat;
   }
