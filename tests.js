@@ -659,6 +659,26 @@ T('날짜·호감도: 오염 세이브 복구 마이그레이션 v2→v3 (실행
   assert(loop.gameState.time === '1일차 아침', '타임루프 세이브 날짜를 강제로 밀어버림');
 });
 
+// ═══ 5-K. 악역의생존법 BGM — 시간대 매칭 + 랜덤 이어재생 (v356) ═══
+T('BGM: academy 곡 등록 + 시간대/감정 매칭 + 끝나면 다른 곡 랜덤 (실행 검증)', () => {
+  assert(/academy: \{ day:5, dusk:3, night:6, emotional:2 \}/.test(SRC), 'academy BGM 트랙 수 등록 소멸(R2 16곡)');
+  const i = SRC.indexOf('  function catFor(mood) {');
+  assert(i > 0, 'catFor 소멸');
+  const body = SRC.slice(i, SRC.indexOf('\n  }\n', i) + 4);
+  const env = { STORY: { id: 'academy' }, gameState: { time: '' } };
+  const sb = runSandbox('var MOOD_MAP = { calm:"daily" }; var sid = () => STORY.id;\n' + body, env);
+  const cat = (sidv, time, mood) => { sb.STORY.id = sidv; sb.gameState.time = time; return sb.catFor(mood); };
+  assert(cat('academy', '3일차 오전', 'calm') === 'day', '낮 매칭 실패');
+  assert(cat('academy', '3일차 저녁', 'tension') === 'dusk', '황혼 매칭 실패');
+  assert(cat('academy', '3일차 밤', 'calm') === 'night' && cat('academy', '4일차 새벽', 'none') === 'night', '밤 매칭 실패');
+  assert(cat('academy', '3일차 밤', 'romance') === 'emotional' && cat('academy', '3일차 오후', 'sad') === 'emotional', '감정 장면 서정곡 매칭 실패');
+  assert(cat('lovediary', '3일차 밤', 'calm') === 'daily', '타 스토리 무드 매핑 오염');
+  const amb = SRC.slice(SRC.indexOf('const Ambient = (() => {'), SRC.indexOf('// ===== SCREEN FX'));
+  assert(/a\.loop = \(n <= 1\)/.test(amb) && /addEventListener\('ended'/.test(amb) && /playTrack\(cat, n, pick\)/.test(amb),
+    '곡 종료 시 랜덤 이어재생 소멸(한 곡 무한반복으로 회귀)');
+  assert(/while \(p === last\)/.test(amb), '방금 곡 연속 재생 방지 소멸');
+});
+
 // ═══ 5-C. cg 씬키 오선택 방지 — 실측 의미 사전 71키 전수 커버 + s_ 접촉금지 (v343) ═══
 T('cg: 씬키별 실측 의미 사전이 71키 전부 커버 + cgBlock 주입 + s_ 접촉금지', () => {
   // 씬키 의미 사전(실측 기반)이 존재하고, 유효 씬키 71개를 하나도 빠짐없이 정의해야 한다.

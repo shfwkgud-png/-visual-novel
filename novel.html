@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v355</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v356</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10957,11 +10957,43 @@ const Ambient = (() => {
   //   AI의 mood 필드 → 카테고리 → 그 카테고리 변형 중 랜덤 1곡, 무드 전환 시 크로스페이드.
   //   곡 파일 규칙: bgm_<storyId>_<category>_<n>.mp3 (R2, 공개 — 토큰 불필요). lovediary만 곡 보유.
   let enabled = (localStorage.getItem('vn_bgm2') ?? '1') === '1';   // ★새 키(구 합성음 음소거값 vn_bgm 승계 방지, 기본 ON)
-  let cur = null, curCat = null;
+  let cur = null, curCat = null, lastMood = null;
   const VOL = 0.32;
   const MOOD_MAP = { calm:'daily', none:'daily', romance:'romance', sad:'sad', mystery:'tension', tension:'tension', battle:'tension' };
-  const TRACKS = { lovediary: { daily:6, romance:2, sad:4, tension:3 } };   // 카테고리별 변형 수(R2 실물 기준 2026-07-21)
+  const TRACKS = {
+    lovediary: { daily:6, romance:2, sad:4, tension:3 },   // 카테고리별 변형 수(R2 실물 기준 2026-07-21)
+    // 악역의생존법(2026-09-15 유저 제공 16곡): 낮=Morning Fields·lobby / 황혼=Dusk Field / 밤=안전구역 / 감정=Architect's Lullaby
+    academy: { day:5, dusk:3, night:6, emotional:2 },
+  };
   const base = 'https://pandora-sync.pasokong99.workers.dev/img?name=';
+  const sid = () => (typeof STORY !== 'undefined' && STORY && STORY.id) || '';
+  function catFor(mood) {
+    if (sid() === 'academy') {
+      if (mood === 'romance' || mood === 'sad') return 'emotional';
+      const t = (typeof gameState !== 'undefined' && gameState && gameState.time) || '';
+      if (/새벽|밤/.test(t)) return 'night';
+      if (/저녁|황혼|노을/.test(t)) return 'dusk';
+      return 'day';
+    }
+    return MOOD_MAP[mood];
+  }
+  function pickTrack(n, last) {
+    if (n <= 1) return 1;
+    let p; do { p = 1 + Math.floor(Math.random() * n); } while (p === last);
+    return p;
+  }
+  // 한 곡 재생 — 끝나면 같은 카테고리의 다른 곡을 랜덤으로 이어 튼다(곡이 1개뿐이면 반복)
+  function playTrack(cat, n, last) {
+    const pick = pickTrack(n, last);
+    const a = new Audio(base + encodeURIComponent(`bgm_${sid()}_${cat}_${pick}`));
+    a.loop = (n <= 1); a.volume = 0; a.preload = 'auto';
+    a.addEventListener('ended', () => {
+      if (cur !== a || !enabled) return;
+      cur = playTrack(cat, n, pick);
+    });
+    a.play().then(() => ramp(a, VOL, 2500)).catch(() => {});   // 자동재생 차단 시 조용히 무시(터치 후 재시도)
+    return a;
+  }
   function ramp(a, to, ms, done) {
     if (!a) { done && done(); return; }
     const from = a.volume, steps = 24, dt = Math.max(16, ms/steps); let i = 0;
@@ -10971,15 +11003,13 @@ const Ambient = (() => {
   }
   function setMood(mood) {
     if (!enabled || !mood) return;
-    const cat = MOOD_MAP[mood]; if (!cat) return;
-    const n = ((TRACKS[(typeof STORY!=='undefined'&&STORY&&STORY.id)||''] || {})[cat]) || 0;
+    const cat = catFor(mood); if (!cat) return;
+    const n = ((TRACKS[sid()] || {})[cat]) || 0;
     if (!n) return;                              // 이 스토리·카테고리 곡 없음(다른 스토리) → 무음
+    lastMood = mood;
     if (cat === curCat && cur && !cur.paused) return;  // 같은 카테고리 유지(재추첨 안 함)
-    const pick = 1 + Math.floor(Math.random() * n);
-    const a = new Audio(base + encodeURIComponent(`bgm_${STORY.id}_${cat}_${pick}`));
-    a.loop = true; a.volume = 0; a.preload = 'auto';
-    a.play().then(() => ramp(a, VOL, 2500)).catch(() => {});   // 자동재생 차단 시 조용히 무시(터치 후 재시도)
     const old = cur;
+    const a = playTrack(cat, n, 0);
     if (old) ramp(old, 0, 2200, () => { try { old.pause(); old.src = ''; } catch {} });
     cur = a; curCat = cat;
   }
@@ -10987,11 +11017,11 @@ const Ambient = (() => {
   function toggle() {
     enabled = !enabled; localStorage.setItem('vn_bgm2', enabled ? '1' : '0');
     if (!enabled) { const c = curCat; stop(); curCat = c; }   // 껐다 켤 때 같은 무드 복원
-    else if (curCat) { const c = curCat; curCat = null; setMood(Object.keys(MOOD_MAP).find(k => MOOD_MAP[k] === c) || 'calm'); }
+    else if (curCat) { curCat = null; setMood(lastMood || 'calm'); }
     const b = document.getElementById('bgmBtn'); if (b) b.classList.toggle('on', enabled);
   }
   // iOS/크롬 자동재생 정책: 첫 사용자 제스처 후 대기 중이던 무드 재생
-  document.addEventListener('pointerdown', () => { if (enabled && curCat && (!cur || cur.paused)) { const c = curCat; curCat = null; setMood(Object.keys(MOOD_MAP).find(k => MOOD_MAP[k] === c) || 'calm'); } }, { once:false, passive:true });
+  document.addEventListener('pointerdown', () => { if (enabled && curCat && (!cur || cur.paused)) { curCat = null; setMood(lastMood || 'calm'); } }, { once:false, passive:true });
   // ★백그라운드 시 일시정지(2026-07-21 유저: 앱 나가도 안 멈춤) — 앱 이탈=pause, 복귀=재개
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { if (cur && !cur.paused) { cur._wasPlaying = true; try { cur.pause(); } catch {} } }
