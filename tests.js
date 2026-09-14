@@ -102,7 +102,7 @@ T('순서: loadSnaps 동작 — 복원 후 보존/잔재 정리', () => {
 // ═══ 3. 대사 파이프라인: 수신기록·중복·에코·보류분 (v305~v311, P0-2) ═══
 function pipelineSandbox(extra) {
   const code = grabFn('resolveSpeakerName') + grabFn('resetTurnLineKeys') + grabFn('enqueueLine')
-    + grabFn('_echoNorm') + grabFn('_sameText') + grabFn('_isNarrationEcho') + grabFn('dropLogEntry');
+    + grabFn('_echoNorm') + grabFn('_sameText') + grabFn('_isNarrationEcho') + grabFn('dropLogEntry') + grabFn('scrubMetaNumbers');
   return runSandbox(code + (extra || ''), {
     CHARACTERS: { a403: { name: '릴리아' }, a412: { name: '모니카' } },
     gameState: { metChars: {} }, replaying: false, playerName: '카일',
@@ -589,6 +589,74 @@ T('개전: 오개전 세이브 복구 마이그레이션 v1→v2 (실행 검증)
   // ③ 전황과 무관한 세이브는 무해 통과
   const plain = mig({ turnCount: 2, gameState: { flags: {} } });
   assert(!plain.gameState.war && plain.dataVersion === 2, '무관 세이브 손상');
+});
+
+// ═══ 5-J. 날짜 역행 + 호감도 수치 누출 (v355) ═══
+// 분리 파이프라인 이후 time은 현재 일차를 모르는 추출 모델이 써서 '1일차'로 되돌아갔고,
+// 매 턴 주입되는 관계 수치 메모를 모델이 "호감도 12의 반응으로"처럼 산문에 받아썼다.
+function timeSandbox() {
+  const c = (SRC.match(/const TIME_SLOTS = [^\n]+/) || [])[0];
+  assert(c, 'TIME_SLOTS 소멸');
+  return runSandbox(c + '\n' + grabFn('timeSlotIndex') + grabFn('mergeTimeValue') + grabFn('scrubMetaNumbers') + grabFn('scrubMetaData'));
+}
+T('날짜: 일차·시간대는 앞으로만 간다 (실행 검증)', () => {
+  const sb = timeSandbox();
+  const m = (c, n, sid) => sb.mergeTimeValue(c, n, sid || 'academy');
+  assert(m('5일차 오후', '1일차 저녁') === '5일차 오후', '일차 역행 허용 — 1일차 왔다갔다 재발');
+  assert(m('5일차 저녁', '5일차 오전') === '5일차 저녁', '같은 날 시간대 역행 허용');
+  assert(m('5일차 밤', '6일차 아침') === '6일차 아침', '다음 날 진행 거부');
+  assert(m('5일차 오전', '5일차 오후') === '5일차 오후', '같은 날 진행 거부');
+  assert(m('5일차 오전', '저녁') === '5일차 저녁', '시간대만 온 값을 현재 일차에 못 붙임');
+  assert(m('5일차 밤', '오후') === '5일차 밤', '시간대만 온 역행값 허용');
+  assert(m('5일차 오후', '') === '5일차 오후' && m('5일차 오후', null) === '5일차 오후', '빈 값이 시간을 지움');
+  assert(m('', '1일차 새벽') === '1일차 새벽', '기준 없을 때 받아 적기 실패');
+  assert(m('3일차 밤', '1일차 아침', 'timeloop') === '1일차 아침', '타임루프는 되돌아가는 게 정상인데 막음');
+});
+T('호감도: 산문 속 수치 메타만 지우고 일반 문장은 보존 (실행 검증)', () => {
+  const sb = timeSandbox();
+  const s = sb.scrubMetaNumbers;
+  assert(s('호감도 12의 반응으로 세라핀이 고개를 돌렸다.') === '세라핀이 고개를 돌렸다.', '"호감도 N의 반응으로" 미제거: ' + s('호감도 12의 반응으로 세라핀이 고개를 돌렸다.'));
+  assert(s('이졸데는 차갑게 답했다(호감도 10).') === '이졸데는 차갑게 답했다.', '괄호 메타 미제거: ' + s('이졸데는 차갑게 답했다(호감도 10).'));
+  assert(s('[친밀도 +5] 루카스가 웃었다.') === '루카스가 웃었다.', '대괄호 증감 메타 미제거');
+  assert(!/호감도|친밀도/.test(s('카산드라(호감도 35에 따른 반응)는 안경을 고쳐 썼다.')), '반응 괄호 메타 잔존');
+  assert(s('그녀는 창밖을 봤다.') === '그녀는 창밖을 봤다.', '무관 문장 훼손');
+  assert(s('호감도 같은 건 숫자로 못 재.') === '호감도 같은 건 숫자로 못 재.', '숫자 없는 일반 단어까지 지움(오탐)');
+  const d = sb.scrubMetaData({ narration: '호감도 20의 반응으로 조용해졌다.', dialogue: [{ text: '(친밀도 30) 뭐야.' }], choices: ['말을 건다 (호감도 +3)', 7] });
+  assert(d.narration === '조용해졌다.' && d.dialogue[0].text === '뭐야.' && d.choices[0] === '말을 건다' && d.choices[1] === 7,
+    '응답 객체 정제 실패: ' + JSON.stringify(d));
+});
+T('날짜·호감도: 배선 — 추출기에 현재 시각 전달 + 쓰기/기록/화면/선택지 전 경로 정제', () => {
+  const fx = grabFn('fireStateExtract');
+  assert(fx.includes('[현재 시각] ${gameState.time'), '추출 모델에 현재 일차 미전달 — 일차 추측 재발');
+  assert(/일차는 절대 되돌리지 마라/.test(fx), '추출 스키마의 역행 금지 문구 소멸');
+  assert(fx.includes('scrubMetaData(sx)'), '추출 결과(선택지) 정제 소멸');
+  assert(SRC.includes('gameState.time = mergeTimeValue(gameState.time, s.time, STORY.id)'), 'time이 가드 없이 덮어쓰기로 회귀');
+  assert(!/if \(s\.time && !_isIdol\) gameState\.time = s\.time;/.test(SRC), '구 무검사 time 덮어쓰기 부활');
+  assert(/scrubMetaData\(parsed\); \} catch \{\}\n\s*gameHistory\.push\(\{ role: 'assistant', content: JSON\.stringify\(parsed\) \}\)/.test(SRC), '기록 저장 전 정제 소멸 — 모델이 자기 기록을 따라 씀');
+  assert(/d\.text = scrubMetaNumbers\(d\.text\)/.test(grabFn('enqueueLine')), '스트리밍 줄 정제 소멸');
+  assert(/scrubMetaNumbers\(c\)/.test(grabFn('showChoices')), '선택지 정제 소멸');
+  assert(SRC.includes('게임 수치·메타 노출 절대 금지'), '엔진 공통 메타 노출 금지 규칙 소멸');
+  assert(SRC.includes('GM 내부 메모 — 아래 숫자·단계는 산문·대사·선택지에 절대 쓰지 마라'), '관계 수치 주입부의 비공개 표시 소멸');
+});
+T('날짜·호감도: 오염 세이브 복구 마이그레이션 v2→v3 (실행 검증)', () => {
+  const m = SRC.match(/const SAVE_MIGRATIONS = \{[\s\S]*?\n\};/);
+  assert(m, 'SAVE_MIGRATIONS 블록 추출 실패');
+  const c = (SRC.match(/const TIME_SLOTS = [^\n]+/) || [])[0];
+  const sb = runSandbox(c + '\n' + grabFn('timeSlotIndex') + grabFn('mergeTimeValue') + grabFn('scrubMetaNumbers') + grabFn('scrubMetaData')
+    + m[0].replace('const SAVE_MIGRATIONS', 'var SAVE_MIGRATIONS'));
+  const mig = sb.SAVE_MIGRATIONS[2];
+  assert(typeof mig === 'function', 'v2→v3 변환기 없음');
+  const A = (time, narr) => ({ role: 'assistant', content: JSON.stringify({ narration: narr || '', state_update: time ? { time } : null }) });
+  const save = { dataVersion: 2, turnCount: 40, gameState: { time: '1일차 저녁', flags: {} }, gameHistory: [
+    A('3일차 아침'), { role: 'user', content: '호감도 올리기' }, A('4일차 오후'), A('1일차 저녁', '호감도 12의 반응으로 세라핀이 웃었다.'), A(null), A('4일차 밤'),
+  ] };
+  const out = mig(save, 'academy');
+  assert(out.dataVersion === 3, '버전 도장 안 찍힘');
+  assert(out.gameState.time === '4일차 밤', '역행으로 망가진 날짜 미복구: ' + out.gameState.time);
+  assert(!out.gameHistory[3].content.includes('호감도 12'), '기록 속 수치 메타 미정제');
+  assert(out.gameHistory[1].content === '호감도 올리기', '유저 입력까지 건드림');
+  const loop = mig({ dataVersion: 2, gameState: { time: '1일차 아침' }, gameHistory: [A('3일차 밤')] }, 'timeloop');
+  assert(loop.gameState.time === '1일차 아침', '타임루프 세이브 날짜를 강제로 밀어버림');
 });
 
 // ═══ 5-C. cg 씬키 오선택 방지 — 실측 의미 사전 71키 전수 커버 + s_ 접촉금지 (v343) ═══
