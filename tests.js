@@ -621,6 +621,12 @@ T('호감도: 산문 속 수치 메타만 지우고 일반 문장은 보존 (실
   assert(!/호감도|친밀도/.test(s('카산드라(호감도 35에 따른 반응)는 안경을 고쳐 썼다.')), '반응 괄호 메타 잔존');
   assert(s('그녀는 창밖을 봤다.') === '그녀는 창밖을 봤다.', '무관 문장 훼손');
   assert(s('호감도 같은 건 숫자로 못 재.') === '호감도 같은 건 숫자로 못 재.', '숫자 없는 일반 단어까지 지움(오탐)');
+  // ★점수 변종(2026-09-16 실세이브 14건: v355 배포 뒤에도 "86점의 깊은 유대"로 계속 샘)
+  assert(s('음산하지만 86점의 깊은 유대와 부끄러움이 섞인 눈동자') === '음산하지만 깊은 유대와 부끄러움이 섞인 눈동자', '"N점의 깊은 유대" 미제거: ' + s('음산하지만 86점의 깊은 유대와 부끄러움이 섞인 눈동자'));
+  assert(s('93점의 신뢰와 은밀한 독점욕이 묻어나는 목소리') === '신뢰와 은밀한 독점욕이 묻어나는 목소리', '"N점의 신뢰" 미제거');
+  assert(s('86점의 높은 친밀도로 얽힌 그녀') === '높은 친밀도로 얽힌 그녀', '"N점의 높은 친밀도" 미제거: ' + s('86점의 높은 친밀도로 얽힌 그녀'));
+  assert(s('친밀도 86점의 관계') === '관계', '"친밀도 N점의" 잔재: ' + s('친밀도 86점의 관계'));
+  assert(s('3점 슛을 성공시켰다') === '3점 슛을 성공시켰다' && s('시험에서 100점의 답안을 냈다') === '시험에서 100점의 답안을 냈다', '관계와 무관한 점수까지 지움(오탐)');
   const d = sb.scrubMetaData({ narration: '호감도 20의 반응으로 조용해졌다.', dialogue: [{ text: '(친밀도 30) 뭐야.' }], choices: ['말을 건다 (호감도 +3)', 7] });
   assert(d.narration === '조용해졌다.' && d.dialogue[0].text === '뭐야.' && d.choices[0] === '말을 건다' && d.choices[1] === 7,
     '응답 객체 정제 실패: ' + JSON.stringify(d));
@@ -657,6 +663,48 @@ T('날짜·호감도: 오염 세이브 복구 마이그레이션 v2→v3 (실행
   assert(out.gameHistory[1].content === '호감도 올리기', '유저 입력까지 건드림');
   const loop = mig({ dataVersion: 2, gameState: { time: '1일차 아침' }, gameHistory: [A('3일차 밤')] }, 'timeloop');
   assert(loop.gameState.time === '1일차 아침', '타임루프 세이브 날짜를 강제로 밀어버림');
+});
+
+// ═══ 5-L. 실세이브 확증 수정 3종 (v358 — 2026-09-16 u_pasokong99 academy 255턴 세이브) ═══
+// ①60턴 기록 중 time 1건 → 분리 모드에서 날짜를 쓰는 주체가 없었다  ②"86점의 깊은 유대" 점수 변종 14건
+// ③로라(친밀도 86) 존댓말 평탄화 — '학원'을 현대 예시에 둔 시대 톤 규칙 + 단계 상승 지시가 말투까지 바꿈
+T('시대톤: 스토리 시대별 분기 — 판타지 아카데미는 고풍 유지, 현대물만 금지 (실행 검증)', () => {
+  const c = (SRC.match(/const CLASSICAL_ERA_STORIES = [^\n]+/) || [])[0];
+  assert(c, 'CLASSICAL_ERA_STORIES 소멸');
+  const sb = runSandbox(c + '\n' + grabFn('storyEra') + grabFn('eraToneRule'));
+  assert(sb.storyEra({ id: 'academy', genre: '아카데미 빙의' }) === 'classical', '악역의생존법이 현대로 분류 — 로라 말투 평탄화 재발');
+  assert(sb.storyEra({ id: 'lovediary', genre: '현대 학원 로맨스' }) === 'modern', '연애일기가 고전으로 분류');
+  assert(sb.storyEra({ id: 'gumiho', genre: '동양 현대판타지' }) === 'modern', '현대판타지가 고전으로 분류');
+  assert(sb.storyEra({ id: 'custom1', genre: '중세 판타지' }) === 'classical' && sb.storyEra({ id: 'custom2', genre: '현대 스릴러' }) === 'modern', '커스텀 스토리 장르 판별 실패');
+  assert(/전면 금지/.test(sb.eraToneRule({ id: 'idol' })) && !/전면 금지/.test(sb.eraToneRule({ id: 'academy' })), '금지문/유지문 분기 실패');
+  assert(/평탄화하지 마라/.test(sb.eraToneRule({ id: 'academy' })), '고전 배경 유지문 소멸');
+  assert(SRC.includes('${eraToneRule(STORY)}'), '프롬프트 배선 소멸(고정 문구로 회귀)');
+  assert(!/현대 배경\(현대 한국·미래·SF·학원·연예계 등\)/.test(SRC), "'학원'을 현대 예시로 둔 구 문구 부활");
+});
+T('날짜·말투: 분리 모드 본편이 time을 쓰고 앱이 단조 병합 + 말투 불변·GM 메모·슬롯 마이그레이션', () => {
+  assert(/"combat", "time" \} 만\./.test(SRC), '분리 모드 스키마에 time 필드 없음 — 날짜가 안 흐름 재발');
+  assert(SRC.includes('서사 기준으로 일차를 바로잡아 적어라'), '어긋난 일차 재정렬 지시 소멸');
+  assert(/typeof data\.time === 'string' && data\.time\.trim\(\)[\s\S]{0,200}gameState\.time = mergeTimeValue\(gameState\.time, data\.time, STORY\.id\)/.test(SRC), '본편 최상위 time 적용 소멸');
+  assert(SRC.includes('★말투 불변: 친해져도 카드에 지정된 말투'), '관계 단계 상승 시 말투 잠금 소멸');
+  assert(SRC.includes('※친밀도 숫자는 GM 내부값이다'), '상태 블록 GM 내부값 표시 소멸');
+  assert(SRC.includes('"86점의 깊은 유대", "호감도가 낮아서" 같은 수치·점수·시스템 표현'), '엔진 규칙에 점수 변종 예시 소멸');
+  assert(/if \(sv\) sv = migrateSave\(sv, STORY\.id\);/.test(SRC), '슬롯 로드 마이그레이션 구멍 부활');
+});
+T('호감도: 오염 세이브 복구 마이그레이션 v3→v4 — 기록·대화로그 점수 변종 정제 (실행 검증)', () => {
+  const m = SRC.match(/const SAVE_MIGRATIONS = \{[\s\S]*?\n\};/);
+  const c = (SRC.match(/const TIME_SLOTS = [^\n]+/) || [])[0];
+  const sb = runSandbox(c + '\n' + grabFn('timeSlotIndex') + grabFn('mergeTimeValue') + grabFn('scrubMetaNumbers') + grabFn('scrubMetaData')
+    + m[0].replace('const SAVE_MIGRATIONS', 'var SAVE_MIGRATIONS'));
+  const mig = sb.SAVE_MIGRATIONS[3];
+  assert(typeof mig === 'function', 'v3→v4 변환기 없음');
+  const save = { dataVersion: 3,
+    gameHistory: [{ role: 'assistant', content: JSON.stringify({ narration: '눈빛에 93점의 깊은 유대와 소유욕이 스쳤다.', dialogue: [{ text: '(음산하지만 86점의 깊은 유대와 부끄러움이 섞인 눈동자로 바라보며) 카일?' }] }) }],
+    dialogueLog: [{ speaker: '로라', text: '눈빛에 86점의 높은 친밀도가 어렸다. 왔구나.' }, { speaker: '카일', isPlayer: true, text: '95점 만점에 95점' }] };
+  const out = mig(save);
+  assert(out.dataVersion === 4, '버전 도장 안 찍힘');
+  assert(!/\d점/.test(out.gameHistory[0].content), '기록 속 점수 변종 잔존: ' + out.gameHistory[0].content);
+  assert(out.dialogueLog[0].text === '눈빛에 높은 친밀도가 어렸다. 왔구나.', '대화로그 정제 실패: ' + out.dialogueLog[0].text);
+  assert(out.dialogueLog[1].text === '95점 만점에 95점', '유저 대사까지 건드림');
 });
 
 // ═══ 5-K. 악역의생존법 BGM — 시간대 매칭 + 랜덤 이어재생 (v356) ═══

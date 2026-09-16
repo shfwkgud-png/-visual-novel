@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v357</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v358</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2312,7 +2312,7 @@ const ENGINE_RULES_PROMPT = `
   - ★narration의 첫 문장을 "OO은(는) ~했다"처럼 플레이어의 직전 입력을 3인칭으로 옮겨 쓴 문장으로 시작하는 것도 같은 위반이다. 첫 문장부터 곧장 그 행동이 일으킨 변화·상대의 미세반응·새 정보를 써라 (예: 입력 "빵 이야기를 하며 인사한다" → ❌"서준은 빵 이야기를 하며 인사했다." ⭕"소요의 눈이 먼저 웃었다.")
   - 오타가 명백하면 의미는 유지하되 내부적으로만 보정해서 이해할 것
 - ★★**주인공 대필 절대 금지(위반=실격)**: 어떤 상황에서도 주인공(플레이어)의 **결정·감정 변화·다음 행동 선언**을 당신이 대신 쓰지 마라. "당신은 두려움을 느끼며 뒤로 물러섰다", "당신은 고개를 끄덕였다" 같은 문장 전부 금지. 꼭 필요한 짧은 생리반응(신음·감탄) 외엔 주인공의 말을 새로 만들지 말 것 — 세계와 NPC의 반응까지만 쓰고 즉시 멈춰, 다음에 무엇을 할지는 항상 플레이어의 몫으로 열어둬라. ★예외(2026-08-18 감사 확증 — 빙의 설정과의 충돌 해소): 주인공의 **관찰·회상·이미 아는 원작 지식의 인출**은 대필이 아니다(예: "그 이름을 듣는 순간, 원작에서 읽었던 결말이 스쳤다"). 금지되는 건 어디까지나 새로운 결정·감정·대사를 지어내는 것뿐이다
-- ★★**게임 수치·메타 노출 절대 금지**: 상태 기록의 호감도·친밀도·평판 같은 숫자와 단계명은 GM 내부 메모다. narration·dialogue·choices에 "호감도 12의 반응으로", "(친밀도 40)", "호감도가 낮아서" 같은 수치·시스템 표현을 절대 쓰지 마라 — 관계의 온도는 오직 시선·말투·거리·행동으로 보여라
+- ★★**게임 수치·메타 노출 절대 금지**: 상태 기록의 호감도·친밀도·평판 같은 숫자와 단계명은 GM 내부 메모다. narration·dialogue·choices에 "호감도 12의 반응으로", "(친밀도 40)", "86점의 깊은 유대", "호감도가 낮아서" 같은 수치·점수·시스템 표현을 절대 쓰지 마라 — 관계의 온도는 오직 시선·말투·거리·행동으로 보여라
 
 ## 분량·구성 규칙 (반드시 지킬 것):
 - ★★★**목표 분량**: 한 응답의 narration+대사 텍스트 합계가 **공백 포함 목표 650~900자**가 되게 써라(하한 500자). ★예외: 스토리 헌법이 짧게 넘기라고 지시한 구간(수업 중 등)과 장면 전환용 이음새 턴은 이 하한을 적용하지 않는다 — 그럴 땐 200~400자로 끊고 다음 구간으로 가라. 그 외에 400자 미만으로 끝나면 장면을 덜 굴린 실패다 — 인물 반응·감각 묘사·다음 파동을 더 넣어 채워라(절정·도발 장면은 900자 이상도 좋다). ★이건 '한 문장을 길게 늘어뜨리라'가 아니라 '짧은 비트를 여러 개 담으라'는 뜻이다.
@@ -4612,7 +4612,7 @@ function buildStatePrompt() {
     const hi = known.filter(id => (met[id].intimacy ?? 10) >= 40)
       .map(id => `${met[id].name || id}=${(met[id].intimacy >= 70) ? '애정(독점욕·스킨십·단둘의 시간을 원함 — 그답게 표현)' : '신뢰(사적 대화·비밀 일부 공유·먼저 다가옴 허용)'}`);
     if (hi.length || lo.length) s += `※[GM 내부 메모 — 아래 숫자·단계는 산문·대사·선택지에 절대 쓰지 마라. "호감도 N의 반응" 같은 표현 금지, 태도로만 드러내라]\n`;
-    if (hi.length) s += `★단계가 오른 사람: ${hi.join(' · ')}. 이 단계답게 행동시켜라(단 인물 성격의 문법으로).\n`;
+    if (hi.length) s += `★단계가 오른 사람: ${hi.join(' · ')}. 이 단계답게 행동시켜라(단 인물 성격의 문법으로). ★말투 불변: 친해져도 카드에 지정된 말투(반말/존댓말/고풍체)·어미·1인칭은 그대로다 — 내용과 거리만 부드러워진다. 호칭은 기록에 서사상 합의가 있을 때만 바뀐다.\n`;
     if (lo.length) {
       s += `★아직 남인 사람(내부 수치 40 미만) — **설렘·질투·독점욕·스킨십·고백 금지**. 그냥 반 친구다:
   `
@@ -4762,7 +4762,7 @@ function buildStatePrompt() {
   const ids = _ordered.slice(0, _cap);
   const _demoted = _ordered.slice(_cap);
   if (ids.length) {
-    s += '이미 만난 캐릭터 (관계·상태 절대 뒤집지 말 것):\n';
+    s += '이미 만난 캐릭터 (관계·상태 절대 뒤집지 말 것 — ※친밀도 숫자는 GM 내부값이다. 산문·대사에 "86점의 유대" 같은 숫자·점수로 절대 옮기지 마라):\n';
     ids.forEach(id => {
       const m = met[id];
       const dead = m.condition && m.condition.includes('사망');
@@ -10446,7 +10446,7 @@ function autoSave() {
 // ═══ 세이브 데이터 버전 체계 (2026-08-24, VN 프레임워크 책 Ch.119·223 — "첫 저장 형식부터 준비하라") ═══
 // 앱 버전(v348…)과 별개로 **세이브 구조의 버전**. 구조를 바꿀 때마다 +1 하고 SAVE_MIGRATIONS에
 // "이전 버전 → 다음 버전" 변환기를 등록한다. 도장 없는 구세이브 = v1로 간주.
-const SAVE_DATA_VERSION = 3;
+const SAVE_DATA_VERSION = 4;
 // { 1: save => ({...save, 바뀐필드, dataVersion: 2}), 2: ... } — 순차 체인으로 현재 버전까지 승격
 const SAVE_MIGRATIONS = {
   // v1→v2 (2026-09-13): 아카데미 오개전 복구.
@@ -10497,6 +10497,21 @@ const SAVE_MIGRATIONS = {
       }
     } catch {}
     save.dataVersion = 3;
+    return save;
+  },
+  // v3→v4 (2026-09-16): "86점의 깊은 유대" 점수 변종까지 기록·대화 로그에서 지운다(v3는 호감도/친밀도 단어만 봤다).
+  //   대화 로그는 기록 화면에 그대로 보이고, 기록은 모델이 다음 턴에 따라 쓰는 근거라 둘 다 정제한다.
+  3: (save) => {
+    try {
+      const hist = Array.isArray(save.gameHistory) ? save.gameHistory : [];
+      for (const h of hist) {
+        if (!h || h.role !== 'assistant' || typeof h.content !== 'string' || !/(호감도|친밀도|\d\s*점)/.test(h.content)) continue;
+        try { const p = JSON.parse(h.content); scrubMetaData(p); h.content = JSON.stringify(p); } catch {}
+      }
+      const dl = Array.isArray(save.dialogueLog) ? save.dialogueLog : [];
+      for (const d of dl) { if (d && !d.isPlayer && typeof d.text === 'string') d.text = scrubMetaNumbers(d.text); }
+    } catch {}
+    save.dataVersion = 4;
     return save;
   }
 };
@@ -11777,7 +11792,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   if (_sidNow !== 'lovediary' && (typeof CG_MANIFEST !== 'undefined' && CG_MANIFEST[_sidNow])) worldPrompt += ENGINE_MOD_CG;   // lovediary는 자체 교사전용 cgBlock 사용
   const playerBlock = `\n\n## 주인공 설정 (플레이어 지정 — 최우선 반영):\n- 이름: ${playerName}\n- 주인공은 얼굴 스프라이트가 없음. 주인공 대사는 speaker를 "${playerName}", char_id를 null로 할 것`
     + (playerDesc.trim() ? `\n- 추가 특징(반드시 반영): ${playerDesc.trim()}` : '')
-    + `\n- ★호칭·관계 규칙(엄수): NPC가 주인공을 부르는 호칭은 주인공의 나이·성별·현재까지 쌓인 관계에 맞춰라. 주인공이 동갑·연하인데 "오빠/언니/형/누나/선배"처럼 손윗사람 호칭을 쓰지 마라. 캐릭터 설정에 특별한 관계(소꿉친구·선후배·연상 등)나 특정 호칭이 지정돼 있어도, 그 유래를 나레이션·회상·대화로 먼저 자연스럽게 깔아 준 뒤에 쓸 것 — 아무 맥락 없이 갑자기 친밀하거나 특수한 호칭을 들이대지 마라(초면이면 초면답게 시작). ★★**시대 톤 일치(2026-08-25 유저 지적 "왜 자꾸 자네자네 하냐")**: 호칭·말투는 이 세계의 시대에 맞춰라. 현대 배경(현대 한국·미래·SF·학원·연예계 등)에서 "자네·그대·~하시게·~인가?"류 고풍 2인칭·사극 말투 전면 금지 — 나이 많은 인물(국장·대표·교수 등)도 현대 한국어 구어로 말한다 — "자네" 대신 "○○ 씨", "너", 직책+님, 손아랫사람에겐 이름으로 부른다. 고풍 표현은 무협·사극·판타지 왕국처럼 실제로 고전 배경인 세계, 혹은 캐릭터 카드가 명시적으로 고풍 말투를 지정한 인물(예: 자칭 여왕)에게만 허용된다.`
+    + `\n- ★호칭·관계 규칙(엄수): NPC가 주인공을 부르는 호칭은 주인공의 나이·성별·현재까지 쌓인 관계에 맞춰라. 주인공이 동갑·연하인데 "오빠/언니/형/누나/선배"처럼 손윗사람 호칭을 쓰지 마라. 캐릭터 설정에 특별한 관계(소꿉친구·선후배·연상 등)나 특정 호칭이 지정돼 있어도, 그 유래를 나레이션·회상·대화로 먼저 자연스럽게 깔아 준 뒤에 쓸 것 — 아무 맥락 없이 갑자기 친밀하거나 특수한 호칭을 들이대지 마라(초면이면 초면답게 시작).${eraToneRule(STORY)}`
     + (window._freeMode && defName ? `\n- ★자유 모드: 주인공은 세계관 설정 속 원작 주인공 '${defName}'이(가) 아니다. '${defName}'의 신분·특수능력·운명을 ${playerName}에게 적용하지 말 것(${defName}은 별개 인물이거나 부재).` : '');
   // 배경 키 = 스토리 매니페스트 + customBgs(신규 팩은 customBgs만으로 배선되므로 필수 합산)
   const bgKeys = [...new Set([...(STORY_BG_FILES[STORY.id] || []), ...Object.keys(STORY.customBgs || {})])].join(', ');
@@ -11827,7 +11842,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     //   본편은 산문·연출만 출력해 첫 글자와 완료가 빨라진다. vn_cfg.splitPipe=false로 즉시 구방식.
     + (splitPipeOn() ? `\n\n## ★★분리 응답 모드(이번 응답에 적용 — 위의 출력 형식 규정보다 우선):
 - 이번 응답에서 "state_update"·"choices"·"chronicle" 필드는 통째로 생략하라(별도 시스템이 이 장면을 읽고 대신 기록한다 — 네가 채워도 무시된다).
-- 출력 JSON = { "narration", "dialogue": [...], "background", "mood", "ending", "cg", "combat" } 만.
+- 출력 JSON = { "narration", "dialogue": [...], "background", "mood", "ending", "cg", "combat", "time" } 만.
+- "time"은 최상위 문자열 필드다: 서사 속에서 시간이 실제로 흘렀을 때만 상태 줄의 현재 시각을 기준으로 'N일차 새벽|아침|오전|오후|저녁|밤'(앞으로만 — 되돌리지 마라), 같은 순간이 이어지면 생략. ★상태 줄의 시각이 서사와 명백히 어긋나면(며칠·몇 주가 흐른 이야기인데 아직 3일차 등) 이번 턴에 지금까지의 서사 기준으로 일차를 바로잡아 적어라 — 앱은 앞으로 가는 값만 받는다.
 - "combat"은 최상위 불리언 필드다 — 규칙은 기존 state_update.combat과 동일(몸으로 겨루는 물리 판정 장면만 true, 청문회·설전 등 언어적 대치는 false, 판정이 끝나면 false).
 - 상태 일관성(관계·사망 불가역·부상 반영·친밀도 구간 태도·⚔판정 표기·RPG 경지 위계)은 서사 속에서 계속 지켜라 — 기록만 생략하는 것이다.` : '');
   // 매 턴 바뀌는 동적 컨텍스트(등장인물 카드 + 현재 상태) — 마지막 유저 입력 앞에 붙여 프리픽스 안정화(원본 히스토리는 불변)
@@ -12179,12 +12195,30 @@ function mergeTimeValue(cur, next, storyId) {
 //   매 턴 주입되는 관계 수치 메모를 모델이 산문에 받아쓴다. 기록에 남으면 다음 턴이 그걸 보고 또 쓰므로
 //   화면·기록·선택지 모두에서 지운다(숫자가 붙은 호감도/친밀도 표기만 — 일반 단어는 건드리지 않는다).
 function scrubMetaNumbers(text) {
-  if (typeof text !== 'string' || !/(호감도|친밀도)/.test(text)) return text;
+  if (typeof text !== 'string' || !/(호감도|친밀도|\d\s*점)/.test(text)) return text;
   return text
     .replace(/\s*[(\[【（][^()\[\]【】（）\n]{0,30}(?:호감도|친밀도)[^()\[\]【】（）\n]{0,30}[)\]】）]/g, '')
-    .replace(/(?:호감도|친밀도)\s*[:：]?\s*[+\-]?\d{1,3}(?:\s*\/\s*100)?\s*(?:의|에\s*따른|에\s*맞(?:는|춘|게)|수준의)?\s*(?:반응(?:으로|을\s*보이며|이다|을)?)?[,\s]*/g, '')
+    .replace(/(?:호감도|친밀도)\s*[:：]?\s*[+\-]?\d{1,3}(?:\s*점)?(?:\s*\/\s*100)?\s*(?:의|에\s*따른|에\s*맞(?:는|춘|게)|수준의)?\s*(?:반응(?:으로|을\s*보이며|이다|을)?)?[,\s]*/g, '')
+    // "86점의 깊은 유대", "93점의 신뢰" — 관계 수치를 점수로 바꿔 적는 변종(2026-09-16 실세이브 14건)
+    .replace(/\d{1,3}\s*점(?:의|짜리|을|이|에\s*달하는)?\s*(?=(?:[가-힣]{0,4}\s*){0,2}(?:유대|신뢰|친밀|호감|애정|소유욕|독점욕|호의|경계심|유착))/g, '')
+    .replace(/((?:유대|신뢰|친밀|호감|애정)(?:감|도)?)\s*[+\-]?\d{1,3}\s*점/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
+}
+// ★시대 톤 규칙은 스토리 시대별로 갈라 넣는다(2026-09-16): 현대 예시에 '학원'을 넣어 두니 판타지 아카데미까지
+//   현대로 읽혀 고풍 말투 인물(로라)이 존댓말로 평탄화됐다. 고전 배경엔 금지문 대신 유지문을 준다.
+const CLASSICAL_ERA_STORIES = new Set(['academy', 'isekai', 'muhyeop', 'murim', 'nakin', 'palace', 'throne', 'kyungsung']);
+function storyEra(story) {
+  const id = (story && story.id) || '';
+  if (CLASSICAL_ERA_STORIES.has(id)) return 'classical';
+  const g = String((story && story.genre) || '');
+  if (/무협|사극|판타지|이세계|중세|왕국|궁중|경성|고대/.test(g) && !/현대/.test(g)) return 'classical';
+  return 'modern';
+}
+function eraToneRule(story) {
+  return storyEra(story) === 'modern'
+    ? ` ★★**시대 톤 일치**: 이 세계는 현대(또는 미래) 배경이다 — "자네·그대·~하시게·~인가?"류 고풍 2인칭·사극 말투 전면 금지. 나이 많은 인물(국장·대표·교수 등)도 현대 한국어 구어로 말한다 — "자네" 대신 "○○ 씨", "너", 직책+님, 손아랫사람에겐 이름으로. 단 캐릭터 카드가 명시적으로 고풍 말투를 지정한 인물은 예외.`
+    : ` ★★**시대 톤 일치**: 이 세계는 고전·판타지 배경이다 — 카드에 지정된 고풍 말투·호칭("그대", "~하노라" 등)은 관계가 깊어져도 현대 구어나 존댓말로 평탄화하지 마라. 카드에 말투 지정이 없는 인물은 세계의 시대감에 맞는 말투를 쓴다.`;
 }
 function scrubMetaData(obj) {
   if (!obj || typeof obj !== 'object') return obj;
@@ -12472,6 +12506,11 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
     }
   } catch {}
   }   // ← !stateOnly (화면·연출 처리 끝. 이하 상태 적용부는 stateOnly와 공유)
+  // ★분리 모드 본편의 시간(2026-09-16 실세이브: 60턴 기록 중 time 1건 — 한 장면만 보는 추출기는 날짜를 거의 안 민다).
+  //   전체 맥락을 가진 본편 모델이 최상위 time을 쓴다 — 추출기와 같은 단조 가드를 거치므로 되돌아가지는 않는다.
+  if (typeof data.time === 'string' && data.time.trim() && !(STORY.id === 'idol' && gameState.idol)) {
+    gameState.time = mergeTimeValue(gameState.time, data.time, STORY.id);
+  }
   if (data.state_update) {
     const s = data.state_update;
     // ★재화·평판 변화 가시화(2026-08-24 전수감사: 친밀도·진영·주사위는 토스트인데 돈·평판만 무음이었음)
@@ -15516,6 +15555,7 @@ function saveToSlot(n) {
 function loadFromSlot(n) {
   let sv = null;
   try { sv = JSON.parse(bulkGet(slotKey(n)) || 'null'); } catch {}
+  if (sv) sv = migrateSave(sv, STORY.id);   // 슬롯도 세이브다 — 구구조를 그대로 복원하면 마이그레이션이 비켜간다(2026-09-16)
   if (!sv) return;
   if (!confirm(`슬롯 ${n}을 불러올까요? 현재 진행은 자동 저장에 남습니다.`)) return;
   toggleSlots();
