@@ -11,7 +11,7 @@ function grab(name) {
   assert(start >= 0, name + ' missing');
   return source.slice(start, source.indexOf('\n}', start) + 2);
 }
-const helpers = ['isFreeApiMode', 'isFreeOpenRouterModel', 'providerRequestError', 'llmRequestCurrent',
+const helpers = ['isFreeApiMode', 'isFreeOpenRouterModel', 'safeProviderErrorText', 'providerErrorDetails', 'providerRequestError', 'llmRequestCurrent',
   'llmRequestProfile', 'callLlmTask', 'createSseParser', 'readProviderStream', 'providerText',
   'fetchGemini', 'fetchNim', 'parseSseTranscript', 'llmSmall'];
 const cases = [];
@@ -103,6 +103,68 @@ test('free quota error performs one request and forbids retry', async () => {
   const r = await h.sb.fetchNim('', []);
   assert.equal(r.error.code, 429); assert.equal(r.error.retryable, false); assert.equal(r.error.freeTest, true);
   assert.equal(h.calls.length, 1); assert.equal(h.timers.size, 0);
+});
+test('HTTP 429 preserves provider cause and Retry-After while remaining a single free request', async () => {
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'openrouter/free',
+    fetch: async () => ({ ok: false, status: 429,
+      headers: { get: name => name.toLowerCase() === 'retry-after' ? '30' : null },
+      json: async () => ({ error: { code: 429, message: 'Provider returned error', metadata: {
+        provider_name: 'Fixture Provider', raw: 'Free model is temporarily rate-limited upstream.'
+      } } }) }) });
+  const r = await h.sb.callLlmTask('JSON', [{ role: 'user', content: 'probe' }], { task: 'probe', maxTok: 128, json: true });
+  assert.equal(r.error.code, 429); assert.equal(r.error.httpStatus, 429);
+  assert.equal(r.error.message, 'Provider returned error');
+  assert.equal(r.error.detail, 'Free model is temporarily rate-limited upstream.');
+  assert.equal(r.error.provider, 'Fixture Provider'); assert.equal(r.error.retryAfter, '30');
+  assert.equal(r.error.retryable, false); assert.equal(r.error.freeTest, true);
+  assert.equal(h.calls.length, 1); assert.equal(h.timers.size, 0);
+  assert.deepEqual(Object.values(h.calls[0].body.provider.max_price), [0, 0, 0, 0]);
+});
+test('SSE 429 retains nested error detail and retry guidance without becoming success or retrying', async () => {
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'fixture/model:free', fetch: async () => {
+    const response = stream(sse([{ error: { code: 429, message: 'Provider returned error', metadata: {
+      provider_name: 'Fixture SSE Provider',
+      raw: JSON.stringify({ error: { message: 'Upstream free capacity is exhausted.' } })
+    } } }]));
+    response.headers = { get: name => name.toLowerCase() === 'retry-after' ? '5' : null };
+    return response;
+  } });
+  const r = await h.sb.fetchNim('', []);
+  assert.equal(r.error.code, 429); assert.equal(r.error.detail, 'Upstream free capacity is exhausted.');
+  assert.equal(r.error.provider, 'Fixture SSE Provider'); assert.equal(r.error.retryAfter, '5');
+  assert.equal(r.error.retryable, false); assert.equal(r.text, '');
+  assert.equal(h.calls.length, 1); assert.equal(h.timers.size, 0);
+});
+test('provider diagnostics redact configured fake keys and bearer credentials in both message and detail', async () => {
+  const orKey = 'fixture-or-secret-7b5f0c8e', geminiKey = 'fixture-gemini-secret-c4a1d93f';
+  const bearer = 'fixture-bearer-private-abcdef0123456789';
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'openrouter/free',
+    OPENROUTER_KEY: orKey, API_KEY: geminiKey,
+    fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: {
+      message: `Rate limited: ${orKey}; Authorization: Bearer ${bearer}`,
+      metadata: { provider_name: 'Fixture', raw: `Upstream limit for ${geminiKey}; ${orKey}` }
+    } }) }) });
+  const r = await h.sb.fetchNim('', []), rendered = JSON.stringify(r.error);
+  for (const secret of [orKey, geminiKey, bearer]) assert(!rendered.includes(secret), 'credential leaked into provider error');
+  assert.match(r.error.message, /Rate limited/); assert.match(r.error.detail, /Upstream limit/);
+  assert.equal(h.calls.length, 1); assert.equal(h.timers.size, 0);
+});
+test('diagnostic metadata extracts only an error message and never dumps request headers or prompts', async () => {
+  const privatePrompt = 'fixture-private-player-history-do-not-export';
+  const privateHeader = 'fixture-private-header-value-do-not-export';
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'openrouter/free',
+    fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: {
+      message: 'Provider returned error', metadata: { provider_name: 'Fixture', raw: {
+        error: { message: 'Free request limit reached.' },
+        request: { headers: { Authorization: 'Bearer ' + privateHeader }, messages: [{ content: privatePrompt }] }
+      } }
+    } }) }) });
+  const r = await h.sb.fetchNim('', []), serialized = JSON.stringify(r.error);
+  assert.equal(r.error.detail, 'Free request limit reached.');
+  for (const value of [privatePrompt, privateHeader, 'Authorization', 'messages']) assert(!serialized.includes(value), 'request data leaked in error metadata');
+  const noMessage = h.sb.providerErrorDetails({ metadata: { raw: { request: { headers: { secret: privateHeader }, prompt: privatePrompt } } } });
+  assert(!JSON.stringify(noMessage).includes(privateHeader)); assert(!JSON.stringify(noMessage).includes(privatePrompt));
+  assert(!noMessage.detail, 'unrecognized object should not be serialized as a diagnostic');
 });
 test('midstream errors remain errors even after partial text', async () => {
   const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'openrouter/free', fetch: async () => stream(sse([

@@ -22,7 +22,7 @@ function sandbox(cfg = {}) {
   sb.window = sb;
   vm.createContext(sb);
   vm.runInContext(`var PROVIDER='gemini', API_KEY='', OPENROUTER_KEY='fake-or', OPENROUTER_MODEL='google/gemini-2.5-flash', OR_MODEL_BY_STORY={story:'google/gemini-3.6-flash'}, GEMINI_MODEL='gemini-3.5-flash', FREE_TEST_MODE=false, FREE_TEST_MODEL='openrouter/free', FREE_TEST_PREVIOUS_PROVIDER='gemini', AI_CONTEXT_MODE='balanced', NIM_URL='https://worker.invalid', NIM_MODEL='fixture/nim'; var STORY={id:'story'}, gameHistory=[], storySummary='', summaryIndex=0; const CONTEXT_RECENT=10, RECENT_CHARS_CAP=120000; function modelCtxTokens(){ return 1000000; }`, sb);
-  vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','recentWindowCount'].map(grab).join('\n'), sb);
+  vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','safeProviderErrorText','freeApiErrorMessage','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','recentWindowCount'].map(grab).join('\n'), sb);
   elements.freeModelSel.value='openrouter/free'; elements.aiContextSel.value='balanced';
   elements.orKeyInput.value='fake-or';
   return sb;
@@ -88,6 +88,56 @@ test('connection probe makes one tiny free request and restores the lock', async
   assert.equal(sb.calls.length,1); assert.equal(sb.calls[0][2].task,'probe');
   assert.equal(sb.calls[0][2].maxTok,128); assert.equal(sb._freeApiProbe,null);
   assert(sb.elements.freeApiCheckStatus.textContent.includes('확인 완료'));
+});
+test('429 probe shows provider details and retry-after without retrying or diagnosing daily exhaustion', async () => {
+  const sb=sandbox(); sb.setFreeTestMode(true);
+  let complete;
+  sb.callLlmTask=(...args)=>{
+    sb.calls.push(args);
+    return new Promise(resolve=>{ complete=resolve; });
+  };
+  const pending=sb.checkFreeApiConnection();
+  assert.equal(sb.calls.length,1);
+  assert.equal(sb.elements.freeApiCheckBtn.disabled,true);
+  assert(sb._freeApiProbe, 'probe must hold its ownership lock');
+  await sb.checkFreeApiConnection();
+  assert.equal(sb.calls.length,1, 'another click must not start another probe');
+  complete({error:{code:429,message:'Rate limit reached',detail:'Queue temporarily full',
+    provider:'Fixture Free Provider',retryAfter:'45',retryable:false}});
+  await pending;
+  const shown=sb.elements.freeApiCheckStatus.textContent;
+  for(const value of ['429','Rate limit reached','Queue temporarily full','Fixture Free Provider','45'])
+    assert(shown.includes(value), 'missing visible error detail: '+value);
+  assert(!/일일 무료 한도(?:를|가)? (?:초과|소진)|무료 사용량을 모두 소진/.test(shown),
+    'a generic throttling response must not be diagnosed as exhausted daily usage');
+  assert.equal(sb.calls.length,1, 'a 429 must not schedule an automatic retry');
+  assert.equal(sb._freeApiProbe,null);
+  assert.equal(sb.elements.freeApiCheckBtn.disabled,false);
+});
+test('string error codes stay visible while keys in provider messages are masked and rendered as text', async () => {
+  const sb=sandbox(); sb.setFreeTestMode(true);
+  const fakeOrKey='sk-or-v1-fixture-only-not-a-real-key-1234567890123456';
+  const fakeGeminiKey='AIzaSyFixtureOnlyNotARealKey12345678901234';
+  sb.elements.orKeyInput.value=fakeOrKey;
+  sb.API_KEY=fakeGeminiKey;
+  Object.defineProperty(sb.elements.freeApiCheckStatus,'innerHTML',{
+    set(){ throw new Error('provider error details must use textContent'); }
+  });
+  sb.callLlmTask=async(...args)=>{
+    sb.calls.push(args);
+    return {error:{code:'429',message:'Provider throttled request for '+fakeOrKey,
+      detail:'Temporary capacity issue; credentials '+fakeGeminiKey+' / '+fakeOrKey,
+      provider:'Fixture Capacity Provider',retryAfter:'60',retryable:false}};
+  };
+  await sb.checkFreeApiConnection();
+  const shown=sb.elements.freeApiCheckStatus.textContent;
+  for(const value of ['429','Provider throttled request','Temporary capacity issue','Fixture Capacity Provider','60'])
+    assert(shown.includes(value), 'missing visible sanitized detail: '+value);
+  assert(!shown.includes(fakeOrKey), 'OpenRouter credential leaked to visible status');
+  assert(!shown.includes(fakeGeminiKey), 'Gemini credential leaked to visible status');
+  assert.equal(sb.calls.length,1);
+  assert.equal(sb._freeApiProbe,null);
+  assert.equal(sb.elements.freeApiCheckBtn.disabled,false);
 });
 test('balanced history budget excludes only already summarized entries', () => {
   const sb=sandbox(); sb.gameHistory=Array.from({length:60},()=>({role:'assistant',content:'가'.repeat(3000)}));

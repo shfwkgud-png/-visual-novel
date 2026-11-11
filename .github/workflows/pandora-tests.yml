@@ -6,6 +6,7 @@ on:
       - fix/pandora-turn-consistency-perf-20261111
       - fix/pandora-v360-state-recovery
       - fix/pandora-v361-prompts-performance
+      - fix/pandora-v362-api-diagnostics
   pull_request:
     branches: [main]
 permissions:
