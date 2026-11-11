@@ -422,6 +422,8 @@ T('분리: fireStateExtract — 추출→적용→병합→선택지 (실행 검
     showChoices: c => { calls.choices = c; },
     autoSave: () => { calls.saved++; },
     setTimeout: (f, ms) => f(),
+    performance: { now: () => 100 },
+    pandoraPerfRecord: () => {},
   });
   await sb.fireStateExtract('(그녀에게 다가간다)', JSON.parse(hist[1].content), ['v716'], 1);
   assert(calls.proc && calls.proc.so === true, 'stateOnly 적용 호출 안 됨');
