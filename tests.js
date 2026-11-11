@@ -434,6 +434,55 @@ T('분리: fireStateExtract — 추출→적용→병합→선택지 (실행 검
   assert(sb.window._splitExtractPending === null, 'pending 미해제');
 });
 
+// ═══ 5-H. 후행 결과 순서 보호 + 계측 (v359) ═══
+T('분리: 늦은 추출·다른 저장·재생성은 state 적용 이전에 차단', async () => {
+  const code = grabFn('fireStateExtract');
+  const tick = () => 100;
+  async function check(kind) {
+    let resolve;
+    const waiting = new Promise(r => { resolve = r; });
+    const row = { role: 'assistant', content: JSON.stringify({ narration: '안녕' }) };
+    const history = [{ role: 'user', content: '안녕' }, row];
+    const state = { player: { injuries: ['발목 부상'] }, metChars: {}, rep: 0, gold: 0 };
+    const calls = { apply: 0, save: 0, choices: 0 };
+    const sb = runSandbox(code + '\n', {
+      turnCount: 5, gameHistory: history, gameState: state, STORY: { id: 'hero' },
+      RPG_STORIES: new Set(), CHARACTERS: {},
+      dialogueQueue: [], historyMode: false, sendBtn: { disabled: false },
+      performance: { now: tick },
+      pandoraPerfRecord: () => {},
+      document: { getElementById: () => null },
+      llmSmall: async () => waiting,
+      scrubMetaData: () => {},
+      processResponse: () => { calls.apply++; },
+      commitPendingEventFrom: () => {},
+      autoSave: () => { calls.save++; },
+      showChoices: () => { calls.choices++; },
+    });
+    const pending = sb.fireStateExtract('안녕', { narration: '안녕', dialogue: [] }, [], 1);
+    if (kind === 'turn') sb.turnCount++;
+    if (kind === 'save') sb.gameState = { ...state };
+    if (kind === 'regenerate') sb.gameHistory.splice(1, 1, { role: 'assistant', content: row.content });
+    resolve(JSON.stringify({ state_update: { gold: 2 }, choices: ['계속'] }));
+    await pending;
+    assert(calls.apply === 0 && calls.save === 0 && calls.choices === 0,
+      kind + '에서 지난 결과 적용됨: ' + JSON.stringify(calls));
+  }
+  await check('turn'); await check('save'); await check('regenerate');
+});
+T('성능기록: 민감한 내용 없이 최대 100건만 메모리에 보관', () => {
+  const sb = runSandbox(grabFn('pandoraPerfRecord') + '\n', { Date });
+  for (let i = 0; i < 105; i++) sb.pandoraPerfRecord('main_model_complete', i, 7);
+  const a = sb.window._pandoraPerf;
+  assert(a.length === 100, '성능기록 상한 초과');
+  assert(Object.keys(a[0]).sort().join(',') === 'at,ms,stage,turn', '기록 필드에 원문이 포함됨');
+});
+T('분리: 긴 장면의 끝부분 보존 + 기존 부상 컨텍스트 포함', () => {
+  const body = grabFn('fireStateExtract');
+  assert(body.includes('fullScene.slice(-2200)'), '장면 끝부분 손실');
+  assert(body.includes('gameState.player.injuries'), '기존 부상 정보 누락');
+});
+
 // ═══ 5-F. 세이브 데이터 버전·마이그레이션 (v349 — 책 Ch.119·223) ═══
 T('세이브버전: 도장·레거시 승격·미래 거부·체인·백업 (실행 검증)', () => {
   // build()에 도장이 찍히는가
