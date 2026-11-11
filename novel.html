@@ -2081,7 +2081,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v364</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v365</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11266,13 +11266,17 @@ async function beginStory() {
     renderFixedStep(st.n.split('{이름}').join(playerName || '그대'), ['▶ 계속'], st);
     return;
   }
+  // Custom episodes use their public synopsis for setup; opening instructions
+  // belong to the first playable scene, not to an extra model-generated prologue.
+  const customStart = !BUILTIN_STORIES[STORY.id];
   // ★프롤로그가 정의된 스토리는 AI 생성 없이 앱이 고정 텍스트+모드선택지를 직접 띄운다
   // (모델 무관 일관성 + 배경 고정 + 느린 첫 호출 제거). AI는 캐릭터 설정 이후 본편부터.
-  if (STORY.prologue) {
+  if (STORY.prologue || customStart) {
     window._startPhase = 'mode';
     // ★모드 라벨은 스토리별 재정의 가능(STORY.modeChoices) — 정해진 서사가 없는 일상 시뮬(lovediary 등)은
     //   기본 문구("정해진 서사를 따라")가 거짓말이 되므로 작품에 맞는 의미를 부여한다. '스토리'/'자유' 단어는 유지 필수(모드 감지 정규식).
-    renderFixedStep(STORY.prologue.split('{이름}').join(playerName || '그대'),
+    const prologue = STORY.prologue || STORY.desc || '이야기를 어떻게 시작할까요?';
+    renderFixedStep(String(prologue).split('{이름}').join(playerName || '그대'),
       STORY.modeChoices || ["📖 스토리 모드 — 정해진 서사를 따라 깊게 몰입한다", "🕊️ 자유 모드 — 이 세계에서 내 마음대로 살아간다"]);
     return;
   }
@@ -11739,6 +11743,10 @@ function llmRequestProfile(provider, model, maxTok, task) {
     thinkingConfig = { thinkingBudget: 0 }; reasoning = { enabled: false };
   } else if (gemini && /gemini-2\.5-pro/i.test(model)) {
     thinkingConfig = { thinkingBudget: 128 }; reasoning = { effort: 'low' };
+  } else if (provider === 'openrouter' && /^nvidia\/nemotron-3\.5-super-vl:free$/i.test(model)) {
+    // This exact free endpoint documents optional reasoning. Keep scene/recorder
+    // budgets available for the requested answer instead of hidden reasoning.
+    reasoning = { enabled: false };
   }
   return { maxTokens, thinkingConfig, reasoning,
     timeoutMs: task === 'probe' ? 20000 : task === 'main' || task === 'draft' ? 120000 : task === 'summary' ? 60000 : 45000 };
@@ -11974,6 +11982,8 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     if (zeroPrice) {
       // Fail closed even if provider pricing changes or routing defaults differ.
       reqBody.provider = { allow_fallbacks: false, max_price: { prompt: 0, completion: 0, request: 0, image: 0 } };
+      if (/^nvidia\/nemotron-3\.5-super-vl:free$/i.test(mdl) && profile.reasoning)
+        reqBody.reasoning = profile.reasoning;
       if (options.json || task === 'main') reqBody.response_format = { type: 'json_object' };
     } else if (/^google\/gemini-/i.test(mdl)) {
       reqBody.provider = { only: ['google-vertex'] };
@@ -14591,7 +14601,9 @@ async function handlePlayerInput(text) {
       // ★스토리 모드 첫 장면 고정(2026-07-20 유저 "첫 만남이 어쩔 땐 소요 어쩔 땐 단아"):
       //   startPromptText로 도입 장면을, startChars로 첫 등장 인물을 지정 — 회차마다 첫 인물이
       //   랜덤이던 문제 해결(prologue 있는 스토리는 startPrompt가 본편에 안 실렸었음).
-      const stName = (STORY.startPromptText || '').split('{이름}').join(playerName);
+      const opening = STORY.startPromptText || (typeof STORY.startPrompt === 'function'
+        ? STORY.startPrompt(playerName) : STORY.startPrompt) || '';
+      const stName = String(opening).split('{이름}').join(playerName);
       const firstChar = (STORY.startChars && STORY.startChars[0] && CHARACTERS[STORY.startChars[0]]) ? CHARACTERS[STORY.startChars[0]].name : '';
       aiEx += `\n\n[스토리 모드: 프롤로그(도입) 직후 순간부터 본편 첫 장면을 시작하라. 프롤로그를 반복하지 말 것.`
         + (stName ? ` 첫 장면은 이렇게: ${stName}` : '')
@@ -14604,7 +14616,7 @@ async function handlePlayerInput(text) {
     if (window._freeMode) gameHistory = [gameHistory[gameHistory.length - 1]];
     window._fateRoll = null;
     autoSave();
-    await callGemini([]);
+    await callGemini(window._freeMode ? [] : (STORY.startChars || []));
     return;
   }
   // ★AI에게만 숨겨 보내는 지시(화면 대사엔 절대 노출 X). 캐릭터 설정 확정·자유모드 시드 등.

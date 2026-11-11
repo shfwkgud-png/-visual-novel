@@ -27,6 +27,21 @@ const FIXTURE = {
   characters: { guide: { name: '안내원', role: '도서관 안내원', personality: '30살 성인. 친절하고 차분한 존댓말을 쓴다.' } },
   events: [], endings: [], startChars: ['guide'],
 };
+// Match a newly published creator story: it has startPrompt, not a built-in
+// prologue or startPromptText. This is the legacy startup path that regressed.
+const CUSTOM_START_FIXTURE = {
+  id: 'u_browser_custom_start', title: '커스텀 시작 장면 검증', genre: '일상',
+  desc: '성인 사서와 방문객이 조용한 도서관에서 약속을 지키는 이야기.',
+  worldLore: '평화로운 도서관이다. 등장인물은 모두 성인이고, 지급과 수령이 끝난 거래만 기록한다.',
+  protagonist: { name: '다온', desc: '26살 성인 방문객' },
+  initialState: { status: '방문객', gold: 0, rep: 0, location: '도서관 접수대', time: '1일차 아침', injuries: [] },
+  characters: { guide: { name: '민서', role: '도서관 사서', gender: '여성', age: '30살',
+    personality: '30살 성인 사서. 영수증을 읽을 때는 반드시 “확인했습니다”라고 차분한 존댓말로 말한다.' } },
+  customBgs: { library: { label: '도서관 접수대', url: 'https://fixture.invalid/library.png' } },
+  startBg: 'library',
+  startPrompt: '아침 도서관 접수대. 민서가 사례금 열 닢을 {이름}에게 지급하고 수령이 완료된 직후부터 시작한다.',
+  startChars: ['guide'], events: [], endings: [],
+};
 const CLOUD_FIXTURE = {
   cfg: { orKey: 'fixture-cloud-key-never-read', freeTestMode: false, orModel: 'fixture-paid-setting-never-render' },
   'save:u_cloud_fixture': {
@@ -89,6 +104,15 @@ function sse(value) {
 function fixtureReply(kind, user) {
   if (kind === 'probe') return { ok: true };
   if (kind === 'choices') return { choices: ['안내원에게 책의 위치를 묻는다', '열람실을 둘러본다'] };
+  if (user.includes('사례금 열 닢')) {
+    if (kind === 'state') return { state_update: { gold: 10 },
+      choices: ['민서에게 영수증을 요청한다', '열람실로 간다'], chronicle: [] };
+    return {
+      narration: '아침 도서관 접수대에서 민서가 사례금 열 닢을 건네고 다온이 모두 받았다.',
+      dialogue: [{ speaker: '민서', char_id: 'guide', emotion: 'normal', pose: 'upper', text: '사례금 열 닢의 지급을 확인했습니다.' }],
+      background: null, mood: null, ending: null, cg: null, combat: false,
+    };
+  }
   const second = /일곱 닢|두 번째 책/.test(user);
   const third = /두 닢|세 번째 서가/.test(user);
   const delta = second ? 7 : third ? 2 : 4;
@@ -112,7 +136,8 @@ async function createFixturePage(origin, mobile, options = {}) {
     isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1,
     serviceWorkers: 'block', reducedMotion: 'reduce',
   });
-  const net = { calls: [], syncCalls: [], errors: [], externalBlocked: 0, holdState: null, nextMainStatus: null };
+  const net = { calls: [], prompts: [], syncCalls: [], errors: [], externalBlocked: 0, holdState: null, nextMainStatus: null };
+  const story = options.story || FIXTURE;
   await context.addInitScript(({ story, id, freeMode }) => {
     if (sessionStorage.getItem('pandora_fixture_seeded')) return;
     sessionStorage.setItem('pandora_fixture_seeded', '1');
@@ -127,7 +152,7 @@ async function createFixturePage(origin, mobile, options = {}) {
       orModel: 'google/gemini-3.6-flash', orModelBy: { nakin: 'google/gemini-3.1-pro-preview' },
       freeTestMode: freeMode, freeTestModel: 'openrouter/free', splitPipe: true,
     }));
-  }, { story: FIXTURE, id: STORY_ID, freeMode: options.freeMode === true });
+  }, { story, id: story.id, freeMode: options.freeMode === true });
   await context.route('**/*', async route => {
     const request = route.request();
     const url = new URL(request.url());
@@ -159,6 +184,10 @@ async function createFixturePage(origin, mobile, options = {}) {
         : /상태 기록관/.test(sys) || /\[이번 턴 장면\]/.test(user) ? 'state'
         : /선택지 작가/.test(sys) ? 'choices' : 'main';
       net.calls.push({ kind, model: body.model, maxTokens: body.max_tokens, systemHead: sys.slice(0, 90) });
+      // Only this explicitly requested fixture context retains prompt text for
+      // assertions. Failure logging below continues to print metadata only.
+      if (options.capturePrompts) net.prompts.push({ kind,
+        messages: messages.map(message => ({ role: message.role, content: String(message.content || '') })) });
       try {
         assert.ok(body.model === 'openrouter/free' || /:free$/.test(body.model), 'free mode selected a paid model');
         assert.ok(!body.provider?.only?.includes('google-vertex'), 'free request retained Google Vertex-only routing');
@@ -471,6 +500,46 @@ async function cloudSafetyChecks(ctx) {
   });
 }
 
+async function customStartChecks(ctx) {
+  const { page, net } = ctx;
+  await check(ctx, 'creator-shaped custom story starts locally then sends its opening and full start-character card once', async () => {
+    await page.locator('#tabMy').click();
+    await page.locator('#myStories .play-item').filter({ hasText: CUSTOM_START_FIXTURE.title }).click();
+    await page.locator('#detailNewBtn').click();
+    await page.waitForFunction(() => window._startPhase === 'mode');
+    await drainDialogue(page);
+    assert.equal(net.calls.length, 0, 'custom prologue unexpectedly called a model');
+    assert.ok((await page.locator('#dialogueText').innerText()).includes(CUSTOM_START_FIXTURE.desc),
+      'custom prologue did not render the public synopsis');
+
+    await page.locator('#choiceBox .choice-btn').filter({ hasText: '스토리 모드' }).click();
+    await page.waitForFunction(() => window._startPhase === 'setup');
+    await drainDialogue(page);
+    assert.equal(net.calls.length, 0, 'custom mode selection or character setup called a model');
+    assert.match(await page.locator('#dialogueText').innerText(), /캐릭터를 설정해 주세요/);
+
+    await enterText(page, '다온/26살/남/차분한 성인 방문객');
+    await waitGold(page, 10);
+    assert.deepEqual(net.calls.map(call => call.kind), ['main', 'state'],
+      'custom startup must make one main request and one state extraction only');
+    const firstMain = net.prompts.filter(prompt => prompt.kind === 'main');
+    assert.equal(firstMain.length, 1);
+    const lastUser = [...firstMain[0].messages].reverse().find(message => message.role === 'user');
+    assert.ok(lastUser, 'main request omitted the player setup input');
+    assert.ok(lastUser.content.includes(CUSTOM_START_FIXTURE.startPrompt.replace('{이름}', '다온')),
+      'creator startPrompt was lost before the first main request');
+    assert.ok(lastUser.content.includes(CUSTOM_START_FIXTURE.characters.guide.personality),
+      'the selected start character reached the request as a name without its detailed card');
+    assert.ok(lastUser.content.includes("반드시 '민서'"), 'opening request did not require the selected first character');
+    const completePrompt = firstMain[0].messages.map(message => message.content).join('\n');
+    assert.ok(!completePrompt.includes('이번 첫 응답은 "프롤로그"다'),
+      'legacy AI prologue instructions leaked into the first playable scene');
+    assert.ok(!completePrompt.includes('프롤로그에는 특정 인물을 등장'),
+      'first playable scene still forbids the selected NPC from appearing');
+    assert.equal(await page.evaluate(() => window._startPhase), 'playing');
+  });
+}
+
 (async () => {
   try {
     const origin = await startServer();
@@ -484,6 +553,11 @@ async function cloudSafetyChecks(ctx) {
       const cloudCtx = await createFixturePage(origin, mobile, { freeMode: true, clock: true });
       try { await cloudSafetyChecks(cloudCtx); }
       finally { await cloudCtx.context.close(); }
+      const customCtx = await createFixturePage(origin, mobile, {
+        freeMode: true, story: CUSTOM_START_FIXTURE, capturePrompts: true,
+      });
+      try { await customStartChecks(customCtx); }
+      finally { await customCtx.context.close(); }
     }
     console.log('\n' + results.length + '/' + results.length + ' browser scenarios passed (' + engineName + '). All model responses were local fixtures.');
   } catch (e) {

@@ -151,6 +151,72 @@ test('Flint allowance respects the output ceiling and exact model scope without 
     }
   }
 });
+test('Nemotron free main relay disables reasoning without expanding its 4000-token budget', async () => {
+  const model = 'nvidia/nemotron-3.5-super-vl:free';
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => model,
+    SYNC_URL: 'https://fixture.invalid/relay', crypto: { randomUUID: () => 'fixture-nemotron-main' } });
+  const chunks = [];
+  const r = await h.sb.fetchNim('JSON', [{ role: 'user', content: 'continue' }], 0.7, 4000,
+    text => chunks.push(text), h.sb.NIM_MODEL, null, 0, { task: 'main', json: true });
+  assert.equal(r.text, '{"state_update":{}}'); assert.equal(chunks.at(-1), r.text);
+  assert.equal(h.calls.length, 1); assert.equal(h.timers.size, 0);
+  const c = h.calls[0], b = c.body;
+  assert.equal(c.url, 'https://fixture.invalid/relay/gen?id=fixture-nemotron-main');
+  assert.equal(b.model, model); assert.equal(b.max_tokens, 4000);
+  assert.deepEqual(b.reasoning, { enabled: false }); assert.equal(b.response_format.type, 'json_object');
+  assert.equal(b.provider.allow_fallbacks, false);
+  assert.deepEqual(Object.values(b.provider.max_price), [0, 0, 0, 0]);
+  for (const field of ['reasoning_effort', 'thinkingConfig', 'safety_settings', 'models']) assert.equal(b[field], undefined);
+  assert.equal(b.provider.only, undefined);
+});
+test('Nemotron state and probe stay JSON while a summary retains its plain-text response contract', async () => {
+  const responses = ['{"state_update":{"gold":5}}', '이전 장면의 사건과 약속을 기록한다.', '{"ok":true}'];
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'nvidia/nemotron-3.5-super-vl:free',
+    fetch: async () => answer(responses.shift()) });
+  assert.equal(await h.sb.llmSmall('JSON', 'record this turn', 2500, 0.3), '{"state_update":{"gold":5}}');
+  const summary = await h.sb.callLlmTask('Summarize in plain text', [{ role: 'user', content: 'past scenes' }],
+    { task: 'summary', maxTok: 2600, json: false });
+  assert.equal(summary.text, '이전 장면의 사건과 약속을 기록한다.');
+  const probe = await h.sb.callLlmTask('JSON', [{ role: 'user', content: 'probe' }],
+    { task: 'probe', maxTok: 128, json: true });
+  assert.equal(probe.text, '{"ok":true}'); assert.equal(h.calls.length, 3);
+  assert.deepEqual(h.calls.map(c => c.body.max_tokens), [2500, 2600, 128]);
+  assert.equal(h.calls[0].body.response_format.type, 'json_object');
+  assert.equal(h.calls[1].body.response_format, undefined);
+  assert.equal(h.calls[2].body.response_format.type, 'json_object');
+  for (const { body } of h.calls) {
+    assert.deepEqual(body.reasoning, { enabled: false }); assert.equal(body.provider.allow_fallbacks, false);
+    assert.deepEqual(Object.values(body.provider.max_price), [0, 0, 0, 0]);
+  }
+  assert.equal(h.timers.size, 0);
+});
+test('Nemotron reasoning override is exact and leaves paid models, other NVIDIA models and NIM unchanged on errors', async () => {
+  const target = 'nvidia/nemotron-3.5-super-vl:free';
+  const fixtures = [
+    { model: target, free: true, off: true },
+    { model: target, free: false, off: true },
+    { model: 'nvidia/nemotron-3.5-super-vl', free: false },
+    { model: 'nvidia/nemotron-3-super:free', free: true },
+    { model: target, free: false, provider: 'nim' }
+  ];
+  for (const fixture of fixtures) {
+    const provider = fixture.provider || 'openrouter';
+    const h = harness({ PROVIDER: provider, FREE_TEST_MODE: fixture.free,
+      curORModel: () => fixture.model, NIM_MODEL: fixture.model,
+      fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'fixture limit' } }) }) });
+    const r = await h.sb.callLlmTask('JSON', [], { task: 'state', maxTok: 2500, json: true });
+    assert.equal(r.error.code, 429); assert.equal(h.calls.length, 1); assert.equal(h.timers.size, 0);
+    const b = h.calls[0].body;
+    assert.equal(b.model, fixture.model); assert.equal(b.max_tokens, 2500);
+    assert.deepEqual(b.reasoning, fixture.off ? { enabled: false } : undefined);
+    assert.equal(b.safety_settings, undefined); assert.equal(b.thinkingConfig, undefined);
+    if (provider === 'openrouter' && fixture.model.endsWith(':free')) {
+      assert.equal(r.error.retryable, false); assert.equal(b.provider.allow_fallbacks, false);
+      assert.deepEqual(Object.values(b.provider.max_price), [0, 0, 0, 0]);
+      assert.equal(b.provider.only, undefined);
+    } else assert.equal(b.provider, undefined);
+  }
+});
 test('free quota error performs one request and forbids retry', async () => {
   const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'qwen/example:free',
     fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'rate limit' } }) }) });

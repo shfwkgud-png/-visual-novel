@@ -9,6 +9,7 @@ on:
       - fix/pandora-v362-api-diagnostics
       - fix/pandora-v363-sync-safety
       - fix/pandora-v364-free-output-budget
+      - fix/pandora-v365-free-nemotron-profile
   pull_request:
     branches: [main]
 permissions:
