@@ -187,6 +187,24 @@ test('recorder receives current injuries, skills, personal knowledge and an expl
   assert.ok(!sent[1].includes('invalid'));
   assert.deepEqual(copy(sent[4]), { task: 'state', json: true });
 });
+test('custom recorder requires numeric cash deltas for completed coin trades and excludes recalled payments', async () => {
+  let sent;
+  const scene = '동전 10닢을 수령했다. 포장지를 받고 3닢을 지불해 거래를 마쳤다. 어제 2닢을 쓴 일을 떠올리며 남은 돈을 주머니에 넣었다.';
+  const sb = sandbox(['stateExtractContract', 'requestStateExtract'], {
+    STORY: { id: 'custom-library' }, RPG_STORIES: new Set(), BUILTIN_STORIES: {},
+    CHARACTERS: {}, gameState: stateFixture({ gold: 12 }), scrubMetaData: () => {},
+    llmSmall: async (...args) => { sent = args; return '{"state_update":{},"choices":[],"chronicle":[]}'; }
+  });
+  await sb.requestStateExtract('사례금을 받고 포장지를 산다.', { narration: scene, dialogue: [] }, []);
+  const [system, user] = sent;
+  assert.ok(user.includes('골드 12') && user.includes(scene), 'recorder needs the current balance and complete transaction evidence');
+  assert.ok(system.includes('동전·닢·G') && system.includes('실제 완료된 수령·지급·구매'), 'cash accounting must cover the story currency and completed trades');
+  assert.ok(system.includes('순변화량을 state_update.gold에 반드시') && system.includes('JSON 숫자로'), 'prose-only notes cannot replace a numeric cash delta');
+  const examples = [...system.matchAll(/\{"gold":(-?\d+)\}/g)].map(match => JSON.parse(match[0]).gold);
+  assert.ok(examples.some(value => value > 0) && examples.some(value => value < 0), 'numeric examples must show both receipts and expenses');
+  assert.ok(system.includes('지난 거래의 회상') && system.includes('중복 가산하지 않는다'), 'recalled or merely pocketed payments must not count again');
+  assert.ok(system.includes('완료 여부나 금액이 불명확하면 추측하지 않는다'));
+});
 test('provider projection preserves actual narration, speech, emotion, state and chronicle without mutating saves', () => {
   const scene = { narration: '문이 열렸다.', dialogue: [{ speaker: '동료', char_id: 'a', text: '약속은 기억해요.', emotion: 'worry', pose: 'upper', sfx: 'door' }],
     state_update: { gold: -2, chars: { a: { knows: '약속 장소' } } }, chronicle: ['문 앞에서 만나기로 했다'], choices: ['기다린다', '떠난다'], cg: 'asset/ref', background: 'library' };
