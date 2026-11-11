@@ -78,6 +78,7 @@ function sse(value) {
 
 function fixtureReply(kind, user) {
   if (kind === 'probe') return { ok: true };
+  if (kind === 'choices') return { choices: ['안내원에게 책의 위치를 묻는다', '열람실을 둘러본다'] };
   const second = /일곱 닢|두 번째 책/.test(user);
   const third = /두 닢|세 번째 서가/.test(user);
   const delta = second ? 7 : third ? 2 : 4;
@@ -132,8 +133,9 @@ async function createFixturePage(origin, mobile) {
       const sys = String(messages[0]?.content || '');
       const user = String(messages[messages.length - 1]?.content || '');
       const kind = /boolean field ok/.test(sys) ? 'probe'
-        : /상태 기록관/.test(sys) || /\[이번 턴 장면\]/.test(user) ? 'state' : 'main';
-      net.calls.push({ kind, model: body.model, maxTokens: body.max_tokens });
+        : /상태 기록관/.test(sys) || /\[이번 턴 장면\]/.test(user) ? 'state'
+        : /선택지 작가/.test(sys) ? 'choices' : 'main';
+      net.calls.push({ kind, model: body.model, maxTokens: body.max_tokens, systemHead: sys.slice(0, 90) });
       try {
         assert.ok(body.model === 'openrouter/free' || /:free$/.test(body.model), 'free mode selected a paid model');
         assert.ok(!body.provider?.only?.includes('google-vertex'), 'free request retained Google Vertex-only routing');
@@ -185,6 +187,8 @@ async function check(ctx, name, fn) {
     console.log('PASS ' + fullName);
   } catch (e) {
     results.push({ name: fullName, passed: false, error: e.message });
+    // Only fixture role/model metadata is logged; no headers, keys or full prompts.
+    console.error('Fixture request roles:', JSON.stringify(ctx.net.calls));
     await ctx.page.screenshot({ path: path.join(ARTIFACTS, fullName.replace(/[^a-z0-9]+/gi, '-') + '.png'), fullPage: true }).catch(() => {});
     throw new Error(fullName + '\n' + e.stack);
   }
@@ -277,6 +281,9 @@ async function configureAndStart(ctx) {
     await drainDialogue(page);
     await page.locator('#choiceBox .choice-btn').filter({ hasText: '스토리 모드' }).click();
     await page.waitForFunction(() => window._startPhase === 'setup');
+    await drainDialogue(page);
+    assert.equal(ctx.net.calls.filter(c => c.kind !== 'probe').length, 0,
+      'fixed character setup must not generate an unnecessary model request');
     await enterText(page, FIRST_INPUT);
     await waitGold(page, 14);
     assert.equal(ctx.net.calls.filter(c => c.kind === 'main').length, 1);

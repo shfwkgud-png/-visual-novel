@@ -13975,8 +13975,11 @@ function idolRunInjected(text) {
 //   장면을 안 읽어 루카스가 금서 구역 떡밥을 던져도 무맥락 문구만 찍었다(유저 스샷 확증).
 //   유저가 이미 입력을 보냈거나 턴이 넘어갔으면 늦게 도착한 생성분은 버린다.
 async function genFallbackChoices() {
+  if (window._startPhase && window._startPhase !== 'playing') return;
   const _turn = turnCount;
   const scope = turnWorkScope(), entry = gameHistory[gameHistory.length - 1];
+  // Setup prompts and a failed player request have no completed scene to extend.
+  if (!entry || entry.role !== 'assistant') return;
   const previous = window._fbGenTurn;
   if (previous && previous.turn === _turn && previous.entry === entry && turnWorkIsCurrent(previous.scope)) return;
   const request = { turn: _turn, scope, entry };

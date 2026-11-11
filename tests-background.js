@@ -203,6 +203,7 @@ test('real regenerate preserves parked response through reset and fetchNim uses 
 
 test('fallback choices are single-flight per scene and cannot cross a same-turn save load', async () => {
   const h = harness(), requests = [], shown = [];
+  h.sb.gameHistory = [{ role: 'assistant', content: 'current scene' }];
   h.sb.turnCount = 8;
   h.sb.CHARACTERS = {};
   h.sb.llmSmall = () => { const d = deferred(); requests.push(d); return d.promise; };
@@ -224,6 +225,7 @@ test('fallback choices are single-flight per scene and cannot cross a same-turn 
 
 test('replaced scene invalidates fallback before it reads current characters or shows choices', async () => {
   const h = harness(), requests = [], shown = [];
+  h.sb.gameHistory = [{ role: 'assistant', content: 'current scene' }];
   h.sb.turnCount = 8;
   h.sb.CHARACTERS = {};
   h.sb.llmSmall = () => { const d = deferred(); requests.push(d); return d.promise; };
@@ -237,6 +239,17 @@ test('replaced scene invalidates fallback before it reads current characters or 
   assert.equal(shown.length, 0, 'stale failure must not generate a fallback for the replacement scene');
   requests[1].resolve('["current A","current B"]'); await newer;
   assert.deepEqual(shown, [['current A', 'current B']]);
+});
+
+test('setup steps and failed player requests never generate fallback API calls', async () => {
+  const h = harness(); let calls = 0;
+  h.sb.turnCount = 0;
+  h.sb.llmSmall = async () => { calls++; return '["A","B"]'; };
+  vm.runInContext(grab('genFallbackChoices'), h.sb);
+  await h.sb.genFallbackChoices();
+  h.sb.gameHistory = [{ role: 'assistant', content: 'fixed setup prompt' }];
+  for (const phase of ['pro','mode','setup']) { h.sb._startPhase = phase; await h.sb.genFallbackChoices(); }
+  assert.equal(calls, 0);
 });
 
 (async () => {
