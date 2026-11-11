@@ -22,13 +22,24 @@ function sandbox(cfg = {}) {
   sb.window = sb;
   vm.createContext(sb);
   vm.runInContext(`var PROVIDER='gemini', API_KEY='', OPENROUTER_KEY='fake-or', OPENROUTER_MODEL='google/gemini-2.5-flash', OR_MODEL_BY_STORY={story:'google/gemini-3.6-flash'}, GEMINI_MODEL='gemini-3.5-flash', FREE_TEST_MODE=false, FREE_TEST_MODEL='openrouter/free', FREE_TEST_PREVIOUS_PROVIDER='gemini', AI_CONTEXT_MODE='balanced', NIM_URL='https://worker.invalid', NIM_MODEL='fixture/nim'; var STORY={id:'story'}, gameHistory=[], storySummary='', summaryIndex=0; const CONTEXT_RECENT=10, RECENT_CHARS_CAP=120000; function modelCtxTokens(){ return 1000000; }`, sb);
-  vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','safeProviderErrorText','freeApiErrorMessage','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','recentWindowCount'].map(grab).join('\n'), sb);
+  vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','safeProviderErrorText','freeApiErrorMessage','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','applyLegacySaveConnection','recentWindowCount'].map(grab).join('\n'), sb);
   elements.freeModelSel.value='openrouter/free'; elements.aiContextSel.value='balanced';
   elements.orKeyInput.value='fake-or';
   return sb;
 }
 const tests = [];
 function test(name, fn) { tests.push([name, fn]); }
+test('resuming an imported save cannot replace existing device credentials or worker URL', () => {
+  const sb = sandbox({ freeTestMode:true, provider:'openrouter', apiKey:'fixture-device-key' });
+  sb.API_KEY='fixture-device-key'; sb.NIM_URL='https://device.invalid';
+  sb.applyLegacySaveConnection({apiKey:'fixture-old-save-key',nimUrl:'https://old-save.invalid'});
+  assert.equal(sb.API_KEY,'fixture-device-key'); assert.equal(sb.NIM_URL,'https://device.invalid');
+});
+test('legacy saves still supply their connection when no shared device configuration exists', () => {
+  const sb = sandbox(); sb.storage.delete('vn_cfg');
+  sb.applyLegacySaveConnection({apiKey:'fixture-legacy-key',nimUrl:'https://legacy.invalid'});
+  assert.equal(sb.API_KEY,'fixture-legacy-key'); assert.equal(sb.NIM_URL,'https://legacy.invalid');
+});
 test('legacy preferences retain model and unknown configuration fields', () => {
   const sb = sandbox({ splitPipe:false, customSetting:'keep', apiKey:'fake-gemini' });
   sb.applyAiPreferences({}); sb.API_KEY='fake-gemini'; sb.persistCfg();

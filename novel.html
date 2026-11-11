@@ -590,8 +590,8 @@
     display: flex; flex-direction: column; gap: 8px;
   }
   #syncSection > p { font-size: 0.85rem; color: var(--text); }
-  #syncBtnRow { display: flex; gap: 8px; }
-  #syncBtnRow .my-btn { margin-top: 0; flex: 1; }
+  #syncBtnRow, .sync-btn-row { display: flex; gap: 8px; }
+  #syncBtnRow .my-btn, .sync-btn-row .my-btn { margin-top: 0; flex: 1; }
 
   /* ===== EPISODE CREATOR ===== */
   #creatorScreen {
@@ -2081,7 +2081,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v362</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v363</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -8550,10 +8550,10 @@ function openStorage() {
   h += `<button class="rw-item" onclick="offloadNow()" style="border-color:rgba(126,200,126,0.5)">
       <span class="rw-turn" style="color:#7ec87e">☁ 정리</span>
       <span class="rw-label">지금 안 하는 스토리 세이브를 <b>클라우드로 옮기고</b> 로컬을 비운다</span>
-      <span class="rw-ago">안전</span></button>`;
-  h += `<div class="ib-note" style="padding:10px 14px">세이브는 매 턴 클라우드에 자동 업로드된다 —
-    로컬에서 비워도 <b>이어하기 하면 다시 받아온다</b>. 되감기·음악 캐시도 지워도 무방하다.
-    <b style="color:#e0524a">내가 만든 스토리</b>만 지울 때 조심하라.</div>`;
+      <span class="rw-ago">${cloudWritesEnabled() ? '백업 확인 후 이동' : '백업 꺼짐'}</span></button>`;
+  h += `<div class="ib-note" style="padding:10px 14px">${cloudWritesEnabled() ? '이 창에서 클라우드 자동 백업이 켜져 있습니다.' : '클라우드 백업이 꺼져 있어 플레이는 이 기기에 저장됩니다.'}
+    정리는 <b>클라우드 저장 성공을 확인한 세이브만</b> 이 기기에서 비웁니다.
+    직접 지우는 데이터는 복구할 수 없을 수 있으니 백업을 먼저 확인하세요.</div>`;
   const box = document.getElementById('rewindBox');
   box.innerHTML = h; box.classList.add('on');
 }
@@ -8563,7 +8563,7 @@ async function offloadNow() {
   const r = await offloadSaves();
   alert(r.moved ? `세이브 ${r.moved}개를 클라우드로 옮기고 ${Math.round(r.freed/1024)}KB를 비웠습니다.
 이어하기 하면 다시 받아옵니다.`
-                : '옮길 세이브가 없습니다(지금 하는 스토리만 남아 있음).');
+                : (r.reason || '옮긴 세이브가 없습니다. 클라우드 저장을 확인하지 못한 데이터는 이 기기에 보존했습니다.'));
   openStorage();
 }
 function lsDrop(k) {
@@ -9193,6 +9193,162 @@ function authHeaders() {
 }
 function hasSyncAuth() { return !!(authToken() || syncToken()); }
 
+// Login permits play and reads. Cloud writes require a checked baseline for this
+// page/account; a fresh browser must never replace an existing backup on login.
+let _syncTimer = null, _syncEpoch = 0, _cloudWriteScope = '';
+let _cloudBaseline = new Map();
+let _cloudBlockedKeys = new Set();
+const _cloudPendingWrites = new Set(), _cloudWriteQueues = new Map();
+const _cloudImportTransactions = new Set();
+let _lastSyncStories = null, _lastSyncUploads = null;
+function cloudWriteScope() {
+  const t = authToken();
+  return t ? 'account:' + t : (syncToken() ? 'legacy:' + syncToken() : '');
+}
+function cloudWritesEnabled(scope = cloudWriteScope(), epoch = _syncEpoch) {
+  return !!scope && scope === cloudWriteScope() && scope === _cloudWriteScope && epoch === _syncEpoch;
+}
+function pauseCloudWrites() {
+  clearTimeout(_syncTimer); _syncTimer = null;
+  _syncEpoch++; _cloudWriteScope = ''; _cloudBaseline = new Map(); _cloudBlockedKeys = new Set();
+  _lastSyncStories = null; _lastSyncUploads = null;
+  for (const tx of _cloudImportTransactions) { try { tx.abort(); } catch {} }
+}
+function cloudReadContext() {
+  return { scope: cloudWriteScope(), epoch: _syncEpoch, headers: authHeaders() };
+}
+function assertCloudContext(ctx) {
+  if (!ctx.scope || ctx.scope !== cloudWriteScope() || ctx.epoch !== _syncEpoch)
+    throw new Error('계정 또는 백업 상태가 바뀌어 작업을 멈췄습니다');
+}
+function cloudValue(raw) {
+  return typeof raw === 'string' ? JSON.parse(raw) : raw;
+}
+function cloudComparable(value) {
+  const sort = v => Array.isArray(v) ? v.map(sort) : v && typeof v === 'object'
+    ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sort(v[k])])) : v;
+  return JSON.stringify(sort(cloudValue(value)));
+}
+function cloudDataKey(key) {
+  return key === 'stories' || key === 'uploads' || /^(?:save:.+|slot[1-3]:.+|vn_slot_.+_[1-3]|endings:.+)$/.test(key)
+    || key === 'tokens:' + (authUser() || 'local');
+}
+function localCloudValue(key) {
+  if (key === 'stories') return getLocalStories();
+  if (key === 'uploads') return getUploads();
+  if (key.startsWith('save:')) return cloudValue(bulkGet(saveKeyFor(key.slice(5))));
+  const slot = /^slot([1-3]):(.+)$/.exec(key);
+  if (slot) return cloudValue(bulkGet('vn_slot_' + slot[2] + '_' + slot[1]));
+  if (/^vn_slot_/.test(key)) return cloudValue(bulkGet(key));
+  if (key.startsWith('endings:')) return cloudValue(localStorage.getItem('vn_endings_' + key.slice(8)));
+  if (key === 'tokens:' + (authUser() || 'local')) return cloudValue(localStorage.getItem('vn_tokens'));
+  return null;
+}
+function cloudPayloadPresent(key, raw) {
+  const v = cloudValue(raw);
+  if (!v || typeof v !== 'object') return false;
+  if (/^save:|^slot[1-3]:|^vn_slot_/.test(key))
+    return !!v.gameState && typeof v.gameState === 'object' && !Array.isArray(v.gameState) && Array.isArray(v.gameHistory);
+  if (key === 'uploads') return ['faces', 'bgs'].some(k => v[k] && typeof v[k] === 'object' && Object.keys(v[k]).length);
+  if (key.startsWith('endings:')) return Array.isArray(v) && v.length > 0;
+  return !Array.isArray(v) && Object.keys(v).length > 0;
+}
+function cloudPayloadEmpty(key, raw) {
+  const v = cloudValue(raw);
+  if (v === null) return true;
+  if (!v || typeof v !== 'object') return false;
+  if (Array.isArray(v)) return key.startsWith('endings:') && v.length === 0;
+  if (Object.keys(v).length === 0) return true;
+  return key === 'uploads' && Object.keys(v).every(k => ['faces', 'bgs'].includes(k)
+    && v[k] && typeof v[k] === 'object' && !Array.isArray(v[k]) && Object.keys(v[k]).length === 0);
+}
+async function readCloudKeys(ctx = cloudReadContext()) {
+  assertCloudContext(ctx);
+  const res = await fetch(SYNC_URL + '/sync/list', { headers: ctx.headers });
+  assertCloudContext(ctx);
+  if (!res.ok) throw new Error('백업 목록을 읽지 못했습니다 (HTTP ' + res.status + ')');
+  const data = await res.json();
+  assertCloudContext(ctx);
+  if (!Array.isArray(data.keys) || data.keys.some(k => typeof k !== 'string' || !k || k.length > 128))
+    throw new Error('백업 목록 형식을 확인할 수 없습니다');
+  // Older workers expose only the first KV page, without a continuation cursor.
+  if (data.keys.length >= 1000 || data.cursor || data.list_complete === false)
+    throw new Error('백업 목록이 일부만 반환되어 쓰기와 복원을 중지했습니다');
+  return [...new Set(data.keys)];
+}
+async function readCloudEntries(ctx) {
+  const keys = await readCloudKeys(ctx);
+  const entries = new Map();
+  for (const key of keys.filter(cloudDataKey)) {
+    const value = await syncGet(key, ctx);
+    if (value === null) throw new Error('확인 중 백업 항목이 바뀌었습니다. 다시 확인하세요');
+    entries.set(key, value);
+  }
+  return { keys, entries };
+}
+async function inspectCloudBackup() {
+  if (!hasSyncAuth()) { syncStatus('로그인이 필요합니다'); return; }
+  syncStatus('클라우드 목록과 저장 정보를 읽는 중…');
+  const ctx = cloudReadContext();
+  try {
+    const { keys, entries } = await readCloudEntries(ctx);
+    assertCloudContext(ctx);
+    const lines = ['클라우드 ' + keys.length + '개 항목 · 읽기만 완료 (업로드·복원 없음)'];
+    for (const [key, value] of entries) {
+      const v = cloudValue(value);
+      if (!cloudPayloadPresent(key, v)) { lines.push(key + ' · 비어 있거나 유효한 플레이 저장이 아님'); continue; }
+      if (/^save:|^slot[1-3]:|^vn_slot_/.test(key)) {
+        const turns = Number.isFinite(v.turnCount) ? v.turnCount : '?';
+        const date = Number.isFinite(v.savedAt) ? new Date(v.savedAt).toLocaleString('ko-KR') : '시각 없음';
+        lines.push(key + ' · ' + turns + '턴 · 기록 ' + v.gameHistory.length + '개 · ' + date);
+      } else if (key === 'stories') lines.push('제작 에피소드 ' + Object.keys(v).length + '개');
+      else if (key === 'uploads') lines.push('이미지 목록 ' + (Object.keys(v.faces || {}).length + Object.keys(v.bgs || {}).length) + '개');
+      else if (key.startsWith('endings:')) lines.push(key + ' · 엔딩 ' + v.length + '개');
+    }
+    if (keys.includes('cfg')) lines.push('연결 설정 백업 있음 · 키와 설정 내용은 읽거나 표시하지 않음');
+    syncStatus(lines.join('\n'));
+  } catch (e) { if (ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) syncStatus(e.message || '백업 확인 실패'); }
+}
+async function enableCloudBackup() {
+  pauseCloudWrites();
+  renderMyProfile();
+  if (!hasSyncAuth()) { syncStatus('로그인이 필요합니다'); return false; }
+  syncStatus('기존 클라우드와 이 기기의 데이터를 비교하는 중…');
+  const ctx = cloudReadContext();
+  try {
+    await Promise.allSettled([..._cloudPendingWrites]);
+    assertCloudContext(ctx);
+    const { entries } = await readCloudEntries(ctx);
+    assertCloudContext(ctx);
+    let conflicts = 0;
+    for (const [key, remote] of entries) {
+      if (cloudPayloadEmpty(key, remote)) continue;
+      if (!cloudPayloadPresent(key, remote) || cloudComparable(remote) !== cloudComparable(localCloudValue(key))) {
+        if (key.startsWith('tokens:')) _cloudBlockedKeys.add(key);
+        else conflicts++;
+      }
+    }
+    if (conflicts) {
+      syncStatus('클라우드와 다른 항목이 ' + conflicts + '개 있어 백업을 켜지 않았습니다. “없는 데이터 가져오기”로 빠진 항목을 가져온 뒤 다시 확인하세요. 양쪽에 다른 내용이 있으면 그대로 보존합니다.');
+      return false;
+    }
+    _cloudBaseline = entries; _cloudWriteScope = ctx.scope;
+    renderMyProfile();
+    syncStatus('이 창에서 클라우드 백업을 켰습니다. 다른 기기의 변경이 발견되면 자동으로 멈춥니다.');
+    scheduleAutoBackup();
+    return true;
+  } catch (e) { if (ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) syncStatus(e.message || '백업 확인 실패'); return false; }
+}
+function disableCloudBackup() {
+  pauseCloudWrites(); renderMyProfile();
+  syncStatus('클라우드 백업을 껐습니다. 플레이는 이 기기에 계속 저장됩니다.');
+}
+window.addEventListener('storage', e => {
+  if (e.key === null || ['vn_auth', 'vn_sync_token'].includes(e.key)) {
+    pauseCloudWrites(); renderMyProfile();
+  }
+});
+
 function acctMsg(m) { const el = document.getElementById('acctMsg'); if (el) el.textContent = m; }
 
 // ----- Google Sign-In (enabled when GOOGLE_CLIENT_ID is set) -----
@@ -9251,11 +9407,13 @@ function renderMyProfile() {
       `<div class="my-label">계정</div>` +
       `<div class="play-item" style="padding:12px 4px;cursor:default">` +
       `<div class="play-info"><div class="play-title">👤 ${esc(authUser())}${isAdminUser() ? ' <span class="story-badge">★ 관리자</span>' : ''}</div>` +
-      `<div class="play-sub">클라우드 자동 백업 켜짐${last}</div></div>` +
+      `<div class="play-sub">${cloudWritesEnabled() ? '이 창에서 클라우드 자동 백업 켜짐' : '이 기기에 저장 중 · 클라우드 백업 꺼짐'}${last}</div></div>` +
       `<button class="play-go" onclick="doLogout()"><span class="tri">⎋</span>로그아웃</button></div>` +
-      `<div id="syncBtnRow"><button class="my-btn" onclick="backupAll(true)">↑ 지금 백업</button>` +
-      `<button class="my-btn" onclick="restoreAll()">↓ 복원</button></div>` +
-      `<div id="syncStatus" class="c-hint" style="text-align:center"></div>` +
+      `<div class="sync-btn-row"><button class="my-btn" onclick="inspectCloudBackup()">백업 확인</button>` +
+      `<button class="my-btn" onclick="restoreAll()">↓ 없는 데이터 가져오기</button></div>` +
+      `<div class="sync-btn-row" style="margin-top:8px"><button class="my-btn" onclick="${cloudWritesEnabled() ? 'disableCloudBackup()' : 'enableCloudBackup()'}">${cloudWritesEnabled() ? '자동 백업 끄기' : '자동 백업 켜기'}</button>` +
+      `<button class="my-btn" onclick="backupAll(true)" ${cloudWritesEnabled() ? '' : 'disabled'}>↑ 지금 백업</button></div>` +
+      `<div id="syncStatus" class="c-hint" style="text-align:center;white-space:pre-line;overflow-wrap:anywhere"></div>` +
       `<div id="acctMsg" class="c-hint" style="text-align:center"></div>`;
   }
 }
@@ -9336,19 +9494,15 @@ function doRegister() {
   authCall('/auth/register', { invite });
 }
 function afterLogin(d) {
+  pauseCloudWrites();
   localStorage.setItem('vn_auth', d.token);
   localStorage.setItem('vn_auth_user', d.display || d.user);
   localStorage.setItem('vn_auth_admin', d.admin ? '1' : '0');
   renderMyProfile();
-  // one-time: fold any legacy passphrase backup into the account, then retire it
-  if (syncToken()) {
-    migrateLegacy(true).then(() => {
-      try { localStorage.removeItem('vn_sync_token'); } catch {}
-    }).catch(() => {});
-  }
-  scheduleAutoBackup();
+  syncStatus('로그인 완료. 클라우드 업로드는 꺼져 있습니다. “백업 확인”으로 기존 데이터를 먼저 확인하세요.');
 }
 function doLogout() {
+  pauseCloudWrites();
   localStorage.removeItem('vn_auth');
   localStorage.removeItem('vn_auth_user');
   localStorage.removeItem('vn_auth_admin');
@@ -9358,25 +9512,31 @@ function doLogout() {
 // copy legacy passphrase-namespace data into the logged-in account
 async function migrateLegacy(silent) {
   const legacy = syncToken();
-  const t = authToken();
-  if (!legacy || !t) return;
-  if (!silent && !confirm('동기화 암호로 저장된 백업 데이터를 이 계정으로 복사합니다. 진행할까요?')) return;
-  acctMsg('기존 백업 데이터를 계정으로 이전 중…');
+  if (!legacy || !authToken() || !cloudWritesEnabled() || silent) return false;
+  if (!confirm('기존 동기화 백업 중 이 계정에 없는 데이터만 복사합니다. 기존 계정 데이터와 동기화 암호는 보존합니다. 진행할까요?')) return false;
+  const ctx = cloudReadContext();
+  acctMsg('기존 백업의 없는 항목만 복사 중…');
   try {
     const listRes = await fetch(SYNC_URL + '/sync/list', { headers: { 'X-Sync-Token': legacy } });
+    assertCloudContext(ctx);
+    if (!listRes.ok) throw new Error('기존 백업 목록 읽기 실패');
     const { keys } = await listRes.json();
+    if (!Array.isArray(keys) || keys.length >= 1000) throw new Error('기존 백업 목록 확인 실패');
     let n = 0;
-    for (const k of keys) {
+    for (const k of keys.filter(cloudDataKey)) {
+      assertCloudContext(ctx);
+      if (await syncGet(k, ctx) !== null) continue;
       const v = await fetch(SYNC_URL + '/sync?key=' + encodeURIComponent(k), { headers: { 'X-Sync-Token': legacy } });
-      if (!v.ok) continue;
-      const body = await v.text();
-      await fetch(SYNC_URL + '/sync?key=' + encodeURIComponent(k), {
-        method: 'PUT', headers: { 'X-Auth': t, 'Content-Type': 'application/json' }, body
-      });
+      assertCloudContext(ctx);
+      if (!v.ok) throw new Error('기존 백업 읽기 실패');
+      const body = await v.json();
+      if (!cloudPayloadPresent(k, body)) continue;
+      if (!await syncPut(k, body, ctx)) throw new Error('백업 복사를 멈췄습니다');
       n++;
     }
-    acctMsg(`✓ ${n}개 항목 이전 완료 (이미지 URL은 그대로 유효)`);
-  } catch (e) { acctMsg('이전 실패: ' + (e.message || '')); }
+    acctMsg(`✓ ${n}개 항목 복사 완료 · 기존 백업과 동기화 암호 보존`);
+    return true;
+  } catch (e) { acctMsg('이전 중단: ' + (e.message || '')); return false; }
 }
 
 function syncStatus(msg) {
@@ -9399,6 +9559,8 @@ function lsKeys(re) {
 //   ★반드시 **업로드 성공을 확인한 뒤에만** 지운다. 실패하면 그 키는 건드리지 않는다.
 async function offloadSaves(keepId) {
   if (!hasSyncAuth()) return { moved: 0, freed: 0, reason: '로그인이 필요하다' };
+  if (!cloudWritesEnabled()) return { moved: 0, freed: 0, reason: '클라우드 백업이 꺼져 있어 이 기기의 저장을 보존했습니다' };
+  const ctx = cloudReadContext();
   const keep = keepId || (typeof STORY !== 'undefined' && STORY ? STORY.id : null);
   const keepKeys = new Set([saveKeyFor(keep)]);
   let moved = 0, freed = 0;
@@ -9409,8 +9571,9 @@ async function offloadSaves(keepId) {
     const cloudKey = /^vn_slot_/.test(k) ? k
                    : 'save:' + (k === 'nakin_save' ? 'nakin' : k.slice(8));
     let ok = false;
-    try { ok = await syncPut(cloudKey, raw); } catch {}
+    try { ok = await syncPut(cloudKey, raw, ctx); } catch {}
     if (!ok) continue;                       // ★올리지 못했으면 절대 지우지 않는다
+    if (!cloudWritesEnabled(ctx.scope, ctx.epoch) || bulkGet(k) !== raw) continue;
     bulkDel(k); moved++; freed += raw.length;
   }
   return { moved, freed };
@@ -9422,47 +9585,80 @@ async function pullSave(id) {
   if (!hasSyncAuth()) return false;
   try {
     const v = await syncGet('save:' + id);
-    if (!v) return false;
+    if (!cloudPayloadPresent('save:' + id, v)) return false;
     return bulkSetSilent(k, typeof v === 'string' ? v : JSON.stringify(v));
   } catch { return false; }
 }
-async function syncPut(key, value) {
-  const h = authHeaders();
-  if (!Object.keys(h).length) return false;
-  const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...h },
-    body: typeof value === 'string' ? value : JSON.stringify(value)
-  });
-  return res.ok;
+async function syncPut(key, value, ctx = cloudReadContext()) {
+  if (!cloudWritesEnabled(ctx.scope, ctx.epoch) || !cloudDataKey(key) || _cloudBlockedKeys.has(key)) return false;
+  let body;
+  try { if (!cloudPayloadPresent(key, value)) return false; body = typeof value === 'string' ? value : JSON.stringify(value); }
+  catch { return false; }
+  const previous = _cloudWriteQueues.get(key) || Promise.resolve();
+  const pending = (async () => {
+    try {
+      await previous;
+      if (!cloudWritesEnabled(ctx.scope, ctx.epoch)) return false;
+      const remote = await syncGet(key, ctx);
+      const baseline = _cloudBaseline.has(key) ? _cloudBaseline.get(key) : null;
+      if (cloudComparable(remote) !== cloudComparable(baseline)) throw new Error('다른 기기의 변경이 있어 클라우드 백업을 멈췄습니다. 양쪽 데이터는 자동으로 합치거나 교체하지 않습니다.');
+      if (!cloudWritesEnabled(ctx.scope, ctx.epoch)) return false;
+      if (cloudComparable(remote) === cloudComparable(body)) return true;
+      const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', ...ctx.headers }, body
+      });
+      if (!cloudWritesEnabled(ctx.scope, ctx.epoch)) return false;
+      if (!res.ok) throw new Error('클라우드 백업 실패 (HTTP ' + res.status + ')');
+      _cloudBaseline.set(key, cloudValue(body));
+      return true;
+    } catch (e) {
+      if (ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) {
+        pauseCloudWrites(); renderMyProfile(); syncStatus(e.message || '백업 실패. 이 기기의 저장은 유지됩니다.');
+      }
+      return false;
+    }
+  })();
+  _cloudWriteQueues.set(key, pending); _cloudPendingWrites.add(pending);
+  try { return await pending; }
+  finally {
+    _cloudPendingWrites.delete(pending);
+    if (_cloudWriteQueues.get(key) === pending) _cloudWriteQueues.delete(key);
+  }
 }
 
-async function syncGet(key) {
-  const h = authHeaders();
-  if (!Object.keys(h).length) return null;
-  const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, { headers: h });
-  if (!res.ok) return null;
-  return res.json();
+async function syncGet(key, ctx = cloudReadContext()) {
+  if (!ctx.scope) return null;
+  assertCloudContext(ctx);
+  const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, { headers: ctx.headers });
+  assertCloudContext(ctx);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('백업 읽기 실패 (HTTP ' + res.status + ')');
+  const value = await res.json();
+  assertCloudContext(ctx);
+  return value;
 }
 
-// Backup everything: created stories + every play save + settings
+// Back up game data. The shared AI connection settings (cfg) are not copied.
 async function backupAll(manual) {
   if (!authToken()) { syncStatus('로그인이 필요합니다'); return; }
+  if (!cloudWritesEnabled()) { syncStatus('기존 백업을 확인한 뒤 “자동 백업 켜기”를 눌러주세요. 이 기기의 저장은 유지됩니다.'); return; }
+  const ctx = cloudReadContext();
   if (manual) syncStatus('백업 중…');
   try {
     let n = 0;
-    await syncPut('stories', getLocalStories()); n++;
-    await syncPut('uploads', getUploads()); n++;
-    for (const id of Object.keys(allStories())) {
-      const raw = bulkGet(saveKeyFor(id));
-      if (raw) { await syncPut('save:' + id, raw); n++; }
+    const entries = [['stories', getLocalStories()], ['uploads', getUploads()]];
+    for (const k of bulkKeys(/^vn_save_|^nakin_save$|^vn_slot_/)) {
+      const key = /^vn_slot_/.test(k) ? k : 'save:' + (k === 'nakin_save' ? 'nakin' : k.slice(8));
+      entries.push([key, bulkGet(k)]);
     }
-    // ★슬롯 세이브도 올린다 — 전엔 백업 대상이 아니라, 로컬에서 지우면 그대로 사라졌다.
-    for (const k of bulkKeys(/^vn_slot_/)) {
-      const raw = bulkGet(k);
-      if (raw) { await syncPut(k, raw); n++; }
+    for (const k of lsKeys(/^vn_endings_/)) entries.push(['endings:' + k.slice(11), localStorage.getItem(k)]);
+    for (const [key, value] of entries) {
+      if (!cloudPayloadPresent(key, value)) continue;
+      if (!await syncPut(key, value, ctx)) throw new Error('일부 항목을 백업하지 못해 완료 처리하지 않았습니다. 이 기기의 데이터는 유지됩니다.');
+      n++;
     }
-    await syncPut('cfg', localStorage.getItem('vn_cfg') || '{}'); n++;
+    assertCloudContext(ctx);
+    if (!n) { syncStatus('백업할 플레이 데이터가 없습니다. 기존 클라우드는 유지됩니다.'); return; }
     const when = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     try { localStorage.setItem('vn_last_backup', String(Date.now())); } catch {}
     syncStatus(`✓ 백업 완료 (${n}개 항목, ${when})`);
@@ -9471,64 +9667,113 @@ async function backupAll(manual) {
   }
 }
 
-// Restore from cloud onto this device (asks before overwriting local data)
+// Add an absent imported save and wait for its durable write before reporting it.
+async function addCloudSave(key, raw, ctx = cloudReadContext()) {
+  assertCloudContext(ctx);
+  if (bulkGet(key) !== null) return false;
+  if (typeof _bulkDB === 'undefined' || !_bulkDB) {
+    if (!bulkSetSilent(key, raw)) throw new Error('이 기기 저장 공간이 부족합니다');
+    return true;
+  }
+  let added = false;
+  await new Promise((resolve, reject) => {
+    const tx = _bulkDB.transaction('kv', 'readwrite'), store = tx.objectStore('kv');
+    _cloudImportTransactions.add(tx);
+    tx.oncomplete = () => { _cloudImportTransactions.delete(tx); resolve(); };
+    tx.onabort = tx.onerror = () => { _cloudImportTransactions.delete(tx); reject(new Error('저장에 실패해 가져오기를 멈췄습니다. 기존 데이터는 유지됩니다.')); };
+    const req = store.get(key);
+    req.onsuccess = () => {
+      try { assertCloudContext(ctx); }
+      catch { tx.abort(); return; }
+      if (req.result === undefined) { store.put(raw, key); added = true; }
+    };
+  });
+  assertCloudContext(ctx);
+  if (added && bulkGet(key) === null) _bulk.set(key, raw);
+  return added;
+}
+
+// Fill absent data only; never replace a divergent local save or API settings.
 async function restoreAll() {
   if (!authToken()) { syncStatus('로그인이 필요합니다'); return; }
-  if (!confirm('클라우드 백업을 이 기기로 가져옵니다. 이 기기의 스토리/플레이가 백업본으로 대체됩니다. 계속할까요?')) return;
-  syncStatus('복원 중…');
+  pauseCloudWrites(); renderMyProfile();
+  if (!confirm('이 기기에 없는 에피소드·저장·슬롯만 가져옵니다. 이미 있는 데이터와 AI 연결 설정은 바꾸지 않으며, 클라우드 업로드는 꺼진 상태로 유지합니다. 계속할까요?')) return;
+  syncStatus('백업을 읽고 확인하는 중…');
+  const ctx = cloudReadContext();
   try {
-    let n = 0;
-    const stories = await syncGet('stories');
-    if (stories) { localStorage.setItem('vn_local_stories', JSON.stringify(stories)); n++; }
-    const uploads = await syncGet('uploads');
-    if (uploads) { localStorage.setItem('vn_uploads', JSON.stringify(uploads)); n++; }
-    for (const id of Object.keys(allStories())) {
-      const save = await syncGet('save:' + id);
-      if (save) { bulkSetSilent(saveKeyFor(id), JSON.stringify(save)); n++; }
+    await Promise.allSettled([..._cloudPendingWrites]);
+    assertCloudContext(ctx);
+    const { entries } = await readCloudEntries(ctx);
+    assertCloudContext(ctx);
+    let n = 0, skipped = 0;
+    const writes = new Map(), clashes = new Set();
+    const stage = (kind, key, value) => {
+      const raw = JSON.stringify(cloudValue(value));
+      const old = kind === 'bulk' ? bulkGet(key) : localStorage.getItem(key);
+      if (old !== null) { if (cloudComparable(old) !== cloudComparable(raw)) skipped++; return; }
+      const id = kind + ':' + key;
+      if (writes.has(id) && cloudComparable(writes.get(id).raw) !== cloudComparable(raw)) { clashes.add(id); skipped++; return; }
+      writes.set(id, { kind, key, raw, expected: null });
+    };
+    for (const [key, remote] of entries) {
+      if (!cloudPayloadPresent(key, remote)) { skipped++; continue; }
+      const v = cloudValue(remote);
+      if (key === 'stories' || key === 'uploads') {
+        const local = key === 'stories' ? getLocalStories() : getUploads();
+        const merged = JSON.parse(JSON.stringify(local));
+        const addMissing = (to, from) => {
+          for (const id of Object.keys(from || {})) {
+            if (!Object.prototype.hasOwnProperty.call(to, id)) Object.defineProperty(to, id, { value: from[id], enumerable: true, writable: true, configurable: true });
+            else if (cloudComparable(to[id]) !== cloudComparable(from[id])) skipped++;
+          }
+        };
+        if (key === 'stories') addMissing(merged, v);
+        else for (const group of ['faces', 'bgs']) { merged[group] = merged[group] || {}; addMissing(merged[group], v[group]); }
+        if (cloudComparable(local) !== cloudComparable(merged)) {
+          const target = key === 'stories' ? 'vn_local_stories' : 'vn_uploads';
+          writes.set('local:' + key, { kind: 'local', key: target, raw: JSON.stringify(merged), expected: localStorage.getItem(target) });
+        }
+      } else if (key.startsWith('save:')) stage('bulk', saveKeyFor(key.slice(5)), v);
+      else if (/^slot[1-3]:/.test(key)) { const m = /^slot([1-3]):(.+)$/.exec(key); stage('bulk', 'vn_slot_' + m[2] + '_' + m[1], v); }
+      else if (/^vn_slot_/.test(key)) stage('bulk', key, v);
+      else if (key.startsWith('endings:')) stage('local', 'vn_endings_' + key.slice(8), v);
+      else if (key.startsWith('tokens:')) stage('local', 'vn_tokens', v);
     }
-    const rawCfg = await syncGet('cfg');
-    if (rawCfg) {
-      const cfg = typeof rawCfg === 'string' ? JSON.parse(rawCfg) : rawCfg;
-      localStorage.setItem('vn_cfg', JSON.stringify(cfg));
-      applyAiPreferences(cfg);
-      if (cfg.apiKey) { API_KEY = cfg.apiKey; document.getElementById('apiKeyInput').value = cfg.apiKey; }
-      if (cfg.orKey) { OPENROUTER_KEY = cfg.orKey;
-        const ork = document.getElementById('orKeyInput'); if (ork) ork.value = cfg.orKey; }   // 입력창에도 복원(저장돼 있음을 눈으로 확인)
-      if (cfg.orModelBy) OR_MODEL_BY_STORY = cfg.orModelBy;
-      if (cfg.orModel) { OPENROUTER_MODEL = cfg.orModel;
-        const orm = document.getElementById('orModelSel'); if (orm) orm.value = cfg.orModel; }
-      if (cfg.nimUrl) { NIM_URL = cfg.nimUrl; document.getElementById('nimUrlInput').value = cfg.nimUrl; }
-      if (cfg.nimModel) NIM_MODEL = NIM_MODEL_OLD_DEFAULTS.includes(cfg.nimModel) ? NIM_MODEL : cfg.nimModel;   // 구기본/EOL/다운 모델은 새 추천으로 승격
-      if (cfg.provider || FREE_TEST_MODE) setProvider(FREE_TEST_MODE ? 'openrouter' : cfg.provider);
+    assertCloudContext(ctx);
+    for (const [id, write] of writes) {
+      assertCloudContext(ctx);
+      if (clashes.has(id)) continue;
+      if (write.kind === 'bulk') { if (!await addCloudSave(write.key, write.raw, ctx)) { skipped++; continue; } }
+      else {
+        if (localStorage.getItem(write.key) !== write.expected) { skipped++; continue; }
+        localStorage.setItem(write.key, write.raw);
+      }
       n++;
     }
-    syncStatus(`✓ 복원 완료 (${n}개 항목)`);
+    assertCloudContext(ctx);
     renderHome();
+    syncStatus(`가져오기 완료 (${n}개 항목) · 다른 내용/빈 값 ${skipped}개 보존 또는 제외 · 클라우드 백업 꺼짐 · AI 연결 설정 유지`);
   } catch (e) {
-    syncStatus('복원 실패: ' + (e.message || '네트워크 오류'));
+    if (ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) syncStatus('가져오기 중단: ' + (e.message || '네트워크 오류'));
   }
 }
 
 // Auto-backup: piggybacks on autoSave, debounced so bursts of turns coalesce
-let _syncTimer = null;
-let _lastSyncStories = null, _lastSyncUploads = null;
 function scheduleAutoBackup() {
-  if (!hasSyncAuth()) return;
+  if (!cloudWritesEnabled()) return;
   clearTimeout(_syncTimer);
-  // ★KV 쓰기 절약(2026-07-21 유저 KV 사용량 메일): 세이브는 매번(턴마다 변함), stories·uploads는
-  //   실제로 바뀌었을 때만 쓴다(거의 안 변하는데 매 백업마다 3개씩 쓰던 낭비 제거). 디바운스 5→20초로 합침.
-  _syncTimer = setTimeout(() => {
-    syncPut('save:' + STORY.id, bulkGet(saveKeyFor(STORY.id)) || '{}').catch(() => {});
-    try { const st = JSON.stringify(getLocalStories()); if (st !== _lastSyncStories) { _lastSyncStories = st; syncPut('stories', st).catch(() => {}); } } catch {}
-    try { const up = JSON.stringify(getUploads());     if (up !== _lastSyncUploads) { _lastSyncUploads = up; syncPut('uploads', up).catch(() => {}); } } catch {}
-    // ★토큰 사용량 — 기기별로 따로 쌓이면 관리자 화면에서 합산이 안 된다. 변경 시에만 올린다.
-    try {
-      if (window._tokensDirty) {
-        window._tokensDirty = false;
-        const tk = localStorage.getItem('vn_tokens') || '{}';
-        syncPut('tokens:' + (localStorage.getItem('vn_auth_user') || 'local'), tk).catch(() => {});
-      }
-    } catch {}
+  const ctx = cloudReadContext(), storyId = STORY.id;
+  _syncTimer = setTimeout(async () => {
+    _syncTimer = null;
+    if (!cloudWritesEnabled(ctx.scope, ctx.epoch) || STORY.id !== storyId) return;
+    const raw = bulkGet(saveKeyFor(storyId));
+    if (raw) await syncPut('save:' + storyId, raw, ctx);
+    try { const st = JSON.stringify(getLocalStories()); if (st !== _lastSyncStories && cloudPayloadPresent('stories', st) && await syncPut('stories', st, ctx)) _lastSyncStories = st; } catch {}
+    try { const up = JSON.stringify(getUploads()); if (up !== _lastSyncUploads && cloudPayloadPresent('uploads', up) && await syncPut('uploads', up, ctx)) _lastSyncUploads = up; } catch {}
+    if (window._tokensDirty && cloudWritesEnabled(ctx.scope, ctx.epoch)) {
+      const tk = localStorage.getItem('vn_tokens');
+      if (tk && await syncPut('tokens:' + (authUser() || 'local'), tk, ctx) && localStorage.getItem('vn_tokens') === tk) window._tokensDirty = false;
+    }
   }, 20000);
 }
 
@@ -9615,15 +9860,21 @@ function canvasToBlob(canvas, type, q) {
 }
 
 async function uploadBlob(name, blob, ct) {
-  const h = authHeaders();
-  if (!Object.keys(h).length) throw new Error('설정에서 로그인하거나 동기화 암호를 저장하세요');
-  const res = await fetch(`${SYNC_URL}/img?name=${encodeURIComponent(name)}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': ct, ...h },
-    body: blob
-  });
-  if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
-  return (await res.json()).url;
+  if (!cloudWritesEnabled()) throw new Error('MY에서 기존 백업을 확인하고 클라우드 백업을 켠 뒤 이미지를 업로드하세요');
+  const ctx = cloudReadContext();
+  const pending = (async () => {
+    const res = await fetch(`${SYNC_URL}/img?name=${encodeURIComponent(name)}`, {
+      method: 'PUT', headers: { 'Content-Type': ct, ...ctx.headers }, body: blob
+    });
+    assertCloudContext(ctx);
+    if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
+    const data = await res.json();
+    assertCloudContext(ctx);
+    return data.url;
+  })();
+  _cloudPendingWrites.add(pending);
+  try { return await pending; }
+  finally { _cloudPendingWrites.delete(pending); }
 }
 
 // Full pipeline: pick file → (optional bg removal) → compress → KV upload
@@ -10679,6 +10930,13 @@ function deleteSave() {
   bulkDel(saveKeyFor(STORY.id));
 }
 
+function applyLegacySaveConnection(save) {
+  // A cloud/slot save must not replace the device's chosen key or worker URL.
+  try { if (localStorage.getItem('vn_cfg') !== null) return; } catch { return; }
+  if (save.apiKey) API_KEY = save.apiKey;
+  if (save.nimUrl) NIM_URL = save.nimUrl;
+}
+
 // 설정 영속화 — **항상 병합 저장**. 어떤 경로로 저장해도 다른 키가 지워지지 않는다.
 function persistCfg() {
   try {
@@ -10697,7 +10955,7 @@ function persistCfg() {
   // ★iOS PWA 워치독(2026-08-06 유저 "계속 로딩만 돌아"): WebKit은 백그라운드 복귀 직후
   //   indexedDB.open이 **아무 이벤트도 안 쏘고 영영 매달리는** 버그가 있다 — 그러면 이 await가
   //   안 끝나 앱이 로딩에 갇힌다. 4초 안에 안 열리면 localStorage 폴백으로 부팅을 계속한다
-  //   (세이브는 매턴 클라우드 백업이 있어 유실 없음, 다음 실행에서 IDB 재시도).
+  //   다음 실행에서 IDB를 재시도한다. 클라우드 백업은 별도로 확인·활성화해야 한다.
   let _slow = false;
   await Promise.race([
     bulkInit(),
@@ -10931,10 +11189,8 @@ function restoreAndReplayInner(save, checkTimeflow) {
   dialogueLog = save.dialogueLog || [];
   playerName = save.playerName || gameState.name || '주인공';
   playerDesc = save.playerDesc || '';
-  API_KEY = save.apiKey || API_KEY;
-  // ★provider는 기기 설정(vn_cfg)이 우선 — 세이브에 박힌 옛 provider로 덮어쓰지 않는다.
-  //   (2026-07-21 버그: 제미나이로 저장된 세이브를 이어하면 NIM 전환이 무시되고 계속 제미나이 호출)
-  if (save.nimUrl) NIM_URL = save.nimUrl;
+  // Provider, key and worker URL all keep the existing device preference.
+  applyLegacySaveConnection(save);
   // world time flow: if enabled and real time passed, the world moved on too
   // ★시간 무개념 스토리 제외(2026-08-24): hero=시간 개념 없음(v345)·timeloop=하루 반복이 컨셉·idol=시간은 앱(sim) 소유
   const _noTimeflow = new Set(['hero', 'timeloop', 'idol']);

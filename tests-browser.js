@@ -27,6 +27,16 @@ const FIXTURE = {
   characters: { guide: { name: '안내원', role: '도서관 안내원', personality: '30살 성인. 친절하고 차분한 존댓말을 쓴다.' } },
   events: [], endings: [], startChars: ['guide'],
 };
+const CLOUD_FIXTURE = {
+  cfg: { orKey: 'fixture-cloud-key-never-read', freeTestMode: false, orModel: 'fixture-paid-setting-never-render' },
+  'save:u_cloud_fixture': {
+    gameState: { gold: 91, location: '도서관' }, turnCount: 7, savedAt: 1794355200000,
+    gameHistory: [{ role: 'user', content: 'fixture-private-cloud-player-text' },
+      { role: 'assistant', content: '{"narration":"fixture-private-cloud-story-text"}' }],
+  },
+  stories: { u_cloud_fixture: { title: 'fixture-private-cloud-episode-title' } },
+  uploads: { faces: { guide: 'https://fixture.invalid/face.png' }, bgs: { library: 'https://fixture.invalid/library.png' } },
+};
 const ARTIFACTS = process.env.PANDORA_BROWSER_ARTIFACTS || path.join(os.tmpdir(), 'pandora-browser');
 fs.mkdirSync(ARTIFACTS, { recursive: true });
 const results = [];
@@ -96,14 +106,14 @@ function fixtureReply(kind, user) {
   };
 }
 
-async function createFixturePage(origin, mobile) {
+async function createFixturePage(origin, mobile, options = {}) {
   const context = await browser.newContext({
     viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 },
     isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1,
     serviceWorkers: 'block', reducedMotion: 'reduce',
   });
-  const net = { calls: [], errors: [], externalBlocked: 0, holdState: null, nextMainStatus: null };
-  await context.addInitScript(({ story, id }) => {
+  const net = { calls: [], syncCalls: [], errors: [], externalBlocked: 0, holdState: null, nextMainStatus: null };
+  await context.addInitScript(({ story, id, freeMode }) => {
     if (sessionStorage.getItem('pandora_fixture_seeded')) return;
     sessionStorage.setItem('pandora_fixture_seeded', '1');
     // Credentials here are intentionally invalid. External traffic is never continued.
@@ -115,13 +125,26 @@ async function createFixturePage(origin, mobile) {
       provider: 'openrouter', orKey: 'sk-or-v1-test-no-network',
       apiKey: 'AIza-test-no-network', nimUrl: 'https://nim-fixture.invalid',
       orModel: 'google/gemini-3.6-flash', orModelBy: { nakin: 'google/gemini-3.1-pro-preview' },
-      freeTestMode: false, freeTestModel: 'openrouter/free', splitPipe: true,
+      freeTestMode: freeMode, freeTestModel: 'openrouter/free', splitPipe: true,
     }));
-  }, { story: FIXTURE, id: STORY_ID });
+  }, { story: FIXTURE, id: STORY_ID, freeMode: options.freeMode === true });
   await context.route('**/*', async route => {
     const request = route.request();
     const url = new URL(request.url());
     if (url.origin === origin) { await route.continue(); return; }
+    if (url.hostname === 'pandora-sync.pasokong99.workers.dev' && ['/sync', '/sync/list'].includes(url.pathname)) {
+      const key = url.pathname === '/sync/list' ? null : url.searchParams.get('key');
+      net.syncCalls.push({ method: request.method(), path: url.pathname, key });
+      if (request.method() !== 'GET') {
+        net.errors.push('cloud write attempted while browser fixture cloud backup is off');
+        await route.fulfill({ status: 409, contentType: 'application/json', body: '{"error":"Fixture rejects cloud writes"}' });
+        return;
+      }
+      if (key === 'cfg') net.errors.push('cloud inspection fetched connection settings');
+      const data = url.pathname === '/sync/list' ? { keys: Object.keys(CLOUD_FIXTURE) } : CLOUD_FIXTURE[key];
+      await route.fulfill({ status: data === undefined ? 404 : 200, contentType: 'application/json', body: JSON.stringify(data ?? null) });
+      return;
+    }
     const modelRequest = request.method() === 'POST' && (
       (url.hostname === 'openrouter.ai' && url.pathname === '/api/v1/chat/completions') ||
       (url.hostname === 'pandora-sync.pasokong99.workers.dev' && url.pathname === '/gen')
@@ -167,6 +190,9 @@ async function createFixturePage(origin, mobile) {
   });
   const page = await context.newPage();
   page.setDefaultTimeout(10000);
+  // A separate cloud-safety context installs its fake clock before application
+  // timers exist. Existing playthrough scenarios retain their real clock.
+  if (options.clock) await page.clock.install({ time: new Date('2026-11-11T00:00:00Z') });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('dialog', dialog => dialog.accept());
@@ -392,6 +418,59 @@ async function playthrough(ctx) {
   });
 }
 
+async function cloudSafetyChecks(ctx) {
+  const { page, net } = ctx;
+  await check(ctx, 'logged-in MY defaults cloud backup off and autosave never uploads after 25 seconds', async () => {
+    await page.locator('#tabMy').click();
+    assert.match(await page.locator('#myProfile').innerText(), /browser-fixture/);
+    assert.match(await page.locator('#myProfile').innerText(), /클라우드 백업 꺼짐/);
+    assert.equal(await page.getByRole('button', { name: '자동 백업 켜기', exact: true }).isVisible(), true);
+    assert.equal(await page.getByRole('button', { name: '↑ 지금 백업', exact: true }).isDisabled(), true);
+    // Exercise the real local autosave entry point, including its cloud-backup
+    // scheduling hook, in a fresh logged-in browser without enabling uploads.
+    await page.evaluate(() => autoSave());
+    await page.clock.fastForward(25000);
+    await page.evaluate(async () => { await Promise.allSettled([..._cloudPendingWrites]); });
+    assert.equal(net.syncCalls.filter(call => call.method !== 'GET').length, 0, 'autosave uploaded despite the default cloud-off state');
+    assert.equal(net.calls.length, 0, 'cloud safety checks unexpectedly generated a model request');
+    assert.match(await page.locator('#myProfile').innerText(), /클라우드 백업 꺼짐/);
+    const cfg = await page.evaluate(() => JSON.parse(localStorage.getItem('vn_cfg')));
+    assert.equal(cfg.freeTestMode, true); assert.equal(cfg.provider, 'openrouter');
+    assert.equal(cfg.orModel, 'google/gemini-3.6-flash');
+  });
+  await check(ctx, 'backup inspection is GET-only, omits credentials and preserves local free settings and saves', async () => {
+    const snapshot = () => page.evaluate(() => ({
+      cfg: localStorage.getItem('vn_cfg'), stories: localStorage.getItem('vn_local_stories'),
+      saves: Object.fromEntries(bulkKeys(/^vn_save_|^nakin_save$|^vn_slot_/).map(key => [key, bulkGet(key)])),
+    }));
+    const before = await snapshot();
+    await page.getByRole('button', { name: '백업 확인', exact: true }).click();
+    await page.waitForFunction(() => document.getElementById('syncStatus').textContent.includes('읽기만 완료'));
+    const status = await page.locator('#syncStatus').innerText();
+    assert.match(status, /클라우드 4개 항목/);
+    assert.match(status, /save:u_cloud_fixture.*7턴.*기록 2개/);
+    assert.match(status, /제작 에피소드 1개/); assert.match(status, /이미지 목록 2개/);
+    assert.match(status, /연결 설정 백업 있음/);
+    for (const forbidden of ['fixture-cloud-key-never-read', 'fixture-paid-setting-never-render',
+      'fixture-private-cloud-player-text', 'fixture-private-cloud-story-text', 'fixture-private-cloud-episode-title']) {
+      assert.ok(!status.includes(forbidden), 'cloud inspection exposed private backup contents');
+    }
+    assert.ok(net.syncCalls.some(call => call.path === '/sync/list'), 'inspection never queried the backup list');
+    assert.ok(net.syncCalls.every(call => call.method === 'GET'), 'inspection wrote to cloud storage');
+    assert.equal(net.syncCalls.filter(call => call.key === 'cfg').length, 0, 'inspection downloaded API settings');
+    assert.deepEqual(await snapshot(), before, 'read-only inspection changed local settings or saves');
+    await page.clock.fastForward(25000);
+    await page.evaluate(async () => { await Promise.allSettled([..._cloudPendingWrites]); });
+    assert.ok(net.syncCalls.every(call => call.method === 'GET'), 'inspection enabled a delayed cloud upload');
+    assert.equal(await page.getByRole('button', { name: '↑ 지금 백업', exact: true }).isDisabled(), true);
+    await page.locator('#pageMy button').filter({ hasText: 'AI 연결 설정' }).click();
+    assert.equal(await page.locator('#freeTestModeChk').isChecked(), true);
+    assert.equal(await page.locator('#freeModelSel').inputValue(), 'openrouter/free');
+    await page.locator('#settingsCloseBtn').click();
+    await page.screenshot({ path: path.join(ARTIFACTS, (ctx.mobile ? 'mobile' : 'desktop') + '-cloud-inspection.png'), fullPage: true });
+  });
+}
+
 (async () => {
   try {
     const origin = await startServer();
@@ -402,6 +481,9 @@ async function playthrough(ctx) {
       const ctx = await createFixturePage(origin, mobile);
       try { await playthrough(ctx); }
       finally { await ctx.context.close(); }
+      const cloudCtx = await createFixturePage(origin, mobile, { freeMode: true, clock: true });
+      try { await cloudSafetyChecks(cloudCtx); }
+      finally { await cloudCtx.context.close(); }
     }
     console.log('\n' + results.length + '/' + results.length + ' browser scenarios passed (' + engineName + '). All model responses were local fixtures.');
   } catch (e) {

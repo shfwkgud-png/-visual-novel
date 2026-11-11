@@ -7,6 +7,7 @@ on:
       - fix/pandora-v360-state-recovery
       - fix/pandora-v361-prompts-performance
       - fix/pandora-v362-api-diagnostics
+      - fix/pandora-v363-sync-safety
   pull_request:
     branches: [main]
 permissions:
@@ -30,6 +31,7 @@ jobs:
           node tests-provider.js
           node tests-settings.js
           node tests-draft.js
+          node tests-sync-safety.js
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15
