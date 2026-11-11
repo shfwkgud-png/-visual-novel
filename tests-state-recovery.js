@@ -501,9 +501,15 @@ T('only role and content enter model messages, recovery metadata stays local', (
 });
 
 function installMainRequest(c, responder) {
-  const main = { requests: [], streamParses: 0, visible: [], summaries: 0 };
+  const main = { requests: [], streamParses: 0, visible: [], summaries: 0, countdowns: 0 };
   Object.assign(c.sb, {
     playerName: '테스터', playerDesc: '', inputBar: { style: {} }, inputMode: false,
+    dialogueLog: c.sb.dialogueLog || [], lastBg: c.sb.lastBg || 'fixture-original-bg',
+    currentBgFile: c.sb.currentBgFile || 'fixture-original-bg', shownSprites: [],
+    autoTimer: null, isShowing: false, waitingForTap: false,
+    clearInterval: id => c.timers.delete(id),
+    resetTurnLineKeys: () => { c.sb._turnLineKeys = new Set(); },
+    setBg: bg => { c.sb.lastBg = bg; c.sb.currentBgFile = bg; },
     WORLD_PROMPT: '', ENGINE_MOD_RPG: '', ENGINE_MOD_CG: '', ENGINE_MOD_IDOL: '',
     BUILTIN_STORIES: { hero: {} }, CG_MANIFEST: {}, STORY_BG_FILES: {},
     presentCharIds: () => [], eraToneRule: () => '', buildStatePrompt: () => '',
@@ -513,15 +519,165 @@ function installMainRequest(c, responder) {
     isSoftRefusal: () => false, fixSpeakerIds: () => {}, recTokens: () => {},
     showDialogue: lines => main.visible.push(clone(lines)),
     summarizeIfNeeded: () => { main.summaries++; },
-    waitWithCountdown: async () => {},
+    waitWithCountdown: async () => { main.countdowns++; },
   });
   c.sb.fetchNim = async (...args) => {
     main.requests.push({ onChunk: args[4] });
     return responder(main.requests.length, ...args);
   };
-  vm.runInContext(grabFn('sceneOutputContract') + grabFn('callGemini'), c.sb);
+  vm.runInContext(grabFn('sceneOutputContract') + grabFn('discardIncompleteScene') + grabFn('callGemini'), c.sb);
   return main;
 }
+
+function installMainStreaming(c, main) {
+  // Exercise the production partial-JSON parser and queue's real dialogueLog
+  // writes. Rendering itself remains a small DOM-free sink.
+  vm.runInContext(['extractStreamUnits', 'resolveSpeakerName', 'scrubMetaNumbers',
+    '_echoNorm', '_isNarrationEcho', 'enqueueLine', 'splitNarration', 'dlgToChunks'].map(grabFn).join('\n'), c.sb);
+  c.sb._turnLineKeys = new Set();
+  c.sb.autoPlay = false;
+  c.sb.resetSprites = () => {};
+  c.sb.Ambient = { setMood() {} };
+  main.streamVisible = [];
+  c.sb.showNextDialogue = () => {
+    const line = c.sb.dialogueQueue.shift();
+    if (line) {
+      main.streamVisible.push(clone(line));
+      if (line._log) line._log.pending = false;
+      c.sb.isShowing = true;
+      c.sb.waitingForTap = true;
+    }
+  };
+}
+
+function failedMainFixture(split) {
+  const c = sandbox();
+  if (!split) c.sb.localStorage.getItem = () => '{"splitPipe":false}';
+  const input = '성인 사서에게 약속한 책을 돌려주고 영수증을 요청한다';
+  c.sb.gameHistory = [
+    { role: 'user', content: '도서관으로 간다' },
+    { role: 'assistant', content: '{"narration":"성인 사서가 서가 옆에서 기다렸다.","dialogue":[]}',
+      _turnBefore: { state: clone(c.sb.gameState), pendingEvent: null } },
+    { role: 'user', content: input }
+  ];
+  c.sb.dialogueLog = [
+    { speaker: '나레이터', text: '성인 사서가 서가 옆에서 기다렸다.', isPlayer: false },
+    { speaker: '테스터', text: input, isPlayer: true }
+  ];
+  c.sb._genText = input;
+  c.sb._pendingEvent = { t: '도서관 약속', tries: 0 };
+  c.sb._pendingGen = { id: 'fixture-incomplete-main' };
+  return { c, input, history: clone(c.sb.gameHistory), log: clone(c.sb.dialogueLog),
+    state: clone(c.sb.gameState), event: clone(c.sb._pendingEvent), turn: c.sb.turnCount };
+}
+
+function assertUncommittedMain(fixture, main, finishReason) {
+  const { c, input, history, state, event, turn } = fixture;
+  const stateNow = clone(c.sb.gameState);
+  // The failure remains visible in diagnostics; gameplay state must not commit.
+  delete stateNow._turnStats;
+  assert.deepEqual(stateNow, state);
+  assert.deepEqual(clone(c.sb.gameHistory), history, 'a failed model answer entered history or replaced a checkpoint');
+  assert.equal(c.sb.turnCount, turn);
+  assert.deepEqual(clone(c.sb._pendingEvent), event);
+  assert.equal(main.requests.length, 1, 'truncation must not start another main request');
+  assert.equal(c.calls.requests.length, 0, 'truncation started state extraction');
+  assert.equal(c.calls.apply.length, 0, 'truncation applied gameplay state');
+  assert.equal(c.calls.saves.length, 0, 'truncation was auto-saved as a completed turn');
+  assert.equal(main.summaries, 0, 'truncation entered long-term memory');
+  assert.equal(main.countdowns, 0, 'truncation scheduled an automatic retry');
+  assert.equal(c.sb.gameHistory[c.sb.gameHistory.length - 1].content, input);
+  assert.equal(c.sb._genText, input, 'failed player input was discarded');
+  assert.equal(c.sb._genFailed, false, 'visibility recovery must not regenerate a truncated reply');
+  assert.equal(c.sb._pendingGen, null);
+  assert.equal(c.sb._stream, null);
+  assert.equal(c.sb._mainRequest, null);
+  assert.equal(c.sb.sendBtn.disabled, false);
+  assert.equal(c.sb.gameState._turnStats.fin, finishReason);
+  const message = main.visible.flat().map(line => line.text || '').join('\n');
+  assert(/출력 한도|출력.*상한|응답.*잘/.test(message), 'missing explicit truncation explanation');
+  assert(/자동.*(?:호출하지|재시도.*않)|자동.*없이/.test(message), 'failure message must explain that it will not retry automatically');
+  assert(/다시 답변|직접.*재시도/.test(message), 'failure message must explain manual recovery');
+}
+
+for (const split of [false, true]) {
+  const mode = split ? 'split' : 'integrated';
+  T(mode + ' main rejects valid-looking JSON when finishReason is length without committing a turn', async () => {
+    const fixture = failedMainFixture(split), { c } = fixture;
+    const main = installMainRequest(c, async () => ({
+      text: JSON.stringify({ narration: '성인 사서가 동전 아홉 개를 건넸다.', dialogue: [],
+        state_update: { gold: 9, event: '도서관 약속' }, choices: ['영수증을 본다', '돌아간다'],
+        chronicle: ['동전 아홉 개를 받았다.'] }),
+      finishReason: 'length', timing: { ttfb: 100, total: 500 }, modelUsed: 'fixture/model:free'
+    }));
+    let relayReads = 0;
+    c.sb.fetch = async () => { relayReads++; throw new Error('unexpected relay recovery'); };
+    await c.sb.callGemini([]); await flush();
+    assertUncommittedMain(fixture, main, 'length');
+    assert.deepEqual(clone(c.sb.dialogueLog), fixture.log);
+    assert.equal(relayReads, 0);
+    assert.equal(c.timers.size, 0);
+  });
+
+  T(mode + ' streamed max_tokens failure removes partial lines and never recovers them as a completed turn', async () => {
+    const fixture = failedMainFixture(split), { c } = fixture, reply = deferred();
+    const main = installMainRequest(c, () => reply.promise);
+    c.sb.FREE_TEST_MODE = true;
+    installMainStreaming(c, main);
+    const originalBg = c.sb.lastBg;
+    const partial = '성인 사서는 책의 목록을 살펴보며 영수증을 작성하기 시작했다.';
+    let relayReads = 0, oldCallbacks = 0;
+    c.sb.fetch = async () => { relayReads++; throw new Error('unexpected relay recovery'); };
+    const work = c.sb.callGemini([]); await flush();
+    main.requests[0].onChunk('{"background":"fixture-incomplete-bg","narration":"' + partial + ' 아직 작성 중');
+    assert(main.streamVisible.some(line => line.text === partial), 'fixture never displayed a partial sentence');
+    assert(c.sb.dialogueLog.some(line => line.text === partial), 'real enqueueLine never recorded the temporary stream');
+    assert.equal(c.sb.currentBgFile, 'fixture-incomplete-bg');
+    c.sb._typeTimer = c.sb.setTimeout(() => { oldCallbacks++; }, 30);
+    c.sb.autoTimer = c.sb.setTimeout(() => { oldCallbacks++; }, 900);
+    c.sb._typeCallback = () => { oldCallbacks++; };
+    const priorTypeGen = c.sb._typeGen || 0;
+    reply.resolve({
+      text: JSON.stringify({ narration: partial, dialogue: [], state_update: { gold: 9 },
+        choices: ['허구 선택지'], chronicle: ['아직 확정하지 않은 사건'] }),
+      finishReason: 'MAX_TOKENS', timing: { ttfb: 100, total: 500 }, modelUsed: 'fixture/model:free',
+      error: { code: 503, message: 'fixture stream ended at its output limit' }
+    });
+    await work; await flush();
+    assertUncommittedMain(fixture, main, 'MAX_TOKENS');
+    assert.deepEqual(clone(c.sb.dialogueLog), fixture.log, 'uncommitted stream leaked into dialogue history');
+    assert.equal(c.sb.dialogueQueue.length, 0);
+    assert.equal(c.sb.lastBg, originalBg);
+    assert.equal(c.sb.currentBgFile, originalBg);
+    assert.equal(c.sb._typeCallback, null);
+    assert(c.sb._typeGen > priorTypeGen);
+    assert.equal(c.sb.isShowing, false);
+    assert.equal(c.sb.waitingForTap, false);
+    assert.equal(c.timers.size, 0, 'stale display callbacks survived failure');
+    assert.equal(oldCallbacks, 0);
+    assert.equal(relayReads, 0, 'provider truncation must not be relabeled as a complete parked response');
+  });
+}
+
+T('first failed playing input exposes manual retry while setup and empty history keep it hidden', () => {
+  const c = sandbox();
+  const elements = { continueHint: { style: {} }, redoBar: { style: {} } };
+  Object.assign(c.sb, { autoTimer: null, inputBar: { style: {} }, liftDialogueForInput() {},
+    document: { getElementById: id => elements[id] || null } });
+  vm.runInContext(grabFn('enterInputMode'), c.sb);
+  for (const scenario of [
+    { phase: 'playing', history: [{ role: 'user', content: '첫 요청' }], visible: true },
+    { phase: undefined, history: [{ role: 'user', content: '기존 저장의 요청' }], visible: true },
+    { phase: 'setup', history: [{ role: 'user', content: '설정 입력' }], visible: false },
+    { phase: 'playing', history: [], visible: false }
+  ]) {
+    c.sb._startPhase = scenario.phase;
+    c.sb.gameHistory = scenario.history;
+    c.sb.enterInputMode();
+    assert.equal(elements.redoBar.style.display, scenario.visible ? 'flex' : 'none');
+    assert.equal(c.sb.inputBar.style.display, 'flex');
+  }
+});
 
 T('split main cannot bypass recorder with invented state, choices or chronicle', async () => {
   const c = sandbox({ respond: async () => JSON.stringify({ state_update: { gold: 4 }, choices: ['기다린다', '떠난다'], chronicle: ['장면에서 확인한 사실'] }) });

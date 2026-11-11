@@ -97,6 +97,60 @@ test('free request carries zero price ceiling and no Google-only routing fields'
   assert.equal(b.max_tokens, 128); assert.equal(b.response_format.type, 'json_object');
   assert.equal(h.timers.size, 0);
 });
+test('Flint free main relay reserves output room without disabling mandatory reasoning', async () => {
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'recursive/flint-v1.0:free',
+    SYNC_URL: 'https://fixture.invalid/relay', crypto: { randomUUID: () => 'fixture-flint-main' } });
+  const chunks = [];
+  const r = await h.sb.fetchNim('JSON', [{ role: 'user', content: 'continue' }], 0.7, 4000,
+    text => chunks.push(text), h.sb.NIM_MODEL, null, 0, { task: 'main', json: true });
+  assert.equal(r.text, '{"state_update":{}}'); assert.equal(h.calls.length, 1);
+  assert.equal(chunks.at(-1), r.text); assert.equal(h.timers.size, 0);
+  const c = h.calls[0], b = c.body;
+  assert.equal(c.url, 'https://fixture.invalid/relay/gen?id=fixture-flint-main');
+  assert.equal(b.model, 'recursive/flint-v1.0:free'); assert.equal(b.max_tokens, 16000);
+  assert.equal(b.response_format.type, 'json_object'); assert.equal(b.provider.allow_fallbacks, false);
+  assert.deepEqual(Object.values(b.provider.max_price), [0, 0, 0, 0]);
+  for (const field of ['reasoning', 'reasoning_effort', 'thinking', 'thinkingConfig', 'safety_settings'])
+    assert.equal(b[field], undefined, field + ' must not be sent to Flint');
+  assert.equal(b.provider.only, undefined); assert.equal(b.models, undefined);
+});
+test('Flint state request gets bounded reasoning room while its probe remains 128 tokens', async () => {
+  const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'recursive/flint-v1.0:free' });
+  const state = await h.sb.llmSmall('JSON', 'record this turn', 2500, 0.3);
+  assert.equal(state, '{"state_update":{}}');
+  const probe = await h.sb.callLlmTask('JSON', [{ role: 'user', content: 'probe' }],
+    { task: 'probe', maxTok: 128, json: true });
+  assert.equal(probe.text, '{"state_update":{}}'); assert.equal(h.calls.length, 2);
+  assert.deepEqual(h.calls.map(c => c.body.max_tokens), [6596, 128]);
+  for (const { body } of h.calls) {
+    assert.equal(body.model, 'recursive/flint-v1.0:free'); assert.equal(body.reasoning, undefined);
+    assert.equal(body.provider.allow_fallbacks, false);
+    assert.deepEqual(Object.values(body.provider.max_price), [0, 0, 0, 0]);
+  }
+  assert.equal(h.timers.size, 0);
+});
+test('Flint allowance respects the output ceiling and exact model scope without retrying failures', async () => {
+  const fixtures = [
+    { model: 'recursive/flint-v1.0:free', task: 'state', requested: 32768, expected: 32768 },
+    { model: 'recursive/flint-v1.0:free', task: 'main', requested: 99999, expected: 32768 },
+    { model: 'recursive/flint-v1.0', task: 'main', requested: 4000, expected: 4000, free: false },
+    { model: 'recursive/flint-v1.0-extra:free', task: 'main', requested: 4000, expected: 4000 },
+    { model: 'openrouter/free', task: 'state', requested: 2500, expected: 2500 }
+  ];
+  for (const fixture of fixtures) {
+    const h = harness({ FREE_TEST_MODE: fixture.free !== false, curORModel: () => fixture.model,
+      fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'fixture limit' } }) }) });
+    const r = await h.sb.callLlmTask('JSON', [], { task: fixture.task, maxTok: fixture.requested, json: true });
+    assert.equal(r.error.code, 429); assert.equal(h.calls.length, 1, fixture.model + ' must not retry or fall back');
+    assert.equal(h.calls[0].body.model, fixture.model);
+    assert.equal(h.calls[0].body.max_tokens, fixture.expected, fixture.model + ' ' + fixture.task);
+    assert.equal(h.calls[0].body.reasoning, undefined); assert.equal(h.timers.size, 0);
+    if (fixture.free !== false) {
+      assert.equal(r.error.retryable, false); assert.equal(r.error.freeTest, true);
+      assert.deepEqual(Object.values(h.calls[0].body.provider.max_price), [0, 0, 0, 0]);
+    }
+  }
+});
 test('free quota error performs one request and forbids retry', async () => {
   const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'qwen/example:free',
     fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'rate limit' } }) }) });

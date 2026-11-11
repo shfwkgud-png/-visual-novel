@@ -2081,7 +2081,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v363</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v364</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -11722,9 +11722,12 @@ function llmRequestProfile(provider, model, maxTok, task) {
   const requested = Math.max(128, Math.min(32768, Math.ceil(Number(maxTok) || 2000)));
   const gemini = /^(?:google\/)?gemini-/i.test(model);
   const thinking = gemini && (/gemini-[34]/i.test(model) || /gemini-2\.5-pro/i.test(model));
+  const flintFree = provider === 'openrouter' && /^recursive\/flint-v1\.0:free$/i.test(model);
   // Main scenes retain their existing reasoning headroom. Recorders pay only for
   // their own output allowance; a 400-token utility no longer requests 16k.
-  const maxTokens = thinking && task !== 'probe'
+  const maxTokens = flintFree && task !== 'probe'
+    ? (task === 'main' ? Math.max(requested, 16000) : Math.min(32768, requested + 4096))
+    : thinking && task !== 'probe'
     ? (task === 'main' ? Math.max(requested, provider === 'openrouter' ? 16000 : 8192) : requested + 1024)
     : requested;
   let thinkingConfig = null, reasoning = null;
@@ -12252,6 +12255,18 @@ function pandoraPerfRecord(stage, milliseconds, turn) {
     if (stats && stats.turn === turn && stage === 'state_extract_failed') stats.extractFailed = true;
   } catch {}
 }
+function discardIncompleteScene(stream) {
+  window._stream = null;
+  window._typeGen = (window._typeGen || 0) + 1;
+  window._typeCallback = null;
+  clearInterval(window._typeTimer); clearTimeout(autoTimer);
+  isShowing = false; waitingForTap = false;
+  dialogueQueue = [];
+  if (dialogueLog === stream.logRef) dialogueLog.splice(stream.logStart);
+  resetTurnLineKeys();
+  if (stream.previousBg) { try { setBg(stream.previousBg); } catch {} }
+  lastBg = stream.previousBg;
+}
 async function callGemini(activeCharIds = [], retryCount = 0) {
   const _turnRequestStart = performance.now();
   const request = { scope: turnWorkScope(), input: gameHistory[gameHistory.length - 1], freeTest: typeof FREE_TEST_MODE !== 'undefined' && FREE_TEST_MODE, split: splitPipeOn() };
@@ -12365,7 +12380,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
 
   // STREAMING PLAYBACK: begin showing narration/dialogue while the model is
   // still writing. State (bg/mood/state_update/choices) applies at completion.
-  const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false, bgDone: false, cgDone: false, moodDone: false };
+  const stream = { active: false, narrDone: false, dlgCount: 0, waiting: false, bgDone: false, cgDone: false, moodDone: false,
+    logRef: dialogueLog, logStart: dialogueLog.length, previousBg: lastBg };
   const canStream = !historyMode && !replaying;   // ★제미나이도 스트리밍(2026-07-21) — 두 프로바이더 공통
   window._stream = canStream ? stream : null;
   const onChunk = !canStream ? null : (buf) => {
@@ -12485,12 +12501,15 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         };
       }
     } catch {}
-    // ★출력 절단 가시화(2026-08-12): 지금까지 finish=length를 잡고도 아무 처리를 안 해
-    //   나레이션이 문장 중간에서 끊긴 채 조용히 표시됐다. 유저가 원인을 알 수 있게 알린다.
-    try {
-      if (result && /length|max_tokens/i.test(result.finishReason || ''))
-        showStatToast('⚠ 출력이 상한에 걸려 잘렸습니다 — 상태 패널의 "최근 턴 처리"에서 확인', true);
-    } catch {}
+    // A truncated response is never a completed scene, even if its prefix happens
+    // to contain parseable JSON. Do not recover it as stop, extract state or save it.
+    if (result && /length|max_tokens/i.test(result.finishReason || '')) {
+      discardIncompleteScene(stream);
+      hideThinking(); window._genFailed = false; window._pendingGen = null;
+      showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal',
+        text: '모델의 출력 한도에 도달해 장면을 완성하지 못했습니다. 이번 응답은 턴·상태·기억에 반영하지 않았습니다.\n입력을 보관했으며 자동으로 다시 호출하지 않습니다. 다시 답변을 누르거나 다른 무료 모델을 선택해 주세요.', pose: 'upper' }]);
+      enterInputMode(); sendBtn.disabled = false; return;
+    }
 
     // If playback already started but the stream errored/emptied mid-way, first try to
     // recover the FULL response from the worker's KV park (v281 relay reads to completion
@@ -14433,7 +14452,9 @@ function enterInputMode() {
   document.getElementById('continueHint').style.display = 'none';
   inputBar.style.display = 'flex';
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
-  document.getElementById('redoBar').style.display = hasHistory ? 'flex' : 'none';
+  const failedFirst = gameHistory[gameHistory.length - 1]?.role === 'user'
+    && (!window._startPhase || window._startPhase === 'playing');
+  document.getElementById('redoBar').style.display = hasHistory || failedFirst ? 'flex' : 'none';
   liftDialogueForInput();
 }
 

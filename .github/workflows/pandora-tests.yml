@@ -8,6 +8,7 @@ on:
       - fix/pandora-v361-prompts-performance
       - fix/pandora-v362-api-diagnostics
       - fix/pandora-v363-sync-safety
+      - fix/pandora-v364-free-output-budget
   pull_request:
     branches: [main]
 permissions:

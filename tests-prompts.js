@@ -55,7 +55,7 @@ function captureMain({ source = SRC, storyId = 'academy', split = true, history 
   const data = history || [{ role: 'user', content: '문 앞에서 기다린다.' }];
   const sb = {
     console, JSON, Math, String, Number, Object, Array, Set, Map, Date, Promise,
-    gameHistory: copy(data), gameState: stateFixture(), turnCount: 3,
+    gameHistory: copy(data), gameState: stateFixture(), turnCount: 3, dialogueLog: [], lastBg: null,
     playerName: '테스터', playerDesc: '신중하게 관찰하는 여행자', PROVIDER: 'nim', NIM_MODEL: 'fixture',
     FREE_TEST_MODE: false, STORY: { id: storyId, protagonist: { name: '원래이름' }, customBgs: {} },
     BUILTIN_STORIES: { academy: {}, lovediary: {}, idol: {}, hero: {} }, RPG_STORIES: new Set(['academy', 'hero']),
