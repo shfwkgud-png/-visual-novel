@@ -44,7 +44,7 @@ function harness() {
   sb.window = sb;
   vm.createContext(sb);
   vm.runInContext(['turnWorkScope', 'turnWorkIsCurrent', 'resetTurnAsyncWork',
-    'parseSseTranscript', 'recoverBackgroundGeneration'].map(grab).join('\n'), sb);
+    'createSseParser', 'providerText', 'parseSseTranscript', 'recoverBackgroundGeneration'].map(grab).join('\n'), sb);
   const fireTimer = async ms => {
     const item = [...timers].find(([, x]) => x.ms === ms);
     assert(item, 'timer not found: ' + ms);

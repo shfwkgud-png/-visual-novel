@@ -47,7 +47,7 @@ function grabSplitPipeline() {
   const start = SRC.indexOf('// ═══════════ 분리 응답 파이프라인');
   const end = SRC.indexOf('// ===== TEXT CHUNKING =====', start);
   assert(start >= 0 && end > start, '분리 파이프라인 추출 실패');
-  return SRC.slice(start, end);
+  return grabFn('stateExtractContract') + '\n' + SRC.slice(start, end);
 }
 
 // ═══ 0. 문법: <script> 블록이 파싱 가능한가 ═══
@@ -282,9 +282,9 @@ T('combat: 판정 턴 입력창 강제 + 8턴 백스톱 + 종료 복귀', () => 
 // ═══ 5-B. 언어적 대치(청문회 등)에서 선택지 실종 방지 (v341) ═══
 T('combat: 언어적 대치는 판정 예외 + event 전환 시 굳은 combat 해제', () => {
   // ① 프롬프트: 청문회·심문·설전 같은 언어적 대치는 combat이 아니라 choices 필수임을 명시
-  assert(SRC.includes('말과 입장으로 겨루는 대치는 combat이 아니다'),
+  assert(SRC.includes('청문회·심문·재판·설전·협상·면접은 combat=false'),
     '언어적 대치 예외(choices 필수) 규정 소멸 — 청문회에서 선택지 실종 재발');
-  assert(/청문회·심문·재판·설전·협상 등 말·입장으로 겨루는 대치는 여기에 해당하지 않는다/.test(SRC),
+  assert(/말로 겨루는 장면이면 false/.test(grabFn('sceneOutputContract')),
     'combat 필드 스펙의 언어적 대치 제외 소멸');
   // ② 엔진 안전망: event(청문회 등)로 장면 전환 시, 모델이 combat 미언급이면 굳은 전투 해제
   const i = SRC.indexOf('gameState.event = s.event;');
@@ -628,7 +628,7 @@ T('개전: 엔진 게이트가 개전선언+진영 둘 다 요구 + 프롬프트
   assert(/warDeclared\(gameState, s\)/.test(seg), 'warDeclared 게이트 미사용');
   assert(/flags\['개전'\] && gameState\.faction/.test(seg), 'initWar 조건이 진영 기록만으로 되돌아감');
   assert(SRC.includes('1부의 반 배정(흑룡반·은사자반·금매반)은 절대 faction이 아니다'), '반→faction 금지 프롬프트 소멸');
-  assert(/조직 내부의 소속 단위는 faction이 아니라 flags에 기록하라/.test(SRC), 'faction 필드 스펙의 소속단위 제외 소멸');
+  assert(/반·조·부서 등 내부 단위는 flags에 둔다/.test(grabFn('stateExtractContract')), 'faction 필드 스펙의 소속단위 제외 소멸');
 });
 
 T('개전: 오개전 세이브 복구 마이그레이션 v1→v2 (실행 검증)', () => {
@@ -695,7 +695,7 @@ T('호감도: 산문 속 수치 메타만 지우고 일반 문장은 보존 (실
 T('날짜·호감도: 배선 — 추출기에 현재 시각 전달 + 쓰기/기록/화면/선택지 전 경로 정제', () => {
   const fx = grabFn('requestStateExtract');
   assert(fx.includes('[현재 시각] ${gameState.time'), '추출 모델에 현재 일차 미전달 — 일차 추측 재발');
-  assert(/일차는 절대 되돌리지 마라/.test(fx), '추출 스키마의 역행 금지 문구 소멸');
+  assert(fx.includes('stateExtractContract(rpg)') && /현재 일차를 되돌리지/.test(grabFn('stateExtractContract')), '추출 스키마의 역행 금지 계약 소멸');
   assert(fx.includes('scrubMetaData(sx)'), '추출 결과(선택지) 정제 소멸');
   assert(SRC.includes('gameState.time = mergeTimeValue(gameState.time, s.time, STORY.id)'), 'time이 가드 없이 덮어쓰기로 회귀');
   assert(!/if \(s\.time && !_isIdol\) gameState\.time = s\.time;/.test(SRC), '구 무검사 time 덮어쓰기 부활');
@@ -746,8 +746,9 @@ T('시대톤: 스토리 시대별 분기 — 판타지 아카데미는 고풍 �
   assert(!/현대 배경\(현대 한국·미래·SF·학원·연예계 등\)/.test(SRC), "'학원'을 현대 예시로 둔 구 문구 부활");
 });
 T('날짜·말투: 분리 모드 본편이 time을 쓰고 앱이 단조 병합 + 말투 불변·GM 메모·슬롯 마이그레이션', () => {
-  assert(/"combat", "time" \} 만\./.test(SRC), '분리 모드 스키마에 time 필드 없음 — 날짜가 안 흐름 재발');
-  assert(SRC.includes('서사 기준으로 일차를 바로잡아 적어라'), '어긋난 일차 재정렬 지시 소멸');
+  const contract = runSandbox(grabFn('stateExtractContract') + grabFn('sceneOutputContract')).sceneOutputContract(true);
+  assert(contract.includes('combat 및 필요할 때 time뿐이다'), '분리 모드 스키마에 time 필드 없음 — 날짜가 안 흐름 재발');
+  assert(contract.includes('날짜가 서사와 명백히 어긋나면 그 경과를 서사로 설명하며 바로잡는다'), '어긋난 일차 재정렬 지시 소멸');
   assert(/typeof data\.time === 'string' && data\.time\.trim\(\)[\s\S]{0,200}gameState\.time = mergeTimeValue\(gameState\.time, data\.time, STORY\.id\)/.test(SRC), '본편 최상위 time 적용 소멸');
   assert(SRC.includes('★말투 불변: 친해져도 카드에 지정된 말투'), '관계 단계 상승 시 말투 잠금 소멸');
   assert(SRC.includes('※친밀도 숫자는 GM 내부값이다'), '상태 블록 GM 내부값 표시 소멸');

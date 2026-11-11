@@ -29,7 +29,7 @@ function extractionCode() {
   const start = SRC.indexOf('// ═══════════ 분리 응답 파이프라인');
   const end = SRC.indexOf('// ===== TEXT CHUNKING =====', start);
   assert.ok(start >= 0 && end > start, 'State pipeline section not found');
-  let code = SRC.slice(start, end);
+  let code = grabFn('stateExtractContract') + '\n' + SRC.slice(start, end);
   for (const name of ['resetTurnAsyncWork', 'rollbackAssistantTurn']) {
     if (!new RegExp('function ' + name + '\\(').test(code)) code += '\n' + grabFn(name);
   }
@@ -329,7 +329,7 @@ T('regenerate restores the original turn state before applying its replacement',
 });
 
 T('two completed turns then rewind and regenerate preserves the restored answer checkpoint', async () => {
-  const c = sandbox();
+  const c = sandbox({ respond: async (_system, user) => JSON.stringify({ state_update: { gold: user.includes('장면 2') ? 7 : 4 }, choices: ['기다린다', '살펴본다'] }) });
   Object.assign(c.sb, {
     gameHistory: [], turnCount: 0, dialogueLog: [], turnSnaps: [], SNAP_MAX: 30,
     histDropped: 0, dlogDropped: 0, storySummary: '', summaryIndex: 0, lastBg: null,
@@ -338,7 +338,7 @@ T('two completed turns then rewind and regenerate preserves the restored answer 
     updateSceneBanner: () => {}, detectActiveChars: () => [],
   });
   const main = installMainRequest(c, async number => ({ text: JSON.stringify({
-    narration: '장면 ' + number, dialogue: [], state_update: { gold: number === 2 ? 7 : 4 },
+    narration: '장면 ' + number, dialogue: [], combat: false,
   }) }));
   vm.runInContext(grabFn('captureSnap') + grabFn('restoreSnap') + grabFn('regenerate'), c.sb);
 
@@ -346,6 +346,7 @@ T('two completed turns then rewind and regenerate preserves the restored answer 
   c.sb.gameHistory.push({ role: 'user', content: '첫 입력' });
   c.sb.dialogueLog.push({ isPlayer: true, text: '첫 입력' });
   await c.sb.callGemini([]);
+  await c.sb.ensureStateExtractReady();
   assert.equal(c.sb.gameState.gold, 14);
   const firstAnswer = c.sb.gameHistory[1];
   assert.equal(firstAnswer._turnBefore.state.gold, 10);
@@ -355,6 +356,7 @@ T('two completed turns then rewind and regenerate preserves the restored answer 
   c.sb.gameHistory.push({ role: 'user', content: '둘째 입력' });
   c.sb.dialogueLog.push({ isPlayer: true, text: '둘째 입력' });
   await c.sb.callGemini([]);
+  await c.sb.ensureStateExtractReady();
   assert.equal(c.sb.gameState.gold, 21);
   assert.equal(firstAnswer._turnBefore, undefined, 'test must exercise checkpoint compaction');
 
@@ -363,6 +365,7 @@ T('two completed turns then rewind and regenerate preserves the restored answer 
   assert.equal(c.sb.turnCount, 1);
   assert.equal(c.sb.gameHistory[1]._turnBefore.state.gold, 10, 'rewind lost the prior answer checkpoint');
   await c.sb.regenerate();
+  await c.sb.ensureStateExtractReady();
   assert.equal(main.requests.length, 3);
   assert.equal(c.sb.gameState.gold, 14, 'rewound answer delta applied twice during regeneration');
   assert.equal(c.sb.turnCount, 1);
@@ -490,7 +493,7 @@ T('only role and content enter model messages, recovery metadata stays local', (
   c.sb.PRIMING_SHOTS = [];
   c.sb.storySummary = '';
   c.sb.recentWindowCount = () => 10;
-  vm.runInContext(grabFn('buildMessages'), c.sb);
+  vm.runInContext(grabFn('providerHistoryContent') + grabFn('buildMessages'), c.sb);
   const messages = c.sb.buildMessages();
   assert.deepEqual(Object.keys(messages[messages.length - 1]).sort(), ['content', 'role']);
   assert.equal(messages[messages.length - 1].content, c.entry.content);
@@ -505,7 +508,7 @@ function installMainRequest(c, responder) {
     BUILTIN_STORIES: { hero: {} }, CG_MANIFEST: {}, STORY_BG_FILES: {},
     presentCharIds: () => [], eraToneRule: () => '', buildStatePrompt: () => '',
     buildMessages: () => c.sb.gameHistory.map(h => ({ role: h.role, content: h.content })),
-    resetDialogueLift: () => {}, PROVIDER: 'test',
+    resetDialogueLift: () => {}, PROVIDER: 'test', NIM_MODEL: 'test-model', FREE_TEST_MODE: false,
     extractStreamUnits: () => { main.streamParses++; return { narration: null, narrationPartial: null, dialogues: [] }; },
     isSoftRefusal: () => false, fixSpeakerIds: () => {}, recTokens: () => {},
     showDialogue: lines => main.visible.push(clone(lines)),
@@ -516,9 +519,62 @@ function installMainRequest(c, responder) {
     main.requests.push({ onChunk: args[4] });
     return responder(main.requests.length, ...args);
   };
-  vm.runInContext(grabFn('callGemini'), c.sb);
+  vm.runInContext(grabFn('sceneOutputContract') + grabFn('callGemini'), c.sb);
   return main;
 }
+
+T('split main cannot bypass recorder with invented state, choices or chronicle', async () => {
+  const c = sandbox({ respond: async () => JSON.stringify({ state_update: { gold: 4 }, choices: ['기다린다', '떠난다'], chronicle: ['장면에서 확인한 사실'] }) });
+  c.sb.gameHistory = [{ role: 'user', content: '광장으로 간다' }];
+  const main = installMainRequest(c, async () => ({ text: JSON.stringify({ narration: '동료에게 동전 네 개를 받았다.', dialogue: [], combat: false,
+    state_update: { gold: 999 }, choices: ['허구 선택지'], chronicle: ['허구 사실'] }) }));
+  await c.sb.callGemini([]);
+  await c.sb.ensureStateExtractReady();
+  assert.equal(main.requests.length, 1);
+  assert.equal(c.calls.requests.length, 1);
+  assert.equal(c.sb.gameState.gold, 14);
+  assert.deepEqual(clone(c.sb.gameState.chronicle), ['장면에서 확인한 사실']);
+  const mainApplied = c.calls.apply.find(x => !x.stateOnly);
+  assert.ok(mainApplied && !mainApplied.data.state_update && !mainApplied.data.choices && !mainApplied.data.chronicle);
+  assert.equal(c.calls.apply.filter(x => x.stateOnly).length, 1);
+  const answer = c.sb.gameHistory[c.sb.gameHistory.length - 1];
+  assert.equal(answer._stateExtract.status, 'applied');
+  assert.ok(!answer.content.includes('999') && !answer.content.includes('허구'));
+});
+
+T('integrated setting and idol mode keep main state and never schedule a recorder', async () => {
+  for (const id of ['hero', 'idol']) {
+    const c = sandbox();
+    c.sb.STORY = { id };
+    c.sb.gameHistory = [{ role: 'user', content: '동전을 받는다' }];
+    if (id === 'hero') c.sb.localStorage.getItem = () => '{"splitPipe":false}';
+    installMainRequest(c, async () => ({ text: JSON.stringify({ narration: '동전 네 개를 받았다.', dialogue: [], state_update: { gold: 4 }, choices: ['기다린다', '떠난다'], chronicle: ['네 개를 받았다'] }) }));
+    await c.sb.callGemini([]);
+    assert.equal(c.sb.gameState.gold, 14, id);
+    assert.equal(c.calls.requests.length, 0, id);
+    assert.equal(c.calls.apply.filter(x => x.stateOnly).length, 0, id);
+    assert.ok(JSON.parse(c.sb.gameHistory[c.sb.gameHistory.length - 1].content).state_update);
+  }
+});
+
+T('split legacy nested combat and time remain main-owned while other state waits for extraction', async () => {
+  const reply = deferred(), c = sandbox({ respond: () => reply.promise });
+  c.sb.gameHistory = [{ role: 'user', content: '검을 든다' }];
+  installMainRequest(c, async () => ({ text: JSON.stringify({ narration: '칼날이 부딪혔다.', dialogue: [],
+    state_update: { gold: 999, combat: true, time: '2일차 오후' } }) }));
+  await c.sb.callGemini([]);
+  const parsed = c.calls.apply.find(x => !x.stateOnly).data;
+  assert.equal(parsed.combat, true);
+  assert.equal(parsed.time, '2일차 오후');
+  assert.equal(parsed.state_update, undefined);
+  assert.equal(c.sb.gameState.gold, 10);
+  reply.resolve('{"state_update":{},"choices":["막는다","피한다"],"chronicle":[]}');
+  await c.sb.ensureStateExtractReady();
+  assert.equal(c.sb.gameState.gold, 10);
+  const topWins = c.sb.normalizeSceneContract({ narration: '장면', combat: false, time: '3일차 아침', state_update: { combat: true, time: '2일차 밤' } }, true);
+  assert.equal(topWins.combat, false);
+  assert.equal(topWins.time, '3일차 아침');
+});
 
 T('main stream and result cannot affect a game loaded while the request is in flight', async () => {
   const reply = deferred();
@@ -566,6 +622,7 @@ T('old main completion and finally cannot unlock a new main request', async () =
   assert.equal(c.sb.gameState.gold, 10);
   newReply.resolve({ text: JSON.stringify({ narration: '새 장면', state_update: { gold: 4 }, dialogue: [] }) });
   await current;
+  await c.sb.ensureStateExtractReady();
   assert.equal(c.sb.gameState.gold, 14);
   assert.equal(c.sb.gameHistory.length, 2);
   assert.equal(c.sb.turnCount, 4);

@@ -5,6 +5,7 @@ on:
       - main
       - fix/pandora-turn-consistency-perf-20261111
       - fix/pandora-v360-state-recovery
+      - fix/pandora-v361-prompts-performance
   pull_request:
     branches: [main]
 permissions:
@@ -24,3 +25,34 @@ jobs:
           node tests-state-recovery.js
           node tests-summary.js
           node tests-background.js
+          node tests-prompts.js
+          node tests-provider.js
+          node tests-settings.js
+          node tests-draft.js
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Run offline browser and mobile scenarios
+        run: node tests-browser.js
+        env:
+          PANDORA_BROWSER: ${{ matrix.browser }}
+      - name: Save browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pandora-browser-${{ matrix.browser }}
+          path: /tmp/pandora-browser
+          if-no-files-found: ignore
