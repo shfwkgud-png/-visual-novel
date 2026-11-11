@@ -11748,13 +11748,24 @@ document.addEventListener('visibilitychange', () => {
     }
   } catch {}
 });
+// In-memory only: no prompts, API keys, character dialogue or player data are recorded.
+function pandoraPerfRecord(stage, milliseconds, turn) {
+  try {
+    const log = window._pandoraPerf || (window._pandoraPerf = []);
+    log.push({ stage, ms: Math.max(0, Math.round(milliseconds)), turn, at: Date.now() });
+    if (log.length > 100) log.splice(0, log.length - 100);
+  } catch {}
+}
 async function callGemini(activeCharIds = [], retryCount = 0) {
+  const _turnRequestStart = performance.now();
   showThinking();
   sendBtn.disabled = true;
   // ★분리 모드: 직전 턴의 후행 상태 추출이 아직 도는 중이면 잠깐 기다린다(최대 6초) —
   //   이번 프롬프트의 [현재 상태]가 최신이 되도록. 6초를 넘기면 옛 상태로 진행(진행이 우선).
   if (window._splitExtractPending) {
+    const _waitStart = performance.now();
     try { await Promise.race([window._splitExtractPending, new Promise(r => setTimeout(r, 6000))]); } catch {}
+    pandoraPerfRecord('previous_extract_wait', performance.now() - _waitStart, turnCount);
   }
   window._genFailed = false;   // ★백그라운드 중단 감지 초기화(복귀 시 자동 재생성 판단용)
   // Hide input while the AI is generating/outputting
@@ -11938,12 +11949,15 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   };
 
   try {
+    const _modelStart = performance.now();
     let result;
     if (PROVIDER !== 'gemini') {   // nim·openrouter는 OpenAI 호환 fetchNim 경로(fetchNim이 프로바이더별 URL·인증 처리)
       result = await fetchNim(systemContent, messages, 0.7, 4000, onChunk);
     } else {
       result = await fetchGemini(systemContent, messages, 0.9, 4000, true, onChunk);   // ★스트리밍(onChunk) — 첫 글자 즉시 표시
     }
+    pandoraPerfRecord('main_model_complete', performance.now() - _modelStart, turnCount);
+    pandoraPerfRecord('main_request_elapsed', performance.now() - _turnRequestStart, turnCount);
     // ★턴 계측 저장(2026-08-11 유저: "아카데미 로딩 왜 유독 느리냐") — 상태 패널에서 확인.
     //   생각(thinking) 토큰이 잡히면 느림의 원인을 숫자로 판별할 수 있다(3.x는 생각이 max_tokens 공유).
     try {
@@ -12263,10 +12277,19 @@ function commitPendingEventFrom(parsed) {
 // 후행 상태 추출: 본편 산문을 읽고 state_update·choices·chronicle을 소형 모델로 뽑는다.
 async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
   const myTurn = turnCount;
+  // Snapshot identities, not just the numeric turn; a save reload/rewind can reuse a turn number.
+  const myState = gameState;
+  const myStory = STORY && STORY.id;
+  const myEntry = gameHistory[histIdx];
+  const _extractStart = performance.now();
   const job = (async () => {
     // 이번 턴 장면 전문(산문+대사)
-    const scene = ((mainData.narration || '') + '\n' +
-      (mainData.dialogue || []).map(d => `${d.speaker}: ${d.text || ''}`).join('\n')).slice(0, 4500);
+    const fullScene = ((mainData.narration || '') + '\n' +
+      (mainData.dialogue || []).map(d => `${d.speaker}: ${d.text || ''}`).join('\n'));
+    // Preserve the ending, where bargains, injuries and decisions commonly resolve.
+    const scene = fullScene.length > 4500
+      ? fullScene.slice(0, 2200) + '\n[중간 장면 생략 — 여기서 언급되지 않은 변화는 확정 금지]\n' + fullScene.slice(-2200)
+      : fullScene;
     // 현재 상태 요약(추출 근거 — 변화량 계산·일관성용)
     const met = gameState.metChars || {};
     const present = (activeCharIds || []).filter(id => CHARACTERS[id])
@@ -12294,6 +12317,7 @@ choices 규칙: 지금 이 장면에서 주인공이 실제로 할 수 있는 �
 combat 필드는 넣지 마라(본편이 처리한다). 대상 캐릭터ID는 장면 인물 목록의 ID만 사용.`;
     const usr = `[현재 시각] ${gameState.time || '미정'} · [현재 위치] ${gameState.location || '미정'}
 [주인공] 평판 ${gameState.rep} · 골드 ${gameState.gold}${gameState.event ? ` · 진행 중 이벤트: ${gameState.event}` : ''}
+[기존 부상 — 이번 장면에서 명시적으로 치료된 것만 제거] ${JSON.stringify((gameState.player && gameState.player.injuries) || []).slice(0, 1200)}
 [장면 인물] ${present || '없음'}
 [플레이어 입력] ${userText || '(없음)'}
 [이번 턴 장면]
@@ -12310,17 +12334,24 @@ ${scene}`;
   window._splitExtractPending = job;
   let sx = null;
   try { sx = await job; } catch {}
+  pandoraPerfRecord('state_extract_complete', performance.now() - _extractStart, myTurn);
   if (window._splitExtractPending === job) window._splitExtractPending = null;
-  // 턴이 넘어갔으면(유저가 이미 다음 입력) 상태만 조용히 적용하고 선택지는 버린다
-  const stale = (turnCount !== myTurn);
+  // A late extraction MUST NOT write to a newer turn, restored save, or regenerated reply.
+  // Retaining the original history object protects against index reuse after trimming.
+  const current = turnCount === myTurn && gameState === myState && STORY && STORY.id === myStory
+    && myEntry && gameHistory.includes(myEntry);
+  if (!current) {
+    pandoraPerfRecord('state_extract_discarded_stale', 0, myTurn);
+    return;
+  }
   if (sx && sx.state_update && typeof sx.state_update === 'object') {
     delete sx.state_update.combat;   // combat은 본편 소유 — 후행이 판정 게이트를 흔들지 못하게
     try { processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, activeCharIds, null, true); } catch {}
     try { commitPendingEventFrom(sx); } catch {}
     // ★핵심 안전장치: 본편 JSON에 병합 저장 → 세이브·복원·리플레이가 기존 형태 그대로를 본다
     try {
-      const h = gameHistory[histIdx];
-      if (h && h.role === 'assistant') {
+      const h = myEntry;
+      if (h && h.role === 'assistant' && gameHistory.includes(h)) {
         const merged = JSON.parse(h.content);
         merged.state_update = sx.state_update;
         if (Array.isArray(sx.chronicle)) merged.chronicle = sx.chronicle;
@@ -12330,7 +12361,6 @@ ${scene}`;
     } catch {}
     try { autoSave(); } catch {}
   }
-  if (stale) return;
   // 선택지 표시(도착 시점 검증 — genFallbackChoices와 동일 계약)
   const ch = (sx && Array.isArray(sx.choices)) ? sx.choices : null;
   if (dialogueQueue.length > 0 || historyMode) { window._pendingChoices = ch; return; }   // 재생 중이면 소진 시점이 표시

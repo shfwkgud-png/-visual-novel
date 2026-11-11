@@ -1,0 +1,21 @@
+name: Pandora regression tests
+on:
+  push:
+    branches:
+      - main
+      - fix/pandora-turn-consistency-perf-20261111
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Pandora regression tests
+        run: node tests.js
