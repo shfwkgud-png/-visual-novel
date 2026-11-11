@@ -10,6 +10,7 @@ on:
       - fix/pandora-v363-sync-safety
       - fix/pandora-v364-free-output-budget
       - fix/pandora-v365-free-nemotron-profile
+      - fix/pandora-v369-completion
   pull_request:
     branches: [main]
 permissions:
@@ -34,9 +35,19 @@ jobs:
           node tests-settings.js
           node tests-draft.js
           node tests-sync-safety.js
+          node tests-consistency.js
+          node tests-consistency-integration.js
+          node tests-long-session.js
+          node tests-performance.js
+          node tests-sync-worker.js
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Keep this version aligned with the npm package below. Browsers and system
+    # dependencies are already in this official image, avoiding apt/DNS failures
+    # on newly rolled runner images before any test can run.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
     strategy:
       fail-fast: false
       matrix:
@@ -46,10 +57,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install browser test runtime
+      - name: Install matching Playwright library
         run: |
           npm install --no-save --package-lock=false playwright@1.62.1
-          npx playwright install --with-deps ${{ matrix.browser }}
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
       - name: Run offline browser and mobile scenarios
         run: node tests-browser.js
         env:

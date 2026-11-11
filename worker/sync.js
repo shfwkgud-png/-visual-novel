@@ -1,20 +1,23 @@
-// PANDORA sync worker — story/save backup across devices (KV).
+import { routeAtomicSync, SYNC_CORS } from './sync-store.js';
+export { PandoraSyncStore } from './sync-store.js';
+
+// PANDORA sync worker — atomic revisions + recoverable backups (SQLite DO).
+// The original KV namespace stays readable and is never removed on migration.
 // Auth: the app sends a user-chosen passphrase in X-Sync-Token; data is
 // namespaced under its hash, so only someone with the same passphrase can
 // read/write those keys. Personal-scale security, no accounts needed.
 //
 // API:
 //   GET  /sync?key=<name>   -> stored JSON (or 404)
-//   PUT  /sync?key=<name>   body = JSON to store
+//   PUT  /sync?key=<name>   body = JSON to store; If-Match: GET response ETag
 //   GET  /sync/list         -> keys stored under this token
+//   GET  /sync/list?history=1 -> recoverable play-save keys, including deleted saves
+//   GET  /sync/capabilities -> protocol / atomic / history readiness
+//   GET  /sync/versions?key=<name> -> recent revision metadata (no contents)
+//   GET  /sync?key=<name>&version=<revision> -> read-only historical backup
 // Keys used by the app: "stories" (vn_local_stories), "save:<storyId>", "cfg"
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,X-OR-Key,X-Push-Sub,Range',
-  'Access-Control-Expose-Headers': 'Content-Range,Accept-Ranges,Content-Length',
-};
+const CORS = SYNC_CORS;
 
 // ===== ACCOUNTS (username/password → HMAC session token) =====
 const te = new TextEncoder();
@@ -33,19 +36,25 @@ async function hmacHex(msg, secret) {
 }
 
 async function makeToken(user, env) {
+  if (!authSecretReady(env)) throw new Error('authentication is not configured');
   const exp = Date.now() + 90 * 24 * 3600 * 1000;   // 90 days
-  const sig = await hmacHex(user + '|' + exp, env.AUTH_SECRET || 'dev');
+  const sig = await hmacHex(user + '|' + exp, env.AUTH_SECRET);
   return btoa(unescape(encodeURIComponent(user))) + '.' + exp + '.' + sig;
 }
 
 async function verifyToken(token, env) {
+  if (!authSecretReady(env)) return null;
   try {
     const [u64, exp, sig] = token.split('.');
     const user = decodeURIComponent(escape(atob(u64)));
     if (Date.now() > Number(exp)) return null;
-    const want = await hmacHex(user + '|' + exp, env.AUTH_SECRET || 'dev');
+    const want = await hmacHex(user + '|' + exp, env.AUTH_SECRET);
     return sig === want ? user : null;
   } catch { return null; }
+}
+
+function authSecretReady(env) {
+  return typeof env.AUTH_SECRET === 'string' && env.AUTH_SECRET.trim().length > 0;
 }
 
 function json(obj, status = 200) {
@@ -100,6 +109,13 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
     const url = new URL(req.url);
+
+    // Never create an account or claim login success with an unconfigured signer.
+    // Existing configured secrets and existing token lifetimes are unchanged.
+    if (req.method === 'POST' && ['/auth/register', '/auth/login', '/auth/google'].includes(url.pathname)
+        && !authSecretReady(env)) {
+      return json({ error: '로그인 서버의 인증 설정이 준비되지 않았습니다', code: 'auth_unavailable' }, 503);
+    }
 
     // ---- GENERATION RELAY (2026-08-13, 유저 "백그라운드 두고 나가면 생성 에러") ----
     // iOS는 앱 이탈 시 탭을 얼려 브라우저→OpenRouter 직행 스트림이 끊긴다. 워커가 중계하면서
@@ -365,49 +381,6 @@ export default {
       return new Response(JSON.stringify({ error: 'login or sync token required' }),
         { status: 401, headers: { ...CORS, 'Content-Type': 'application/json' } });
     }
-    const ns = who.ns;
-
-    if (url.pathname === '/sync/list') {
-      const list = await env.PANDORA_KV.list({ prefix: ns + ':' });
-      const keys = list.keys.map(k => k.name.slice(ns.length + 1));
-      return new Response(JSON.stringify({ keys }),
-        { headers: { ...CORS, 'Content-Type': 'application/json' } });
-    }
-
-    const key = url.searchParams.get('key');
-    if (!key || key.length > 128) {
-      return new Response(JSON.stringify({ error: 'key required' }),
-        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } });
-    }
-    const kvKey = ns + ':' + key;
-
-    if (req.method === 'GET') {
-      const val = await env.PANDORA_KV.get(kvKey);
-      if (val === null) {
-        return new Response(JSON.stringify({ error: 'not found' }),
-          { status: 404, headers: { ...CORS, 'Content-Type': 'application/json' } });
-      }
-      return new Response(val, { headers: { ...CORS, 'Content-Type': 'application/json' } });
-    }
-
-    if (req.method === 'DELETE') {
-      await env.PANDORA_KV.delete(kvKey);
-      return new Response(JSON.stringify({ ok: true }),
-        { headers: { ...CORS, 'Content-Type': 'application/json' } });
-    }
-
-    if (req.method === 'PUT') {
-      const body = await req.text();
-      if (body.length > 20_000_000) {
-        return new Response(JSON.stringify({ error: 'too large' }),
-          { status: 413, headers: { ...CORS, 'Content-Type': 'application/json' } });
-      }
-      await env.PANDORA_KV.put(kvKey, body);
-      return new Response(JSON.stringify({ ok: true, bytes: body.length }),
-        { headers: { ...CORS, 'Content-Type': 'application/json' } });
-    }
-
-    return new Response(JSON.stringify({ error: 'method' }),
-      { status: 405, headers: { ...CORS, 'Content-Type': 'application/json' } });
+    return routeAtomicSync(req, env, who.ns);
   }
 };

@@ -49,18 +49,35 @@ function harness(options = {}) {
   }));
   const bulk = new Map(Object.entries(options.bulk || {}));
   const remote = new Map(Object.entries(options.remote || {}));
+  const revisions = new Map([...remote.keys()].map((key, i) => [key, '"fixture-r' + (i + 1) + '"']));
+  const versions = new Map(Object.entries(options.versions || {}));
   const fetches = [], timers = new Map(), clearedTimers = [], statuses = [], confirms = [];
   const events = [], elements = new Map(), listeners = new Map();
-  let timerId = 0, fetchOverride = null;
+  let timerId = 0, fetchOverride = null, revisionId = remote.size;
+  const makeElement = (id = '', tag = 'div') => {
+    let content = '';
+    const value = { id, tag, value: '', checked: false, disabled: false, style: {}, innerHTML: '',
+      options: [], children: [], classList: { add() {}, remove() {}, toggle() {} },
+      setAttribute(name, text) { this[name] = text; },
+      appendChild(child) {
+        this.children.push(child);
+        if (child.id) elements.set(child.id, child);
+        if (this.tag === 'select' && child.tag === 'option') {
+          this.options.push(child); if (!this.value) this.value = child.value;
+        }
+      }, click() { return this.onclick && this.onclick(); } };
+    Object.defineProperty(value, 'textContent', { get: () => content, set: text => { content = String(text); value.children = []; } });
+    Object.defineProperty(value, 'childElementCount', { get: () => value.children.length });
+    return value;
+  };
   const element = id => {
-    if (!elements.has(id)) elements.set(id, { id, value: '', checked: false, disabled: false,
-      style: {}, textContent: '', innerHTML: '', options: [],
-      classList: { add() {}, remove() {}, toggle() {} }, appendChild() {}, click() {} });
+    if (!elements.has(id)) elements.set(id, makeElement(id));
     return elements.get(id);
   };
-  const response = (status, value) => ({
+  const response = (status, value, headers = {}) => ({
     ok: status >= 200 && status < 300, status,
-    headers: { get: name => name.toLowerCase() === 'content-type' ? 'application/json' : null },
+    headers: { get: name => Object.entries(headers).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+      ?? (name.toLowerCase() === 'content-type' ? 'application/json' : null) },
     json: async () => typeof value === 'string' ? JSON.parse(value) : clone(value),
     text: async () => typeof value === 'string' ? value : JSON.stringify(value)
   });
@@ -74,7 +91,7 @@ function harness(options = {}) {
       key: index => [...storage.keys()][index] || null,
       get length() { return storage.size; }
     },
-    document: { getElementById: element, createElement: tag => ({ tag, style: {}, click() {} }),
+    document: { getElementById: element, createElement: tag => makeElement('', tag),
       head: { appendChild() {} } },
     navigator: { clipboard: { writeText: async () => {} } },
     setTimeout: (fn, ms) => { const id = ++timerId; timers.set(id, { fn, ms }); return id; },
@@ -108,12 +125,34 @@ function harness(options = {}) {
         if (result !== undefined) return result;
       }
       const parsed = new URL(call.url);
-      if (parsed.pathname === '/sync/list') return response(200, { keys: [...remote.keys()] });
+      if (parsed.pathname === '/sync/capabilities') return response(200,
+        options.capabilities || { protocol: 2, atomic: true, history: true, maxVersions: 6 });
+      if (parsed.pathname === '/sync/list') {
+        const history = parsed.searchParams.get('history') === '1';
+        const keys = history ? [...new Set([...remote.keys(), ...[...versions]
+          .filter(([, rows]) => rows.some(version => !version.deleted)).map(([key]) => key)])] : [...remote.keys()];
+        return response(200, { keys, list_complete: true, ...(history ? { history: true } : {}) });
+      }
+      if (parsed.pathname === '/sync/versions') {
+        const key = parsed.searchParams.get('key');
+        return response(200, { key, versions: (versions.get(key) || []).map(({ value, ...info }) => info), maxVersions: 6 });
+      }
       if (parsed.pathname === '/sync') {
         const key = parsed.searchParams.get('key');
+        const version = parsed.searchParams.get('version');
+        if (call.method === 'GET' && version) {
+          const past = (versions.get(key) || []).find(item => item.revision === version);
+          return past ? response(200, past.value, { ETag: '"' + version + '"' }) : response(404, { error: 'version not found' });
+        }
+        const revision = revisions.get(key) || '"missing"';
         if (call.method === 'GET') return remote.has(key)
-          ? response(200, remote.get(key)) : response(404, { error: 'not found' });
-        if (call.method === 'PUT') { remote.set(key, call.body); return response(200, { ok: true }); }
+          ? response(200, remote.get(key), { ETag: revision }) : response(404, { error: 'not found' }, { ETag: revision });
+        if (call.method === 'PUT') {
+          if (call.headers['If-Match'] !== revision) return response(412, { error: 'revision conflict' }, { ETag: revision });
+          const next = '"fixture-r' + (++revisionId) + '"';
+          remote.set(key, call.body); revisions.set(key, next);
+          return response(200, { ok: true, revision: next.slice(1, -1) }, { ETag: next });
+        }
       }
       if (parsed.pathname === '/img' && call.method === 'PUT')
         return response(200, { url: 'https://fixture.invalid/image.png' });
@@ -129,7 +168,8 @@ function harness(options = {}) {
   const syncStatusOriginal = sb.syncStatus;
   sb.syncStatus = text => { statuses.push(text); syncStatusOriginal(text); };
   return {
-    sb, storage, bulk, remote, fetches, timers, clearedTimers, statuses, confirms, events, elements, listeners,
+    sb, storage, bulk, remote, revisions, versions, fetches, timers, clearedTimers, statuses, confirms, events, elements, listeners,
+    setRemote: (key, value) => { remote.set(key, value); const revision = '"fixture-r' + (++revisionId) + '"'; revisions.set(key, revision); return revision; },
     response, setFetch: fn => { fetchOverride = fn; },
     puts: () => fetches.filter(call => call.method === 'PUT'),
     key: call => new URL(call.url).searchParams.get('key'),
@@ -515,7 +555,8 @@ test('two pending writes for one save are serialized against the updated baselin
   const second = h.sb.syncPut('save:nakin', secondValue);
   await tick();
   assert.deepEqual(h.fetches.map(call => call.method), ['GET', 'PUT']);
-  h.remote.set('save:nakin', firstValue); delayed.resolve(h.response(200, { ok: true }));
+  const revision = h.setRemote('save:nakin', firstValue);
+  delayed.resolve(h.response(200, { ok: true }, { ETag: revision }));
   assert.equal(await first, true);
   assert.equal(await second, true);
   assert.deepEqual(h.fetches.map(call => call.method), ['GET', 'PUT', 'GET', 'PUT']);
@@ -546,7 +587,8 @@ test('enabling again waits for an already submitted PUT before reading the new b
   const enabling = h.sb.enableCloudBackup(); await tick();
   assert(!h.fetches.some(call => new URL(call.url).pathname === '/sync/list'),
     'a new baseline must wait until the old submitted write settles');
-  h.remote.set('save:nakin', next); delayed.resolve(h.response(200, { ok: true }));
+  const revision = h.setRemote('save:nakin', next);
+  delayed.resolve(h.response(200, { ok: true }, { ETag: revision }));
   assert.equal(await pending, false, 'the old epoch must not reclaim write permission');
   assert.equal(await enabling, true);
   assert.equal(h.sb.cloudWritesEnabled(), true);
@@ -559,7 +601,8 @@ test('offload keeps a save changed locally while its older copy uploads', async 
   const pending = h.sb.offloadSaves('nakin'); await tick();
   assert.equal(h.puts().length, 1);
   h.bulk.set('vn_save_other', newer);
-  delayed.resolve(h.response(200, { ok: true }));
+  const revision = h.setRemote('save:other', older);
+  delayed.resolve(h.response(200, { ok: true }, { ETag: revision }));
   const result = await pending;
   assert.equal(result.moved, 0);
   assert.equal(h.bulk.get('vn_save_other'), newer);
@@ -621,9 +664,10 @@ test('different cloud values for both slot key formats never choose an arbitrary
 test('an incomplete remote key listing cannot enable uploads or restore partial data', async () => {
   for (const operation of ['enableCloudBackup', 'restoreAll']) {
     const h = harness();
-    h.setFetch(() => h.response(200, { keys: ['save:nakin'], list_complete: false }));
+    h.setFetch(call => new URL(call.url).pathname === '/sync/list'
+      ? h.response(200, { keys: ['save:nakin'], list_complete: false }) : undefined);
     await h.sb[operation](); await tick();
-    assert.equal(h.fetches.length, 1);
+    assert.equal(h.fetches.filter(call => new URL(call.url).pathname === '/sync/list').length, 1);
     assert.equal(h.sb.cloudWritesEnabled(), false);
     assert.equal(h.puts().length, 0);
     assert.equal(h.bulk.size, 0);
@@ -715,6 +759,283 @@ test('a local edit made after staging survives while IndexedDB restoration is aw
   assert.equal(db.physical.get('nakin_save'), h.bulk.get('nakin_save'));
   assert.equal(h.puts().length, 0);
   assert.equal(h.sb.cloudWritesEnabled(), false);
+});
+
+test('servers without the complete atomic history contract cannot enable any uploads', async () => {
+  const local = JSON.stringify(saveFixture(8));
+  for (const capability of [null, { protocol: 1, atomic: true, history: true },
+    { protocol: 2, atomic: false, history: true }, { protocol: 2, atomic: true, history: false }]) {
+    const h = harness({ bulk: { nakin_save: local } });
+    h.setFetch(call => new URL(call.url).pathname === '/sync/capabilities'
+      ? h.response(capability ? 200 : 404, capability || { error: 'not available' }) : undefined);
+    assert.equal(await h.sb.enableCloudBackup(), false);
+    assert.equal(await h.sb.syncPut('save:nakin', saveFixture(9)), false);
+    h.sb.scheduleAutoBackup();
+    assert.equal(h.timers.size, 0);
+    assert.equal(h.sb.cloudWritesEnabled(), false);
+    assert.equal(h.puts().length, 0);
+    assert.equal(h.bulk.get('nakin_save'), local);
+    assert.deepEqual(h.fetches.map(call => new URL(call.url).pathname), ['/sync/capabilities']);
+  }
+});
+
+test('missing ETags on either an existing save or a 404 never permit an unversioned PUT', async () => {
+  const original = saveFixture(4), local = JSON.stringify(original);
+  const existing = harness({ bulk: { nakin_save: local }, remote: { 'save:nakin': original } });
+  existing.setFetch(call => new URL(call.url).pathname === '/sync'
+    ? existing.response(200, original) : undefined);
+  assert.equal(await existing.sb.enableCloudBackup(), false);
+  assert.equal(existing.puts().length, 0);
+  assert.equal(existing.bulk.get('nakin_save'), local);
+  const absent = harness({ bulk: { nakin_save: local } }); await enable(absent);
+  absent.setFetch(call => new URL(call.url).pathname === '/sync'
+    ? absent.response(404, { error: 'not found' }) : undefined);
+  assert.equal(await absent.sb.syncPut('save:nakin', original), false);
+  assert.equal(absent.puts().length, 0);
+  assert.equal(absent.sb.cloudWritesEnabled(), false);
+  assert.equal(absent.bulk.get('nakin_save'), local);
+});
+
+test('a 412 race after preflight preserves both the newer remote save and local progress', async () => {
+  const original = saveFixture(4), local = JSON.stringify(saveFixture(5)), newer = saveFixture(7);
+  const h = harness({ bulk: { nakin_save: JSON.stringify(original) }, remote: { 'save:nakin': original } });
+  await enable(h);
+  const readRevision = h.revisions.get('save:nakin');
+  h.bulk.set('nakin_save', local);
+  h.setFetch(call => { if (call.method === 'PUT') h.setRemote('save:nakin', newer); });
+  assert.equal(await h.sb.syncPut('save:nakin', local), false);
+  assert.equal(h.puts().length, 1);
+  assert.equal(h.puts()[0].headers['If-Match'], readRevision);
+  assert.deepEqual(h.remote.get('save:nakin'), newer);
+  assert.equal(h.bulk.get('nakin_save'), local);
+  assert.equal(h.sb.cloudWritesEnabled(), false);
+  assert.equal(h.storage.has('vn_last_backup'), false);
+  assert.equal(h.timers.size, 0);
+});
+
+test('a concurrent inspector cannot lend its newer ETag to a writer using an older read', async () => {
+  const original = saveFixture(4), local = JSON.stringify(saveFixture(5)), newer = saveFixture(8);
+  const h = harness({ bulk: { nakin_save: JSON.stringify(original) }, remote: { 'save:nakin': original } });
+  await enable(h); h.bulk.set('nakin_save', local);
+  const oldRevision = h.revisions.get('save:nakin'), body = deferred(); let waiting = false;
+  h.setFetch(call => {
+    if (!waiting && call.method === 'GET' && new URL(call.url).pathname === '/sync') {
+      waiting = true;
+      return { ...h.response(200, original, { ETag: oldRevision }), json: () => body.promise };
+    }
+  });
+  const writing = h.sb.syncPut('save:nakin', local);
+  await until(() => waiting, 'the old preflight response'); await tick();
+  const newerRevision = h.setRemote('save:nakin', newer);
+  await h.sb.inspectCloudBackup();
+  assert.equal(h.sb.cloudWritesEnabled(), true, 'read-only inspection must not pause or approve a write');
+  assert.notEqual(newerRevision, oldRevision);
+  body.resolve(original);
+  assert.equal(await writing, false);
+  assert.equal(h.puts().length, 1);
+  assert.equal(h.puts()[0].headers['If-Match'], oldRevision,
+    'the conditional write must use the ETag from its own response body');
+  assert.deepEqual(h.remote.get('save:nakin'), newer);
+  assert.equal(h.bulk.get('nakin_save'), local);
+  assert.equal(h.sb.cloudWritesEnabled(), false);
+});
+
+test('a successful HTTP response without its new ETag cannot delete an offloaded local save', async () => {
+  const local = JSON.stringify(saveFixture(8));
+  const h = harness({ bulk: { vn_save_other: local } }); await enable(h);
+  h.setFetch(call => {
+    if (call.method !== 'PUT') return;
+    h.setRemote(h.key(call), call.body);
+    return h.response(200, { ok: true });
+  });
+  const result = await h.sb.offloadSaves('nakin');
+  assert.equal(result.moved, 0);
+  assert.equal(result.freed, 0);
+  assert.equal(h.bulk.get('vn_save_other'), local);
+  assert.equal(h.remote.get('save:other'), local, 'the server may already have accepted the copy');
+  assert.equal(h.sb.cloudWritesEnabled(), false);
+  assert.equal(h.storage.has('vn_last_backup'), false);
+});
+
+test('an equal remote body without a read ETag cannot authorize local offload deletion', async () => {
+  const save = saveFixture(8), local = JSON.stringify(save);
+  const h = harness({ bulk: { vn_save_other: local }, remote: { 'save:other': save } }); await enable(h);
+  h.setFetch(call => new URL(call.url).pathname === '/sync' && call.method === 'GET'
+    ? h.response(200, save) : undefined);
+  const result = await h.sb.offloadSaves('nakin');
+  assert.equal(result.moved, 0, 'matching JSON alone cannot prove a versioned durable backup');
+  assert.equal(h.bulk.get('vn_save_other'), local);
+  assert.equal(h.sb.cloudWritesEnabled(), false);
+  assert.equal(h.puts().length, 0);
+});
+
+test('recreating a deleted key uses its tombstone revision from the 404 response', async () => {
+  const h = harness(); await enable(h);
+  h.revisions.set('save:nakin', '"fixture-deleted-r9"');
+  assert.equal(await h.sb.syncPut('save:nakin', saveFixture(6)), true);
+  assert.equal(h.puts()[0].headers['If-Match'], '"fixture-deleted-r9"');
+  assert.equal(JSON.parse(h.remote.get('save:nakin')).turnCount, 6);
+});
+
+const pastVersion = (revision = 'past-r3', turn = 3) => ({ revision, savedAt: 1730000000000,
+  deleted: false, bytes: 500, current: false, value: saveFixture(turn) });
+
+test('listing history is read-only and cannot replace the current backup baseline', async () => {
+  const current = saveFixture(9), local = JSON.stringify(current);
+  const h = harness({ bulk: { nakin_save: local }, remote: { 'save:nakin': current },
+    versions: { 'save:nakin': [pastVersion(), { ...pastVersion('deleted-r2', 2), deleted: true }] } });
+  await enable(h);
+  const revision = h.revisions.get('save:nakin');
+  await h.sb.showCloudHistory();
+  assert.equal(h.sb.cloudWritesEnabled(), true);
+  assert.equal(h.puts().length, 0);
+  assert.equal(h.bulk.get('nakin_save'), local);
+  assert.equal(h.elements.get('cloudHistoryVersions').children.length, 1, 'deleted revisions are not recoverable choices');
+  assert(h.fetches.every(call => call.method === 'GET'));
+  assert(!h.fetches.some(call => new URL(call.url).pathname === '/sync'), 'listing history must not load any save into the current revision cache');
+  assert.equal(await h.sb.syncPut('save:nakin', saveFixture(10)), true);
+  assert.equal(h.puts()[0].headers['If-Match'], revision);
+  assert.equal(JSON.parse(h.remote.get('save:nakin')).turnCount, 10);
+});
+
+test('the history selector exposes a deleted backup and its recovery button restores a retained version', async () => {
+  const h = harness({ versions: { 'save:nakin': [
+    { ...pastVersion('deleted-r4', 4), deleted: true, current: true }, pastVersion('past-r3', 3) ] } });
+  assert.equal(h.remote.has('save:nakin'), false);
+  await h.sb.showCloudHistory();
+  const listCall = h.fetches.find(call => new URL(call.url).pathname === '/sync/list');
+  assert.equal(new URL(listCall.url).searchParams.get('history'), '1');
+  const panel = h.elements.get('cloudHistoryPanel'), select = panel.children.find(child => child.tag === 'select');
+  assert.deepEqual(select.options.map(option => option.value), ['save:nakin']);
+  const rows = h.elements.get('cloudHistoryVersions');
+  assert.equal(rows.children.length, 1, 'the tombstone itself must not be a restore choice');
+  await rows.children[0].click();
+  assert.equal(JSON.parse(h.bulk.get('vn_slot_nakin_1')).turnCount, 3);
+  assert.equal(h.remote.has('save:nakin'), false, 'local recovery must not revive the remote tombstone');
+  assert.equal(h.puts().length, 0);
+  assert.equal(h.sb.cloudWritesEnabled(), false);
+});
+
+test('history lookup rejects a live-only key list that omits the history capability marker', async () => {
+  const h = harness({ remote: { 'save:nakin': saveFixture() } });
+  h.setFetch(call => new URL(call.url).pathname === '/sync/list'
+    ? h.response(200, { keys: ['save:nakin'], list_complete: true }) : undefined);
+  await h.sb.showCloudHistory();
+  assert.match(h.elements.get('cloudHistoryPanel').textContent, /이전 버전이 있는 백업 목록을 확인하지 못했습니다/);
+  assert(!h.fetches.some(call => new URL(call.url).pathname === '/sync/versions'));
+  assert.equal(h.bulk.size, 0); assert.equal(h.puts().length, 0);
+});
+
+test('recovering a previous version fills only an empty slot and strips connection settings', async () => {
+  const current = JSON.stringify(saveFixture(9)), occupied = JSON.stringify(saveFixture(8));
+  const config = JSON.stringify({ orKey: 'fixture-device-key', splitPipe: false });
+  const version = pastVersion();
+  Object.assign(version.value, { apiKey: 'fixture-past-key', orKey: 'fixture-past-key',
+    openrouterKey: 'fixture-past-key', nimUrl: 'https://fixture.invalid', cfg: { provider: 'old' } });
+  const h = harness({ storage: { vn_auth: 'fixture-auth-a', vn_auth_user: 'Fixture Player', vn_cfg: config },
+    bulk: { nakin_save: current, vn_slot_nakin_1: occupied },
+    remote: { 'save:nakin': JSON.parse(current) }, versions: { 'save:nakin': [version] } });
+  const beforeRemote = clone([...h.remote]);
+  assert.equal(await h.sb.importCloudVersion('save:nakin', 'past-r3', h.sb.cloudWriteScope()), true);
+  const restored = JSON.parse(h.bulk.get('vn_slot_nakin_2'));
+  assert.equal(restored.turnCount, 3);
+  assert.equal(restored.restoredFrom.revision, 'past-r3');
+  assert(Number.isFinite(restored.restoredFrom.restoredAt));
+  for (const field of ['apiKey', 'orKey', 'openrouterKey', 'nimUrl', 'cfg']) assert(!(field in restored));
+  assert.equal(h.bulk.get('nakin_save'), current);
+  assert.equal(h.bulk.get('vn_slot_nakin_1'), occupied);
+  assert.equal(h.bulk.has('vn_slot_nakin_3'), false);
+  assert.equal(h.storage.get('vn_cfg'), config);
+  assert.deepEqual(clone([...h.remote]), beforeRemote);
+  assert.equal(h.puts().length, 0);
+  assert.equal(h.sb.cloudWritesEnabled(), false);
+  assert(h.statuses.some(text => /2번 빈 슬롯에 복구했습니다/.test(text)));
+});
+
+test('a previous version cannot overwrite any of three occupied local slots', async () => {
+  const bulk = Object.fromEntries([1, 2, 3].map(slot => ['vn_slot_nakin_' + slot, JSON.stringify(saveFixture(8 + slot))]));
+  bulk.nakin_save = JSON.stringify(saveFixture(12));
+  const h = harness({ bulk, versions: { 'save:nakin': [pastVersion()] } });
+  assert.equal(await h.sb.importCloudVersion('save:nakin', 'past-r3', h.sb.cloudWriteScope()), false);
+  assert.deepEqual(Object.fromEntries(h.bulk), bulk);
+  assert.equal(h.puts().length, 0);
+  assert(h.statuses.some(text => /빈 슬롯이 없어/.test(text)));
+});
+
+test('pausing an old historical read releases recovery ownership for the next account session', async () => {
+  const h = harness({ versions: { 'save:nakin': [pastVersion('past-r3', 3), pastVersion('past-r4', 4)] } });
+  const delayed = deferred(); let oldRead = false;
+  h.setFetch(call => {
+    if (new URL(call.url).searchParams.get('version') === 'past-r3') {
+      oldRead = true; return delayed.promise;
+    }
+  });
+  const oldImport = h.sb.importCloudVersion('save:nakin', 'past-r3', h.sb.cloudWriteScope());
+  await until(() => oldRead, 'the old historical network request');
+  h.sb.pauseCloudWrites();
+  h.storage.set('vn_auth', 'fixture-auth-b');
+  const fresh = await h.sb.importCloudVersion('save:nakin', 'past-r4', h.sb.cloudWriteScope());
+  delayed.resolve(h.response(200, saveFixture(3)));
+  assert.equal(await oldImport, false, 'the previous account response must remain stale');
+  assert.equal(fresh, true, 'an old account network request must not keep a new session locked');
+  assert.equal(JSON.parse(h.bulk.get('vn_slot_nakin_1')).turnCount, 4);
+  assert.equal(h.bulk.has('vn_slot_nakin_2'), false);
+  assert.equal(h.puts().length, 0);
+});
+
+test('previous-version recovery reports success only after IndexedDB commits', async () => {
+  const h = harness({ versions: { 'save:nakin': [pastVersion()] } }), db = attachIndexedDb(h);
+  let settled = false;
+  const pending = h.sb.importCloudVersion('save:nakin', 'past-r3', h.sb.cloudWriteScope())
+    .then(value => { settled = true; return value; });
+  await until(() => db.transactions.length === 1, 'the historical slot import');
+  const tx = db.transactions[0]; tx.read(); await tick();
+  assert.equal(tx.pending.size, 1);
+  assert.equal(h.bulk.has('vn_slot_nakin_1'), false);
+  assert.equal(settled, false);
+  assert(!h.statuses.some(text => /복구했습니다/.test(text)));
+  tx.complete();
+  assert.equal(await pending, true);
+  assert.equal(JSON.parse(h.bulk.get('vn_slot_nakin_1')).turnCount, 3);
+  assert.equal(db.physical.get('vn_slot_nakin_1'), h.bulk.get('vn_slot_nakin_1'));
+  assert(h.statuses.some(text => /1번 빈 슬롯에 복구했습니다/.test(text)));
+  assert.equal(h.puts().length, 0);
+});
+
+test('aborted historical recovery preserves occupied slots and never claims completion', async () => {
+  const occupied = JSON.stringify(saveFixture(8));
+  const h = harness({ bulk: { vn_slot_nakin_1: occupied }, versions: { 'save:nakin': [pastVersion()] } });
+  const db = attachIndexedDb(h); db.physical.set('vn_slot_nakin_1', occupied);
+  const pending = h.sb.importCloudVersion('save:nakin', 'past-r3', h.sb.cloudWriteScope());
+  await until(() => db.transactions.length === 1, 'the historical slot transaction');
+  const tx = db.transactions[0]; tx.read(); tx.abort();
+  assert.equal(await pending, false);
+  assert.equal(h.bulk.get('vn_slot_nakin_1'), occupied);
+  assert.equal(db.physical.get('vn_slot_nakin_1'), occupied);
+  assert.equal(h.bulk.has('vn_slot_nakin_2'), false);
+  assert.equal(db.physical.has('vn_slot_nakin_2'), false);
+  assert(!h.statuses.some(text => /복구했습니다/.test(text)));
+  assert.equal(h.sb.cloudWritesEnabled(), false);
+  assert.equal(h.puts().length, 0);
+});
+
+test('a slot occupied in IndexedDB by another tab is skipped even if the local cache is empty', async () => {
+  const occupied = JSON.stringify(saveFixture(8));
+  const h = harness({ versions: { 'save:nakin': [pastVersion()] } }), db = attachIndexedDb(h);
+  db.physical.set('vn_slot_nakin_1', occupied);
+  const pending = h.sb.importCloudVersion('save:nakin', 'past-r3', h.sb.cloudWriteScope());
+  await until(() => db.transactions.length === 1, 'the first empty-slot check');
+  db.transactions[0].read();
+  assert.equal(db.transactions[0].pending.size, 0);
+  db.transactions[0].complete();
+  await until(() => db.transactions.length === 2, 'the next empty-slot check');
+  db.transactions[1].read(); db.transactions[1].complete();
+  assert.equal(await pending, true);
+  assert.equal(db.physical.get('vn_slot_nakin_1'), occupied);
+  assert.equal(JSON.parse(db.physical.get('vn_slot_nakin_2')).turnCount, 3);
+  assert.equal(h.bulk.get('vn_slot_nakin_2'), db.physical.get('vn_slot_nakin_2'));
+  assert(h.statuses.some(text => /2번 빈 슬롯에 복구했습니다/.test(text)));
+  assert.equal(h.puts().length, 0);
 });
 
 (async () => {

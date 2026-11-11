@@ -489,9 +489,9 @@ T('성능기록: 민감한 내용 없이 최대 100건만 메모리에 보관', 
   assert(a.length === 100, '성능기록 상한 초과');
   assert(Object.keys(a[0]).sort().join(',') === 'at,ms,stage,turn', '기록 필드에 원문이 포함됨');
 });
-T('분리: 긴 장면의 끝부분 보존 + 기존 부상 컨텍스트 포함', () => {
+T('분리: 긴 장면 전체 보존 + 기존 부상 컨텍스트 포함', () => {
   const body = grabFn('requestStateExtract');
-  assert(body.includes('fullScene.slice(-2200)'), '장면 끝부분 손실');
+  assert(!body.includes('fullScene.slice('), '상태 기록에서 장면 일부를 잘라냄');
   assert(body.includes('gameState.player.injuries'), '기존 부상 정보 누락');
 });
 

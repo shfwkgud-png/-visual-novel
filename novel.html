@@ -1978,6 +1978,8 @@
     <input type="text" id="freeModelInput" aria-label="무료 모델 ID" placeholder="무료 모델 ID — 끝이 :free인 모델만 가능" style="display:none" autocomplete="off">
     <button type="button" class="my-btn" id="freeApiCheckBtn" style="display:none" onclick="checkFreeApiConnection()">무료 연결 확인</button>
     <p id="freeApiCheckStatus" role="status" aria-live="polite" style="display:none;white-space:pre-line;overflow-wrap:anywhere"></p>
+    <button type="button" class="my-btn" id="freeApiQuotaBtn" style="display:none" onclick="checkFreeApiQuota()">오늘 남은 무료 요청 확인</button>
+    <p id="freeApiQuotaStatus" role="status" aria-live="polite" style="display:none;white-space:pre-line;overflow-wrap:anywhere"></p>
     <select id="orModelSel" style="display:none">
       <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (기본)</option>
       <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
@@ -1996,6 +1998,13 @@
       <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B (폴백용)</option>
     </select>
 
+    <label for="aiPipelineSel" style="font-size:0.85em;margin-top:8px">응답 방식</label>
+    <select id="aiPipelineSel">
+      <option value="split">본문 먼저 읽기 — 본문과 상태를 나누어 처리</option>
+      <option value="integrated">요청 절약 — 본문과 상태를 한 번에 처리</option>
+    </select>
+    <p id="aiPipelineHint" style="margin:0">일반 스토리는 각각 보통 2회·1회 요청을 사용합니다. 요약·다시 생성은 별도이며, 속도와 정확도는 모델에 따라 다릅니다.</p>
+    <details style="margin-top:8px"><summary>최근 응답 시간</summary><div id="aiPerfPanel" style="font-size:0.8em;white-space:pre-line;line-height:1.7;margin-top:6px"></div></details>
     <label for="aiContextSel" style="font-size:0.85em;margin-top:8px">이전 이야기 전달량</label>
     <select id="aiContextSel">
       <option value="balanced">균형 — 최근 원문과 누적 기억</option>
@@ -2081,7 +2090,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v368</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v369</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -2096,7 +2105,7 @@
   <button onclick="Ambient.toggle(); syncTopMenu()"><span id="tmBgmLabel">배경음악</span><i id="tmBgmDot"></i></button>
   <button onclick="closeTopMenu(); toggleSlots()">세이브 슬롯</button>
   <button onclick="closeTopMenu(); refreshApp()">최신 버전으로 갱신</button>
-  <button onclick="toggleSplitPipe(); syncTopMenu()"><span id="tmSplitLabel">⚡빠른 응답</span><i id="tmSplitDot"></i></button>
+  <button onclick="toggleSplitPipe(); syncTopMenu()"><span id="tmSplitLabel">본문 먼저 읽기</span><i id="tmSplitDot"></i></button>
   <button onclick="closeTopMenu(); exitToMain()">홈으로</button>
 </div>
 <div id="sceneBanner" onclick="openIdolBoard()"></div>
@@ -2152,6 +2161,7 @@
 
 </div><!-- /#appFrame -->
 
+<script src="pandora-consistency.js?v=369"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -2429,7 +2439,7 @@ function stateExtractContract(rpg) {
 - player.abilities는 새로 확인·습득한 능력, player.note는 바뀐 현재 상황이다. player.injuries는 부상 변화가 확인된 턴에만 현재 남은 전체 목록을 보내고, 이번 장면에서 명시적으로 치료된 것만 뺀다. 상태가 불분명하면 기존 부상을 보존한다.
 - flags는 새로 확정된 설정·진행·비밀 단계만 담는다. 의도·계획·비유·가정·선택지를 이미 성립한 사건으로 기록하지 않는다.
 ${rpg ? '- RPG 성장: player.stats는 바뀐 능력치의 새 값(1~100), player.skills는 실제 사용·수련·습득한 스킬의 {rank, xp}, player.tier와 chars의 tier/allegiance는 근거 있는 변화만 기록한다. 현재 수치를 모르면 임의의 초기값·승급을 만들지 않는다.\n' : ''}- choices는 현재 장면에서 가능한 행동·대사 2~4개다. 실제 그 자리에 있는 대상만 사용하고, 서로 다른 방향이며 적어도 하나는 상황을 바꾸는 구체적 선택이어야 한다. combat 중에도 생성하며 표시 여부는 앱이 결정한다.
-- chronicle은 이번 턴에 새로 확정된 사실 0~3줄이다. 사용자 설정 정정·약속·죽음·비밀 공개·관계 전환을 우선하고, 추측·반복·문체 감상은 넣지 않는다.`;
+- chronicle은 이번 턴에 새로 확정된 사실 0~3줄이다. 사용자 설정 정정·약속·죽음·비밀 공개·관계 전환을 우선하고, 추측·반복·문체 감상은 넣지 않는다.${typeof PandoraConsistency !== 'undefined' ? PandoraConsistency.responseContract() : ''}`;
 }
 function sceneOutputContract(split, rpg = false) {
   const schema = {
@@ -2438,7 +2448,7 @@ function sceneOutputContract(split, rpg = false) {
     background: null, mood: null, ending: null, cg: null
   };
   if (split) { schema.combat = false; }
-  else { schema.state_update = {}; schema.choices = ['구체적 행동', '다른 방향의 대사']; schema.chronicle = []; }
+  else { schema.state_update = {}; schema.choices = ['구체적 행동', '다른 방향의 대사']; schema.chronicle = []; schema.transactions = []; }
   return `\n\n## 이번 호출의 출력 계약 — ${split ? '장면 작성자' : '장면과 상태 통합 작성자'}
 - 설명·코드블록 없이 JSON 객체 하나만 반환한다. 아래 예시는 구조 설명이며 실제 사건·인물·대사가 아니다. narration을 먼저, dialogue를 다음에 써서 장면을 바로 표시할 수 있게 한다.
 ${JSON.stringify(schema)}
@@ -9026,6 +9036,16 @@ function openSettings() {
   document.getElementById('apiScreen').style.display = 'flex';
   setProvider(PROVIDER);
   const ctx = document.getElementById('aiContextSel'); if (ctx) ctx.value = AI_CONTEXT_MODE;
+  const pipeline = document.getElementById('aiPipelineSel');
+  if (pipeline) {
+    pipeline.value = splitPipeOn() ? 'split' : 'integrated';
+    pipeline.disabled = typeof STORY !== 'undefined' && STORY && STORY.id === 'idol';
+  }
+  const pipelineHint = document.getElementById('aiPipelineHint');
+  if (pipelineHint) pipelineHint.textContent = pipeline && pipeline.disabled
+    ? '아이돌 경영은 이야기와 경영 상태를 한 번에 처리합니다.'
+    : '일반 스토리는 각각 보통 2회·1회 요청을 사용합니다. 요약·다시 생성은 별도이며, 속도와 정확도는 모델에 따라 다릅니다.';
+  renderAiPerformance();
   try { document.getElementById('notifDoneChk').checked = localStorage.getItem('vn_notif_done') === '1'; } catch {}
 }
 function closeSettings() {
@@ -9034,7 +9054,7 @@ function closeSettings() {
 
 function aiSettingsBusy() {
   return !!(window._mainRequest || window._inputRequest || window._splitExtractPending
-    || window._summaryPending || window._backgroundRecovery || window._freeApiProbe || window._aiDraftPending);
+    || window._summaryPending || window._backgroundRecovery || window._freeApiProbe || window._freeQuotaProbe || window._aiDraftPending);
 }
 function applyAiPreferences(cfg) {
   if (!cfg || typeof cfg !== 'object') return;
@@ -9108,6 +9128,81 @@ async function checkFreeApiConnection() {
   finally { if (window._freeApiProbe === probe) window._freeApiProbe = null; btn.disabled = false; }
 }
 
+// Account metadata only: this GET does not generate text or spend a model request.
+async function checkFreeApiQuota() {
+  const status = document.getElementById('freeApiQuotaStatus'), btn = document.getElementById('freeApiQuotaBtn');
+  if (!status || !btn) return;
+  status.style.display = 'block';
+  if (!FREE_TEST_MODE || PROVIDER !== 'openrouter') { status.textContent = '무료 API 모드를 먼저 켜 주세요.'; return; }
+  if (aiSettingsBusy()) { status.textContent = '진행 중인 요청이 끝난 뒤 확인해 주세요.'; return; }
+  const key = (document.getElementById('orKeyInput').value || OPENROUTER_KEY || '').trim();
+  if (!key) { status.textContent = 'OpenRouter API 키를 입력해 주세요.'; return; }
+  const controller = new AbortController(), probe = {};
+  window._freeQuotaProbe = probe; btn.disabled = true;
+  const timer = setTimeout(() => controller.abort(), 15000);
+  status.textContent = '오늘 남은 무료 요청을 조회하는 중…';
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/key', {
+      method: 'GET', headers: { Authorization: 'Bearer ' + key }, signal: controller.signal, cache: 'no-store'
+    });
+    if (window._freeQuotaProbe !== probe) return;
+    if (!res.ok) { status.textContent = '사용량을 조회하지 못했습니다 (HTTP ' + res.status + '). 모델 요청은 보내지 않았습니다.'; return; }
+    const body = await res.json(), quota = body && body.data && body.data.free_model_daily_requests;
+    if (window._freeQuotaProbe !== probe) return;
+    if (!quota || !['used', 'limit', 'remaining'].every(k => Number.isSafeInteger(quota[k]) && quota[k] >= 0)
+      || quota.remaining > quota.limit) {
+      status.textContent = '서비스가 남은 요청 수를 제공하지 않았습니다. 남은 횟수를 추정해 표시하지 않습니다.'; return;
+    }
+    window._freeQuotaResult = { used: quota.used, limit: quota.limit, remaining: quota.remaining, checkedAt: Date.now() };
+    const pipeline = document.getElementById('aiPipelineSel');
+    const split = pipeline && !pipeline.disabled ? pipeline.value !== 'integrated' : splitPipeOn();
+    status.textContent = '오늘 무료 요청 ' + quota.remaining + ' / ' + quota.limit + '회 남음 · 사용 ' + quota.used + '회\n'
+      + '선택한 응답 방식으로 추가 요약·재시도가 없을 때 최대 ' + Math.floor(quota.remaining / (split ? 2 : 1)) + '턴입니다.\n'
+      + '조회 시점의 계정 전체 사용량이며, 조회 자체는 이야기를 생성하지 않습니다.';
+  } catch {
+    if (window._freeQuotaProbe === probe) status.textContent = '사용량 조회에 연결하지 못했습니다. 모델 요청은 보내지 않았습니다.';
+  } finally {
+    clearTimeout(timer);
+    if (window._freeQuotaProbe === probe) window._freeQuotaProbe = null;
+    btn.disabled = false;
+  }
+}
+
+function renderAiPerformance() {
+  const panel = document.getElementById('aiPerfPanel');
+  if (!panel) return;
+  const samples = (window._pandoraTurnPerf || []).filter(s => Number.isFinite(s.ready));
+  if (!samples.length) { panel.textContent = '이번 실행에서 상태 반영까지 완료한 응답이 아직 없습니다. 첫 표시·본문 완료·전체 완료를 따로 측정합니다.'; return; }
+  const sec = x => Number.isFinite(x) ? x.toFixed(1) + '초' : '미측정';
+  const groups = new Map();
+  for (const s of samples) {
+    const key = s.model + ' · ' + (s.pipeline === 'split' ? '본문 먼저 읽기' : '요청 절약');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(s);
+  }
+  const lines = [];
+  for (const [name, values] of groups) {
+    const average = field => { const xs = values.map(v => v[field]).filter(Number.isFinite); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
+    lines.push(name + ' · 완료 ' + values.length + '턴\n평균 첫 표시 ' + sec(average('visible'))
+      + ' · 본문 완료 ' + sec(average('elapsed')) + ' · 상태까지 완료 ' + sec(average('ready')));
+  }
+  panel.textContent = lines.join('\n\n') + '\n\n이번 실행에서 재시도 없이 완료한 최근 30개 응답만 비교합니다. 요청 내용·API 키는 기록하지 않습니다. 모델과 장면에 따라 편차가 있습니다.';
+}
+
+function recordTurnPerformance() {
+  const stats = gameState && gameState._turnStats;
+  if (!stats || stats.turn !== turnCount || !Number.isFinite(stats.startedAt) || stats.extractFailed || stats.retried) return;
+  stats.ready = Math.max(0, Date.now() - stats.startedAt) / 1000;
+  if (!stats.sampleId) stats.sampleId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+  const samples = window._pandoraTurnPerf || (window._pandoraTurnPerf = []);
+  if (!samples.some(s => s.sampleId === stats.sampleId)) {
+    samples.push({ sampleId: stats.sampleId, model: stats.model || PROVIDER, pipeline: stats.pipeline,
+      visible: stats.visible, elapsed: stats.elapsed, ready: stats.ready, promptChars: stats.promptChars });
+    if (samples.length > 30) samples.shift();
+  }
+  renderAiPerformance();
+}
+
 // ===== 응답 완료 푸시 알림 (2026-08-14 유저 "답변 완성되면 진동 정도는") =====
 // iOS는 웹 진동 API가 없고 백그라운드 탭은 얼어붙는다 → 릴레이 워커가 생성 완주 시 Web Push를 쏘고
 // sw.js가 배너(진동 동반)를 띄운다. 앱이 보이는 중엔 SW가 침묵하고 페이지에 신호만 보낸다.
@@ -9172,6 +9267,14 @@ function saveSettings() {
     NIM_URL = document.getElementById('nimUrlInput').value.trim() || NIM_URL;
     NIM_MODEL = document.getElementById('nimModelSel').value || NIM_MODEL;
   }
+  const pipeline = document.getElementById('aiPipelineSel');
+  if (pipeline && !pipeline.disabled) {
+    try {
+      const cfg = JSON.parse(localStorage.getItem('vn_cfg') || '{}') || {};
+      cfg.splitPipe = pipeline.value !== 'integrated';
+      localStorage.setItem('vn_cfg', JSON.stringify(cfg));
+    } catch {}
+  }
   persistCfg();
   closeSettings();
 }
@@ -9201,6 +9304,7 @@ function hasSyncAuth() { return !!(authToken() || syncToken()); }
 // page/account; a fresh browser must never replace an existing backup on login.
 let _syncTimer = null, _syncEpoch = 0, _cloudWriteScope = '';
 let _cloudBaseline = new Map();
+let _cloudRevisions = new Map(), _cloudAtomic = false;
 let _cloudBlockedKeys = new Set();
 const _cloudPendingWrites = new Set(), _cloudWriteQueues = new Map();
 const _cloudImportTransactions = new Set();
@@ -9215,6 +9319,8 @@ function cloudWritesEnabled(scope = cloudWriteScope(), epoch = _syncEpoch) {
 function pauseCloudWrites() {
   clearTimeout(_syncTimer); _syncTimer = null;
   _syncEpoch++; _cloudWriteScope = ''; _cloudBaseline = new Map(); _cloudBlockedKeys = new Set();
+  _cloudRevisions = new Map(); _cloudAtomic = false;
+  window._cloudVersionImport = null;
   _lastSyncStories = null; _lastSyncUploads = null;
   for (const tx of _cloudImportTransactions) { try { tx.abort(); } catch {} }
 }
@@ -9224,6 +9330,21 @@ function cloudReadContext() {
 function assertCloudContext(ctx) {
   if (!ctx.scope || ctx.scope !== cloudWriteScope() || ctx.epoch !== _syncEpoch)
     throw new Error('계정 또는 백업 상태가 바뀌어 작업을 멈췄습니다');
+}
+async function requireAtomicCloud(ctx) {
+  assertCloudContext(ctx);
+  const res = await fetch(SYNC_URL + '/sync/capabilities', { headers: ctx.headers, cache: 'no-store' });
+  assertCloudContext(ctx);
+  if (!res.ok) throw new Error('백업 서버 업데이트가 필요해 자동 백업을 켜지 않았습니다. 이 기기의 저장은 유지됩니다.');
+  const caps = await res.json();
+  assertCloudContext(ctx);
+  if (!caps || caps.protocol !== 2 || caps.atomic !== true || caps.history !== true)
+    throw new Error('서버의 동시 저장 보호와 이전 버전 보관을 확인하지 못했습니다. 이 기기의 저장은 유지됩니다.');
+  return caps;
+}
+function cloudRevision(response) {
+  const revision = response.headers && response.headers.get('ETag');
+  return typeof revision === 'string' && revision.length > 0 && revision.length < 300 && !/[\r\n]/.test(revision) ? revision : null;
 }
 function cloudValue(raw) {
   return typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -9266,13 +9387,15 @@ function cloudPayloadEmpty(key, raw) {
   return key === 'uploads' && Object.keys(v).every(k => ['faces', 'bgs'].includes(k)
     && v[k] && typeof v[k] === 'object' && !Array.isArray(v[k]) && Object.keys(v[k]).length === 0);
 }
-async function readCloudKeys(ctx = cloudReadContext()) {
+async function readCloudKeys(ctx = cloudReadContext(), options = {}) {
   assertCloudContext(ctx);
-  const res = await fetch(SYNC_URL + '/sync/list', { headers: ctx.headers });
+  const res = await fetch(SYNC_URL + '/sync/list' + (options.history ? '?history=1' : ''), { headers: ctx.headers });
   assertCloudContext(ctx);
   if (!res.ok) throw new Error('백업 목록을 읽지 못했습니다 (HTTP ' + res.status + ')');
   const data = await res.json();
   assertCloudContext(ctx);
+  if (options.history && data.history !== true)
+    throw new Error('서버에서 이전 버전이 있는 백업 목록을 확인하지 못했습니다.');
   if (!Array.isArray(data.keys) || data.keys.some(k => typeof k !== 'string' || !k || k.length > 128))
     throw new Error('백업 목록 형식을 확인할 수 없습니다');
   // Older workers expose only the first KV page, without a continuation cursor.
@@ -9322,6 +9445,7 @@ async function enableCloudBackup() {
   try {
     await Promise.allSettled([..._cloudPendingWrites]);
     assertCloudContext(ctx);
+    await requireAtomicCloud(ctx);
     const { entries } = await readCloudEntries(ctx);
     assertCloudContext(ctx);
     let conflicts = 0;
@@ -9336,7 +9460,9 @@ async function enableCloudBackup() {
       syncStatus('클라우드와 다른 항목이 ' + conflicts + '개 있어 백업을 켜지 않았습니다. “없는 데이터 가져오기”로 빠진 항목을 가져온 뒤 다시 확인하세요. 양쪽에 다른 내용이 있으면 그대로 보존합니다.');
       return false;
     }
-    _cloudBaseline = entries; _cloudWriteScope = ctx.scope;
+    if ([...entries.keys()].some(key => !ctx.revisions || !ctx.revisions.get(key)))
+      throw new Error('백업 버전을 확인하지 못해 쓰기를 켜지 않았습니다. 서버 업데이트 후 다시 확인하세요.');
+    _cloudBaseline = entries; _cloudAtomic = true; _cloudWriteScope = ctx.scope;
     renderMyProfile();
     syncStatus('이 창에서 클라우드 백업을 켰습니다. 다른 기기의 변경이 발견되면 자동으로 멈춥니다.');
     scheduleAutoBackup();
@@ -9417,6 +9543,7 @@ function renderMyProfile() {
       `<button class="my-btn" onclick="restoreAll()">↓ 없는 데이터 가져오기</button></div>` +
       `<div class="sync-btn-row" style="margin-top:8px"><button class="my-btn" onclick="${cloudWritesEnabled() ? 'disableCloudBackup()' : 'enableCloudBackup()'}">${cloudWritesEnabled() ? '자동 백업 끄기' : '자동 백업 켜기'}</button>` +
       `<button class="my-btn" onclick="backupAll(true)" ${cloudWritesEnabled() ? '' : 'disabled'}>↑ 지금 백업</button></div>` +
+      `<button class="my-btn" style="margin-top:8px" onclick="showCloudHistory()">이전 백업 보기 · 빈 슬롯으로 복구</button><div id="cloudHistoryPanel"></div>` +
       `<div id="syncStatus" class="c-hint" style="text-align:center;white-space:pre-line;overflow-wrap:anywhere"></div>` +
       `<div id="acctMsg" class="c-hint" style="text-align:center"></div>`;
   }
@@ -9594,7 +9721,7 @@ async function pullSave(id) {
   } catch { return false; }
 }
 async function syncPut(key, value, ctx = cloudReadContext()) {
-  if (!cloudWritesEnabled(ctx.scope, ctx.epoch) || !cloudDataKey(key) || _cloudBlockedKeys.has(key)) return false;
+  if (!_cloudAtomic || !cloudWritesEnabled(ctx.scope, ctx.epoch) || !cloudDataKey(key) || _cloudBlockedKeys.has(key)) return false;
   let body;
   try { if (!cloudPayloadPresent(key, value)) return false; body = typeof value === 'string' ? value : JSON.stringify(value); }
   catch { return false; }
@@ -9607,12 +9734,20 @@ async function syncPut(key, value, ctx = cloudReadContext()) {
       const baseline = _cloudBaseline.has(key) ? _cloudBaseline.get(key) : null;
       if (cloudComparable(remote) !== cloudComparable(baseline)) throw new Error('다른 기기의 변경이 있어 클라우드 백업을 멈췄습니다. 양쪽 데이터는 자동으로 합치거나 교체하지 않습니다.');
       if (!cloudWritesEnabled(ctx.scope, ctx.epoch)) return false;
+      // The ETag must belong to this exact read, not to a concurrent inspector.
+      const revision = ctx.revisions && ctx.revisions.get(key);
+      if (!revision) throw new Error('서버의 백업 버전을 확인할 수 없어 업로드를 멈췄습니다. 이 기기의 저장은 유지됩니다.');
       if (cloudComparable(remote) === cloudComparable(body)) return true;
       const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', ...ctx.headers }, body
+        method: 'PUT', headers: { 'Content-Type': 'application/json', ...ctx.headers, 'If-Match': revision }, body
       });
       if (!cloudWritesEnabled(ctx.scope, ctx.epoch)) return false;
+      if (res.status === 409 || res.status === 412)
+        throw new Error('다른 기기가 먼저 저장해 업로드를 멈췄습니다. 서버의 새 백업과 이 기기의 저장을 모두 보존했습니다.');
       if (!res.ok) throw new Error('클라우드 백업 실패 (HTTP ' + res.status + ')');
+      const nextRevision = cloudRevision(res);
+      if (!nextRevision) throw new Error('업로드의 새 버전을 확인하지 못했습니다. 이 기기의 저장을 보존하고 백업을 멈췄습니다.');
+      _cloudRevisions.set(key, nextRevision);
       _cloudBaseline.set(key, cloudValue(body));
       return true;
     } catch (e) {
@@ -9635,11 +9770,101 @@ async function syncGet(key, ctx = cloudReadContext()) {
   assertCloudContext(ctx);
   const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, { headers: ctx.headers });
   assertCloudContext(ctx);
+  const revision = cloudRevision(res);
+  if (!ctx.revisions) ctx.revisions = new Map();
+  if (revision) { ctx.revisions.set(key, revision); _cloudRevisions.set(key, revision); }
+  else { ctx.revisions.delete(key); _cloudRevisions.delete(key); }
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('백업 읽기 실패 (HTTP ' + res.status + ')');
   const value = await res.json();
   assertCloudContext(ctx);
   return value;
+}
+
+async function showCloudHistory() {
+  if (!hasSyncAuth()) { syncStatus('로그인이 필요합니다'); return; }
+  const ctx = cloudReadContext(), panel = document.getElementById('cloudHistoryPanel');
+  if (!panel) return;
+  panel.textContent = '이전 백업 목록을 읽는 중…';
+  try {
+    await requireAtomicCloud(ctx);
+    const keys = (await readCloudKeys(ctx, { history: true })).filter(k => /^(?:save:.+|slot[1-3]:.+|vn_slot_.+_[1-3])$/.test(k));
+    assertCloudContext(ctx); panel.textContent = '';
+    if (!keys.length) { panel.textContent = '버전을 확인할 플레이 백업이 없습니다.'; return; }
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', '복구할 백업');
+    for (const key of keys) {
+      const option = document.createElement('option'); option.value = key; option.textContent = key; select.appendChild(option);
+    }
+    const rows = document.createElement('div'); rows.id = 'cloudHistoryVersions';
+    const notice = document.createElement('p'); notice.className = 'c-hint';
+    notice.textContent = '선택한 버전을 이 기기의 빈 슬롯에 복사합니다. 현재 플레이와 서버 백업은 그대로 보존합니다.';
+    panel.appendChild(select); panel.appendChild(notice); panel.appendChild(rows);
+    select.onchange = () => loadCloudHistoryVersions(select.value, ctx, rows);
+    await loadCloudHistoryVersions(select.value, ctx, rows);
+  } catch (e) { if (ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) panel.textContent = e.message || '버전 목록을 읽지 못했습니다.'; }
+}
+async function loadCloudHistoryVersions(key, ctx, rows) {
+  const request = {}; rows._versionRequest = request;
+  rows.textContent = '저장된 버전을 읽는 중…';
+  try {
+    assertCloudContext(ctx);
+    const res = await fetch(SYNC_URL + '/sync/versions?key=' + encodeURIComponent(key), { headers: ctx.headers, cache: 'no-store' });
+    if (!res.ok) throw new Error('이전 버전을 읽지 못했습니다 (HTTP ' + res.status + ')');
+    const data = await res.json(); assertCloudContext(ctx);
+    if (rows._versionRequest !== request) return;
+    if (!data || !Array.isArray(data.versions)) throw new Error('버전 목록 형식을 확인할 수 없습니다.');
+    rows.textContent = '';
+    for (const version of data.versions.slice(0, 6)) {
+      if (!version || typeof version.revision !== 'string' || !/^[a-zA-Z0-9-]{1,100}$/.test(version.revision) || version.deleted) continue;
+      const button = document.createElement('button'); button.className = 'my-btn';
+      const date = Number.isFinite(version.savedAt) ? new Date(version.savedAt).toLocaleString('ko-KR') : '시각 없음';
+      button.textContent = date + (version.current ? ' · 현재 백업' : ' · 이전 백업') + ' → 빈 슬롯';
+      button.onclick = async () => {
+        button.disabled = true;
+        try { await importCloudVersion(key, version.revision, ctx.scope); }
+        finally { button.disabled = false; }
+      };
+      rows.appendChild(button);
+    }
+    if (!rows.childElementCount) rows.textContent = '복구할 수 있는 이전 저장이 없습니다.';
+  } catch (e) {
+    if (rows._versionRequest === request && ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) rows.textContent = e.message || '버전 조회 실패';
+  }
+}
+async function importCloudVersion(key, revision, expectedScope) {
+  if (window._cloudVersionImport) return false;
+  if (expectedScope !== cloudWriteScope()) { syncStatus('계정이 바뀌어 복구를 중단했습니다.'); return false; }
+  const match = /^(?:save:|slot[1-3]:)(.+)$/.exec(key) || /^vn_slot_(.+)_[1-3]$/.exec(key);
+  if (!match || !/^[a-zA-Z0-9-]{1,100}$/.test(revision)) return false;
+  const storyId = match[1];
+  if (!allStories()[storyId]) { syncStatus('먼저 “없는 데이터 가져오기”로 해당 에피소드를 가져와 주세요.'); return false; }
+  pauseCloudWrites(); renderMyProfile();
+  const ctx = cloudReadContext(), job = {}; window._cloudVersionImport = job;
+  try {
+    await requireAtomicCloud(ctx);
+    const res = await fetch(SYNC_URL + '/sync?key=' + encodeURIComponent(key) + '&version=' + encodeURIComponent(revision), { headers: ctx.headers, cache: 'no-store' });
+    assertCloudContext(ctx);
+    if (!res.ok) throw new Error('선택한 버전을 읽지 못했습니다 (HTTP ' + res.status + ')');
+    const save = await res.json(); assertCloudContext(ctx);
+    if (!cloudPayloadPresent('save:' + storyId, save)) throw new Error('복구할 수 있는 플레이 저장이 아닙니다.');
+    // Connection settings belong to this device, never to an old backup.
+    for (const field of ['apiKey', 'orKey', 'openrouterKey', 'nimUrl', 'cfg']) delete save[field];
+    save.restoredFrom = { revision, restoredAt: Date.now() };
+    for (let slot = 1; slot <= 3; slot++) {
+      const target = 'vn_slot_' + storyId + '_' + slot;
+      if (bulkGet(target) !== null) continue;
+      if (await addCloudSave(target, JSON.stringify(save), ctx)) {
+        syncStatus('이전 백업을 ' + slot + '번 빈 슬롯에 복구했습니다. 해당 이야기의 슬롯 불러오기로 확인하세요. 자동 백업은 꺼져 있습니다.');
+        return true;
+      }
+    }
+    syncStatus('빈 슬롯이 없어 복구하지 않았습니다. 기존 슬롯과 현재 플레이는 그대로입니다.');
+    return false;
+  } catch (e) {
+    if (ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) syncStatus(e.message || '복구하지 못했습니다. 기존 데이터는 유지됩니다.');
+    return false;
+  } finally { if (window._cloudVersionImport === job) window._cloudVersionImport = null; }
 }
 
 // Back up game data. The shared AI connection settings (cfg) are not copied.
@@ -11030,11 +11255,12 @@ function setProvider(p) {
   if (orM) orM.style.display = p === 'openrouter' && !FREE_TEST_MODE ? 'block' : 'none';
   const onlyRow = document.getElementById('orOnlyStoryRow'); if (onlyRow) onlyRow.style.display = p === 'openrouter' && !FREE_TEST_MODE ? 'flex' : 'none';
   const ft = document.getElementById('freeTestModeChk'); if (ft) ft.checked = FREE_TEST_MODE;
-  for (const id of ['freeTestHint', 'freeModelSel', 'freeApiCheckBtn']) { const el = document.getElementById(id); if (el) el.style.display = FREE_TEST_MODE ? 'block' : 'none'; }
+  for (const id of ['freeTestHint', 'freeModelSel', 'freeApiCheckBtn', 'freeApiQuotaBtn']) { const el = document.getElementById(id); if (el) el.style.display = FREE_TEST_MODE ? 'block' : 'none'; }
   for (const id of ['provGemini', 'provNim']) { const el = document.getElementById(id); if (el) el.disabled = FREE_TEST_MODE; }
   const fm = document.getElementById('freeModelSel'); if (fm) fm.value = FREE_TEST_MODEL === 'openrouter/free' ? FREE_TEST_MODEL : 'custom';
   const fi = document.getElementById('freeModelInput'); if (fi) fi.value = FREE_TEST_MODEL === 'openrouter/free' ? '' : FREE_TEST_MODEL;
   const fs = document.getElementById('freeApiCheckStatus'); if (fs && !FREE_TEST_MODE) fs.style.display = 'none';
+  const fq = document.getElementById('freeApiQuotaStatus'); if (fq && !FREE_TEST_MODE) fq.style.display = 'none';
   showFreeModelInput();
   document.getElementById('provHint').textContent = p === 'gemini'
     ? 'Gemini API 키와 모델을 선택하세요. 요금은 연결한 프로젝트의 결제 등급을 따릅니다.'
@@ -12265,9 +12491,51 @@ function pandoraPerfRecord(stage, milliseconds, turn) {
     log.push({ stage, ms: Math.max(0, Math.round(milliseconds)), turn, at: Date.now() });
     if (log.length > 100) log.splice(0, log.length - 100);
     const stats = typeof gameState !== 'undefined' && gameState && gameState._turnStats;
-    if (stats && stats.turn === turn && stage === 'state_extract_complete') stats.extract = Math.round(milliseconds / 100) / 10;
+    if (stats && stats.turn === turn && stage === 'state_extract_complete') {
+      stats.extract = Math.round(milliseconds / 100) / 10; stats.extractFailed = false;
+    }
     if (stats && stats.turn === turn && stage === 'state_extract_failed') stats.extractFailed = true;
   } catch {}
+}
+function createTurnConsistency(userText, turn = turnCount + 1, history = gameHistory, state = gameState) {
+  if (typeof PandoraConsistency === 'undefined') return null;
+  return PandoraConsistency.createContext({ state, history, userText: String(userText || ''), turn, storyId: STORY.id });
+}
+function reviewTurnConsistency(context, mainData, stateData) {
+  if (!context || typeof PandoraConsistency === 'undefined') return {
+    ok: false, issues: [{ code: 'validator_unavailable', message: '상태 확인 기능을 불러오지 못했습니다. 새로고침한 뒤 다시 답변해 주세요.' }]
+  };
+  return PandoraConsistency.reviewTurn(context, mainData, stateData);
+}
+function showTurnReviewNotice(message) {
+  let notice = document.getElementById('turnReviewNotice');
+  if (!notice) {
+    notice = document.createElement('div'); notice.id = 'turnReviewNotice'; notice.setAttribute('role', 'alert');
+    notice.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 80px);width:min(520px,calc(100vw - 32px));box-sizing:border-box;background:#262126;border:1px solid #edb86e;border-radius:12px;padding:12px;z-index:900;color:#fff;font-size:13px;line-height:1.55;box-shadow:0 4px 20px #0008';
+    document.body.appendChild(notice);
+  }
+  notice.textContent = String(message || '이야기의 상태 변화를 확인하지 못했습니다.') + ' 이번 상태는 확정하지 않았습니다.';
+  const button = document.createElement('button'); button.className = 'my-btn'; button.style.marginTop = '8px';
+  button.textContent = '다시 답변'; button.onclick = () => { if (!sendBtn.disabled) regenerate(); };
+  notice.appendChild(button);
+}
+function clearTurnReviewNotice() {
+  const notice = document.getElementById('turnReviewNotice'); if (notice) notice.remove();
+}
+function discardInconsistentScene(stream, review) {
+  window._stream = null; window._typeGen = (window._typeGen || 0) + 1; window._typeCallback = null;
+  clearInterval(window._typeTimer); clearTimeout(autoTimer);
+  isShowing = false; waitingForTap = false; dialogueQueue = [];
+  if (dialogueLog === stream.logRef) dialogueLog.splice(stream.logStart);
+  resetTurnLineKeys();
+  if (stream.previousBg) { try { setBg(stream.previousBg); } catch {} }
+  lastBg = stream.previousBg;
+  hideThinking(); window._genFailed = false; window._pendingGen = null;
+  const message = (review.issues || []).map(x => x.message).filter(Boolean).slice(0, 2).join(' ');
+  showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: message || '이전 장면과 충돌하는 응답을 보류했습니다.', pose: 'upper' }]);
+  showTurnReviewNotice(message);
+  enterInputMode(); sendBtn.disabled = false;
+  try { autoSave(); } catch {}
 }
 function discardIncompleteScene(stream, finishReason) {
   window._stream = null;
@@ -12289,7 +12557,7 @@ function discardIncompleteScene(stream, finishReason) {
 }
 async function callGemini(activeCharIds = [], retryCount = 0) {
   const _turnRequestStart = performance.now();
-  const request = { scope: turnWorkScope(), input: gameHistory[gameHistory.length - 1], freeTest: typeof FREE_TEST_MODE !== 'undefined' && FREE_TEST_MODE, split: splitPipeOn() };
+  const request = { scope: turnWorkScope(), input: gameHistory[gameHistory.length - 1], startedAt: Date.now(), freeTest: typeof FREE_TEST_MODE !== 'undefined' && FREE_TEST_MODE, split: splitPipeOn() };
   window._mainRequest = request;
   sendBtn.disabled = true;
   // The full commit is a boundary, not a six-second race against stale state.
@@ -12307,6 +12575,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
   }
   if (!mainRequestIsCurrent(request)) return;
+  if (typeof clearTurnReviewNotice === 'function') clearTurnReviewNotice();
+  if (typeof createTurnConsistency === 'function') request.consistency = createTurnConsistency(request.input && request.input.content, turnCount + 1);
   showThinking();
   window._genFailed = false;   // ★백그라운드 중단 감지 초기화(복귀 시 자동 재생성 판단용)
   // Hide input while the AI is generating/outputting
@@ -12392,7 +12662,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     + (bgKeys ? `\n\n## background 필드 — 장소가 바뀌면 반드시 갱신하되, 아래 이 스토리의 배경 키 목록에서만 정확히 골라라(목록에 없는 이름을 쓰면 배경이 안 바뀐다, 예: ${bgKeys.split(', ').slice(0, 3).join(', ')} 등):\n${bgKeys}` : '')
     + sceneOutputContract(request.split, RPG_STORIES.has(_sidNow) || !_isBuiltin);
   // 매 턴 바뀌는 동적 컨텍스트(등장인물 카드 + 현재 상태) — 마지막 유저 입력 앞에 붙여 프리픽스 안정화(원본 히스토리는 불변)
-  const dynamicCtx = charPrompt + buildStatePrompt();
+  const dynamicCtx = charPrompt + buildStatePrompt()
+    + (request.consistency && typeof PandoraConsistency !== 'undefined' ? PandoraConsistency.contextPrompt(request.consistency) : '');
   const messages = buildMessages();
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].role === 'user') { messages[i] = { ...messages[i], content: dynamicCtx + '\n\n' + messages[i].content }; break; }
@@ -12504,6 +12775,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         const _u = result.usage || {};
         gameState._turnStats = {
           turn: turnCount + 1,
+          startedAt: request.startedAt, pipeline: request.split ? 'split' : 'integrated',
+          elapsed: Math.round((performance.now() - _turnRequestStart) / 100) / 10,
           visible: stream.firstDisplayMs == null ? null : Math.round(stream.firstDisplayMs / 100) / 10,
           promptChars: systemContent.length + messages.reduce((n, m) => n + String(m.content || '').length, 0),
           extract: null, extractFailed: false,
@@ -12719,6 +12992,19 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
 
     try { scrubMetaData(parsed); } catch {}
     if (!mainRequestIsCurrent(request)) return;
+    let consistencyReview = null;
+    if (typeof reviewTurnConsistency === 'function') {
+      if (!request.split) {
+        consistencyReview = reviewTurnConsistency(request.consistency, parsed, parsed);
+        if (!consistencyReview.ok) { discardInconsistentScene(stream, consistencyReview); return; }
+      }
+      if (request.consistency && typeof PandoraConsistency !== 'undefined') {
+        const repeated = PandoraConsistency.diagnoseScene(request.consistency, parsed);
+        if (repeated.some(w => w.code === 'repeated_scene') && !/(회상|떠올|그대로|다시.{0,8}(보여|읽어|들려))/.test(request.consistency.userText)) {
+          discardInconsistentScene(stream, { issues: repeated }); return;
+        }
+      }
+    }
     const turnBefore = rememberTurnBefore();
     // Only the latest answer can be regenerated. Keep one checkpoint, not a full
     // copy of gameState for every retained history row.
@@ -12730,14 +13016,35 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     //   사라졌다(재조립 때 간격 게이트에 걸려 프롬프트에서도 빠지므로 회복 불가였다).
     // ★분리 파이프라인(2026-08-24): 본편 응답에 state_update가 없으면(분리 모드 응답) 사건 커밋을
     //   후행 추출 결과 도착 시점으로 미룬다 — event 확인이 후행 데이터에 있기 때문.
-    if (parsed && parsed.state_update) { try { commitPendingEventFrom(parsed); } catch {} }
     recTokens(0, 0, true);   // 토큰 추적: 본편 턴 카운트(사용량은 fetch단에서 합산)
     // ★분리 모드: 상태·선택지·연대기를 후행 소형 호출로 추출(본편은 이미 화면에 흐르는 중)
     if (request.split && parsed && !parsed.state_update) {
       try { fixSpeakerIds(parsed); } catch {}
-      fireStateExtract(userMessageForExtract(), parsed, activeCharIds, gameHistory.length - 1).catch(() => {});
+      fireStateExtract(userMessageForExtract(), parsed, activeCharIds, gameHistory.length - 1, request.consistency).catch(() => {});
     }
-    processResponse(parsed, activeCharIds, stream.active ? stream : null);
+    try {
+      if (!stream.active && gameState._turnStats && gameState._turnStats.turn === turnCount) {
+        gameState._turnStats.visible = Math.round((performance.now() - _turnRequestStart) / 100) / 10;
+        pandoraPerfRecord('main_first_display', performance.now() - _turnRequestStart, turnCount);
+      }
+      processResponse(parsed, activeCharIds, stream.active ? stream : null);
+      if (consistencyReview) PandoraConsistency.commit(gameState, consistencyReview);
+      if (parsed && parsed.state_update) commitPendingEventFrom(parsed);
+    } catch (error) {
+      gameHistory.pop();
+      // Keep the request's state identity so its outer recovery path still owns
+      // the input lock; replacing the object would incorrectly make it stale.
+      for (const key of Object.keys(gameState)) delete gameState[key];
+      Object.assign(gameState, turnBefore.state);
+      window._pendingEvent = turnBefore.pendingEvent;
+      turnCount = Math.max(0, turnCount - 1);
+      if (typeof discardInconsistentScene === 'function') {
+        discardInconsistentScene(stream, { issues: [{ message: '장면 반영 중 오류가 있어 이전 상태로 되돌렸습니다.' }] });
+        return;
+      }
+      throw error;
+    }
+    if (!request.split && typeof recordTurnPerformance === 'function') recordTurnPerformance();
     autoSave();
     summarizeIfNeeded();
 
@@ -12883,6 +13190,7 @@ function mainRequestIsCurrent(request) {
     && (!request.input || gameHistory.includes(request.input));
 }
 function resetTurnAsyncWork() {
+  if (typeof clearTurnReviewNotice === 'function') clearTurnReviewNotice();
   window._turnEpoch = (window._turnEpoch || 0) + 1;
   const task = window._splitExtractTask;
   if (task && task.cancel) task.cancel(false);
@@ -12951,6 +13259,10 @@ async function ensureStateExtractReady() {
     const entry = pendingStateExtractEntry();
     if (!entry) return true;
     const meta = entry._stateExtract;
+    if (meta.status === 'review') {
+      if (typeof showTurnReviewNotice === 'function') showTurnReviewNotice(meta.reviewMessage);
+      return false;
+    }
     if (meta.turn !== turnCount) return false;
     let data;
     try { data = JSON.parse(entry.content); } catch { return false; }
@@ -12971,6 +13283,21 @@ function applyStateExtract(task, sx) {
   window._isStateCommit = true;
   try {
     const merged = JSON.parse(oldContent);
+    let consistencyReview = null;
+    if (typeof reviewTurnConsistency === 'function') {
+      if (!meta.consistency && typeof createTurnConsistency === 'function') {
+        const checkpoint = assistantTurnCheckpoint(entry);
+        meta.consistency = createTurnConsistency(meta.userText, meta.turn,
+          gameHistory.slice(0, gameHistory.indexOf(entry)), checkpoint && checkpoint.state || gameState);
+      }
+      consistencyReview = reviewTurnConsistency(meta.consistency, merged, sx);
+      if (!consistencyReview.ok) {
+        meta.status = 'review';
+        meta.reviewMessage = consistencyReview.issues.map(x => x.message).slice(0, 2).join(' ');
+        showTurnReviewNotice(meta.reviewMessage);
+        return false;
+      }
+    }
     // combat belongs to the displayed main scene, including on save replay.
     delete sx.state_update.combat;
     for (const key of ['gold', 'rep']) {
@@ -12985,12 +13312,17 @@ function applyStateExtract(task, sx) {
     // Replaying the saved prose does not mean this uncommitted state was applied.
     replaying = false;
     processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, meta.activeCharIds, null, true);
+    if (consistencyReview) PandoraConsistency.commit(gameState, consistencyReview);
     commitPendingEventFrom(sx, meta.pendingEvent, meta.turn);
     merged.state_update = sx.state_update;
     if (Array.isArray(sx.chronicle)) merged.chronicle = sx.chronicle;
     if (Array.isArray(sx.choices)) merged.choices = sx.choices;
+    if (Array.isArray(sx.transactions)) merged.transactions = sx.transactions;
     entry.content = JSON.stringify(merged);
     meta.status = 'applied';
+    delete meta.consistency; delete meta.reviewMessage;
+    if (typeof clearTurnReviewNotice === 'function') clearTurnReviewNotice();
+    if (typeof recordTurnPerformance === 'function') recordTurnPerformance();
     return true;
   } catch {
     // A renderer/status error must not leave half an additive update to be retried.
@@ -13006,13 +13338,16 @@ function applyStateExtract(task, sx) {
     window._isStateCommit = false;
   }
 }
-async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
+async function fireStateExtract(userText, mainData, activeCharIds, histIdx, consistency = null) {
   const entry = gameHistory[histIdx];
   if (!entry || entry.role !== 'assistant') return false;
   if (!entry._stateExtract) {
     entry._stateExtract = {
       id: 'state-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10),
       turn: turnCount, status: 'pending', attempts: 0,
+      consistency: consistency || (typeof createTurnConsistency === 'function'
+        ? createTurnConsistency(userText, turnCount, gameHistory.slice(0, histIdx),
+          entry._turnBefore && entry._turnBefore.state || gameState) : null),
       userText: String(userText || '').slice(0, 1200),
       activeCharIds: [...new Set([...(activeCharIds || []),
         ...(mainData.dialogue || []).map(d => d && d.char_id)])].filter(id => id && CHARACTERS[id]),
@@ -13021,6 +13356,10 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
   }
   const meta = entry._stateExtract;
   if (meta.status === 'applied') return true;
+  if (meta.status === 'review') {
+    if (typeof showTurnReviewNotice === 'function') showTurnReviewNotice(meta.reviewMessage);
+    return false;
+  }
   if (meta.turn !== turnCount) return false;
   const active = window._splitExtractTask;
   if (active && active.entry === entry && stateExtractIsCurrent(active)) return active.promise;
@@ -13030,12 +13369,13 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
   const started = performance.now();
   meta.status = 'pending';
   meta.attempts = (meta.attempts || 0) + 1;
+  if (meta.attempts > 1 && gameState._turnStats && gameState._turnStats.turn === meta.turn) gameState._turnStats.retried = true;
   window._splitExtractTask = task;
   const cancelled = new Promise(resolve => { task.cancel = resolve; });
   const work = Promise.resolve().then(async () => {
     if (!stateExtractIsCurrent(task)) return false;
     let sx = null;
-    try { sx = await requestStateExtract(meta.userText, mainData, meta.activeCharIds); } catch {}
+    try { sx = await requestStateExtract(meta.userText, mainData, meta.activeCharIds, meta.consistency); } catch {}
     pandoraPerfRecord('state_extract_complete', performance.now() - started, meta.turn);
     if (!stateExtractIsCurrent(task)) {
       pandoraPerfRecord('state_extract_discarded_stale', 0, meta.turn);
@@ -13044,12 +13384,14 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
     const valid = sx && sx.state_update && typeof sx.state_update === 'object' && !Array.isArray(sx.state_update);
     const applied = !!valid && applyStateExtract(task, sx);
     if (!applied) {
-      meta.status = 'failed';
+      if (meta.status !== 'review') meta.status = 'failed';
       pandoraPerfRecord('state_extract_failed', 0, meta.turn);
     }
     try { autoSave(); } catch {}
     if (!applied) {
-      try { showStatToast('장면의 상태를 아직 반영하지 못했어요. 다음 입력에서 다시 시도합니다.', true); } catch {}
+      try { showStatToast(meta.status === 'review'
+        ? '앞선 사건과 충돌하는 상태를 보류했습니다. “다시 답변”으로 장면을 새로 받아 주세요.'
+        : '장면의 상태를 아직 반영하지 못했어요. 다음 입력에서 다시 시도합니다.', true); } catch {}
       return false;
     }
     // A queued next input owns the UI; otherwise choices belong to this exact scene.
@@ -13072,14 +13414,13 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
   return task.promise;
 }
 // Read only the scene belonging to the receipt. The caller owns validation and commit.
-async function requestStateExtract(userText, mainData, activeCharIds) {
+async function requestStateExtract(userText, mainData, activeCharIds, consistency = null) {
     // 이번 턴 장면 전문(산문+대사)
     const fullScene = ((mainData.narration || '') + '\n' +
       (mainData.dialogue || []).map(d => `${d.speaker}: ${d.text || ''}`).join('\n'));
-    // Preserve the ending, where bargains, injuries and decisions commonly resolve.
-    const scene = fullScene.length > 4500
-      ? fullScene.slice(0, 2200) + '\n[중간 장면 생략 — 여기서 언급되지 않은 변화는 확정 금지]\n' + fullScene.slice(-2200)
-      : fullScene;
+    // Every displayed action must remain available as evidence. Dropping the
+    // middle silently lost purchases/injuries even when the main response ended.
+    const scene = fullScene;
     // 현재 상태 요약(추출 근거 — 변화량 계산·일관성용)
     const met = gameState.metChars || {};
     const present = [...new Set(activeCharIds || [])].filter(id => CHARACTERS[id])
@@ -13095,7 +13436,7 @@ async function requestStateExtract(userText, mainData, activeCharIds) {
       .filter(x => typeof x === 'string').slice(-8).map(x => x.slice(0, 200)).join('\n');
     const sys = `너는 텍스트 RPG의 상태 기록관이다. 이미 표시된 장면의 상태 변화·선택지·확정 사실만 JSON으로 추출한다. 새로운 장면이나 대사를 쓰지 않는다.
 ${stateExtractContract(rpg)}
-반환 구조: {"state_update":{},"choices":["구체적 행동","다른 방향의 대사"],"chronicle":[]}
+반환 구조: {"state_update":{},"choices":["구체적 행동","다른 방향의 대사"],"chronicle":[],"transactions":[]}
 최상위 combat/time, narration/dialogue 및 연출 필드는 출력하지 마라. combat 판정과 장면 연출은 본편이 이미 처리했다. 대상 캐릭터ID는 장면 인물 목록만 사용한다. 정확히 알 수 없는 변화는 생략하고, 아무 변화가 없어도 state_update:{}를 반드시 반환한다.`;
     const usr = `[현재 시각] ${gameState.time || '미정'} · [현재 위치] ${gameState.location || '미정'}
 [주인공] 평판 ${gameState.rep} · 골드 ${gameState.gold}${gameState.event ? ` · 진행 중 이벤트: ${gameState.event}` : ''}
@@ -13106,6 +13447,7 @@ ${settled || '없음'}
 [기존 능력·성장 — 명시적인 변화만 기록] ${JSON.stringify({ abilities: gameState.player?.abilities || [], stats: gameState.player?.stats || {}, skills: gameState.player?.skills || {}, tier: gameState.player?.tier || '' })}
 [기존 부상 — 이번 장면에서 명시적으로 치료된 것만 제거] ${JSON.stringify((gameState.player && gameState.player.injuries) || []).slice(0, 1200)}
 [장면 인물] ${present || '없음'}
+${consistency && typeof PandoraConsistency !== 'undefined' ? PandoraConsistency.contextPrompt(consistency) : ''}
 [플레이어 입력] ${userText || '(없음)'}
 [이번 턴 장면]
 ${scene}`;
@@ -14536,7 +14878,9 @@ async function handlePlayerInput(text) {
     hideThinking();
     userInput.textContent = text;
     enterInputMode();
-    try { showStatToast('상태 반영에 실패해 입력을 보관했어요. 보내기를 누르면 다시 시도합니다.', true); } catch {}
+    try { showStatToast(pendingStateExtractEntry() && pendingStateExtractEntry()._stateExtract.status === 'review'
+      ? '입력을 보관했어요. 보류된 장면에서 “다시 답변”을 먼저 눌러 주세요.'
+      : '상태 반영에 실패해 입력을 보관했어요. 보내기를 누르면 다시 시도합니다.', true); } catch {}
     return;
   }
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
@@ -14937,14 +15281,18 @@ function syncTopMenu() {
   const sOn = splitPipeOn();
   const sDot = document.getElementById('tmSplitDot'), sLab = document.getElementById('tmSplitLabel');
   if (sDot) sDot.classList.toggle('on', sOn);
-  if (sLab) sLab.textContent = sOn ? '⚡빠른 응답 켜짐' : '⚡빠른 응답 꺼짐';
+  if (sLab) sLab.textContent = sOn ? '본문 먼저 읽기' : '요청 절약 모드';
 }
 function toggleSplitPipe() {
+  if (aiSettingsBusy()) { showStatToast('진행 중인 응답이 끝난 뒤 응답 방식을 바꿔 주세요.', true); return; }
+  if (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol') {
+    showStatToast('아이돌 경영은 이야기와 상태를 한 번에 처리합니다.'); return;
+  }
   try {
     const c = JSON.parse(localStorage.getItem('vn_cfg') || '{}') || {};
     c.splitPipe = !(c.splitPipe !== false);   // 기본 on → 누르면 off → 다시 on
     localStorage.setItem('vn_cfg', JSON.stringify(c));
-    showStatToast(c.splitPipe === false ? '⚡빠른 응답 꺼짐 — 기존 방식으로 응답합니다' : '⚡빠른 응답 켜짐 — 산문이 먼저, 상태는 뒤에서 처리됩니다');
+    showStatToast(c.splitPipe === false ? '요청 절약 — 본문과 상태를 한 번에 처리합니다' : '본문 먼저 읽기 — 상태 정리는 뒤에서 이어집니다');
   } catch {}
 }
 // ★상단 적층(상단바 → 배너 → 선택지)을 실측으로 쌓는다.

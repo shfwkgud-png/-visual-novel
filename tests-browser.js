@@ -4,6 +4,7 @@
 // npx playwright install --with-deps chromium
 // node tests-browser.js
 // Optional: PANDORA_BROWSER=webkit node tests-browser.js
+// Optional local runtime reuse: PANDORA_BROWSER_EXECUTABLE=/path/to/chromium
 'use strict';
 const assert = require('assert/strict');
 const fs = require('fs');
@@ -42,6 +43,16 @@ const CUSTOM_START_FIXTURE = {
   startPrompt: '아침 도서관 접수대. 민서가 사례금 열 닢을 {이름}에게 지급하고 수령이 완료된 직후부터 시작한다.',
   startChars: ['guide'], events: [], endings: [],
 };
+const LONG_STORY_FIXTURE = {
+  ...CUSTOM_START_FIXTURE,
+  id: 'u_browser_long_session', title: '장기 저장·기억 전달 검증',
+  desc: '50턴의 모의 응답으로 기억 전달과 저장 복원을 확인한다. 실제 모델 품질 검사가 아니다.',
+  initialState: { ...CUSTOM_START_FIXTURE.initialState, gold: 7 },
+  startPrompt: '민서와 다음 날 오전 10시 위층 열람실에서 장부를 확인하기로 이미 약속했다. 준호에게는 알리지 않았다. 오늘은 장부 1쪽부터 차례로 확인한다.',
+  characters: { ...CUSTOM_START_FIXTURE.characters,
+    friend: { name: '준호', role: '지하 서고의 기록원', age: '32살', personality: '약속을 전해 듣지 않은 성인 기록원.' } },
+};
+const LONG_PROMISE = '민서와 내일 오전 10시 위층 열람실에서 장부 확인. 준호에게 알리지 않음.';
 const CLOUD_FIXTURE = {
   cfg: { orKey: 'fixture-cloud-key-never-read', freeTestMode: false, orModel: 'fixture-paid-setting-never-render' },
   'save:u_cloud_fixture': {
@@ -52,6 +63,11 @@ const CLOUD_FIXTURE = {
   stories: { u_cloud_fixture: { title: 'fixture-private-cloud-episode-title' } },
   uploads: { faces: { guide: 'https://fixture.invalid/face.png' }, bgs: { library: 'https://fixture.invalid/library.png' } },
 };
+const CLOUD_DELETED_KEY = 'save:' + STORY_ID;
+const CLOUD_PAST_SAVE = { dataVersion: 5, turnCount: 3, savedAt: 1794355100000,
+  gameState: { gold: 17, location: '도서관', time: '1일차 아침' },
+  gameHistory: [{ role: 'assistant', content: JSON.stringify({ narration: '보관된 세 번째 장면.', dialogue: [] }) }],
+  dialogueLog: [], apiKey: 'fixture-old-key-must-not-be-imported' };
 const ARTIFACTS = process.env.PANDORA_BROWSER_ARTIFACTS || path.join(os.tmpdir(), 'pandora-browser');
 fs.mkdirSync(ARTIFACTS, { recursive: true });
 const results = [];
@@ -104,8 +120,16 @@ function sse(value) {
 function fixtureReply(kind, user) {
   if (kind === 'probe') return { ok: true };
   if (kind === 'choices') return { choices: ['안내원에게 책의 위치를 묻는다', '열람실을 둘러본다'] };
-  if (user.includes('사례금 열 닢')) {
+  // The recorder now also receives a settled-event ledger. Select the fixture
+  // from its current scene, never from old quoted transactions in that ledger.
+  const sceneMarker = '[이번 턴 장면]';
+  const currentAction = /\[이번 행동과 이미 끝난 사건\]\n이번 플레이어 입력: ([\s\S]*?)\n현재 위치:/.exec(user);
+  const current = user.includes(sceneMarker) ? user.slice(user.lastIndexOf(sceneMarker) + sceneMarker.length)
+    : currentAction ? currentAction[1] : user;
+  if (current.includes('사례금 열 닢')) {
     if (kind === 'state') return { state_update: { gold: 10 },
+      transactions: [{ kind: 'reward', item: '사례금', counterparty: '민서', delta: 10,
+        evidence: '아침 도서관 접수대에서 민서가 사례금 열 닢을 건네고 다온이 모두 받았다.' }],
       choices: ['민서에게 영수증을 요청한다', '열람실로 간다'], chronicle: [] };
     return {
       narration: '아침 도서관 접수대에서 민서가 사례금 열 닢을 건네고 다온이 모두 받았다.',
@@ -113,21 +137,40 @@ function fixtureReply(kind, user) {
       background: null, mood: null, ending: null, cg: null, combat: false,
     };
   }
-  const second = /일곱 닢|두 번째 책/.test(user);
-  const third = /두 닢|세 번째 서가/.test(user);
+  const second = /일곱 닢|두 번째 책/.test(current);
+  const third = /두 닢|세 번째 서가/.test(current);
   const delta = second ? 7 : third ? 2 : 4;
+  const narration = second ? '두 번째 책을 돌려주자 안내원이 일곱 닢의 사례를 건넸다.'
+    : third ? '세 번째 서가를 정리하자 안내원이 두 닢의 사례를 건넸다.'
+    : '안내원이 도서관 방문을 반기며 네 닢의 사례를 건넸다.';
   if (kind === 'state') return {
     state_update: { gold: delta },
+    transactions: [{ kind: 'reward', item: second ? '책 반환 사례금' : third ? '서가 정리 사례금' : '방문 사례금',
+      counterparty: '안내원', delta, evidence: narration }],
     choices: ['안내원에게 책의 위치를 묻는다', '열람실을 둘러본다'],
     chronicle: [],
   };
   return {
-    narration: second ? '두 번째 책을 돌려주자 안내원이 일곱 닢의 사례를 건넸다.'
-      : third ? '세 번째 서가를 정리하자 안내원이 두 닢의 사례를 건넸다.'
-      : '안내원이 도서관 방문을 반기며 네 닢의 사례를 건넸다.',
+    narration,
     dialogue: [{ speaker: '안내원', char_id: 'guide', emotion: 'normal', pose: 'upper', text: '도와주셔서 감사합니다. 천천히 둘러보세요.' }],
     background: null, mood: null, ending: null, cg: null, combat: false,
   };
+}
+
+function longSessionReply(kind, turn) {
+  if (kind === 'summary') return {
+    summary: LONG_PROMISE + ' 현재 플레이에서는 새로운 거래 없이 장부를 차례로 확인했다.',
+    chronicle: [],
+  };
+  const scene = `장기 검증 ${turn}번째 장면. 민서와 장부 ${turn}쪽을 확인했다. 새로운 거래는 없었다.`;
+  if (kind === 'state') return {
+    state_update: { location: '도서관 접수대', player: { note: LONG_PROMISE },
+      chars: { guide: { knows: LONG_PROMISE } } },
+    choices: [`장부 ${turn + 1}쪽을 확인한다`, '잠시 쉬며 창밖을 본다'], chronicle: [],
+  };
+  return { narration: scene,
+    dialogue: [{ speaker: '민서', char_id: 'guide', emotion: 'normal', pose: 'upper', text: `${turn}쪽 확인했습니다.` }],
+    background: null, mood: null, ending: null, cg: null, combat: false };
 }
 
 async function createFixturePage(origin, mobile, options = {}) {
@@ -136,7 +179,8 @@ async function createFixturePage(origin, mobile, options = {}) {
     isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1,
     serviceWorkers: 'block', reducedMotion: 'reduce',
   });
-  const net = { calls: [], prompts: [], syncCalls: [], errors: [], externalBlocked: 0, holdState: null, nextMainStatus: null };
+  const net = { calls: [], prompts: [], syncCalls: [], errors: [], externalBlocked: 0,
+    holdState: null, nextMainStatus: null, nextStateStatus: null, mainTurn: 0, quotaCalls: 0 };
   const story = options.story || FIXTURE;
   await context.addInitScript(({ story, id, freeMode }) => {
     if (sessionStorage.getItem('pandora_fixture_seeded')) return;
@@ -157,17 +201,35 @@ async function createFixturePage(origin, mobile, options = {}) {
     const request = route.request();
     const url = new URL(request.url());
     if (url.origin === origin) { await route.continue(); return; }
-    if (url.hostname === 'pandora-sync.pasokong99.workers.dev' && ['/sync', '/sync/list'].includes(url.pathname)) {
-      const key = url.pathname === '/sync/list' ? null : url.searchParams.get('key');
-      net.syncCalls.push({ method: request.method(), path: url.pathname, key });
+    if (url.hostname === 'openrouter.ai' && url.pathname === '/api/v1/key' && request.method() === 'GET') {
+      net.quotaCalls++;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: {
+        is_free_tier: true, free_model_daily_requests: { used: 17, limit: 50, remaining: 33 },
+      } }) });
+      return;
+    }
+    if (url.hostname === 'pandora-sync.pasokong99.workers.dev' && ['/sync', '/sync/list', '/sync/capabilities', '/sync/versions'].includes(url.pathname)) {
+      const key = url.searchParams.get('key');
+      const history = url.searchParams.get('history') === '1', version = url.searchParams.get('version');
+      net.syncCalls.push({ method: request.method(), path: url.pathname, key, history, version });
       if (request.method() !== 'GET') {
         net.errors.push('cloud write attempted while browser fixture cloud backup is off');
         await route.fulfill({ status: 409, contentType: 'application/json', body: '{"error":"Fixture rejects cloud writes"}' });
         return;
       }
       if (key === 'cfg') net.errors.push('cloud inspection fetched connection settings');
-      const data = url.pathname === '/sync/list' ? { keys: Object.keys(CLOUD_FIXTURE) } : CLOUD_FIXTURE[key];
-      await route.fulfill({ status: data === undefined ? 404 : 200, contentType: 'application/json', body: JSON.stringify(data ?? null) });
+      const data = url.pathname === '/sync/list' ? { keys: history
+        ? [...Object.keys(CLOUD_FIXTURE).filter(k => k.startsWith('save:')), CLOUD_DELETED_KEY] : Object.keys(CLOUD_FIXTURE),
+        list_complete: true, ...(history ? { history: true } : {}) }
+        : url.pathname === '/sync/capabilities' ? { protocol: 2, atomic: true, history: true, maxVersions: 6 }
+        : url.pathname === '/sync/versions' ? { key, versions: key === CLOUD_DELETED_KEY ? [
+          { revision: 'deleted-r4', savedAt: 1794355200000, deleted: true, bytes: 0, current: true },
+          { revision: 'past-r3', savedAt: 1794355100000, deleted: false, bytes: 500, current: false },
+        ] : [], maxVersions: 6 }
+        : key === CLOUD_DELETED_KEY && version === 'past-r3' ? CLOUD_PAST_SAVE : CLOUD_FIXTURE[key];
+      await route.fulfill({ status: data === undefined ? 404 : 200, contentType: 'application/json',
+        headers: { ETag: data === undefined ? '"missing"' : '"fixture-' + encodeURIComponent(key || 'catalog') + '"' },
+        body: JSON.stringify(data ?? null) });
       return;
     }
     const modelRequest = request.method() === 'POST' && (
@@ -182,7 +244,9 @@ async function createFixturePage(origin, mobile, options = {}) {
       const user = String(messages[messages.length - 1]?.content || '');
       const kind = /boolean field ok/.test(sys) ? 'probe'
         : /상태 기록관/.test(sys) || /\[이번 턴 장면\]/.test(user) ? 'state'
+        : /사실 기록원/.test(sys) && /통합 요약/.test(sys) ? 'summary'
         : /선택지 작가/.test(sys) ? 'choices' : 'main';
+      if (kind === 'main') net.mainTurn++;
       net.calls.push({ kind, model: body.model, maxTokens: body.max_tokens, systemHead: sys.slice(0, 90) });
       // Only this explicitly requested fixture context retains prompt text for
       // assertions. Failure logging below continues to print metadata only.
@@ -201,12 +265,19 @@ async function createFixturePage(origin, mobile, options = {}) {
         await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ error: { code: status, message: 'Fixture free quota exhausted' } }) });
         return;
       }
+      if (kind === 'state' && net.nextStateStatus) {
+        const status = net.nextStateStatus; net.nextStateStatus = null;
+        await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ error: { code: status, message: 'Fixture interrupted recorder' } }) });
+        return;
+      }
       if (kind === 'state' && net.holdState) {
         const held = net.holdState; net.holdState = null;
         held.reached.release();
         await held.resume.promise;
       }
-      await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse(fixtureReply(kind, user)) });
+      const reply = options.longSession ? longSessionReply(kind, net.mainTurn) : fixtureReply(kind, user);
+      if (options.integrated && kind === 'main') Object.assign(reply, fixtureReply('state', user));
+      await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse(reply) });
       return;
     }
     // Default deny is essential: newly introduced provider endpoints cannot escape.
@@ -498,6 +569,27 @@ async function cloudSafetyChecks(ctx) {
     await page.locator('#settingsCloseBtn').click();
     await page.screenshot({ path: path.join(ARTIFACTS, (ctx.mobile ? 'mobile' : 'desktop') + '-cloud-inspection.png'), fullPage: true });
   });
+  await check(ctx, 'a deleted cloud save is selectable in history and recovers into an empty local slot', async () => {
+    const before = await page.evaluate(() => ({ cfg: localStorage.getItem('vn_cfg'),
+      current: Object.fromEntries(bulkKeys(/^vn_save_|^nakin_save$/).map(key => [key, bulkGet(key)])) }));
+    await page.getByRole('button', { name: '이전 백업 보기 · 빈 슬롯으로 복구', exact: true }).click();
+    await page.locator('#cloudHistoryPanel select').selectOption(CLOUD_DELETED_KEY);
+    const versions = page.locator('#cloudHistoryVersions button');
+    await versions.first().waitFor({ state: 'visible' });
+    assert.equal(await versions.count(), 1, 'deleted head itself appeared as a recoverable revision');
+    await versions.first().click();
+    await page.waitForFunction(() => document.getElementById('syncStatus').textContent.includes('1번 빈 슬롯에 복구했습니다'));
+    const after = await page.evaluate(id => ({ cfg: localStorage.getItem('vn_cfg'),
+      current: Object.fromEntries(bulkKeys(/^vn_save_|^nakin_save$/).map(key => [key, bulkGet(key)])),
+      restored: JSON.parse(bulkGet('vn_slot_' + id + '_1')), cloudEnabled: cloudWritesEnabled() }), STORY_ID);
+    assert.equal(after.cfg, before.cfg); assert.deepEqual(after.current, before.current);
+    assert.equal(after.restored.turnCount, 3); assert.equal(after.restored.restoredFrom.revision, 'past-r3');
+    assert.equal(after.restored.apiKey, undefined); assert.equal(after.cloudEnabled, false);
+    assert.ok(net.syncCalls.some(call => call.path === '/sync/list' && call.history));
+    assert.ok(net.syncCalls.some(call => call.key === CLOUD_DELETED_KEY && call.version === 'past-r3'));
+    assert.ok(net.syncCalls.every(call => call.method === 'GET'));
+    assert.equal(net.calls.length, 0);
+  });
 }
 
 async function customStartChecks(ctx) {
@@ -540,12 +632,140 @@ async function customStartChecks(ctx) {
   });
 }
 
+async function flushLocalSave(page) {
+  await page.evaluate(async () => {
+    if (!_bulkDB) return;
+    await new Promise((resolve, reject) => {
+      const tx = _bulkDB.transaction('kv', 'readonly');
+      tx.oncomplete = resolve; tx.onerror = reject;
+      tx.objectStore('kv').get(saveKeyFor(STORY.id));
+    });
+  });
+}
+
+async function startFixtureStory(ctx, fixture, setup = FIRST_INPUT) {
+  const { page } = ctx;
+  await page.locator('#tabMy').click();
+  await page.locator('#myStories .play-item').filter({ hasText: fixture.title }).click();
+  await page.locator('#detailNewBtn').click();
+  await page.waitForFunction(() => window._startPhase === 'mode');
+  await drainDialogue(page);
+  await page.locator('#choiceBox .choice-btn').filter({ hasText: '스토리 모드' }).click();
+  await page.waitForFunction(() => window._startPhase === 'setup');
+  await enterText(page, setup);
+}
+
+async function quotaAndIntegratedChecks(ctx) {
+  const { page, net } = ctx;
+  await check(ctx, 'quota inspection uses GET only and integrated setting saves one request per ordinary turn', async () => {
+    await page.locator('#tabMy').click();
+    await page.locator('#pageMy button').filter({ hasText: 'AI 연결 설정' }).click();
+    await page.locator('#freeApiQuotaBtn').click();
+    await page.waitForFunction(() => /33/.test(document.getElementById('freeApiQuotaStatus').textContent));
+    assert.equal(net.quotaCalls, 1);
+    assert.equal(net.calls.length, 0, 'looking up the quota generated a model response');
+    await page.locator('#aiPipelineSel').selectOption('integrated');
+    await page.locator('#apiModal .start-btn').click();
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('vn_cfg')).splitPipe), false);
+    await startFixtureStory(ctx, FIXTURE);
+    await page.waitForFunction(() => turnCount === 1 && gameState.gold === 14 && !sendBtn.disabled);
+    await drainDialogue(page);
+    assert.deepEqual(net.calls.map(call => call.kind), ['main'], 'integrated first turn still ran a state extraction');
+    await enterText(page, SECOND_INPUT);
+    await page.waitForFunction(() => turnCount === 2 && gameState.gold === 21 && !sendBtn.disabled);
+    await drainDialogue(page);
+    assert.deepEqual(net.calls.map(call => call.kind), ['main', 'main']);
+    assert.equal(await page.evaluate(() => pendingStateExtractEntry()), null);
+  });
+}
+
+async function longSessionChecks(ctx) {
+  const { page, net } = ctx;
+  let checkpoint;
+  await check(ctx, '50 fixture turns retain the private promise across real summary, history trimming and slot writes', async () => {
+    await startFixtureStory(ctx, LONG_STORY_FIXTURE, '다온/26살/남/차분한 성인 방문객');
+    await waitGold(page, 7);
+    for (let turn = 2; turn <= 50; turn++) {
+      await enterText(page, `[장기 검증 ${turn}] 새로운 거래 없이 장부 ${turn}쪽을 민서와 확인한다.`);
+      await page.waitForFunction(expected => turnCount === expected && !sendBtn.disabled &&
+        gameHistory[gameHistory.length - 1]?._stateExtract?.status === 'applied', turn);
+      await drainDialogue(page);
+      if (turn === 25) {
+        await page.waitForFunction(() => !window._summaryPending);
+        checkpoint = await page.evaluate(() => ({ state: JSON.parse(JSON.stringify(gameState)),
+          summary: storySummary, boundary: summaryIndex, dropped: histDropped, turn: turnCount }));
+        await openSlots(page);
+        await page.locator('#slotList .slot-item').first().getByRole('button', { name: '저장', exact: true }).click();
+        await page.locator('#slotPanel .my-btn').click();
+      }
+    }
+    await page.waitForFunction(() => !window._summaryPending);
+    const memory = await page.evaluate(() => ({ gold: gameState.gold, turn: turnCount,
+      summary: storySummary, history: gameHistory.length, dropped: histDropped,
+      remaining: gameHistory.length - summaryIndex, currentWindow: recentWindowCount(),
+      guideKnows: gameState.metChars.guide?.knows || '', friendKnows: gameState.metChars.friend?.knows || '',
+      pending: !!pendingStateExtractEntry() }));
+    assert.equal(memory.turn, 50); assert.equal(memory.gold, 7);
+    assert.ok(memory.dropped > 0, 'long test never crossed the history trim boundary');
+    assert.ok(memory.history <= 60, 'successfully summarized history grew beyond its retention cap');
+    assert.ok(memory.currentWindow >= memory.remaining, 'unsummarized original text was omitted from the next prompt');
+    assert.ok(memory.summary.includes(LONG_PROMISE));
+    assert.ok(memory.guideKnows.includes('오전 10시'));
+    assert.ok(!memory.friendKnows.includes('오전 10시'), 'private knowledge was assigned to the absent character');
+    assert.equal(memory.pending, false);
+    assert.equal(net.calls.filter(call => call.kind === 'main').length, 50);
+    assert.equal(net.calls.filter(call => call.kind === 'state').length, 50);
+    assert.ok(net.calls.filter(call => call.kind === 'summary').length >= 5, 'long test did not exercise repeated memory updates');
+    const lastMain = net.prompts.filter(prompt => prompt.kind === 'main').at(-1);
+    assert.ok(lastMain.messages.some(message => message.content.includes(LONG_PROMISE)),
+      'the retained promise never reached the actual main request');
+  });
+  await check(ctx, 'interrupted turn survives browser reload and a 25-turn slot restores its exact memory without a new scene', async () => {
+    net.nextStateStatus = 503;
+    await enterText(page, '[장기 검증 51] 새로운 거래 없이 장부 51쪽을 민서와 확인한다.');
+    await page.waitForFunction(() => turnCount === 51 && !sendBtn.disabled &&
+      gameHistory[gameHistory.length - 1]?._stateExtract?.status === 'failed');
+    await drainDialogue(page);
+    await flushLocalSave(page);
+    const mainBefore = net.calls.filter(call => call.kind === 'main').length;
+    const stateBefore = net.calls.filter(call => call.kind === 'state').length;
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
+    await page.locator('.enter-btn').click();
+    await page.locator('#introScreen').waitFor({ state: 'hidden' });
+    await page.locator('#tabMy').click();
+    await page.locator('#myStories .play-item').filter({ hasText: LONG_STORY_FIXTURE.title }).click();
+    await page.locator('#detailContinueBtn').click();
+    await waitGold(page, 7);
+    assert.equal(await page.evaluate(() => turnCount), 51);
+    assert.equal(net.calls.filter(call => call.kind === 'main').length, mainBefore, 'reload generated the story a second time');
+    assert.equal(net.calls.filter(call => call.kind === 'state').length, stateBefore + 1,
+      'persisted failed receipt did not resume exactly once');
+    const callsBefore = net.calls.length;
+    await openSlots(page);
+    await page.locator('#slotList .slot-item').first().getByRole('button', { name: '불러오기', exact: true }).click();
+    await waitGold(page, 7);
+    const restored = await page.evaluate(() => ({ state: JSON.parse(JSON.stringify(gameState)),
+      summary: storySummary, boundary: summaryIndex, dropped: histDropped, turn: turnCount }));
+    assert.deepEqual(restored, checkpoint, 'slot restore mixed a later scene or summary into an earlier checkpoint');
+    assert.equal(net.calls.length, callsBefore, 'restoring a completed slot called a model');
+    await page.evaluate(() => {
+      window._bgDuringGen = true; window._bgGenScope = turnWorkScope();
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await page.waitForTimeout(850);
+    assert.equal(net.calls.length, callsBefore, 'synthetic foreground return generated a completed turn again');
+  });
+}
+
 (async () => {
   try {
     const origin = await startServer();
     const engineName = process.env.PANDORA_BROWSER || 'chromium';
     assert.ok(['chromium', 'webkit'].includes(engineName), 'PANDORA_BROWSER must be chromium or webkit');
-    browser = await playwright[engineName].launch({ headless: true });
+    const launch = { headless: true };
+    if (process.env.PANDORA_BROWSER_EXECUTABLE) launch.executablePath = process.env.PANDORA_BROWSER_EXECUTABLE;
+    browser = await playwright[engineName].launch(launch);
     for (const mobile of engineName === 'webkit' ? [true] : [false, true]) {
       const ctx = await createFixturePage(origin, mobile);
       try { await playthrough(ctx); }
@@ -558,6 +778,16 @@ async function customStartChecks(ctx) {
       });
       try { await customStartChecks(customCtx); }
       finally { await customCtx.context.close(); }
+      const integratedCtx = await createFixturePage(origin, mobile, { freeMode: true, integrated: true });
+      try { await quotaAndIntegratedChecks(integratedCtx); }
+      finally { await integratedCtx.context.close(); }
+      if (mobile) {
+        const longCtx = await createFixturePage(origin, mobile, {
+          freeMode: true, story: LONG_STORY_FIXTURE, longSession: true, capturePrompts: true,
+        });
+        try { await longSessionChecks(longCtx); }
+        finally { await longCtx.context.close(); }
+      }
     }
     console.log('\n' + results.length + '/' + results.length + ' browser scenarios passed (' + engineName + '). All model responses were local fixtures.');
   } catch (e) {
