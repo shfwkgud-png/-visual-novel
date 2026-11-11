@@ -205,6 +205,30 @@ test('custom recorder requires numeric cash deltas for completed coin trades and
   assert.ok(system.includes('지난 거래의 회상') && system.includes('중복 가산하지 않는다'), 'recalled or merely pocketed payments must not count again');
   assert.ok(system.includes('완료 여부나 금액이 불명확하면 추측하지 않는다'));
 });
+test('recorder distinguishes a recalled purchase using the committed balance, prior situation and recent facts', async () => {
+  let sent;
+  const receipt = '민서에게 사례금 10G를 받았다.';
+  const purchase = '포장지를 받고 3G 지출(-3)을 완료했다.';
+  const note = '사례금 수령과 포장지 구매를 마쳤고 남은 소지금은 7G다.';
+  const input = '받았던 사례금 10G와 방금 쓴 3G를 떠올린다. 2G 중고책은 생각만 했고 실제로 사지 않는다.';
+  const scene = '다온은 포장지를 받으며 동전 세 닢을 냈던 순간을 떠올렸다. 중고책을 살 생각은 접었다.';
+  const sb = sandbox(['stateExtractContract', 'requestStateExtract'], {
+    STORY: { id: 'custom-library' }, RPG_STORIES: new Set(), BUILTIN_STORIES: {}, CHARACTERS: {},
+    gameState: stateFixture({ gold: 7, chronicle: [receipt, purchase], player: { note, injuries: [] } }),
+    gameHistory: [{ role: 'assistant', content: '아직 확정되지 않은 미래 거래: 책을 사고 소지금이 5G가 된다.' }],
+    scrubMetaData: () => {},
+    llmSmall: async (...args) => { sent = args; return '{"state_update":{},"choices":[],"chronicle":[]}'; }
+  });
+  const before = JSON.stringify({ state: sb.gameState, history: sb.gameHistory });
+  await sb.requestStateExtract(input, { narration: scene, dialogue: [] }, []);
+  const [system, user] = sent;
+  for (const evidence of ['골드 7', receipt, purchase, note, input, scene]) {
+    assert.ok(user.includes(evidence), 'missing committed transaction context: ' + evidence);
+  }
+  assert.ok(!user.includes('아직 확정되지 않은 미래 거래'), 'uncommitted history must not become accounting evidence');
+  assert.equal(JSON.stringify({ state: sb.gameState, history: sb.gameHistory }), before, 'prompt assembly must not rewrite the save');
+  assert.ok(system.includes('이미 반영') && system.includes('중복'), 'the recorder must distinguish existing transactions from new changes');
+});
 test('provider projection preserves actual narration, speech, emotion, state and chronicle without mutating saves', () => {
   const scene = { narration: '문이 열렸다.', dialogue: [{ speaker: '동료', char_id: 'a', text: '약속은 기억해요.', emotion: 'worry', pose: 'upper', sfx: 'door' }],
     state_update: { gold: -2, chars: { a: { knows: '약속 장소' } } }, chronicle: ['문 앞에서 만나기로 했다'], choices: ['기다린다', '떠난다'], cg: 'asset/ref', background: 'library' };
