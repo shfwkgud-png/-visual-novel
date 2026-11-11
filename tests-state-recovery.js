@@ -659,6 +659,70 @@ for (const split of [false, true]) {
   });
 }
 
+for (const split of [false, true]) {
+  for (const recovery of ['stream-error', 'incomplete-json']) {
+    const mode = split ? 'split' : 'integrated';
+    T(mode + ' ' + recovery + ' relay recovery rejects a truncated parked SSE without committing partial content', async () => {
+      const fixture = failedMainFixture(split), { c } = fixture, reply = deferred();
+      const main = installMainRequest(c, () => reply.promise);
+      installMainStreaming(c, main);
+      vm.runInContext(['createSseParser', 'providerText', 'parseSseTranscript'].map(grabFn).join('\n'), c.sb);
+      const finishReason = recovery === 'stream-error' ? 'length' : 'MAX_TOKENS';
+      const partial = '성인 사서는 반납한 책의 장부를 펼치고 영수증 작성을 시작했다.';
+      const partialJson = '{"background":"fixture-parked-bg","narration":"' + partial + ' 아직';
+      const fullText = JSON.stringify({
+        narration: partial + ' 서가의 기록을 확인하는 동안 창밖에는 조용히 비가 내렸다.',
+        dialogue: [{ speaker: '새 인물', char_id: 'fresh', text: '반납 기록을 자세히 확인하겠습니다.' }],
+        state_update: { gold: 999, event: '도서관 약속' },
+        choices: ['서가를 본다', '기다린다'], chronicle: ['아직 확정할 수 없는 반납 사건']
+      });
+      assert(fullText.length > partialJson.length, 'fixture must reach the longer parked response recovery branch');
+      const midpoint = Math.floor(fullText.length / 2);
+      const frame = value => 'data: ' + JSON.stringify(value) + '\n\n';
+      const transcript = frame({ model: 'fixture/parked-model:free', choices: [{ delta: { content: fullText.slice(0, midpoint) } }] })
+        + frame({ choices: [{ delta: { content: fullText.slice(midpoint) } }] })
+        + frame({ choices: [{ delta: {}, finish_reason: finishReason }] }) + 'data: [DONE]\n\n';
+      // Validate the synthetic SSE using the exact parser used during recovery.
+      const parsedFixture = c.sb.parseSseTranscript(transcript);
+      assert.equal(parsedFixture.text, fullText);
+      assert.equal(parsedFixture.finishReason, finishReason);
+      assert.equal(JSON.parse(parsedFixture.text).state_update.gold, 999);
+      let relayReads = 0, transcriptReads = 0, transcriptParses = 0;
+      const parseTranscript = c.sb.parseSseTranscript;
+      c.sb.parseSseTranscript = sse => { transcriptParses++; return parseTranscript(sse); };
+      c.sb.SYNC_URL = 'https://relay.fixture.invalid';
+      c.sb.fetch = async url => {
+        relayReads++;
+        assert.equal(String(url), c.sb.SYNC_URL + '/gen?id=fixture-incomplete-main');
+        return { ok: true, text: async () => { transcriptReads++; return transcript; } };
+      };
+      const originalBg = c.sb.lastBg;
+      const work = c.sb.callGemini([]); await flush();
+      main.requests[0].onChunk(partialJson);
+      assert(main.streamVisible.some(line => line.text === partial), 'fixture never displayed its partial scene');
+      assert(c.sb.dialogueLog.some(line => line.text === partial), 'fixture did not exercise real stream logging');
+      reply.resolve({
+        text: recovery === 'stream-error' ? '' : partialJson,
+        finishReason: recovery === 'stream-error' ? null : 'stop',
+        ...(recovery === 'stream-error' ? { error: { code: 503, message: 'fixture interrupted connection' } } : {}),
+        timing: { ttfb: 100, total: 500 }, modelUsed: 'fixture/client-model:free'
+      });
+      await work; await flush();
+      assert.equal(relayReads, 1, 'recovery must only read the existing parked generation once');
+      assert.equal(transcriptReads, 1);
+      assert.equal(transcriptParses, 1, 'recovery bypassed the real SSE finish-reason parser');
+      assertUncommittedMain(fixture, main, finishReason);
+      assert.deepEqual(clone(c.sb.dialogueLog), fixture.log, 'parked truncation retained partial stream content');
+      assert.equal(c.sb.dialogueQueue.length, 0);
+      assert.equal(c.sb.lastBg, originalBg);
+      assert.equal(c.sb.currentBgFile, originalBg);
+      assert.equal(c.timers.size, 0, 'parked truncation left a retry or playback timer');
+      assert(!c.calls.toasts.some(message => /복구했습니다/.test(message)),
+        'a truncated parked response must not be announced as successfully recovered');
+    });
+  }
+}
+
 T('first failed playing input exposes manual retry while setup and empty history keep it hidden', () => {
   const c = sandbox();
   const elements = { continueHint: { style: {} }, redoBar: { style: {} } };
