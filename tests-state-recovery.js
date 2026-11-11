@@ -57,7 +57,7 @@ function sandbox(options = {}) {
     gameState: clone(state), gameHistory: clone(history), turnCount: 3,
     STORY: { id: 'hero' }, RPG_STORIES: new Set(['hero']),
     CHARACTERS: { old: { name: '기존 인물' }, fresh: { name: '새 인물' } },
-    dialogueQueue: [], historyMode: false, replaying: false,
+    dialogueQueue: [], historyMode: false, replaying: false, isShowing: false, waitingForTap: false,
     sendBtn: { disabled: false }, userInput: { textContent: '', innerText: '' },
     document: { getElementById: () => null },
     localStorage: { getItem: () => null },

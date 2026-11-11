@@ -322,7 +322,8 @@ async function check(ctx, name, fn) {
 
 async function drainDialogue(page) {
   for (let i = 0; i < 60; i++) {
-    if (await page.evaluate(() => inputMode && !sendBtn.disabled && !isShowing && dialogueQueue.length === 0)) return;
+    if (await page.evaluate(() => inputMode && !sendBtn.disabled && !replaying && !isShowing &&
+      !waitingForTap && dialogueQueue.length === 0 && inputBar.style.display !== 'none')) return;
     // A real click/tap exercises typewriter completion and dialogue queue transitions.
     if (await page.locator('#dialoguePanel').isVisible()) {
       const box = await page.locator('#dialoguePanel').boundingBox();
@@ -334,7 +335,7 @@ async function drainDialogue(page) {
     }
     await page.waitForTimeout(80);
   }
-  throw new Error('Dialogue did not reach an input boundary: ' + await page.evaluate(() => JSON.stringify({ inputMode, busy: sendBtn.disabled, isShowing, waitingForTap, queued: dialogueQueue.length, phase: window._startPhase })));
+  throw new Error('Dialogue did not reach an input boundary: ' + await page.evaluate(() => JSON.stringify({ inputMode, busy: sendBtn.disabled, replaying, isShowing, waitingForTap, queued: dialogueQueue.length, phase: window._startPhase })));
 }
 
 async function enterText(page, text) {
@@ -458,6 +459,40 @@ async function playthrough(ctx) {
     await page.locator('#detailContinueBtn').click();
     await waitGold(page, 14);
     assert.equal(net.calls.length, before);
+  });
+  await check(ctx, 'slot two and browser reload hide input until AUTO finishes the restored scene', async () => {
+    const before = net.calls.length;
+    const history = await page.evaluate(() => JSON.stringify(gameHistory));
+    const finishRestoredScene = async () => {
+      await page.waitForFunction(() => replaying && !inputMode);
+      assert.equal(await page.locator('#inputBar').isVisible(), false, 'restored dialogue exposed the next input before replay ended');
+      assert.equal(await page.locator('#redoBar').isVisible(), false, 'restored dialogue exposed a stale redo bar');
+      assert.equal(await page.locator('#choiceBox').count(), 0, 'restored dialogue kept stale choices visible');
+      assert.equal(net.calls.length, before, 'loading a completed scene requested a model response');
+      assert.equal(await page.evaluate(() => autoPlay), false);
+      await page.locator('#autoBtn').click();
+      await page.waitForFunction(() => !replaying && inputMode && !sendBtn.disabled && !isShowing &&
+        !waitingForTap && dialogueQueue.length === 0, undefined, { timeout: 20000 });
+      assert.equal(await page.locator('#inputBar').isVisible(), true, 'AUTO completion did not restore input');
+      assert.equal(await page.evaluate(() => gameState.gold), 14);
+      assert.equal(await page.evaluate(() => JSON.stringify(gameHistory)), history, 'replaying changed the canonical turn history');
+      assert.equal(net.calls.length, before, 'AUTO playback generated a new turn');
+      await page.locator('#autoBtn').click();
+      assert.equal(await page.evaluate(() => autoPlay), false);
+    };
+    await openSlots(page);
+    await page.locator('#slotList .slot-item').nth(1).getByRole('button', { name: '저장', exact: true }).click();
+    await page.locator('#slotList .slot-item').nth(1).getByRole('button', { name: '불러오기', exact: true }).click();
+    await finishRestoredScene();
+    await flushLocalSave(page);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
+    await page.locator('.enter-btn').click();
+    await page.locator('#introScreen').waitFor({ state: 'hidden' });
+    await page.locator('#tabMy').click();
+    await page.locator('#myStories .play-item').filter({ hasText: FIXTURE.title }).click();
+    await page.locator('#detailContinueBtn').click();
+    await finishRestoredScene();
   });
   await check(ctx, 'next input waits for delayed extraction before requesting a new scene', async () => {
     const held = { reached: deferred(), resume: deferred() };

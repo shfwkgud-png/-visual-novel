@@ -37,6 +37,7 @@ jobs:
           node tests-sync-safety.js
           node tests-consistency.js
           node tests-consistency-integration.js
+          node tests-replay-input.js
           node tests-long-session.js
           node tests-performance.js
           node tests-sync-worker.js

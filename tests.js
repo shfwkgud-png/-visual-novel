@@ -419,7 +419,7 @@ T('분리: fireStateExtract — 추출→적용→병합→선택지 (실행 검
     gameState: { rep: 1, gold: 10, metChars: { v716: { intimacy: 20 } }, firedEvents: [], firedEventTurns: {} },
     CHARACTERS: { v716: { name: '나비' } },
     RPG_STORIES: new Set(['hero']), STORY: { id: 'hero' },
-    dialogueQueue: [], historyMode: false, replaying: false,
+    dialogueQueue: [], historyMode: false, replaying: false, isShowing: false, waitingForTap: false,
     sendBtn: { disabled: false },
     document: { getElementById: () => null },
     llmSmall: async () => JSON.stringify({

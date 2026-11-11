@@ -11376,6 +11376,22 @@ function restoreAndReplay(save, checkTimeflow) {
   if (restored) resumeStateExtract();
 }
 function restoreAndReplayInner(save, checkTimeflow) {
+  // A restored scene owns the display until its replay finishes. Cancel every
+  // prior scene timer before restoring its history or accepting another input.
+  clearTimeout(autoTimer);
+  clearInterval(window._typeTimer);
+  window._typeGen = (window._typeGen || 0) + 1;
+  window._typeCallback = null; window._typeFull = '';
+  isShowing = false; waitingForTap = false; replaying = false;
+  window._replayFill = false; dialogueQueue = [];
+  window._pendingDialogues = null; window._present = null; window._pendingPlayerLine = null;
+  historyMode = false; document.body.classList.remove('history-mode');
+  inputMode = false; inputBar.style.display = 'none';
+  document.getElementById('redoBar').style.display = 'none';
+  document.getElementById('continueHint').style.display = 'none';
+  const staleChoices = document.getElementById('choiceBox');
+  if (staleChoices) staleChoices.remove();
+  resetDialogueLift();
   window._startPhase = 'playing';   // 이어하기는 본편 진행 중 — 시작 플로우 상태머신 스킵
   // ★세이브 로드도 턴 경계다(2026-08-18 감사 확증) — 저장 직전 마지막 줄과 불러온 뒤 첫 줄이
   //   우연히 같으면 정당한 줄이 중복차단에 걸릴 수 있었다. 히스토리는 잘라도(컷) 이 두 키는
@@ -11466,6 +11482,7 @@ function restoreAndReplayInner(save, checkTimeflow) {
       replaying = true;
       processResponse({ ...data, state_update: null }, chars);
     } catch {
+      replaying = false; window._replayFill = false;
       enterInputMode();
     }
   } else {
@@ -13407,7 +13424,7 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx, cons
     // A queued next input owns the UI; otherwise choices belong to this exact scene.
     if (window._inputRequest || window._mainRequest) return true;
     const ch = Array.isArray(sx.choices) ? sx.choices : null;
-    if (dialogueQueue.length > 0 || historyMode) { window._pendingChoices = ch; return true; }
+    if (dialogueQueue.length > 0 || historyMode || replaying || isShowing || waitingForTap) { window._pendingChoices = ch; return true; }
     if (!document.getElementById('choiceBox') && !sendBtn.disabled) {
       try { showChoices(ch); } catch {}
     }
@@ -14852,7 +14869,7 @@ function handleKey(e) {
 
 async function sendMessage() {
   const text = (userInput.innerText || '').trim();
-  if (!text || sendBtn.disabled) return;
+  if (!text || sendBtn.disabled || replaying) return;
   // ★기록(히스토리) 모드에 갇힌 채 전송하면 응답이 _pendingDialogues에 홀드돼 화면 침묵
   //   ("응답이 없어요" 사고의 진범, 2026-07-20) — 전송 순간 반드시 현재로 복귀
   if (historyMode) exitHistory();
@@ -14869,7 +14886,7 @@ async function sendMessage() {
 
 async function handlePlayerInput(text) {
   // Acquire input ownership before the first await (choices and direct input share it).
-  if (sendBtn.disabled || window._inputRequest) return;
+  if (sendBtn.disabled || window._inputRequest || replaying) return;
   const request = { scope: turnWorkScope() };
   window._inputRequest = request;
   sendBtn.disabled = true;

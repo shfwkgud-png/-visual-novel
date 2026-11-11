@@ -49,7 +49,7 @@ function harness(options = {}) {
     turnCount: 1, STORY: { id: 'library', protagonist: { name: '다온' }, customBgs: {} },
     RPG_STORIES: new Set(['library']), BUILTIN_STORIES: { library: {} },
     CHARACTERS: { minseo: { name: '민서' }, junho: { name: '준호' } },
-    dialogueQueue: [], dialogueLog: [], historyMode: false, replaying: false,
+    dialogueQueue: [], dialogueLog: [], historyMode: false, replaying: false, isShowing: false, waitingForTap: false,
     sendBtn: { disabled: false }, userInput: { textContent: '', innerText: '' },
     document: { getElementById: id => elements.get(id) || null, createElement: node, body: node('body') },
     performance: { now: () => time += 5 },
