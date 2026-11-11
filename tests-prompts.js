@@ -171,18 +171,24 @@ test('off-scene characters beyond the detail cap retain death and relationship f
   assert.ok(text.includes('c13=인물13(관계 옛 동료, 친밀도 77, 상태 사망)'));
   assert.ok(!text.includes('그 외 만난 적 있는 인물(관계는 옅음)'));
 });
-test('recorder receives current injuries, skills, personal knowledge and an explicit no-change contract', async () => {
+test('recorder receives current state and distinguishes completed movement from a future meeting', async () => {
   let sent;
   const sb = sandbox(['stateExtractContract', 'requestStateExtract'], {
     STORY: { id: 'academy' }, RPG_STORIES: new Set(['academy']), BUILTIN_STORIES: { academy: {} },
-    CHARACTERS: { a: { name: '동료' } }, gameState: stateFixture({ metChars: { a: { name: '동료', intimacy: 20, knows: '약속 장소를 안다', condition: '피곤함' } },
+    CHARACTERS: { a: { name: '동료' } }, gameState: stateFixture({ location: '접수대', metChars: { a: { name: '동료', intimacy: 20, knows: '약속 장소를 안다', condition: '피곤함' } },
       player: { abilities: ['관찰'], injuries: ['발목 부상'], stats: { 지력: 30 }, skills: { 관찰: { rank: '초급', xp: 12 } } } }),
     scrubMetaData: () => {}, llmSmall: async (...args) => { sent = args; return '{"state_update":{},"choices":["기다린다","노크한다"],"chronicle":[]}'; }
   });
-  const result = await sb.requestStateExtract('기다린다', { narration: '동료가 문을 열었다.', dialogue: [] }, ['a', 'a', 'invalid']);
+  const scene = '동료가 문을 열어 다온이 지하 서고에 도착했다. 두 사람은 내일 중정에서 만나기로 약속했다.';
+  const result = await sb.requestStateExtract('지하 서고로 내려간다.', { narration: scene, dialogue: [] }, ['a', 'a', 'invalid']);
   assert.deepEqual(copy(result.state_update), {});
   assert.ok(sent[0].includes('상태 기록관') && sent[0].includes('현재 일차를 되돌리지'));
   assert.ok(sent[1].includes('발목 부상') && sent[1].includes('약속 장소를 안다') && sent[1].includes('"지력":30'));
+  assert.ok(sent[1].includes('[현재 위치] 접수대') && sent[1].includes(scene));
+  const locationRule = sent[0].split('\n').find(line => line.includes('state_update.location')) || '';
+  assert.ok(locationRule.includes('도착') && locationRule.includes('반드시 기록'), 'completed movement must update the current location');
+  assert.ok(locationRule.includes('약속 장소는 현재 위치 변경이 아니다'), 'future meetings must not move the player early');
+  assert.ok(locationRule.includes('{"location":"지하 서고"}'));
   assert.equal((sent[1].match(/a=동료/g) || []).length, 1);
   assert.ok(!sent[1].includes('invalid'));
   assert.deepEqual(copy(sent[4]), { task: 'state', json: true });
