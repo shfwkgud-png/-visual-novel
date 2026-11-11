@@ -12,7 +12,8 @@ function grab(name) {
   return source.slice(start, source.indexOf('\n}', start) + 2);
 }
 function harness() {
-  const nodes = Object.fromEntries(['freeApiQuotaStatus', 'freeApiQuotaBtn', 'orKeyInput', 'aiPipelineSel', 'aiPerfPanel']
+  const nodes = Object.fromEntries(['freeApiQuotaStatus', 'freeApiQuotaBtn', 'orKeyInput', 'aiPipelineSel', 'aiPerfPanel',
+    'apiScreen', 'aiContextSel', 'aiPipelineHint', 'notifDoneChk']
     .map(id => [id, { textContent: '', style: {}, value: '', disabled: false }]));
   nodes.orKeyInput.value = 'fixture-key-never-real'; nodes.aiPipelineSel.value = 'split';
   const storage = new Map(), calls = [], timers = new Map(); let clock = 10000;
@@ -21,6 +22,7 @@ function harness() {
     document: { getElementById: id => nodes[id] || null },
     localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value) },
     FREE_TEST_MODE: true, PROVIDER: 'openrouter', OPENROUTER_KEY: '', STORY: { id: 'fixture' },
+    AI_CONTEXT_MODE: 'balanced', setProvider: value => { sb.PROVIDER = value; },
     gameState: {}, turnCount: 1, showStatToast: message => sb.notices.push(message), notices: [],
     setTimeout: fn => { const id = timers.size + 1; timers.set(id, fn); return id; },
     clearTimeout: id => timers.delete(id),
@@ -28,7 +30,8 @@ function harness() {
     response: { ok: true, status: 200, json: async () => ({ data: { free_model_daily_requests: { used: 6, limit: 50, remaining: 44 } } }) }
   };
   sb.window = sb; vm.createContext(sb);
-  vm.runInContext(['aiSettingsBusy', 'splitPipeOn', 'toggleSplitPipe', 'checkFreeApiQuota', 'renderAiPerformance', 'recordTurnPerformance'].map(grab).join('\n'), sb);
+  vm.runInContext(['aiSettingsBusy', 'splitPipeOn', 'toggleSplitPipe', 'checkFreeApiQuota', 'renderFreeApiQuota',
+    'openSettings', 'closeSettings', 'renderAiPerformance', 'recordTurnPerformance'].map(grab).join('\n'), sb);
   return { sb, nodes, storage, calls, timers, setClock: n => { clock = n; } };
 }
 test('the page main script still parses after loading the independent validator', () => {
@@ -54,17 +57,58 @@ test('quota estimate follows the selected one-call mode and accounts for zero re
   await h.sb.checkFreeApiQuota(); assert(h.nodes.freeApiQuotaStatus.textContent.includes('0 / 50'));
   assert(h.nodes.freeApiQuotaStatus.textContent.includes('0턴'));
 });
+test('cached 29-request quota recalculates on a pipeline change and settings reopen without querying again', async () => {
+  const h = harness(), queriedAt = Date.UTC(2026, 10, 11, 7, 23, 9);
+  h.setClock(queriedAt);
+  h.sb.response.json = async () => ({ data: { free_model_daily_requests: { used: 21, limit: 50, remaining: 29 } } });
+  h.sb.openSettings();
+  await h.sb.checkFreeApiQuota();
+  assert.match(h.nodes.freeApiQuotaStatus.textContent, /29 \/ 50회 남음/);
+  assert.match(h.nodes.freeApiQuotaStatus.textContent, /최대 14턴/);
+  const observedAt = h.nodes.freeApiQuotaStatus.textContent.split('\n')
+    .find(line => /조회/.test(line) && /\d{1,2}:\d{2}/.test(line));
+  assert(observedAt, 'the display must identify the original metadata lookup time');
+  assert.equal(h.sb._freeQuotaResult.checkedAt, queriedAt);
+
+  // Execute the select's real change handler, rather than calling the renderer
+  // directly: a correct helper with missing UI wiring would still regress.
+  const selectTag = source.match(/<select\b[^>]*\bid="aiPipelineSel"[^>]*>/);
+  const change = selectTag && selectTag[0].match(/\bonchange="([^"]+)"/);
+  assert(change, 'pipeline selection must refresh the cached quota estimate');
+  h.setClock(queriedAt + 180000);
+  h.nodes.aiPipelineSel.value = 'integrated';
+  vm.runInContext(change[1], h.sb);
+  assert.match(h.nodes.freeApiQuotaStatus.textContent, /최대 29턴/);
+  assert(h.nodes.freeApiQuotaStatus.textContent.includes(observedAt));
+  h.nodes.aiPipelineSel.value = 'split';
+  vm.runInContext(change[1], h.sb);
+  assert.match(h.nodes.freeApiQuotaStatus.textContent, /최대 14턴/);
+
+  // Changing the persistent mode outside the modal leaves its old 14-turn
+  // label behind. Reopening must re-read the mode and refresh that label.
+  h.sb.closeSettings();
+  h.sb.toggleSplitPipe();
+  assert.equal(JSON.parse(h.storage.get('vn_cfg')).splitPipe, false);
+  h.sb.openSettings();
+  assert.equal(h.nodes.aiPipelineSel.value, 'integrated');
+  assert.match(h.nodes.freeApiQuotaStatus.textContent, /29 \/ 50회 남음/);
+  assert.match(h.nodes.freeApiQuotaStatus.textContent, /최대 29턴/);
+  assert(h.nodes.freeApiQuotaStatus.textContent.includes(observedAt));
+  assert.equal(h.sb._freeQuotaResult.checkedAt, queriedAt, 'rerendering is not a fresh account lookup');
+  assert.equal(h.calls.length, 1, 'mode changes and reopening must not consume another metadata request');
+  assert.equal(h.calls[0].options.method, 'GET');
+});
 test('missing metadata is unknown, never an invented 50 request balance', async () => {
   const h = harness(); h.sb.response.json = async () => ({ data: { is_free_tier: true } });
   await h.sb.checkFreeApiQuota();
   assert(h.nodes.freeApiQuotaStatus.textContent.includes('제공하지 않았'));
   assert(!h.nodes.freeApiQuotaStatus.textContent.includes('50'));
-  assert.equal(h.sb._freeQuotaResult, undefined);
+  assert.equal(h.sb._freeQuotaResult, null);
 });
 test('malformed or contradictory quota counters cannot become a displayed balance', async () => {
   for (const q of [{ used: 1, limit: 50, remaining: 51 }, { used: -1, limit: 50, remaining: 50 }, { used: 2, limit: '50', remaining: 48 }]) {
     const h = harness(); h.sb.response.json = async () => ({ data: { free_model_daily_requests: q } });
-    await h.sb.checkFreeApiQuota(); assert.equal(h.sb._freeQuotaResult, undefined);
+    await h.sb.checkFreeApiQuota(); assert.equal(h.sb._freeQuotaResult, null);
   }
 });
 test('429 and transport failure do not retry or leak provider error bodies', async () => {

@@ -1999,7 +1999,7 @@
     </select>
 
     <label for="aiPipelineSel" style="font-size:0.85em;margin-top:8px">응답 방식</label>
-    <select id="aiPipelineSel">
+    <select id="aiPipelineSel" onchange="renderFreeApiQuota()">
       <option value="split">본문 먼저 읽기 — 본문과 상태를 나누어 처리</option>
       <option value="integrated">요청 절약 — 본문과 상태를 한 번에 처리</option>
     </select>
@@ -9045,6 +9045,7 @@ function openSettings() {
   if (pipelineHint) pipelineHint.textContent = pipeline && pipeline.disabled
     ? '아이돌 경영은 이야기와 경영 상태를 한 번에 처리합니다.'
     : '일반 스토리는 각각 보통 2회·1회 요청을 사용합니다. 요약·다시 생성은 별도이며, 속도와 정확도는 모델에 따라 다릅니다.';
+  renderFreeApiQuota();
   renderAiPerformance();
   try { document.getElementById('notifDoneChk').checked = localStorage.getItem('vn_notif_done') === '1'; } catch {}
 }
@@ -9138,6 +9139,7 @@ async function checkFreeApiQuota() {
   const key = (document.getElementById('orKeyInput').value || OPENROUTER_KEY || '').trim();
   if (!key) { status.textContent = 'OpenRouter API 키를 입력해 주세요.'; return; }
   const controller = new AbortController(), probe = {};
+  window._freeQuotaResult = null;
   window._freeQuotaProbe = probe; btn.disabled = true;
   const timer = setTimeout(() => controller.abort(), 15000);
   status.textContent = '오늘 남은 무료 요청을 조회하는 중…';
@@ -9154,11 +9156,7 @@ async function checkFreeApiQuota() {
       status.textContent = '서비스가 남은 요청 수를 제공하지 않았습니다. 남은 횟수를 추정해 표시하지 않습니다.'; return;
     }
     window._freeQuotaResult = { used: quota.used, limit: quota.limit, remaining: quota.remaining, checkedAt: Date.now() };
-    const pipeline = document.getElementById('aiPipelineSel');
-    const split = pipeline && !pipeline.disabled ? pipeline.value !== 'integrated' : splitPipeOn();
-    status.textContent = '오늘 무료 요청 ' + quota.remaining + ' / ' + quota.limit + '회 남음 · 사용 ' + quota.used + '회\n'
-      + '선택한 응답 방식으로 추가 요약·재시도가 없을 때 최대 ' + Math.floor(quota.remaining / (split ? 2 : 1)) + '턴입니다.\n'
-      + '조회 시점의 계정 전체 사용량이며, 조회 자체는 이야기를 생성하지 않습니다.';
+    renderFreeApiQuota();
   } catch {
     if (window._freeQuotaProbe === probe) status.textContent = '사용량 조회에 연결하지 못했습니다. 모델 요청은 보내지 않았습니다.';
   } finally {
@@ -9166,6 +9164,18 @@ async function checkFreeApiQuota() {
     if (window._freeQuotaProbe === probe) window._freeQuotaProbe = null;
     btn.disabled = false;
   }
+}
+
+function renderFreeApiQuota() {
+  const status = document.getElementById('freeApiQuotaStatus'), quota = window._freeQuotaResult;
+  if (!status || !quota || !FREE_TEST_MODE || PROVIDER !== 'openrouter') return;
+  const pipeline = document.getElementById('aiPipelineSel');
+  const split = pipeline && !pipeline.disabled ? pipeline.value !== 'integrated' : splitPipeOn();
+  const checked = new Date(quota.checkedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  status.style.display = 'block';
+  status.textContent = '오늘 무료 요청 ' + quota.remaining + ' / ' + quota.limit + '회 남음 · 사용 ' + quota.used + '회\n'
+    + '선택한 응답 방식으로 추가 요약·재시도가 없을 때 최대 ' + Math.floor(quota.remaining / (split ? 2 : 1)) + '턴입니다.\n'
+    + '조회 시각 ' + checked + ' · 조회 당시 계정 전체 사용량입니다. 잔량을 갱신하려면 조회 버튼을 눌러 주세요. 조회 자체는 이야기를 생성하지 않습니다.';
 }
 
 function renderAiPerformance() {
