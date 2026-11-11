@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - fix/pandora-turn-consistency-perf-20261111
+      - fix/pandora-v360-state-recovery
   pull_request:
     branches: [main]
 permissions:
@@ -18,4 +19,8 @@ jobs:
         with:
           node-version: '22'
       - name: Run Pandora regression tests
-        run: node tests.js
+        run: |
+          node tests.js
+          node tests-state-recovery.js
+          node tests-summary.js
+          node tests-background.js

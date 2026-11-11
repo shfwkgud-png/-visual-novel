@@ -43,6 +43,12 @@ function runSandbox(code, sandbox) {
   vm.runInContext(code, sb, { timeout: 5000 });
   return sb;
 }
+function grabSplitPipeline() {
+  const start = SRC.indexOf('// ═══════════ 분리 응답 파이프라인');
+  const end = SRC.indexOf('// ===== TEXT CHUNKING =====', start);
+  assert(start >= 0 && end > start, '분리 파이프라인 추출 실패');
+  return SRC.slice(start, end);
+}
 
 // ═══ 0. 문법: <script> 블록이 파싱 가능한가 ═══
 T('문법: 스크립트 파싱', () => {
@@ -393,14 +399,16 @@ T('분리: stateOnly 경로가 렌더를 건드리지 않음 + 배선 존재', (
   assert(pr.includes("typeof data.combat === 'boolean'"), '본편 combat 최상위 처리 소멸(판정 게이트 지연)');
   // 후행 발사·병합·대기 배선
   assert(SRC.includes('fireStateExtract(userMessageForExtract()'), '후행 추출 발사 소멸');
-  assert(SRC.includes('h.content = JSON.stringify(merged)'), 'gameHistory 병합 저장 소멸(복원 호환 붕괴)');
-  assert(SRC.includes('window._splitExtractPending, new Promise'), '다음 턴 전 후행 대기 소멸(옛 상태로 프롬프트)');
-  assert(SRC.includes('window._splitExtractPending && window._pendingChoices == null'), '소비 지점 폴백 억제 소멸(선택지 이중 생성)');
+  assert(/\.content = JSON\.stringify\(merged\)/.test(SRC), 'gameHistory 병합 저장 소멸(복원 호환 붕괴)');
+  assert(grabFn('callGemini').includes('await ensureStateExtractReady()'), '다음 턴 전 상태 확정 대기 소멸(옛 상태로 프롬프트)');
+  const consume = grabFn('showNextDialogue');
+  assert(consume.includes('(window._splitExtractPending || pendingStateExtractEntry()) && window._pendingChoices == null'),
+    '소비 지점 폴백 억제 소멸(선택지 이중 생성)');
   // 후행이 본편 소유 필드를 침범하지 못함
   assert(SRC.includes('delete sx.state_update.combat'), '후행 combat 차단 소멸(판정 게이트 경합)');
 });
 T('분리: fireStateExtract — 추출→적용→병합→선택지 (실행 검증)', async () => {
-  const code = grabFn('userMessageForExtract') + '\n' + grabFn('commitPendingEventFrom') + '\n' + grabFn('fireStateExtract');
+  const code = grabSplitPipeline();
   const calls = { proc: null, choices: 'NOT_CALLED', saved: 0 };
   const hist = [
     { role: 'user', content: '(그녀에게 다가간다)' },
@@ -411,7 +419,7 @@ T('분리: fireStateExtract — 추출→적용→병합→선택지 (실행 검
     gameState: { rep: 1, gold: 10, metChars: { v716: { intimacy: 20 } }, firedEvents: [], firedEventTurns: {} },
     CHARACTERS: { v716: { name: '나비' } },
     RPG_STORIES: new Set(['hero']), STORY: { id: 'hero' },
-    dialogueQueue: [], historyMode: false,
+    dialogueQueue: [], historyMode: false, replaying: false,
     sendBtn: { disabled: false },
     document: { getElementById: () => null },
     llmSmall: async () => JSON.stringify({
@@ -438,7 +446,7 @@ T('분리: fireStateExtract — 추출→적용→병합→선택지 (실행 검
 
 // ═══ 5-H. 후행 결과 순서 보호 + 계측 (v359) ═══
 T('분리: 늦은 추출·다른 저장·재생성은 state 적용 이전에 차단', async () => {
-  const code = grabFn('fireStateExtract');
+  const code = grabSplitPipeline();
   const tick = () => 100;
   async function check(kind) {
     let resolve;
@@ -450,7 +458,7 @@ T('분리: 늦은 추출·다른 저장·재생성은 state 적용 이전에 차
     const sb = runSandbox(code + '\n', {
       turnCount: 5, gameHistory: history, gameState: state, STORY: { id: 'hero' },
       RPG_STORIES: new Set(), CHARACTERS: {},
-      dialogueQueue: [], historyMode: false, sendBtn: { disabled: false },
+      dialogueQueue: [], historyMode: false, replaying: false, sendBtn: { disabled: false },
       performance: { now: tick },
       pandoraPerfRecord: () => {},
       document: { getElementById: () => null },
@@ -462,12 +470,14 @@ T('분리: 늦은 추출·다른 저장·재생성은 state 적용 이전에 차
       showChoices: () => { calls.choices++; },
     });
     const pending = sb.fireStateExtract('안녕', { narration: '안녕', dialogue: [] }, [], 1);
+    await Promise.resolve();   // 요청이 시작된 뒤 세션/턴을 바꾼다
+    const savesBeforeResponse = calls.save;   // v360: 미확정 작업의 사전 저장은 정상이다
     if (kind === 'turn') sb.turnCount++;
     if (kind === 'save') sb.gameState = { ...state };
     if (kind === 'regenerate') sb.gameHistory.splice(1, 1, { role: 'assistant', content: row.content });
     resolve(JSON.stringify({ state_update: { gold: 2 }, choices: ['계속'] }));
     await pending;
-    assert(calls.apply === 0 && calls.save === 0 && calls.choices === 0,
+    assert(calls.apply === 0 && calls.save === savesBeforeResponse && calls.choices === 0,
       kind + '에서 지난 결과 적용됨: ' + JSON.stringify(calls));
   }
   await check('turn'); await check('save'); await check('regenerate');
@@ -480,7 +490,7 @@ T('성능기록: 민감한 내용 없이 최대 100건만 메모리에 보관', 
   assert(Object.keys(a[0]).sort().join(',') === 'at,ms,stage,turn', '기록 필드에 원문이 포함됨');
 });
 T('분리: 긴 장면의 끝부분 보존 + 기존 부상 컨텍스트 포함', () => {
-  const body = grabFn('fireStateExtract');
+  const body = grabFn('requestStateExtract');
   assert(body.includes('fullScene.slice(-2200)'), '장면 끝부분 손실');
   assert(body.includes('gameState.player.injuries'), '기존 부상 정보 누락');
 });
@@ -683,13 +693,16 @@ T('호감도: 산문 속 수치 메타만 지우고 일반 문장은 보존 (실
     '응답 객체 정제 실패: ' + JSON.stringify(d));
 });
 T('날짜·호감도: 배선 — 추출기에 현재 시각 전달 + 쓰기/기록/화면/선택지 전 경로 정제', () => {
-  const fx = grabFn('fireStateExtract');
+  const fx = grabFn('requestStateExtract');
   assert(fx.includes('[현재 시각] ${gameState.time'), '추출 모델에 현재 일차 미전달 — 일차 추측 재발');
   assert(/일차는 절대 되돌리지 마라/.test(fx), '추출 스키마의 역행 금지 문구 소멸');
   assert(fx.includes('scrubMetaData(sx)'), '추출 결과(선택지) 정제 소멸');
   assert(SRC.includes('gameState.time = mergeTimeValue(gameState.time, s.time, STORY.id)'), 'time이 가드 없이 덮어쓰기로 회귀');
   assert(!/if \(s\.time && !_isIdol\) gameState\.time = s\.time;/.test(SRC), '구 무검사 time 덮어쓰기 부활');
-  assert(/scrubMetaData\(parsed\); \} catch \{\}\n\s*gameHistory\.push\(\{ role: 'assistant', content: JSON\.stringify\(parsed\) \}\)/.test(SRC), '기록 저장 전 정제 소멸 — 모델이 자기 기록을 따라 씀');
+  const main = grabFn('callGemini');
+  const scrubAt = main.indexOf('scrubMetaData(parsed)');
+  const saveAt = main.indexOf("gameHistory.push({ role: 'assistant'");
+  assert(scrubAt >= 0 && saveAt > scrubAt, '기록 저장 전 정제 소멸 — 모델이 자기 기록을 따라 씀');
   assert(/d\.text = scrubMetaNumbers\(d\.text\)/.test(grabFn('enqueueLine')), '스트리밍 줄 정제 소멸');
   assert(/scrubMetaNumbers\(c\)/.test(grabFn('showChoices')), '선택지 정제 소멸');
   assert(SRC.includes('게임 수치·메타 노출 절대 금지'), '엔진 공통 메타 노출 금지 규칙 소멸');

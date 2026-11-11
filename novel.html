@@ -2053,7 +2053,7 @@
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v359</span></span>
+      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v360</span></span>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
@@ -10392,6 +10392,7 @@ function autoSave() {
   // ★복원 도중 저장 금지(2026-08-24, 책 Ch.116): 복원이 덜 끝난 전역이 세이브를 덮는 사고 차단.
   //   복원 완료 후의 '재생 완료 시점 저장'은 플래그 해제 뒤라 정상 동작한다.
   if (window._isRestoring) return;
+  if (window._isStateCommit) return;
   // 평상시 상한 유지 — 여기서 미리 줄여두면 용량 초과 자체가 잘 안 난다
   if (gameHistory.length > HISTORY_MAX) trimHistory(HISTORY_MAX);
   if (dialogueLog.length > DIALOG_MAX) {
@@ -10404,6 +10405,7 @@ function autoSave() {
     histDropped, dlogDropped,     // ★되감기 기준점 — 없으면 새로고침 후 자르기가 안 먹는다
     gameHistory,
     gameState,
+    pendingEvent: window._pendingEvent || null,
     storySummary,
     summaryIndex,
     lastBg,
@@ -10446,7 +10448,7 @@ function autoSave() {
 // ═══ 세이브 데이터 버전 체계 (2026-08-24, VN 프레임워크 책 Ch.119·223 — "첫 저장 형식부터 준비하라") ═══
 // 앱 버전(v348…)과 별개로 **세이브 구조의 버전**. 구조를 바꿀 때마다 +1 하고 SAVE_MIGRATIONS에
 // "이전 버전 → 다음 버전" 변환기를 등록한다. 도장 없는 구세이브 = v1로 간주.
-const SAVE_DATA_VERSION = 4;
+const SAVE_DATA_VERSION = 5;
 // { 1: save => ({...save, 바뀐필드, dataVersion: 2}), 2: ... } — 순차 체인으로 현재 버전까지 승격
 const SAVE_MIGRATIONS = {
   // v1→v2 (2026-09-13): 아카데미 오개전 복구.
@@ -10512,6 +10514,12 @@ const SAVE_MIGRATIONS = {
       for (const d of dl) { if (d && !d.isPlayer && typeof d.text === 'string') d.text = scrubMetaNumbers(d.text); }
     } catch {}
     save.dataVersion = 4;
+    return save;
+  },
+  // v4→v5: optional extraction receipts/checkpoints. Never infer/reapply old deltas
+  // from an unmarked legacy scene: its original application status is unknown.
+  4: (save) => {
+    save.dataVersion = 5;
     return save;
   }
 };
@@ -10655,6 +10663,7 @@ function startGame(isContinue) {
   }
 
   if (!isContinue) {
+    resetTurnAsyncWork();
     // Protagonist defaults come from the story pack — editable anytime
     // in-game via the 주인공 tab of the status panel (Frontia-style).
     playerName = (STORY.protagonist && STORY.protagonist.name) || '주인공';
@@ -10719,15 +10728,19 @@ function startGame(isContinue) {
 function restoreAndReplay(save, checkTimeflow) {
   // ★복원 단일 루틴 보강(2026-08-24, 책 Ch.116 "절반 복원 금지"): 복원 도중 autoSave가 돌면
   //   덜 복원된 전역이 세이브를 덮는다 — _isRestoring 동안 저장 차단, 실패 시 홈으로(절반 상태 진행 금지).
+  resetTurnAsyncWork();
   window._isRestoring = true;
+  let restored = false;
   try {
     restoreAndReplayInner(save, checkTimeflow);
+    restored = true;
   } catch (e) {
     try { console.error('[복원 실패]', e); showStatToast('⚠ 이어하기 실패 — 세이브 손상 가능성. 홈으로 돌아갑니다', true); } catch {}
     try { exitToMain(); } catch {}
   } finally {
     window._isRestoring = false;
   }
+  if (restored) resumeStateExtract();
 }
 function restoreAndReplayInner(save, checkTimeflow) {
   window._startPhase = 'playing';   // 이어하기는 본편 진행 중 — 시작 플로우 상태머신 스킵
@@ -10743,6 +10756,7 @@ function restoreAndReplayInner(save, checkTimeflow) {
   histDropped = save.histDropped || 0;
   dlogDropped = save.dlogDropped || 0;
   gameState = save.gameState || gameState;
+  window._pendingEvent = save.pendingEvent ? { ...save.pendingEvent } : null;
   if (STORY.id === 'idol' && gameState.idol) {
     migrateIdolSave(gameState.idol);                    // 구 세이브 필드 보정
     // ★세이브에 박힌 gameState.time은 v182 이전엔 AI가 옮긴 요일이라 wkIdx와 어긋나 있다.
@@ -10904,8 +10918,9 @@ function hideThinking() {
 }
 
 // Rate-limit cooldown with a thematic countdown
-function waitWithCountdown(seconds, attempt = 1) {
+function waitWithCountdown(seconds, attempt = 1, request = null) {
   return new Promise(resolve => {
+    if (request && !mainRequestIsCurrent(request)) { resolve(); return; }
     setNameplate('···', null);
     document.getElementById('continueHint').style.display = 'none';
     const who = PROVIDER === 'nim' ? 'NVIDIA 서버 혼잡' : 'Gemini 한도';
@@ -10915,6 +10930,7 @@ function waitWithCountdown(seconds, attempt = 1) {
     };
     render();
     const iv = setInterval(() => {
+      if (request && !mainRequestIsCurrent(request)) { clearInterval(iv); resolve(); return; }
       left--;
       if (left <= 0) { clearInterval(iv); resolve(); }
       else render();
@@ -10957,7 +10973,8 @@ function buildMessages() {
   }
 
   const recent = gameHistory.slice(-recentWindowCount());
-  messages.push(...recent);
+  // Receipts and rollback checkpoints are local save data, never provider messages.
+  messages.push(...recent.map(h => ({ role: h.role, content: h.content })));
 
   return messages;
 }
@@ -11133,6 +11150,26 @@ async function summarizeIfNeeded() {
   const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - SUMMARY_KEEP);
   if (toSummarize.length < 4) return;
 
+  // 한 세션에서는 요약 한 개만 진행한다. 새 세션은 이전 네트워크 요청을 기다리지 않는다.
+  const myState = gameState, myStory = STORY, myEpoch = window._turnEpoch || 0;
+  const previous = window._summaryPending;
+  if (previous && previous.state === myState && previous.story === myStory && previous.epoch === myEpoch) return;
+  const job = { state: myState, story: myStory, epoch: myEpoch };
+  const baseSummary = storySummary;
+  const current = () => window._summaryPending === job && gameState === myState && STORY === myStory
+    && (window._turnEpoch || 0) === myEpoch;
+  // trimHistory는 배열을 교체하므로 배열 identity 대신 실제 요약한 항목들의 경계를 찾는다.
+  // 요청 뒤 추가된 턴은 절대 이번 요약에 포함된 것으로 표시하지 않는다.
+  const completedBoundary = () => {
+    if (!current() || storySummary !== baseSummary) return -1;
+    const start = gameHistory.indexOf(toSummarize[0]);
+    if (start < 0 || start !== summaryIndex) return -1;
+    for (let i = 0; i < toSummarize.length; i++) {
+      if (gameHistory[start + i] !== toSummarize[i]) return -1;
+    }
+    return start + toSummarize.length;
+  };
+
   const existingCtx = storySummary ? `기존 요약:\n${storySummary}\n\n` : '';
   const newContent = toSummarize.map(h => {
     if (h.role === 'user') return `[플레이어]: ${h.content}`;
@@ -11148,6 +11185,7 @@ async function summarizeIfNeeded() {
   const sysText = '당신은 비주얼 노벨 스토리 요약가입니다. 핵심 사건, 캐릭터 관계 변화, 중요한 선택과 결과, 밝혀진 정보를 요약하세요. 1000자 이내. 서술형으로. ★플레이어가 정하거나 정정한 설정·약속·고유명사·관계 사실은 요약이 아무리 길어져도 삭제 금지 — 문장을 줄이되 사실 항목은 유지하라. ★누가 그 자리에 있었는지를 반드시 보존하라 — 현장에 있던 인물은 "~를 목격했다"로 적고, 전해 들은 경우에만 "소문으로 들었다"로 적는다. 목격을 전문(傳聞)으로 바꾸지 마라.';
   const userText = `${existingCtx}새로운 내용:\n${newContent}\n\n위 내용을 포함하여 전체 이야기를 하나의 통합 요약으로 작성하세요.`;
 
+  window._summaryPending = job;
   try {
     let summary = '';
     if (PROVIDER !== 'gemini') {
@@ -11191,14 +11229,14 @@ async function summarizeIfNeeded() {
       });
       const data = await res.json();
       if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
-        try { showStatToast('⚠ 요약이 상한에 걸려 잘렸습니다 — 이번 회차는 건너뜁니다', true); } catch {}
+        try { if (current()) showStatToast('⚠ 요약이 상한에 걸려 잘렸습니다 — 이번 회차는 건너뜁니다', true); } catch {}
         return;   // 잘린 요약을 확정하지 않는다 — 기존 storySummary·summaryIndex 그대로 유지
       }
       summary = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     }
     if (summary && summary.trim()) {
-      storySummary = summary.trim();
-      summaryIndex = gameHistory.length - SUMMARY_KEEP;
+      if (completedBoundary() < 0) return;
+      let chronicle = [];
       // ★연대기 추출(2026-08-14, 폐지된 감독 패스에서 이관): '실제로 일어난 일'만 기록한다.
       //   구 감독처럼 지시·해석·다음 전개를 만들지 않는다 — 기록원 역할로만 한정.
       try {
@@ -11210,17 +11248,23 @@ async function summarizeIfNeeded() {
         const cm = (chronRaw || '').match(/\[[\s\S]*\]/);
         if (cm) {
           const arr = JSON.parse(cm[0]);
-          if (Array.isArray(arr)) {
-            gameState.chronicle = gameState.chronicle || [];
-            arr.forEach(e => { if (e && typeof e === 'string') gameState.chronicle.push(e); });
-            if (gameState.chronicle.length > 60) gameState.chronicle = gameState.chronicle.slice(-60);
-          }
+          if (Array.isArray(arr)) chronicle = arr.filter(e => e && typeof e === 'string');
         }
       } catch {}
+      // 연대기를 기다리는 사이 로드·되감기·새 게임이 있었으면 어느 쪽도 확정하지 않는다.
+      const boundary = completedBoundary();
+      if (boundary < 0) return;
+      storySummary = summary.trim();
+      summaryIndex = boundary;
+      if (chronicle.length) {
+        gameState.chronicle = (gameState.chronicle || []).concat(chronicle).slice(-60);
+      }
       autoSave();
     }
   } catch {
     // Summary failed silently — not critical
+  } finally {
+    if (window._summaryPending === job) window._summaryPending = null;
   }
 }
 
@@ -11710,41 +11754,74 @@ window.addEventListener('pageshow', e => {
   }, 300);
 });
 
+// Background pickup owns only its own input lock and the failed turn it observed.
+// Loading another save or beginning another request must make the pickup inert.
+async function recoverBackgroundGeneration(scope) {
+  if (!turnWorkIsCurrent(scope) || !window._genFailed || typeof sendBtn === 'undefined'
+    || !sendBtn || sendBtn.disabled || window._mainRequest || window._inputRequest) return false;
+  const controller = new AbortController();
+  const job = { scope, input: gameHistory[gameHistory.length - 1], cancel: () => controller.abort() };
+  window._backgroundRecovery = job;
+  const current = () => window._backgroundRecovery === job && turnWorkIsCurrent(scope)
+    && gameHistory[gameHistory.length - 1] === job.input && !window._mainRequest && !window._inputRequest;
+  const timeout = setTimeout(() => controller.abort(), 90000);
+  window._genFailed = false;
+  sendBtn.disabled = true;
+  try {
+    try { showThinking(); } catch {}
+    const p = window._pendingGen;
+    let parked = null;
+    if (p && p.id) {
+      for (let i = 0; i < 30 && current() && !controller.signal.aborted; i++) {
+        try {
+          const r = await fetch(SYNC_URL + '/gen?id=' + encodeURIComponent(p.id), { signal: controller.signal });
+          if (!current()) return false;
+          if (r.ok) {
+            const transcript = await r.text();
+            if (!current()) return false;
+            const parsed = parseSseTranscript(transcript);
+            if (parsed.text && parsed.text.trim()) parked = parsed;
+            break;   // empty stored response is a failed generation, so regenerate below
+          }
+        } catch {}
+        if (!current()) return false;
+        if (controller.signal.aborted) break;
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    }
+    if (!current()) return false;
+    if (window._pendingGen === p) window._pendingGen = null;
+    // Transfer ownership before regenerate acquires its own request lock. The parked
+    // result is an argument because regenerate resets stale asynchronous state first.
+    window._backgroundRecovery = null;
+    sendBtn.disabled = false;
+    if (parked) {
+      try { showStatToast('📦 백그라운드에서 완성된 응답을 이어받았습니다', false); } catch {}
+    }
+    await regenerate(parked);
+    return true;
+  } finally {
+    clearTimeout(timeout);
+    if (window._backgroundRecovery === job) {
+      const mayUnlock = current();
+      window._backgroundRecovery = null;
+      if (mayUnlock) sendBtn.disabled = false;
+    }
+  }
+}
 document.addEventListener('visibilitychange', () => {
   try {
     if (document.hidden) {
-      if (typeof sendBtn !== 'undefined' && sendBtn && sendBtn.disabled) window._bgDuringGen = true;
+      if (typeof sendBtn !== 'undefined' && sendBtn && sendBtn.disabled) {
+        window._bgDuringGen = true;
+        window._bgGenScope = turnWorkScope();
+      }
     } else if (window._bgDuringGen) {
+      const scope = window._bgGenScope;
       window._bgDuringGen = false;
-      setTimeout(async () => {   // 대기 중이던 fetch가 성공/실패로 정착할 시간을 준 뒤 판단
-        if (!(window._genFailed && typeof sendBtn !== 'undefined' && sendBtn && !sendBtn.disabled)) return;
-        window._genFailed = false;
-        // ★워커 보관본 픽업(2026-08-13): 끊긴 그 생성이 서버(워커 waitUntil)에서 완주돼 KV에
-        //   보관돼 있으면 재생성 없이 그대로 주워온다. 아직 생성 중이면 3초 간격으로 기다린다.
-        const p = window._pendingGen;
-        if (p && p.id) {
-          try { showThinking(); sendBtn.disabled = true; } catch {}
-          for (let i = 0; i < 30; i++) {   // 최대 ~90초(서버에서 아직 굽는 중일 수 있다)
-            try {
-              const r = await fetch(SYNC_URL + '/gen?id=' + p.id);
-              if (r.ok) {
-                const parsed = parseSseTranscript(await r.text());
-                if (parsed.text && parsed.text.trim()) {
-                  window._pendingGen = null;
-                  window._parkedResult = parsed;   // fetchNim이 이걸 집어 파이프라인을 그대로 태운다
-                  try { showStatToast('📦 백그라운드에서 완성된 응답을 이어받았습니다', false); } catch {}
-                  try { regenerate(); } catch {}
-                  return;
-                }
-                break;   // 보관본이 비어 있음(업스트림 에러 전문) → 재생성
-              }
-            } catch {}
-            await new Promise(rs => setTimeout(rs, 3000));
-          }
-          window._pendingGen = null;
-        }
-        try { regenerate(); } catch {}
-      }, 700);
+      window._bgGenScope = null;
+      // Let the failed fetch settle, then validate the exact session captured on exit.
+      setTimeout(() => { recoverBackgroundGeneration(scope).catch(() => {}); }, 700);
     }
   } catch {}
 });
@@ -11758,15 +11835,25 @@ function pandoraPerfRecord(stage, milliseconds, turn) {
 }
 async function callGemini(activeCharIds = [], retryCount = 0) {
   const _turnRequestStart = performance.now();
-  showThinking();
+  const request = { scope: turnWorkScope(), input: gameHistory[gameHistory.length - 1] };
+  window._mainRequest = request;
   sendBtn.disabled = true;
-  // ★분리 모드: 직전 턴의 후행 상태 추출이 아직 도는 중이면 잠깐 기다린다(최대 6초) —
-  //   이번 프롬프트의 [현재 상태]가 최신이 되도록. 6초를 넘기면 옛 상태로 진행(진행이 우선).
-  if (window._splitExtractPending) {
+  // The full commit is a boundary, not a six-second race against stale state.
+  if (pendingStateExtractEntry()) {
     const _waitStart = performance.now();
-    try { await Promise.race([window._splitExtractPending, new Promise(r => setTimeout(r, 6000))]); } catch {}
+    const ready = await ensureStateExtractReady();
+    if (!mainRequestIsCurrent(request)) return;
     pandoraPerfRecord('previous_extract_wait', performance.now() - _waitStart, turnCount);
+    if (!ready) {
+      window._mainRequest = null;
+      sendBtn.disabled = false;
+      hideThinking(); enterInputMode();
+      try { showStatToast('이전 장면의 상태 반영을 다시 시도해 주세요.', true); } catch {}
+      return;
+    }
   }
+  if (!mainRequestIsCurrent(request)) return;
+  showThinking();
   window._genFailed = false;   // ★백그라운드 중단 감지 초기화(복귀 시 자동 재생성 판단용)
   // Hide input while the AI is generating/outputting
   inputBar.style.display = 'none';
@@ -11870,6 +11957,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   const canStream = !historyMode && !replaying;   // ★제미나이도 스트리밍(2026-07-21) — 두 프로바이더 공통
   window._stream = canStream ? stream : null;
   const onChunk = !canStream ? null : (buf) => {
+    if (!mainRequestIsCurrent(request)) return;
     if (historyMode && !stream.active) return;   // browsing history — don't hijack
     const u = extractStreamUnits(buf);
     // ★모델 스키마 위반 방어(스트림 경로): narration을 dialogue로도 복제하는 모델이 있어
@@ -11956,6 +12044,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     } else {
       result = await fetchGemini(systemContent, messages, 0.9, 4000, true, onChunk);   // ★스트리밍(onChunk) — 첫 글자 즉시 표시
     }
+    if (!mainRequestIsCurrent(request)) return;
     pandoraPerfRecord('main_model_complete', performance.now() - _modelStart, turnCount);
     pandoraPerfRecord('main_request_elapsed', performance.now() - _turnRequestStart, turnCount);
     // ★턴 계측 저장(2026-08-11 유저: "아카데미 로딩 왜 유독 느리냐") — 상태 패널에서 확인.
@@ -12000,8 +12089,10 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
           if (_gid && typeof SYNC_URL !== 'undefined') {
             for (let _k = 0; _k < 3; _k++) {
               const _r = await fetch(SYNC_URL + '/gen?id=' + _gid);
+              if (!mainRequestIsCurrent(request)) return;
               if (_r.ok) {
                 const _full = parseSseTranscript(await _r.text());
+                if (!mainRequestIsCurrent(request)) return;
                 if (_full && _full.text && _full.text.trim().endsWith('}') &&
                     _full.text.length > String(result.text || '').length) _recovered = _full.text;
                 break;
@@ -12011,6 +12102,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
           }
         } catch {}
       }
+      if (!mainRequestIsCurrent(request)) return;
       if (_recovered) {
         window._pendingGen = null;
         try { showStatToast('🔧 끊긴 응답을 서버 보관본으로 복구했습니다', false); } catch {}
@@ -12043,7 +12135,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         const m = em.match(/retry in ([\d.]+)\s*s/i);
         let wait = m ? Math.ceil(parseFloat(m[1])) + 2 : 15;
         wait = Math.min(90, wait * (retryCount + 1));   // backoff: 1x, 2x, 3x
-        await waitWithCountdown(wait, retryCount + 1);
+        await waitWithCountdown(wait, retryCount + 1, request);
+        if (!mainRequestIsCurrent(request)) return;
         return callGemini(activeCharIds, retryCount + 1);
       }
       // ★NVIDIA 백엔드 간헐 장애(5xx·타임아웃·네트워크 끊김)도 자동 재시도(2026-07-20 유저 "또 api 뒤졌네").
@@ -12052,7 +12145,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         || /시간 초과|timeout|network|fetch|Failed|ECONN|502|503|504|abort/i.test(em);
       if (transient && retryCount < 3) {
         const wait = 3 + retryCount * 3;   // 3s, 6s, 9s
-        await waitWithCountdown(wait, retryCount + 1);
+        await waitWithCountdown(wait, retryCount + 1, request);
+        if (!mainRequestIsCurrent(request)) return;
         return callGemini(activeCharIds, retryCount + 1);
       }
       hideThinking();
@@ -12082,6 +12176,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     if (!raw.trim()) {
       if (retryCount < 2) {
         await new Promise(r => setTimeout(r, 1200 * (retryCount + 1)));
+        if (!mainRequestIsCurrent(request)) return;
         return callGemini(activeCharIds, retryCount + 1);
       }
       try { showStatToast('⚠ 빈 응답 3회(사유: ' + (result.finishReason || '미상') + ') — 입력 표현을 바꿔보라', true); } catch {}
@@ -12099,8 +12194,10 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       if (_gid && _incomplete) {
         for (let _k = 0; _k < 3; _k++) {
           const _r = await fetch(SYNC_URL + '/gen?id=' + _gid);
+          if (!mainRequestIsCurrent(request)) return;
           if (_r.ok) {
             const _full = parseSseTranscript(await _r.text());
+            if (!mainRequestIsCurrent(request)) return;
             if (_full.text && _full.text.length > raw.length) {
               raw = _full.text;
               try { showStatToast('🔧 끊긴 응답을 서버 보관본으로 복구했습니다', false); } catch {}
@@ -12111,7 +12208,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         }
       }
     } catch {}
-
+    if (!mainRequestIsCurrent(request)) return;
     let parsed;
     try {
       let cleaned = raw.replace(/```json\s*|```/g, '').trim();
@@ -12147,7 +12244,12 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
 
     try { scrubMetaData(parsed); } catch {}
-    gameHistory.push({ role: 'assistant', content: JSON.stringify(parsed) });
+    if (!mainRequestIsCurrent(request)) return;
+    const turnBefore = rememberTurnBefore();
+    // Only the latest answer can be regenerated. Keep one checkpoint, not a full
+    // copy of gameState for every retained history row.
+    for (const h of gameHistory) delete h._turnBefore;
+    gameHistory.push({ role: 'assistant', content: JSON.stringify(parsed), _turnBefore: turnBefore });
     turnCount++;
     // ★사건 확정 지점(2026-08-18): 응답이 실제로 도착한 턴에만 기록한다. 전엔 프롬프트를
     //   조립하는 순간 확정해서, 429 한 번이나 [다시 답변] 한 번에 메인 사건이 통째로
@@ -12156,15 +12258,17 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     //   후행 추출 결과 도착 시점으로 미룬다 — event 확인이 후행 데이터에 있기 때문.
     if (parsed && parsed.state_update) { try { commitPendingEventFrom(parsed); } catch {} }
     recTokens(0, 0, true);   // 토큰 추적: 본편 턴 카운트(사용량은 fetch단에서 합산)
-    processResponse(parsed, activeCharIds, stream.active ? stream : null);
     // ★분리 모드: 상태·선택지·연대기를 후행 소형 호출로 추출(본편은 이미 화면에 흐르는 중)
     if (splitPipeOn() && parsed && !parsed.state_update) {
-      try { fireStateExtract(userMessageForExtract(), parsed, activeCharIds, gameHistory.length - 1); } catch {}
+      try { fixSpeakerIds(parsed); } catch {}
+      fireStateExtract(userMessageForExtract(), parsed, activeCharIds, gameHistory.length - 1).catch(() => {});
     }
+    processResponse(parsed, activeCharIds, stream.active ? stream : null);
     autoSave();
     summarizeIfNeeded();
 
   } catch(e) {
+    if (!mainRequestIsCurrent(request)) return;
     hideThinking();
     if (e.name === 'AbortError') {
       showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal', text: '응답 시간 초과. 다시 시도해주세요.', pose: 'upper' }]);
@@ -12173,7 +12277,10 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
     enterInputMode();
   } finally {
-    sendBtn.disabled = false;
+    if (window._mainRequest === request) {
+      window._mainRequest = null;
+      sendBtn.disabled = false;
+    }
   }
 }
 
@@ -12245,7 +12352,7 @@ function scrubMetaData(obj) {
 // ═══════════ 분리 응답 파이프라인 (2026-08-24 — "다른 RP챗은 빠른데 나는 느림" 수술) ═══════════
 // 본편 호출 = 산문·대사·연출만(화면에 즉시 흐름) / 상태·선택지·연대기 = 후행 소형 호출.
 // 안전장치: ①후행 결과를 gameHistory의 본편 JSON에 병합 저장 → 복원·리플레이 경로 무변화
-// ②스위치(vn_cfg.splitPipe=false로 즉시 구방식 복귀) ③후행 실패=상태 변화 없이 진행(다음 턴에 이어짐).
+// ②스위치(vn_cfg.splitPipe=false로 구방식 복귀) ③후행 실패=저장된 작업을 재시도한 뒤 다음 턴 진행.
 function splitPipeOn() {
   try { const c = JSON.parse(localStorage.getItem('vn_cfg') || '{}'); if (c.splitPipe === false) return false; } catch {}
   const sid = (typeof STORY !== 'undefined' && STORY && STORY.id) || '';
@@ -12257,8 +12364,8 @@ function userMessageForExtract() {
 }
 // 사건 커밋(P0-3): 모델이 event/chronicle로 "이 사건을 열었다"고 확인한 턴에만 확정.
 // 분리 모드에서는 후행 추출 결과 도착 시 호출된다.
-function commitPendingEventFrom(parsed) {
-  const _pe = window._pendingEvent;
+function commitPendingEventFrom(parsed, pendingEvent = window._pendingEvent, eventTurn = turnCount) {
+  const _pe = pendingEvent;
   if (!_pe || !_pe.t) return;
   const _s = (parsed && parsed.state_update) || {};
   const _confirmed = _s.event === _pe.t
@@ -12267,22 +12374,218 @@ function commitPendingEventFrom(parsed) {
     gameState.firedEvents = gameState.firedEvents || [];
     if (!gameState.firedEvents.includes(_pe.t)) gameState.firedEvents.push(_pe.t);
     gameState.firedEventTurns = gameState.firedEventTurns || {};   // 체인 조건용 발동 턴(P2-9)
-    gameState.firedEventTurns[_pe.t] = turnCount;
-    gameState._lastEventTurn = turnCount;
-    window._pendingEvent = null;
+    gameState.firedEventTurns[_pe.t] = eventTurn;
+    gameState._lastEventTurn = eventTurn;
+    if (window._pendingEvent && window._pendingEvent.t === _pe.t) window._pendingEvent = null;
   } else {
     _pe.tries = (_pe.tries || 0) + 1;   // 확인 실패 — 응답을 실제로 받은 턴에만 +1(결함A)
+    if (!window._pendingEvent || window._pendingEvent.t === _pe.t) window._pendingEvent = { ..._pe };
   }
 }
-// 후행 상태 추출: 본편 산문을 읽고 state_update·choices·chronicle을 소형 모델로 뽑는다.
+// v360: a turn is complete only after its state is committed. The durable receipt lives
+// beside history content, so saving/reloading cannot lose an unfinished extraction.
+function turnWorkScope() {
+  return { epoch: window._turnEpoch || 0, state: gameState, story: STORY && STORY.id };
+}
+function turnWorkIsCurrent(scope) {
+  return scope && scope.epoch === (window._turnEpoch || 0) && scope.state === gameState
+    && STORY && scope.story === STORY.id;
+}
+function mainRequestIsCurrent(request) {
+  return window._mainRequest === request && turnWorkIsCurrent(request.scope)
+    && (!request.input || gameHistory.includes(request.input));
+}
+function resetTurnAsyncWork() {
+  window._turnEpoch = (window._turnEpoch || 0) + 1;
+  const task = window._splitExtractTask;
+  if (task && task.cancel) task.cancel(false);
+  window._splitExtractTask = null;
+  window._splitExtractPending = null;
+  window._inputRequest = null;
+  window._mainRequest = null;
+  const recovery = window._backgroundRecovery;
+  if (recovery && recovery.cancel) recovery.cancel();
+  window._backgroundRecovery = null;
+  window._pendingGen = null;
+  window._parkedResult = null;
+  window._genFailed = false;
+  window._bgDuringGen = false;
+  window._bgGenScope = null;
+  window._fbGenTurn = null;
+  window._stream = null;
+  window._pendingChoices = null;
+  window._lastChoices = null;
+  sendBtn.disabled = false;
+}
+function pendingStateExtractEntry() {
+  return gameHistory.find(h => h && h.role === 'assistant' && h._stateExtract
+    && h._stateExtract.status !== 'applied') || null;
+}
+function stateExtractIsCurrent(task) {
+  return turnWorkIsCurrent(task.scope) && task.entry._stateExtract === task.meta
+    && gameHistory.includes(task.entry) && turnCount === task.meta.turn;
+}
+function rememberTurnBefore() {
+  return { state: JSON.parse(JSON.stringify(gameState)),
+    pendingEvent: window._pendingEvent ? { ...window._pendingEvent } : null };
+}
+function assistantTurnCheckpoint(entry) {
+  if (entry && entry._turnBefore && entry._turnBefore.state) return entry._turnBefore;
+  // Older saves may still have the exact pre-input rewind snapshot. Reuse only
+  // an exact history boundary, never a merely similar turn number.
+  const index = gameHistory.indexOf(entry);
+  if (index < 1 || gameHistory[index - 1].role !== 'user') return null;
+  if (typeof turnSnaps === 'undefined' || typeof histDropped === 'undefined') return null;
+  const inputBoundary = histDropped + index - 1;
+  for (let i = turnSnaps.length - 1; i >= 0; i--) {
+    const sn = turnSnaps[i];
+    if (sn.turn !== turnCount - 1 || sn.hL !== inputBoundary) continue;
+    try {
+      const saved = JSON.parse(sn.s);
+      if (saved.gameState) return { state: saved.gameState, pendingEvent: saved.pendingEvent || null };
+    } catch {}
+  }
+  return null;
+}
+function rollbackAssistantTurn(entry) {
+  const before = assistantTurnCheckpoint(entry);
+  if (!before || !before.state) return false;
+  gameState = JSON.parse(JSON.stringify(before.state));
+  window._pendingEvent = before.pendingEvent ? { ...before.pendingEvent } : null;
+  try { updateStatusUI(); } catch {}
+  return true;
+}
+async function ensureStateExtractReady() {
+  const scope = turnWorkScope();
+  // Normal play has at most one unfinished turn. Do not apply an old absolute-value
+  // patch over a newer turn, including a malformed/imported save with a missing boundary.
+  for (;;) {
+    if (!turnWorkIsCurrent(scope)) return false;
+    const entry = pendingStateExtractEntry();
+    if (!entry) return true;
+    const meta = entry._stateExtract;
+    if (meta.turn !== turnCount) return false;
+    let data;
+    try { data = JSON.parse(entry.content); } catch { return false; }
+    let ok = false;
+    try { ok = await fireStateExtract(meta.userText, data, meta.activeCharIds, gameHistory.indexOf(entry)); } catch {}
+    if (!ok) return false;   // keep the receipt for the next explicit retry; never silently skip
+  }
+}
+function resumeStateExtract() {
+  if (!pendingStateExtractEntry()) return;
+  ensureStateExtractReady().catch(() => {});
+}
+function applyStateExtract(task, sx) {
+  if (!stateExtractIsCurrent(task) || task.meta.status === 'applied') return false;
+  const entry = task.entry, meta = task.meta;
+  const before = rememberTurnBefore(), oldContent = entry.content;
+  const wasReplaying = replaying;
+  window._isStateCommit = true;
+  try {
+    const merged = JSON.parse(oldContent);
+    // combat belongs to the displayed main scene, including on save replay.
+    delete sx.state_update.combat;
+    for (const key of ['gold', 'rep']) {
+      if (key in sx.state_update && !Number.isFinite(sx.state_update[key])) delete sx.state_update[key];
+    }
+    if (sx.state_update.chars && typeof sx.state_update.chars === 'object') {
+      for (const id of Object.keys(sx.state_update.chars)) {
+        if (!meta.activeCharIds.includes(id) || !sx.state_update.chars[id]
+          || typeof sx.state_update.chars[id] !== 'object') delete sx.state_update.chars[id];
+      }
+    }
+    // Replaying the saved prose does not mean this uncommitted state was applied.
+    replaying = false;
+    processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, meta.activeCharIds, null, true);
+    commitPendingEventFrom(sx, meta.pendingEvent, meta.turn);
+    merged.state_update = sx.state_update;
+    if (Array.isArray(sx.chronicle)) merged.chronicle = sx.chronicle;
+    if (Array.isArray(sx.choices)) merged.choices = sx.choices;
+    entry.content = JSON.stringify(merged);
+    meta.status = 'applied';
+    return true;
+  } catch {
+    // A renderer/status error must not leave half an additive update to be retried.
+    for (const key of Object.keys(gameState)) delete gameState[key];
+    Object.assign(gameState, before.state);
+    window._pendingEvent = before.pendingEvent;
+    entry.content = oldContent;
+    meta.status = 'failed';
+    try { updateStatusUI(); } catch {}
+    return false;
+  } finally {
+    replaying = wasReplaying;
+    window._isStateCommit = false;
+  }
+}
 async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
-  const myTurn = turnCount;
-  // Snapshot identities, not just the numeric turn; a save reload/rewind can reuse a turn number.
-  const myState = gameState;
-  const myStory = STORY && STORY.id;
-  const myEntry = gameHistory[histIdx];
-  const _extractStart = performance.now();
-  const job = (async () => {
+  const entry = gameHistory[histIdx];
+  if (!entry || entry.role !== 'assistant') return false;
+  if (!entry._stateExtract) {
+    entry._stateExtract = {
+      id: 'state-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10),
+      turn: turnCount, status: 'pending', attempts: 0,
+      userText: String(userText || '').slice(0, 1200),
+      activeCharIds: [...new Set([...(activeCharIds || []),
+        ...(mainData.dialogue || []).map(d => d && d.char_id)])].filter(id => id && CHARACTERS[id]),
+      pendingEvent: window._pendingEvent ? { ...window._pendingEvent } : null
+    };
+  }
+  const meta = entry._stateExtract;
+  if (meta.status === 'applied') return true;
+  if (meta.turn !== turnCount) return false;
+  const active = window._splitExtractTask;
+  if (active && active.entry === entry && stateExtractIsCurrent(active)) return active.promise;
+  // Single-flight across entry points: another unfinished turn must commit first.
+  if (active && stateExtractIsCurrent(active)) return false;
+  const task = { entry, meta, scope: turnWorkScope() };
+  const started = performance.now();
+  meta.status = 'pending';
+  meta.attempts = (meta.attempts || 0) + 1;
+  window._splitExtractTask = task;
+  const cancelled = new Promise(resolve => { task.cancel = resolve; });
+  const work = Promise.resolve().then(async () => {
+    if (!stateExtractIsCurrent(task)) return false;
+    let sx = null;
+    try { sx = await requestStateExtract(meta.userText, mainData, meta.activeCharIds); } catch {}
+    pandoraPerfRecord('state_extract_complete', performance.now() - started, meta.turn);
+    if (!stateExtractIsCurrent(task)) {
+      pandoraPerfRecord('state_extract_discarded_stale', 0, meta.turn);
+      return false;
+    }
+    const valid = sx && sx.state_update && typeof sx.state_update === 'object' && !Array.isArray(sx.state_update);
+    const applied = !!valid && applyStateExtract(task, sx);
+    if (!applied) {
+      meta.status = 'failed';
+      pandoraPerfRecord('state_extract_failed', 0, meta.turn);
+    }
+    try { autoSave(); } catch {}
+    if (!applied) {
+      try { showStatToast('장면의 상태를 아직 반영하지 못했어요. 다음 입력에서 다시 시도합니다.', true); } catch {}
+      return false;
+    }
+    // A queued next input owns the UI; otherwise choices belong to this exact scene.
+    if (window._inputRequest || window._mainRequest) return true;
+    const ch = Array.isArray(sx.choices) ? sx.choices : null;
+    if (dialogueQueue.length > 0 || historyMode) { window._pendingChoices = ch; return true; }
+    if (!document.getElementById('choiceBox') && !sendBtn.disabled) {
+      try { showChoices(ch); } catch {}
+    }
+    return true;
+  });
+  task.promise = Promise.race([work, cancelled]).finally(() => {
+    if (window._splitExtractTask === task) {
+      window._splitExtractTask = null;
+      window._splitExtractPending = null;
+    }
+  });
+  window._splitExtractPending = task.promise;
+  try { autoSave(); } catch {}   // the receipt precedes the network request
+  return task.promise;
+}
+// Read only the scene belonging to the receipt. The caller owns validation and commit.
+async function requestStateExtract(userText, mainData, activeCharIds) {
     // 이번 턴 장면 전문(산문+대사)
     const fullScene = ((mainData.narration || '') + '\n' +
       (mainData.dialogue || []).map(d => `${d.speaker}: ${d.text || ''}`).join('\n'));
@@ -12296,7 +12599,7 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx) {
       .map(id => `${id}=${CHARACTERS[id].name}(친밀도 ${(met[id] && met[id].intimacy) ?? '?'})`).join(' · ');
     const rpg = (typeof RPG_STORIES !== 'undefined' && RPG_STORIES.has(STORY.id));
     const sys = `너는 텍스트 RPG의 상태 기록관이다. 방금 진행된 장면을 읽고 상태 변화·선택지·확정 사실만 JSON으로 추출하라(코드블록 없이 순수 JSON).
-★절대 규칙: 장면에 실제 근거가 있는 변화만 기록하라 — 장면에 없는 사건·수치 변화를 지어내면 안 된다. 변화가 없으면 필드를 생략하라.
+★절대 규칙: 장면에 실제 근거가 있는 변화만 기록하라 — 장면에 없는 사건·수치 변화를 지어내면 안 된다. 변화가 없는 개별 필드는 생략하라. 최상위 state_update는 반드시 객체로 포함하고, 아무 변화도 없으면 "state_update": {}로 명시하라.
 출력 형식:
 {
  "state_update": {
@@ -12330,42 +12633,6 @@ ${scene}`;
     try { sx = JSON.parse(m[0]); } catch { return null; }
     try { scrubMetaData(sx); } catch {}
     return sx;
-  })();
-  window._splitExtractPending = job;
-  let sx = null;
-  try { sx = await job; } catch {}
-  pandoraPerfRecord('state_extract_complete', performance.now() - _extractStart, myTurn);
-  if (window._splitExtractPending === job) window._splitExtractPending = null;
-  // A late extraction MUST NOT write to a newer turn, restored save, or regenerated reply.
-  // Retaining the original history object protects against index reuse after trimming.
-  const current = turnCount === myTurn && gameState === myState && STORY && STORY.id === myStory
-    && myEntry && gameHistory.includes(myEntry);
-  if (!current) {
-    pandoraPerfRecord('state_extract_discarded_stale', 0, myTurn);
-    return;
-  }
-  if (sx && sx.state_update && typeof sx.state_update === 'object') {
-    delete sx.state_update.combat;   // combat은 본편 소유 — 후행이 판정 게이트를 흔들지 못하게
-    try { processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, activeCharIds, null, true); } catch {}
-    try { commitPendingEventFrom(sx); } catch {}
-    // ★핵심 안전장치: 본편 JSON에 병합 저장 → 세이브·복원·리플레이가 기존 형태 그대로를 본다
-    try {
-      const h = myEntry;
-      if (h && h.role === 'assistant' && gameHistory.includes(h)) {
-        const merged = JSON.parse(h.content);
-        merged.state_update = sx.state_update;
-        if (Array.isArray(sx.chronicle)) merged.chronicle = sx.chronicle;
-        if (Array.isArray(sx.choices)) merged.choices = sx.choices;
-        h.content = JSON.stringify(merged);
-      }
-    } catch {}
-    try { autoSave(); } catch {}
-  }
-  // 선택지 표시(도착 시점 검증 — genFallbackChoices와 동일 계약)
-  const ch = (sx && Array.isArray(sx.choices)) ? sx.choices : null;
-  if (dialogueQueue.length > 0 || historyMode) { window._pendingChoices = ch; return; }   // 재생 중이면 소진 시점이 표시
-  if (document.getElementById('choiceBox') || sendBtn.disabled) return;
-  showChoices(ch);   // null이면 showChoices가 폴백 생성 경로를 태운다
 }
 
 // ===== TEXT CHUNKING =====
@@ -12563,7 +12830,7 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
       //   넘어오면 선택지가 8턴 백스톱 전까지 계속 감춰진다(2026-08-21 청문회 추천답변 실종).
       //   장면이 바뀌었는데 모델이 이 턴 전투라고 명시하지 않았다면(combat 미언급) 전투를 해제한다.
       //   모델이 같은 턴에 combat=true를 명시하면(=전투 이벤트) 아래 12078 파싱이 그대로 존중한다.
-      if (_evChanged && gameState.combat && typeof s.combat !== 'boolean') {
+      if (!stateOnly && _evChanged && gameState.combat && typeof s.combat !== 'boolean') {
         gameState.combat = false; gameState._combatStart = null;
       }
     }
@@ -13100,7 +13367,7 @@ function showNextDialogue() {
     //   전투 중 '선택지 없음' 지시가 앱 보장 선택지로 덮여버린다(2026-08-18 유저 스샷).
     // ★분리 모드: 후행 추출이 아직 도는 중이면 폴백 선택지를 만들지 않고 입력창만 연다 —
     //   후행이 도착하면 fireStateExtract가 진짜 선택지를 표시한다(이중 생성·경합 방지).
-    if (window._splitExtractPending && window._pendingChoices == null) { enterInputMode(); return; }
+    if ((window._splitExtractPending || pendingStateExtractEntry()) && window._pendingChoices == null) { enterInputMode(); return; }
     showChoices(window._pendingChoices);
     return;
   }
@@ -13573,8 +13840,13 @@ function idolRunInjected(text) {
 //   유저가 이미 입력을 보냈거나 턴이 넘어갔으면 늦게 도착한 생성분은 버린다.
 async function genFallbackChoices() {
   const _turn = turnCount;
-  if (window._fbGenTurn === _turn) return;   // 같은 턴 중복 생성 방지
-  window._fbGenTurn = _turn;
+  const scope = turnWorkScope(), entry = gameHistory[gameHistory.length - 1];
+  const previous = window._fbGenTurn;
+  if (previous && previous.turn === _turn && previous.entry === entry && turnWorkIsCurrent(previous.scope)) return;
+  const request = { turn: _turn, scope, entry };
+  window._fbGenTurn = request;
+  const current = () => window._fbGenTurn === request && turnWorkIsCurrent(scope)
+    && turnCount === _turn && gameHistory[gameHistory.length - 1] === entry;
   let out = null;
   try {
     const scene = dialogueLog.slice(-8).map(e => `${e.speaker}: ${e.text}`).join('\n').slice(-1600);
@@ -13587,6 +13859,7 @@ async function genFallbackChoices() {
       if (Array.isArray(arr)) out = arr.filter(x => typeof x === 'string' && x.trim()).slice(0, 4);
     }
   } catch {}
+  if (!current()) return;
   // 최후 수단: 생성 실패 시 구 템플릿(장면 인물 기반)
   if (!out || out.length < 2) {
     const _scene = (window._activeCharIds || []).filter(id => (CHARACTERS[id] || {}).name);
@@ -13596,7 +13869,7 @@ async function genFallbackChoices() {
   }
   // 도착 시점 검증: 턴이 그대로이고, 기록 모드가 아니고, 이미 다른 선택지가 안 떠 있고,
   // 유저가 아직 전송하지 않았을 때만 표시
-  if (turnCount !== _turn || historyMode || document.getElementById('choiceBox') || sendBtn.disabled) return;
+  if (!current() || historyMode || document.getElementById('choiceBox') || sendBtn.disabled) return;
   showChoices(out);
 }
 
@@ -13751,6 +14024,29 @@ async function sendMessage() {
 }
 
 async function handlePlayerInput(text) {
+  // Acquire input ownership before the first await (choices and direct input share it).
+  if (sendBtn.disabled || window._inputRequest) return;
+  const request = { scope: turnWorkScope() };
+  window._inputRequest = request;
+  sendBtn.disabled = true;
+  if (pendingStateExtractEntry()) {
+    window._genText = text;
+    showThinking();
+    try { showStatToast('이전 장면의 변화를 반영한 뒤 이어갑니다.'); } catch {}
+  }
+  const _waitStart = performance.now();
+  const ready = await ensureStateExtractReady();
+  if (window._inputRequest !== request || !turnWorkIsCurrent(request.scope)) return;
+  window._inputRequest = null;
+  sendBtn.disabled = false;
+  pandoraPerfRecord('previous_extract_wait', performance.now() - _waitStart, turnCount);
+  if (!ready) {
+    hideThinking();
+    userInput.textContent = text;
+    enterInputMode();
+    try { showStatToast('상태 반영에 실패해 입력을 보관했어요. 보내기를 누르면 다시 시도합니다.', true); } catch {}
+    return;
+  }
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
   if (idolRunInjected(text)) return;
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
@@ -15567,6 +15863,8 @@ function renderSlots() {
 
 function currentSavePayload() {
   return {
+    dataVersion: SAVE_DATA_VERSION, histDropped, dlogDropped,
+    pendingEvent: window._pendingEvent || null,
     gameHistory, gameState, storySummary, summaryIndex, lastBg, turnCount,
     dialogueLog, playerName, playerDesc,
     provider: PROVIDER, nimUrl: NIM_URL, apiKey: API_KEY, savedAt: Date.now()
@@ -15668,6 +15966,7 @@ function exitToMain() {
   try { const pb = document.getElementById('planBtn'); if (pb) pb.style.display = 'none'; document.body.dataset.story = ''; } catch {}
   Ambient.stop();
   if (gameHistory.length) autoSave();
+  resetTurnAsyncWork();
   statusPanel.classList.remove('visible');
   document.getElementById('backlogPanel').classList.remove('visible');
   document.getElementById('genPill').style.display = 'none';
@@ -16096,13 +16395,25 @@ function renderBacklog() {
 }
 
 // ===== REGENERATE / UNDO =====
-async function regenerate() {
+async function regenerate(parkedResult = null) {
   if (sendBtn.disabled) return;
+  const lastAnswer = gameHistory[gameHistory.length - 1];
+  if (lastAnswer && lastAnswer.role === 'assistant') {
+    const checkpoint = assistantTurnCheckpoint(lastAnswer);
+    if (!checkpoint) {
+      showStatToast('이 답변의 이전 상태가 없어 다시 답변할 수 없어요. 저장된 시점으로 되감기를 이용해 주세요.', true);
+      return;
+    }
+    lastAnswer._turnBefore = checkpoint;
+  }
+  resetTurnAsyncWork();
+  if (parkedResult && typeof parkedResult.text === 'string') window._parkedResult = parkedResult;
   // ★기록 모드 잔존 시 응답 홀드 방지(sendMessage와 동일 가드)
   if (historyMode) exitHistory();
   // Remove last assistant response
   if (gameHistory.length > 0 && gameHistory[gameHistory.length - 1].role === 'assistant') {
-    gameHistory.pop();
+    const removed = gameHistory.pop();
+    rollbackAssistantTurn(removed);
     turnCount = Math.max(0, turnCount - 1);
     // ★그 턴에 확정된 사건이 있으면 되돌려 다시 실리게 한다 — 안 그러면 되돌리기 한 번에
     //   사건만 조용히 사라진다(2026-08-18 감사 확증).
@@ -16153,6 +16464,7 @@ function snapKeyFor(id) { return 'vn_snaps_' + id; }
 
 function captureSnap(label) {
   try {
+    const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
     const snap = {
       t: Date.now(),
       turn: turnCount,
@@ -16176,6 +16488,8 @@ function captureSnap(label) {
       dL: dlogDropped + dialogueLog.length,
       s: JSON.stringify({
         gameState, storySummary, summaryIndex, lastBg, turnCount,
+        pendingEvent: window._pendingEvent || null,
+        lastTurnBefore: lastAssistant ? assistantTurnCheckpoint(lastAssistant) : null,
         playerName, playerDesc,
         currentBgFile: (typeof currentBgFile !== 'undefined' ? currentBgFile : null),
         shownSprites: (typeof shownSprites !== 'undefined' ? [...shownSprites] : []),
@@ -16279,6 +16593,7 @@ function restoreSnap(i) {
   const sn = turnSnaps[i]; if (!sn) return;
   let d;
   try { d = JSON.parse(sn.s); } catch { showStatToast('스냅샷을 읽지 못했다', true); return; }
+  resetTurnAsyncWork();
   closeRewind();
   if (typeof historyMode !== 'undefined' && historyMode) exitHistory();
   // 상태 복원 — 아이돌 수치(gameState.idol)도 함께 돌아간다
@@ -16293,6 +16608,12 @@ function restoreSnap(i) {
       dialogueLog = dialogueLog.slice(0, Math.max(0, Math.min(dialogueLog.length, sn.dL - dlogDropped)));
   }
   gameState = d.gameState || gameState;
+  window._pendingEvent = d.pendingEvent ? { ...d.pendingEvent } : null;
+  const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
+  if (lastAssistant) {
+    if (d.lastTurnBefore && d.lastTurnBefore.state) lastAssistant._turnBefore = d.lastTurnBefore;
+    else delete lastAssistant._turnBefore;
+  }
   storySummary = d.storySummary || '';
   summaryIndex = d.summaryIndex || 0;
   lastBg = d.lastBg || null;
@@ -16331,13 +16652,25 @@ function restoreSnap(i) {
   showStatToast(`⏪ ${sn.turn}턴 시점으로 되돌렸다`);
   if (d.choices && d.choices.length) { window._lastChoices = d.choices; showChoices(d.choices); }
   else { window._lastChoices = null; enterInputMode(); }
+  resumeStateExtract();
 }
 
 async function undoInput() {
   if (sendBtn.disabled) return;
+  const lastAnswer = gameHistory[gameHistory.length - 1];
+  if (lastAnswer && lastAnswer.role === 'assistant') {
+    const checkpoint = assistantTurnCheckpoint(lastAnswer);
+    if (!checkpoint) {
+      showStatToast('이 입력의 이전 상태가 없어 취소할 수 없어요. 저장된 시점으로 되감기를 이용해 주세요.', true);
+      return;
+    }
+    lastAnswer._turnBefore = checkpoint;
+  }
+  resetTurnAsyncWork();
   // Remove last assistant response + last user input
   if (gameHistory.length > 0 && gameHistory[gameHistory.length - 1].role === 'assistant') {
-    gameHistory.pop();
+    const removed = gameHistory.pop();
+    rollbackAssistantTurn(removed);
     turnCount = Math.max(0, turnCount - 1);
     // ★그 턴에 확정된 사건이 있으면 되돌려 다시 실리게 한다 — 안 그러면 되돌리기 한 번에
     //   사건만 조용히 사라진다(2026-08-18 감사 확증).
