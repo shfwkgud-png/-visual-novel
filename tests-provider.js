@@ -337,7 +337,7 @@ test('Gemini 3.8 is routed via OpenRouter to Google Vertex BYOK', async () => {
   assert.equal(c.body.reasoning.effort,'low');
   assert.equal(c.body.temperature,undefined);
   assert.equal(c.body.top_p,undefined);
-  assert.equal(c.body.response_format.type,'json_object');
+  assert.equal(c.body.stream,true);
 });
 test('Gemini thinking compatibility is retried once and cached per model', async () => {
   let count = 0;
