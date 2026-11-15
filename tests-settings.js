@@ -21,7 +21,7 @@ function sandbox(cfg = {}) {
   };
   sb.window = sb;
   vm.createContext(sb);
-  vm.runInContext(`var PROVIDER='gemini', API_KEY='', OPENROUTER_KEY='fake-or', OPENROUTER_MODEL='google/gemini-2.5-flash', OR_MODEL_BY_STORY={story:'google/gemini-3.6-flash'}, GEMINI_MODEL='gemini-3.5-flash', FREE_TEST_MODE=false, FREE_TEST_MODEL='openrouter/free', FREE_TEST_PREVIOUS_PROVIDER='gemini', AI_CONTEXT_MODE='balanced', NIM_URL='https://worker.invalid', NIM_MODEL='fixture/nim'; var STORY={id:'story'}, gameHistory=[], storySummary='', summaryIndex=0; const CONTEXT_RECENT=10, RECENT_CHARS_CAP=120000; function modelCtxTokens(){ return 1000000; }`, sb);
+  vm.runInContext(`var PROVIDER='gemini', API_KEY='', OPENROUTER_KEY='fake-or', OPENROUTER_MODEL='google/gemini-2.5-flash', OR_MODEL_BY_STORY={story:'google/gemini-3.6-flash'}, GEMINI_MODEL='gemini-3.8-flash', FREE_TEST_MODE=false, FREE_TEST_MODEL='openrouter/free', FREE_TEST_PREVIOUS_PROVIDER='gemini', AI_CONTEXT_MODE='balanced', NIM_URL='https://worker.invalid', NIM_MODEL='fixture/nim'; var STORY={id:'story'}, gameHistory=[], storySummary='', summaryIndex=0; const CONTEXT_RECENT=10, RECENT_CHARS_CAP=120000; function modelCtxTokens(){ return 1000000; }`, sb);
   vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','safeProviderErrorText','freeApiErrorMessage','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','applyLegacySaveConnection','recentWindowCount'].map(grab).join('\n'), sb);
   elements.freeModelSel.value='openrouter/free'; elements.aiContextSel.value='balanced';
   elements.orKeyInput.value='fake-or';
@@ -45,8 +45,33 @@ test('legacy preferences retain model and unknown configuration fields', () => {
   sb.applyAiPreferences({}); sb.API_KEY='fake-gemini'; sb.persistCfg();
   const cfg = JSON.parse(sb.storage.get('vn_cfg'));
   assert.equal(cfg.customSetting,'keep'); assert.equal(cfg.splitPipe,false);
-  assert.equal(cfg.apiKey,'fake-gemini'); assert.equal(cfg.geminiModel,'gemini-3.5-flash');
+  assert.equal(cfg.apiKey,'fake-gemini'); assert.equal(cfg.geminiModel,'gemini-3.8-flash');
+  assert.equal(cfg.gemini38DefaultApplied,true);
   assert.equal(sb.FREE_TEST_MODE,false);
+});
+test('legacy Gemini default upgrades to 3.8 once and preserves saved keys', () => {
+  const sb = sandbox({ geminiModel:'gemini-3.5-flash', apiKey:'fake-gemini-key', orKey:'fake-or-key', customSetting:'keep' });
+  sb.applyAiPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  const migrated = JSON.parse(sb.storage.get('vn_cfg'));
+  assert.equal(sb.GEMINI_MODEL,'gemini-3.8-flash');
+  assert.equal(migrated.geminiModel,'gemini-3.8-flash');
+  assert.equal(migrated.gemini38DefaultApplied,true);
+  assert.equal(migrated.apiKey,'fake-gemini-key');
+  assert.equal(migrated.orKey,'fake-or-key');
+  assert.equal(migrated.customSetting,'keep');
+
+  // A later explicit selection of the older model must not be migrated again.
+  sb.GEMINI_MODEL='gemini-3.5-flash';
+  sb.persistCfg();
+  sb.GEMINI_MODEL='gemini-3.8-flash';
+  sb.applyAiPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  assert.equal(sb.GEMINI_MODEL,'gemini-3.5-flash');
+});
+test('user-selected alternative Gemini model is not replaced', () => {
+  const sb = sandbox({ geminiModel:'gemini-3.6-flash', apiKey:'fake-gemini-key' });
+  sb.applyAiPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  assert.equal(sb.GEMINI_MODEL,'gemini-3.6-flash');
+  assert.equal(JSON.parse(sb.storage.get('vn_cfg')).geminiModel,'gemini-3.6-flash');
 });
 test('free mode restore overrides provider without overwriting paid story models', () => {
   const sb=sandbox();
