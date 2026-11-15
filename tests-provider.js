@@ -323,6 +323,18 @@ test('Gemini emits every text part but excludes thought content and normalizes u
   assert.equal(c.body.contents.length, 1); assert.equal(c.body.generationConfig.responseMimeType, 'application/json');
   assert.equal(c.body.generationConfig.thinkingConfig.thinkingLevel, 'minimal');
 });
+test('Gemini 3.8 sends the new model ID and omits deprecated temperature', async () => {
+  const h = harness({ PROVIDER: 'gemini', GEMINI_MODEL: 'gemini-3.8-flash',
+    fetch: async () => stream(sse([{ candidates: [{ content: { parts: [{ text: '{"narration":"ok"}' }] }, finishReason: 'STOP' }] }])) });
+  const r = await h.sb.fetchGemini('system', [{ role: 'user', content: 'play' }], 0.9, 4000, true);
+  assert.equal(r.text, '{"narration":"ok"}');
+  assert.equal(r.modelUsed, 'gemini-3.8-flash');
+  const c = h.calls[0];
+  assert(c.url.includes('/models/gemini-3.8-flash:streamGenerateContent'));
+  assert.equal(c.body.generationConfig.temperature, undefined);
+  assert.equal(c.body.generationConfig.thinkingConfig.thinkingLevel, 'low');
+  assert.equal(c.body.generationConfig.responseMimeType, 'application/json');
+});
 test('Gemini thinking compatibility is retried once and cached per model', async () => {
   let count = 0;
   const h = harness({ PROVIDER: 'gemini', fetch: async () => ++count === 1
