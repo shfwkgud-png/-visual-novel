@@ -323,17 +323,21 @@ test('Gemini emits every text part but excludes thought content and normalizes u
   assert.equal(c.body.contents.length, 1); assert.equal(c.body.generationConfig.responseMimeType, 'application/json');
   assert.equal(c.body.generationConfig.thinkingConfig.thinkingLevel, 'minimal');
 });
-test('Gemini 3.8 sends the new model ID and omits deprecated temperature', async () => {
-  const h = harness({ PROVIDER: 'gemini', GEMINI_MODEL: 'gemini-3.8-flash',
-    fetch: async () => stream(sse([{ candidates: [{ content: { parts: [{ text: '{"narration":"ok"}' }] }, finishReason: 'STOP' }] }])) });
-  const r = await h.sb.fetchGemini('system', [{ role: 'user', content: 'play' }], 0.9, 4000, true);
-  assert.equal(r.text, '{"narration":"ok"}');
-  assert.equal(r.modelUsed, 'gemini-3.8-flash');
+test('Gemini 3.8 is routed via OpenRouter to Google Vertex BYOK', async () => {
+  const h = harness({ PROVIDER: 'openrouter', curORModel: () => 'google/gemini-3.8-flash' });
+  const r = await h.sb.fetchNim('system', [{ role: 'user', content: 'play' }], 0.9, 4000, null,
+    h.sb.NIM_MODEL, null, 0, { task:'main', json:true });
+  assert.equal(r.modelUsed,'google/gemini-3.8-flash');
+  assert.equal(h.calls.length,1);
   const c = h.calls[0];
-  assert(c.url.includes('/models/gemini-3.8-flash:streamGenerateContent'));
-  assert.equal(c.body.generationConfig.temperature, undefined);
-  assert.equal(c.body.generationConfig.thinkingConfig.thinkingLevel, 'low');
-  assert.equal(c.body.generationConfig.responseMimeType, 'application/json');
+  assert.equal(c.url,'https://fixture.invalid/openrouter');
+  assert.equal(c.headers.Authorization,'Bearer fixture-only');
+  assert.equal(c.body.model,'google/gemini-3.8-flash');
+  assert.equal(c.body.provider.only[0],'google-vertex');
+  assert.equal(c.body.reasoning.effort,'low');
+  assert.equal(c.body.temperature,undefined);
+  assert.equal(c.body.top_p,undefined);
+  assert.equal(c.body.response_format.type,'json_object');
 });
 test('Gemini thinking compatibility is retried once and cached per model', async () => {
   let count = 0;
