@@ -1982,11 +1982,11 @@
     <button type="button" class="my-btn" id="freeApiQuotaBtn" style="display:none" onclick="checkFreeApiQuota()">오늘 남은 무료 요청 확인</button>
     <p id="freeApiQuotaStatus" role="status" aria-live="polite" style="display:none;white-space:pre-line;overflow-wrap:anywhere"></p>
     <select id="orModelSel" style="display:none">
-      <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (기본)</option>
+      <option value="google/gemini-3.8-flash">Gemini 3.8 Flash (기본 · Vertex BYOK)</option>
+      <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (이전 모델)</option>
       <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
       <option value="google/gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
       <option value="google/gemini-3.5-flash">Gemini 3.5 Flash</option>
-      <option value="google/gemini-3.8-flash">Gemini 3.8 Flash (최신)</option>
       <option value="google/gemini-3.6-flash">Gemini 3.6 Flash (이전 모델)</option>
       <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (빠름 · 쿼터 넉넉 · 저렴)</option>
     </select>
@@ -2195,7 +2195,7 @@ let FREE_TEST_PREVIOUS_PROVIDER = 'gemini';
 let AI_CONTEXT_MODE = 'balanced';
 // ★OpenRouter(2026-07-22): OpenAI 호환. 유저 Vertex BYOK로 $300 크레딧 사용. Bearer 인증. NIM 경로 재사용.
 let OPENROUTER_KEY = '';
-let OPENROUTER_MODEL = 'google/gemini-2.5-flash';
+let OPENROUTER_MODEL = 'google/gemini-3.8-flash';
 // ★스토리별 모델 오버라이드(2026-08-11 유저: "아카데미 로딩 유독 느림"+"Gemini 한도 재시도") —
 //   3.1 Pro '프리뷰'는 유료 계정도 분당 쿼터가 낮아, 생각 많은 RPG 스토리(아카데미)가 429에 걸린다.
 //   연애일기=3.1 Pro(작문) · 아카데미=3.6 Flash(쿼터·속도)처럼 스토리마다 다른 모델을 쓸 수 있게 한다.
@@ -9086,6 +9086,32 @@ function applyAiPreferences(cfg) {
   AI_CONTEXT_MODE = cfg.aiContextMode === 'full' ? 'full' : 'balanced';
   if (FREE_TEST_MODE) PROVIDER = 'openrouter';
 }
+// Keep the currently configured OpenRouter/Vertex BYOK account and all per-story overrides.
+// Migrate only the previously hard-coded global default, once; manually selected
+// alternatives (including choosing the old version again) remain respected.
+function applyOpenRouterPreferences(cfg) {
+  if (!cfg || typeof cfg !== 'object') return;
+  if (typeof cfg.orModel === 'string' && /^[a-z0-9._-]+\/[a-z0-9._:-]+$/i.test(cfg.orModel)) {
+    const upgrade = cfg.orModel === 'google/gemini-2.5-flash' && cfg.or38DefaultApplied !== true;
+    OPENROUTER_MODEL = upgrade ? 'google/gemini-3.8-flash' : cfg.orModel;
+    if (upgrade) {
+      try {
+        const raw = localStorage.getItem('vn_cfg');
+        if (raw !== null) {
+          const saved = JSON.parse(raw) || {};
+          if (saved.orModel === cfg.orModel) {
+            saved.orModel = OPENROUTER_MODEL;
+            saved.or38DefaultApplied = true;
+            localStorage.setItem('vn_cfg', JSON.stringify(saved));
+          }
+        }
+      } catch {}
+    }
+  }
+  if (cfg.orModelBy && typeof cfg.orModelBy === 'object' && !Array.isArray(cfg.orModelBy)) {
+    OR_MODEL_BY_STORY = cfg.orModelBy;
+  }
+}
 function showFreeModelInput() {
   const sel = document.getElementById('freeModelSel'), input = document.getElementById('freeModelInput');
   if (input) input.style.display = FREE_TEST_MODE && sel && sel.value === 'custom' ? 'block' : 'none';
@@ -11203,7 +11229,7 @@ function persistCfg() {
     localStorage.setItem('vn_cfg', JSON.stringify(Object.assign(prev, {
       provider: PROVIDER, nimUrl: NIM_URL, nimModel: NIM_MODEL,
       apiKey: API_KEY, orKey: OPENROUTER_KEY, orModel: OPENROUTER_MODEL, orModelBy: OR_MODEL_BY_STORY,
-      geminiModel: GEMINI_MODEL, gemini38DefaultApplied: true, freeTestMode: FREE_TEST_MODE, freeTestModel: FREE_TEST_MODEL,
+      geminiModel: GEMINI_MODEL, gemini38DefaultApplied: true, or38DefaultApplied: true, freeTestMode: FREE_TEST_MODE, freeTestModel: FREE_TEST_MODEL,
       freePreviousProvider: FREE_TEST_PREVIOUS_PROVIDER, aiContextMode: AI_CONTEXT_MODE
     })));
   } catch {}
@@ -11234,8 +11260,7 @@ function persistCfg() {
       applyAiPreferences(cfg);
       if (cfg.apiKey) { API_KEY = cfg.apiKey; document.getElementById('apiKeyInput').value = cfg.apiKey; }
       if (cfg.orKey) OPENROUTER_KEY = cfg.orKey;
-      if (cfg.orModel) OPENROUTER_MODEL = cfg.orModel;
-      if (cfg.orModelBy) OR_MODEL_BY_STORY = cfg.orModelBy;
+      applyOpenRouterPreferences(cfg);
       if (cfg.nimUrl) { NIM_URL = cfg.nimUrl; document.getElementById('nimUrlInput').value = cfg.nimUrl; }
       if (cfg.nimModel) NIM_MODEL = NIM_MODEL_OLD_DEFAULTS.includes(cfg.nimModel) ? NIM_MODEL : cfg.nimModel;   // 구기본/EOL/다운 모델은 새 추천으로 승격
       if (cfg.provider || FREE_TEST_MODE) setProvider(FREE_TEST_MODE ? 'openrouter' : cfg.provider);
