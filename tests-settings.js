@@ -21,7 +21,7 @@ function sandbox(cfg = {}) {
   };
   sb.window = sb;
   vm.createContext(sb);
-  vm.runInContext(`var PROVIDER='gemini', API_KEY='', OPENROUTER_KEY='fake-or', OPENROUTER_MODEL='google/gemini-2.5-flash', OR_MODEL_BY_STORY={story:'google/gemini-3.6-flash'}, GEMINI_MODEL='gemini-3.8-flash', FREE_TEST_MODE=false, FREE_TEST_MODEL='openrouter/free', FREE_TEST_PREVIOUS_PROVIDER='gemini', AI_CONTEXT_MODE='balanced', NIM_URL='https://worker.invalid', NIM_MODEL='fixture/nim'; var STORY={id:'story'}, gameHistory=[], storySummary='', summaryIndex=0; const CONTEXT_RECENT=10, RECENT_CHARS_CAP=120000; function modelCtxTokens(){ return 1000000; }`, sb);
+  vm.runInContext(`var PROVIDER='gemini', API_KEY='', OPENROUTER_KEY='fake-or', OPENROUTER_MODEL='google/gemini-2.5-flash', OR_MODEL_BY_STORY={story:'google/gemini-3.6-flash'}, GEMINI_MODEL='gemini-3.5-flash', FREE_TEST_MODE=false, FREE_TEST_MODEL='openrouter/free', FREE_TEST_PREVIOUS_PROVIDER='gemini', AI_CONTEXT_MODE='balanced', NIM_URL='https://worker.invalid', NIM_MODEL='fixture/nim'; var STORY={id:'story'}, gameHistory=[], storySummary='', summaryIndex=0; const CONTEXT_RECENT=10, RECENT_CHARS_CAP=120000; function modelCtxTokens(){ return 1000000; }`, sb);
   vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','applyOpenRouterPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','safeProviderErrorText','freeApiErrorMessage','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','applyLegacySaveConnection','recentWindowCount'].map(grab).join('\n'), sb);
   elements.freeModelSel.value='openrouter/free'; elements.aiContextSel.value='balanced';
   elements.orKeyInput.value='fake-or';
@@ -45,27 +45,9 @@ test('legacy preferences retain model and unknown configuration fields', () => {
   sb.applyAiPreferences({}); sb.API_KEY='fake-gemini'; sb.persistCfg();
   const cfg = JSON.parse(sb.storage.get('vn_cfg'));
   assert.equal(cfg.customSetting,'keep'); assert.equal(cfg.splitPipe,false);
-  assert.equal(cfg.apiKey,'fake-gemini'); assert.equal(cfg.geminiModel,'gemini-3.8-flash');
-  assert.equal(cfg.gemini38DefaultApplied,true);
+  assert.equal(cfg.apiKey,'fake-gemini'); assert.equal(cfg.geminiModel,'gemini-3.5-flash');
+  assert.equal(cfg.orGemini38MigrationV2,true);
   assert.equal(sb.FREE_TEST_MODE,false);
-});
-test('legacy Gemini default upgrades to 3.8 once and preserves saved keys', () => {
-  const sb = sandbox({ geminiModel:'gemini-3.5-flash', apiKey:'fake-gemini-key', orKey:'fake-or-key', customSetting:'keep' });
-  sb.applyAiPreferences(JSON.parse(sb.storage.get('vn_cfg')));
-  const migrated = JSON.parse(sb.storage.get('vn_cfg'));
-  assert.equal(sb.GEMINI_MODEL,'gemini-3.8-flash');
-  assert.equal(migrated.geminiModel,'gemini-3.8-flash');
-  assert.equal(migrated.gemini38DefaultApplied,true);
-  assert.equal(migrated.apiKey,'fake-gemini-key');
-  assert.equal(migrated.orKey,'fake-or-key');
-  assert.equal(migrated.customSetting,'keep');
-
-  // A later explicit selection of the older model must not be migrated again.
-  sb.GEMINI_MODEL='gemini-3.5-flash';
-  sb.persistCfg();
-  sb.GEMINI_MODEL='gemini-3.8-flash';
-  sb.applyAiPreferences(JSON.parse(sb.storage.get('vn_cfg')));
-  assert.equal(sb.GEMINI_MODEL,'gemini-3.5-flash');
 });
 test('user-selected alternative Gemini model is not replaced', () => {
   const sb = sandbox({ geminiModel:'gemini-3.6-flash', apiKey:'fake-gemini-key' });
@@ -81,22 +63,41 @@ test('OpenRouter Vertex default upgrades to Gemini 3.8 without losing credential
   const cfg = JSON.parse(sb.storage.get('vn_cfg'));
   assert.equal(sb.OPENROUTER_MODEL,'google/gemini-3.8-flash');
   assert.equal(cfg.orModel,'google/gemini-3.8-flash');
-  assert.equal(cfg.or38DefaultApplied,true);
+  assert.equal(cfg.orGemini38MigrationV2,true);
   assert.equal(cfg.orKey,'fixture-vertex-or-key');
   assert.equal(cfg.apiKey,'fake-gemini-key');
   assert.equal(cfg.unrelated,'keep');
-  assert.equal(sb.OR_MODEL_BY_STORY.academy,'google/gemini-3.1-pro-preview');
+  assert.equal(sb.OR_MODEL_BY_STORY.academy,'google/gemini-3.8-flash');
   assert.equal(sb.curORModel(),'google/gemini-3.8-flash');
   sb.STORY.id='academy';
-  assert.equal(sb.curORModel(),'google/gemini-3.1-pro-preview');
+  assert.equal(sb.curORModel(),'google/gemini-3.8-flash');
 });
 test('OpenRouter manual model selection persists through subsequent loads', () => {
-  const sb = sandbox({ orModel:'google/gemini-2.5-flash', or38DefaultApplied:true });
+  const sb = sandbox({ orModel:'google/gemini-2.5-flash', or38DefaultApplied:true, orGemini38MigrationV2:true });
   sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
   assert.equal(sb.OPENROUTER_MODEL,'google/gemini-2.5-flash');
   sb.OPENROUTER_MODEL='google/gemini-3.8-flash'; sb.persistCfg();
   sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
   assert.equal(sb.OPENROUTER_MODEL,'google/gemini-3.8-flash');
+});
+test('Vertex migration upgrades previously selected 3.6 Flash even after an earlier migration', () => {
+  const sb = sandbox({ provider:'openrouter', orModel:'google/gemini-3.6-flash',
+    or38DefaultApplied:true, orModelBy:{ academy:'google/gemini-3.1-pro-preview', free:'qwen/qwen3-32b:free' } });
+  sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  const cfg = JSON.parse(sb.storage.get('vn_cfg'));
+  assert.equal(sb.OPENROUTER_MODEL,'google/gemini-3.8-flash');
+  assert.equal(sb.OR_MODEL_BY_STORY.academy,'google/gemini-3.8-flash');
+  assert.equal(sb.OR_MODEL_BY_STORY.free,'qwen/qwen3-32b:free');
+  assert.equal(cfg.orGemini38MigrationV2,true);
+});
+test('Vertex migration preserves non-Gemini selections and later explicit model choice', () => {
+  const sb = sandbox({ orModel:'qwen/qwen3-32b:free', orModelBy:{ other:'anthropic/claude-sonnet-4' } });
+  sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  assert.equal(sb.OPENROUTER_MODEL,'qwen/qwen3-32b:free');
+  assert.equal(sb.OR_MODEL_BY_STORY.other,'anthropic/claude-sonnet-4');
+  sb.OPENROUTER_MODEL='google/gemini-3.5-flash'; sb.persistCfg();
+  sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  assert.equal(sb.OPENROUTER_MODEL,'google/gemini-3.5-flash');
 });
 test('free mode restore overrides provider without overwriting paid story models', () => {
   const sb=sandbox();
