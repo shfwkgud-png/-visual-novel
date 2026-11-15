@@ -22,7 +22,7 @@ function sandbox(cfg = {}) {
   sb.window = sb;
   vm.createContext(sb);
   vm.runInContext(`var PROVIDER='gemini', API_KEY='', OPENROUTER_KEY='fake-or', OPENROUTER_MODEL='google/gemini-2.5-flash', OR_MODEL_BY_STORY={story:'google/gemini-3.6-flash'}, GEMINI_MODEL='gemini-3.8-flash', FREE_TEST_MODE=false, FREE_TEST_MODEL='openrouter/free', FREE_TEST_PREVIOUS_PROVIDER='gemini', AI_CONTEXT_MODE='balanced', NIM_URL='https://worker.invalid', NIM_MODEL='fixture/nim'; var STORY={id:'story'}, gameHistory=[], storySummary='', summaryIndex=0; const CONTEXT_RECENT=10, RECENT_CHARS_CAP=120000; function modelCtxTokens(){ return 1000000; }`, sb);
-  vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','safeProviderErrorText','freeApiErrorMessage','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','applyLegacySaveConnection','recentWindowCount'].map(grab).join('\n'), sb);
+  vm.runInContext(['isFreeApiMode','isFreeOpenRouterModel','curORModel','aiSettingsBusy','applyAiPreferences','applyOpenRouterPreferences','showFreeModelInput','selectedFreeModel','setFreeTestMode','safeProviderErrorText','freeApiErrorMessage','checkFreeApiConnection','setProvider','saveSettings','closeSettings','persistCfg','applyLegacySaveConnection','recentWindowCount'].map(grab).join('\n'), sb);
   elements.freeModelSel.value='openrouter/free'; elements.aiContextSel.value='balanced';
   elements.orKeyInput.value='fake-or';
   return sb;
@@ -72,6 +72,31 @@ test('user-selected alternative Gemini model is not replaced', () => {
   sb.applyAiPreferences(JSON.parse(sb.storage.get('vn_cfg')));
   assert.equal(sb.GEMINI_MODEL,'gemini-3.6-flash');
   assert.equal(JSON.parse(sb.storage.get('vn_cfg')).geminiModel,'gemini-3.6-flash');
+});
+test('OpenRouter Vertex default upgrades to Gemini 3.8 without losing credentials or story overrides', () => {
+  const old = { provider:'openrouter', orKey:'fixture-vertex-or-key', apiKey:'fake-gemini-key',
+    orModel:'google/gemini-2.5-flash', orModelBy:{ academy:'google/gemini-3.1-pro-preview' }, unrelated:'keep' };
+  const sb = sandbox(old);
+  sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  const cfg = JSON.parse(sb.storage.get('vn_cfg'));
+  assert.equal(sb.OPENROUTER_MODEL,'google/gemini-3.8-flash');
+  assert.equal(cfg.orModel,'google/gemini-3.8-flash');
+  assert.equal(cfg.or38DefaultApplied,true);
+  assert.equal(cfg.orKey,'fixture-vertex-or-key');
+  assert.equal(cfg.apiKey,'fake-gemini-key');
+  assert.equal(cfg.unrelated,'keep');
+  assert.equal(sb.OR_MODEL_BY_STORY.academy,'google/gemini-3.1-pro-preview');
+  assert.equal(sb.curORModel(),'google/gemini-3.8-flash');
+  sb.STORY.id='academy';
+  assert.equal(sb.curORModel(),'google/gemini-3.1-pro-preview');
+});
+test('OpenRouter manual model selection persists through subsequent loads', () => {
+  const sb = sandbox({ orModel:'google/gemini-2.5-flash', or38DefaultApplied:true });
+  sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  assert.equal(sb.OPENROUTER_MODEL,'google/gemini-2.5-flash');
+  sb.OPENROUTER_MODEL='google/gemini-3.8-flash'; sb.persistCfg();
+  sb.applyOpenRouterPreferences(JSON.parse(sb.storage.get('vn_cfg')));
+  assert.equal(sb.OPENROUTER_MODEL,'google/gemini-3.8-flash');
 });
 test('free mode restore overrides provider without overwriting paid story models', () => {
   const sb=sandbox();
