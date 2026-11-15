@@ -1966,7 +1966,8 @@
     <p id="provHint">Gemini API 키를 입력하세요</p>
     <input type="password" id="apiKeyInput" placeholder="AIza...">
     <select id="geminiModelSel" aria-label="Gemini 모델">
-      <option value="gemini-3.5-flash">Gemini 3.5 Flash (현재 설정)</option>
+      <option value="gemini-3.8-flash">Gemini 3.8 Flash (기본 · 최신)</option>
+      <option value="gemini-3.5-flash">Gemini 3.5 Flash (이전 모델)</option>
       <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
       <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
     </select>
@@ -1985,7 +1986,8 @@
       <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
       <option value="google/gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
       <option value="google/gemini-3.5-flash">Gemini 3.5 Flash</option>
-      <option value="google/gemini-3.6-flash">Gemini 3.6 Flash (최신 · 2.5 Pro 공식 이전처)</option>
+      <option value="google/gemini-3.8-flash">Gemini 3.8 Flash (최신)</option>
+      <option value="google/gemini-3.6-flash">Gemini 3.6 Flash (이전 모델)</option>
       <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (빠름 · 쿼터 넉넉 · 저렴)</option>
     </select>
         <label id="orOnlyStoryRow" class="ai-option" style="display:none"><input type="checkbox" id="orOnlyStory"> 이 모델을 지금 플레이 중인 스토리에만 적용</label>
@@ -2186,7 +2188,7 @@ let turnCount = 0;
 let playerName = '카이든';
 let playerDesc = '';
 let PROVIDER = 'gemini';   // 'gemini' | 'nim' | 'openrouter'
-let GEMINI_MODEL = 'gemini-3.5-flash';
+let GEMINI_MODEL = 'gemini-3.8-flash';
 let FREE_TEST_MODE = false;
 let FREE_TEST_MODEL = 'openrouter/free';
 let FREE_TEST_PREVIOUS_PROVIDER = 'gemini';
@@ -9059,7 +9061,25 @@ function aiSettingsBusy() {
 }
 function applyAiPreferences(cfg) {
   if (!cfg || typeof cfg !== 'object') return;
-  if (typeof cfg.geminiModel === 'string' && /^gemini-[a-z0-9.-]+$/i.test(cfg.geminiModel)) GEMINI_MODEL = cfg.geminiModel;
+  if (typeof cfg.geminiModel === 'string' && /^gemini-[a-z0-9.-]+$/i.test(cfg.geminiModel)) {
+    // Upgrade the old default only once; preserve keys, other provider settings,
+    // and an explicit later choice to return to 3.5 Flash.
+    const upgrading = cfg.geminiModel === 'gemini-3.5-flash' && cfg.gemini38DefaultApplied !== true;
+    GEMINI_MODEL = upgrading ? 'gemini-3.8-flash' : cfg.geminiModel;
+    if (upgrading) {
+      try {
+        const raw = localStorage.getItem('vn_cfg');
+        if (raw !== null) {
+          const stored = JSON.parse(raw) || {};
+          if (stored.geminiModel === 'gemini-3.5-flash') {
+            stored.geminiModel = GEMINI_MODEL;
+            stored.gemini38DefaultApplied = true;
+            localStorage.setItem('vn_cfg', JSON.stringify(stored));
+          }
+        }
+      } catch {}
+    }
+  }
   FREE_TEST_MODE = cfg.freeTestMode === true;
   if (typeof cfg.freeTestModel === 'string' && (cfg.freeTestModel === 'openrouter/free' || /^[a-z0-9._-]+\/[a-z0-9._:-]+:free$/i.test(cfg.freeTestModel))) FREE_TEST_MODEL = cfg.freeTestModel;
   if (['gemini', 'nim', 'openrouter'].includes(cfg.freePreviousProvider)) FREE_TEST_PREVIOUS_PROVIDER = cfg.freePreviousProvider;
@@ -11183,7 +11203,7 @@ function persistCfg() {
     localStorage.setItem('vn_cfg', JSON.stringify(Object.assign(prev, {
       provider: PROVIDER, nimUrl: NIM_URL, nimModel: NIM_MODEL,
       apiKey: API_KEY, orKey: OPENROUTER_KEY, orModel: OPENROUTER_MODEL, orModelBy: OR_MODEL_BY_STORY,
-      geminiModel: GEMINI_MODEL, freeTestMode: FREE_TEST_MODE, freeTestModel: FREE_TEST_MODEL,
+      geminiModel: GEMINI_MODEL, gemini38DefaultApplied: true, freeTestMode: FREE_TEST_MODE, freeTestModel: FREE_TEST_MODEL,
       freePreviousProvider: FREE_TEST_PREVIOUS_PROVIDER, aiContextMode: AI_CONTEXT_MODE
     })));
   } catch {}
@@ -12064,7 +12084,7 @@ function providerText(content) {
 }
 // Each returns { text } on success, { error:{code,message} }, or { blocked:true }
 async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, prefill = true, onChunk = null, options = {}) {
-  const mdl = (typeof GEMINI_MODEL !== 'undefined' && GEMINI_MODEL) || 'gemini-3.5-flash';
+  const mdl = (typeof GEMINI_MODEL !== 'undefined' && GEMINI_MODEL) || 'gemini-3.8-flash';
   const denied = providerRequestError('gemini', mdl);
   if (denied) return { error: denied };
   if (!llmRequestCurrent(options)) return { error: { code: 'CANCELLED', retryable: false, message: '이전 요청이 취소되었습니다.' } };
@@ -12075,7 +12095,8 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
   // JSON mode provides a complete object; an artificial model-prefix turn is not
   // needed and can conflict with current Gemini chat/thought-signature contracts.
   const apiContents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
-  const generationConfig = { temperature: temp, maxOutputTokens: profile.maxTokens };
+  const generationConfig = { maxOutputTokens: profile.maxTokens };
+  if (mdl !== 'gemini-3.8-flash') generationConfig.temperature = temp; // 3.8 ignores deprecated sampling parameters
   if (prefill || options.json) generationConfig.responseMimeType = 'application/json';
   if (profile.thinkingConfig) generationConfig.thinkingConfig = profile.thinkingConfig;
   const GEM_URL = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mdl)}:streamGenerateContent?alt=sse`;
