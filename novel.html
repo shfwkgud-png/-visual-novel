@@ -9073,7 +9073,7 @@ function applyAiPreferences(cfg) {
 function applyOpenRouterPreferences(cfg) {
   if (!cfg || typeof cfg !== 'object') return;
   const isGoogleGemini = model => typeof model === 'string' && /^google\/gemini-/i.test(model);
-  const upgrade = cfg.or38DefaultApplied !== true;
+  const upgrade = cfg.orGemini38MigrationV2 !== true;
   // One-time model switch on this device: update prior Gemini selections,
   // including per-story Gemini overrides that would otherwise shadow the new default.
   // Preserve non-Gemini choices, API keys, provider and all other settings.
@@ -9090,12 +9090,13 @@ function applyOpenRouterPreferences(cfg) {
       const raw = localStorage.getItem('vn_cfg');
       if (raw !== null) {
         const stored = JSON.parse(raw) || {};
-        if (stored.or38DefaultApplied !== true) {
+        if (stored.orGemini38MigrationV2 !== true) {
           if (isGoogleGemini(stored.orModel)) stored.orModel = 'google/gemini-3.8-flash';
           if (stored.orModelBy && typeof stored.orModelBy === 'object' && !Array.isArray(stored.orModelBy))
             stored.orModelBy = Object.fromEntries(Object.entries(stored.orModelBy).map(([id, value]) =>
               [id, isGoogleGemini(value) ? 'google/gemini-3.8-flash' : value]));
           stored.or38DefaultApplied = true;
+          stored.orGemini38MigrationV2 = true;
           localStorage.setItem('vn_cfg', JSON.stringify(stored));
         }
       }
@@ -11219,7 +11220,7 @@ function persistCfg() {
     localStorage.setItem('vn_cfg', JSON.stringify(Object.assign(prev, {
       provider: PROVIDER, nimUrl: NIM_URL, nimModel: NIM_MODEL,
       apiKey: API_KEY, orKey: OPENROUTER_KEY, orModel: OPENROUTER_MODEL, orModelBy: OR_MODEL_BY_STORY,
-      geminiModel: GEMINI_MODEL, or38DefaultApplied: true, freeTestMode: FREE_TEST_MODE, freeTestModel: FREE_TEST_MODEL,
+      geminiModel: GEMINI_MODEL, or38DefaultApplied: true, orGemini38MigrationV2: true, freeTestMode: FREE_TEST_MODE, freeTestModel: FREE_TEST_MODEL,
       freePreviousProvider: FREE_TEST_PREVIOUS_PROVIDER, aiContextMode: AI_CONTEXT_MODE
     })));
   } catch {}
