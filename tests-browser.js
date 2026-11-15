@@ -365,7 +365,7 @@ async function configureAndStart(ctx) {
     await page.locator('#orKeyInput').fill('sk-or-v1-test-no-network');
     await page.locator('#freeModelSel').selectOption('openrouter/free');
     await page.locator('#freeTestModeChk').uncheck();
-    assert.equal(await page.locator('#orModelSel').inputValue(), 'google/gemini-3.1-pro-preview');
+    assert.equal(await page.locator('#orModelSel').inputValue(), 'google/gemini-3.8-flash');
     assert.equal(await page.locator('#orOnlyStory').isChecked(), true);
     await page.locator('#freeTestModeChk').check();
     await page.locator('#apiModal .start-btn').click();
@@ -374,8 +374,8 @@ async function configureAndStart(ctx) {
       return { free: c.freeTestMode, freeModel: c.freeTestModel, normalModel: c.orModel, provider: c.provider,
         perStoryModel: c.orModelBy.nakin, keptGeminiKey: c.apiKey === 'AIza-test-no-network', nimUrl: c.nimUrl };
     });
-    assert.deepEqual(saved, { free: true, freeModel: 'openrouter/free', normalModel: 'google/gemini-3.6-flash', provider: 'openrouter',
-      perStoryModel: 'google/gemini-3.1-pro-preview', keptGeminiKey: true, nimUrl: 'https://nim-fixture.invalid' });
+    assert.deepEqual(saved, { free: true, freeModel: 'openrouter/free', normalModel: 'google/gemini-3.8-flash', provider: 'openrouter',
+      perStoryModel: 'google/gemini-3.8-flash', keptGeminiKey: true, nimUrl: 'https://nim-fixture.invalid' });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
     await page.locator('.enter-btn').click();
@@ -571,7 +571,7 @@ async function cloudSafetyChecks(ctx) {
     assert.match(await page.locator('#myProfile').innerText(), /클라우드 백업 꺼짐/);
     const cfg = await page.evaluate(() => JSON.parse(localStorage.getItem('vn_cfg')));
     assert.equal(cfg.freeTestMode, true); assert.equal(cfg.provider, 'openrouter');
-    assert.equal(cfg.orModel, 'google/gemini-3.6-flash');
+    assert.equal(cfg.orModel, 'google/gemini-3.8-flash');
   });
   await check(ctx, 'backup inspection is GET-only, omits credentials and preserves local free settings and saves', async () => {
     const snapshot = () => page.evaluate(() => ({
