@@ -1,0 +1,448 @@
+{
+  "schemaVersion": 1,
+  "title": "판도라 · 호그와트 7년 정사 사건 장부",
+  "status": "chapter-complete / independent event runtime; not yet mounted to PANDORA main story",
+  "verificationLevel": "7권 198장 장별 가이드와 공식 설정에 근거한 사건 장부. 원작 소설 전문 직접 열람/완독은 미실행.",
+  "books": [
+    {
+      "book": 1,
+      "span": "1991-1992",
+      "chapters": 17,
+      "path": "books/01-stone.json"
+    },
+    {
+      "book": 2,
+      "span": "1992-1993",
+      "chapters": 18,
+      "path": "books/02-chamber.json"
+    },
+    {
+      "book": 3,
+      "span": "1993-1994",
+      "chapters": 22,
+      "path": "books/03-azkaban.json"
+    },
+    {
+      "book": 4,
+      "span": "1994-1995",
+      "chapters": 37,
+      "path": "books/04-goblet.json"
+    },
+    {
+      "book": 5,
+      "span": "1995-1996",
+      "chapters": 38,
+      "path": "books/05-phoenix.json"
+    },
+    {
+      "book": 6,
+      "span": "1996-1997",
+      "chapters": 30,
+      "path": "books/06-prince.json"
+    },
+    {
+      "book": 7,
+      "span": "1997-1998",
+      "chapters": 36,
+      "path": "books/07-hallows.json"
+    }
+  ],
+  "expected": {
+    "chapters": 198,
+    "beats": 433
+  },
+  "primaryCanon": [
+    "소설 1-7권 사건; 영화·게임·연극의 추가 설정은 별도 선택 전까지 정사 근거로 사용 금지"
+  ],
+  "sources": [
+    {
+      "type": "book_chapter_guide",
+      "name": "Harry Potter Lexicon - Books 1 to 7",
+      "urls": [
+        "https://www.hp-lexicon.org/source/the-harry-potter-novels/ps/",
+        "https://www.hp-lexicon.org/source/the-harry-potter-novels/cs/",
+        "https://www.hp-lexicon.org/source/the-harry-potter-novels/pa/",
+        "https://www.hp-lexicon.org/source/the-harry-potter-novels/gf/",
+        "https://www.hp-lexicon.org/source/the-harry-potter-novels/op/",
+        "https://www.hp-lexicon.org/source/the-harry-potter-novels/hbp/",
+        "https://www.hp-lexicon.org/source/the-harry-potter-novels/dh/"
+      ]
+    },
+    {
+      "type": "official",
+      "name": "Harry Potter official - Horcrux origins",
+      "url": "https://www.harrypotter.com/features/history-of-voldemorts-horcruxes"
+    },
+    {
+      "type": "official",
+      "name": "Harry Potter official - Elder Wand ownership",
+      "url": "https://www.harrypotter.com/features/everything-we-know-about-the-elder-wand"
+    },
+    {
+      "type": "timeline",
+      "name": "HP Lexicon - master timeline",
+      "url": "https://www.hp-lexicon.org/master-timeline/"
+    }
+  ],
+  "AU": {
+    "id": "all-adult-hogwarts",
+    "setting": "호그와트/기숙사/수업/학생 생활/교수진/7년 학제 모두 유지",
+    "schoolEntry": "모든 재학생은 입학 첫날부터 성인(최소 18세). 해리와 같은 코호트는 1991년에 성인으로 입학한다.",
+    "appearance": "7개 학년도에 걸쳐 기본 얼굴·외형·스프라이트는 공용. 의상·부상·관계만 선택적으로 변화한다.",
+    "malfoy": {
+      "id": "malfoy",
+      "gender": "female",
+      "character": "드레이코 말포이(여성 AU)",
+      "continuity": "루시우스·나시사의 자녀, 슬리데린 소속, 6권 임무와 딱총나무 지팡이의 충성권을 원칙적으로 유지"
+    },
+    "triWizard": "원작의 17세 나이 제한은 성인 학제와 충돌하므로 5학년 이상 학적 제한으로 대체한다. 4학년 해리는 여전히 부정 선발된다.",
+    "bloodProtection": "더즐리 가문에 묶인 혈연 보호가 특정 만 나이에 종료된다는 원작 규칙은 이 AU에서 거주 관계의 종료/1997년 보호식 만료로 대체한다. 어릴 때 릴리의 희생은 그대로 유지한다.",
+    "underageMagic": "마법부의 미성년 추적 규정은 재학생 모두 성인인 AU에서 수업 외부 허가 규정으로 대체하며, 원작의 미성년 위반 사건은 마법부의 보복성 규정 위반 청문으로 치환한다.",
+    "originalHistory": "1981년 포터 부부의 죽음과 마법사의 비밀은 유지하되 1991년 입학 나이만 성인으로 일괄 재설정하므로 원작 출생연도·원작 연령을 재주입하지 않는다.",
+    "romance": "성인 인물 간 우정·연애·가족 갈등은 자유 진행, 정사 사건과 합의한 AU 나이 규칙은 따로 관리한다.",
+    "license": "개인 비상업 팬 설정; 원작 본문/영상/배우 초상·원화 자산의 무단 복제와 배포 여부는 별도 권리 검토"
+  },
+  "invariants": [
+    "플레이어는 해리를 대체하지 않는다. 기본 신분은 동시대에 입학한 성인 일반 학생이다.",
+    "매 턴 AI가 사건을 자유 창작하지 않는다. 정사 이벤트는 검증된 시계·사건 실행기에서만 확정된다.",
+    "정사 사건은 사용자 입력 없더라도 시간에 따라 발생하지만, 플레이어를 현장으로 강제 이동시키지 않는다.",
+    "플레이어가 합리적으로 인과를 바꾸면 이후 충돌 사건을 '정사 그대로' 확정하지 않고 미해결 분기로 보류한다.",
+    "모델에 전달하는 정보는 이미 발생했으며 플레이어가 관찰·전달받은 사실로 한정한다. GM 비밀, 미래 스포일러, 오프스크린 사실은 노출하지 않는다.",
+    "교사·학생·기관은 각자 가진 정보와 이해관계로 행동하며 플레이어만을 기다리지 않는다.",
+    "죽은 인물은 명시적 예외(유령·초상화·기억·대체 세계선) 없이 현장에 살아 등장하지 않는다.",
+    "해리·론·헤르미온느의 7권 오프캠퍼스 여정을 호그와트에서 발생하는 사건으로 오인하지 않는다.",
+    "단일 세계선에는 동일 물건의 중복 실물·동시에 다른 장소에 존재하는 인물이 없어야 한다.",
+    "정사와 AU 변형을 각 사건의 출처 계층으로 구분하고 영화 전용 장면은 기본값으로 배제한다.",
+    "성별 변환 말포이 외형을 시즌별로 무작정 변경하지 않는다."
+  ],
+  "seasonOrder": [
+    "summer",
+    "autumn",
+    "winter",
+    "spring",
+    "finale"
+  ],
+  "clockPolicy": {
+    "trigger": "world_time_or_explicit_game_action",
+    "not": "chat_turn_count",
+    "locationsIndependent": true,
+    "exactDateOnlyIfVerified": true,
+    "historyCannotMoveBackWithoutBranch": true
+  },
+  "playerReputationAxes": [
+    "house",
+    "school_status",
+    "order",
+    "death_eaters",
+    "ministry",
+    "independent",
+    "malfoy_relationship",
+    "harry_relationship"
+  ],
+  "worldStateVariables": [
+    "voldemort_stage",
+    "wizard_war_stage",
+    "school_ministry_control",
+    "minister",
+    "diary_holder",
+    "stone_destroyed",
+    "horcrux_diary_destroyed",
+    "horcrux_ring_destroyed",
+    "horcrux_locket_destroyed",
+    "horcrux_cup_destroyed",
+    "horcrux_diadem_destroyed",
+    "horcrux_nagini_destroyed",
+    "horcrux_harry_destroyed",
+    "elder_wand_allegiance"
+  ],
+  "secrets": [
+    {
+      "id": "secret_quirrell",
+      "discovery": "b01c17",
+      "truth": "퀴렐이 볼드모트의 숙주",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_diary",
+      "discovery": "b02c17",
+      "truth": "일기장에는 볼드모트의 영혼 조각",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_pettigrew",
+      "discovery": "b03c19",
+      "truth": "진범은 피터이고 시리우스는 누명을 씀",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_fake_moody",
+      "discovery": "b04c35",
+      "truth": "교수는 바티 크라우치 2세가 사칭",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_prophecy",
+      "discovery": "b05c37",
+      "truth": "해리뿐 아니라 네빌도 예언 후보였다",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_horcrux",
+      "discovery": "b06c23",
+      "truth": "볼드모트는 유물에 영혼 조각을 분할해 놓았다",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_snape",
+      "discovery": "b07c33",
+      "truth": "스네이프의 덤블도어 보호 및 협력은 지속되었다",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_wand",
+      "discovery": "b07c36",
+      "truth": "말포이가 덤블도어를 무장해제했고 해리가 말포이의 지팡이를 빼앗아 딱총나무 지팡이의 충성권이 넘어갔다",
+      "stage": "hidden_until_revealed"
+    },
+    {
+      "id": "secret_harry_soul",
+      "discovery": "b07c33",
+      "truth": "해리는 의도치 않은 영혼 조각을 지님",
+      "stage": "hidden_until_revealed"
+    }
+  ],
+  "prehistory": [
+    {
+      "id": "p01",
+      "era": "medieval",
+      "access": "gm",
+      "truth": "호그와트 창립과 슬리데린의 비밀 시설"
+    },
+    {
+      "id": "p02",
+      "era": "1940s",
+      "access": "gm",
+      "truth": "톰 리들이 울보 머틀의 죽음에 이어 일기장에 영혼 조각을 숨김"
+    },
+    {
+      "id": "p03",
+      "era": "1940s",
+      "access": "gm",
+      "truth": "톰 리들이 슬러그혼에게 여러 호크룩스 제작 가능성을 질문함"
+    },
+    {
+      "id": "p04",
+      "era": "1945",
+      "access": "gm",
+      "truth": "덤블도어가 그린델왈드의 딱총나무 지팡이에 대한 충성권을 획득함"
+    },
+    {
+      "id": "p05",
+      "era": "1940-1970s",
+      "access": "gm",
+      "truth": "볼드모트가 건트 반지, 후플푸프 잔, 슬리데린 로켓과 레번클로 보관을 호크룩스로 만듦"
+    },
+    {
+      "id": "p06",
+      "era": "pre-1981",
+      "access": "gm",
+      "truth": "시빌 트릴로니의 예언을 스네이프가 일부 엿듣고 볼드모트에게 전달함"
+    },
+    {
+      "id": "p07",
+      "era": "1981",
+      "access": "gm",
+      "truth": "피터 페티그루가 포터 부부의 비밀유지자이자 배신자임"
+    },
+    {
+      "id": "p08",
+      "era": "1981",
+      "access": "gm",
+      "truth": "릴리의 희생이 해리를 지키며 볼드모트 육체를 무너뜨림"
+    },
+    {
+      "id": "p09",
+      "era": "1981",
+      "access": "gm",
+      "truth": "볼드모트 영혼 조각 하나가 의도치 않게 해리에 붙음"
+    },
+    {
+      "id": "p10",
+      "era": "1981",
+      "access": "gm",
+      "truth": "스네이프가 릴리 보호를 조건으로 덤블도어 편에 비밀 협력"
+    },
+    {
+      "id": "p11",
+      "era": "1981",
+      "access": "gm",
+      "truth": "피터가 자신의 죽음을 위장하고 시리우스가 누명으로 체포됨"
+    },
+    {
+      "id": "p12",
+      "era": "1970s-1980s",
+      "access": "gm",
+      "truth": "레귤러스 블랙이 진짜 로켓을 빼내고 가짜 로켓으로 대체함"
+    },
+    {
+      "id": "p13",
+      "era": "1980s",
+      "access": "gm",
+      "truth": "루시우스 말포이가 영혼 조각의 진실은 모른 채 일기장을 보관"
+    },
+    {
+      "id": "p14",
+      "era": "pre-1991",
+      "access": "gm",
+      "truth": "볼드모트가 알바니아 지역에서 육체를 잃고 잠복"
+    },
+    {
+      "id": "p15",
+      "era": "pre-1991",
+      "access": "gm",
+      "truth": "시리우스·루핀·제임스·피터가 마루더즈의 비밀 관계를 맺음"
+    }
+  ],
+  "causalEdges": [
+    {
+      "from": "b02c17s02",
+      "to": "b06c23s02",
+      "why": "첫 일기장 파괴가 호크룩스 확인의 강력한 증거가 된다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b03c20s01",
+      "to": "b04c32s02",
+      "why": "페티그루가 살아서 도주해야 원작 방식의 부활 의식을 실행한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b04c32s02",
+      "to": "b05c36s02",
+      "why": "볼드모트의 육체 부활이 실제로 있어야 마법부가 그를 목격한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b05c35s02",
+      "to": "b06c03s01",
+      "why": "시리우스의 사망이 유산·그리몰드 재산 이전의 전제가 된다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c02s02",
+      "to": "b06c27s03",
+      "why": "깨지지 않는 맹세와 계획이 스네이프의 탑 행동으로 이어진다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c06s02",
+      "to": "b06c27s01",
+      "why": "사라지는 장롱의 연결이 침입 경로를 만든다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c26s02",
+      "to": "b07c09s02",
+      "why": "가짜 로켓 속 R.A.B.가 다음 권 조사의 출발점이다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c27s02",
+      "to": "b07c23s04",
+      "why": "말포이가 덤블도어를 무장해제했기에 지팡이 소유권이 말포이에게 간다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c10s01",
+      "to": "b07c11s01",
+      "why": "크리처의 증언이 문둥구스를 찾는 근거가 된다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c13s01",
+      "to": "b07c19s02",
+      "why": "로켓 확보가 로켓 파괴의 전제다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c23s04",
+      "to": "b07c36s04",
+      "why": "해리의 말포이 제압이 최후 지팡이 충성권 계산에 영향을 준다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c26s02",
+      "to": "b07c31s01",
+      "why": "후플푸프 잔 확보 뒤에 파괴할 수 있다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c29s02",
+      "to": "b07c31s02",
+      "why": "레번클로 보관 위치를 알아야 필요의 방에서 회수할 수 있다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c31s01",
+      "to": "b07c36s04",
+      "why": "잔 파괴는 볼드모트가 필멸이 되기 위한 필요조건이다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c31s02",
+      "to": "b07c36s04",
+      "why": "보관 파괴는 볼드모트가 필멸이 되기 위한 필요조건이다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c33s02",
+      "to": "b07c34s03",
+      "why": "해리의 영혼 조각 인지가 숲에서의 선택을 설명한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c34s03",
+      "to": "b07c35s02",
+      "why": "숲에서의 희생 없이 원작 방식으로 복귀할 수 없다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c35s01",
+      "to": "b07c36s04",
+      "why": "해리의 영혼 조각 파괴는 마지막 전투의 생사 판정에 영향을 준다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c36s02",
+      "to": "b07c36s04",
+      "why": "나기니가 파괴돼야 독립 호크룩스가 더 남지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    }
+  ],
+  "highRiskRetcons": [
+    "드레이코의 성전환을 이름/마법/친족/나이/지팡이 충성 관계의 변경으로 확대하지 않는다.",
+    "1981년 릴리의 희생과 1991년 성인 입학의 시간차는 독립 연령 설정으로 관리한다.",
+    "4권 나이 제한을 원작 17세로 그대로 두면 모든 성인 학생이 지원 가능해 정사 모순이 난다.",
+    "7권 해리·론·헤르미온느는 정규 수업에 참석하지 않는다.",
+    "5권 시리우스는 장막에서 사라지므로 명시적 분기가 없으면 생존으로 호출하지 않는다."
+  ]
+}
