@@ -138,13 +138,13 @@ assert.match(pack.worldLore,/여성 말포이는 해리를 명성과 기숙사 �
 assert.match(pack.characters.ron.personality,/친구 곁에 서는 용기/);
 assert(!('cgManifest' in pack));
 const backgrounds=new Set(Object.values(pack.customBgs).map(entry=>entry.url));
-const portraitBackgrounds=Object.values(pack.customBgs).map(entry=>entry.portraitUrl).filter(Boolean);
+const portraitBackgrounds=new Set(Object.values(pack.customBgs).map(entry=>entry.portraitUrl));
 const portraits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.emoImgs||{})));
 assert.equal(backgrounds.size,92);
+assert.equal(portraitBackgrounds.size,92);
 assert.equal(portraits.size,234);
-const houseInteriors=['gryffindor','slytherin','ravenclaw','hufflepuff'].flatMap(house=>[house+'_common_room',house+'_dormitory']);
-for (const key of ['great_hall','hogwarts_courtyard',...houseInteriors]) {
-  assert.equal(pack.customBgs[key].portraitUrl,`sd_samples/backgrounds/hogwarts/${key}_portrait.webp`);
+for (const [key, entry] of Object.entries(pack.customBgs)) {
+  assert.equal(entry.portraitUrl, entry.url.replace(/\.webp$/, '_portrait.webp'), key);
 }
 for (const id of ['harry','ron','crabbe','goyle']) assert.equal(Object.keys(pack.characters[id].emoImgs).length,6);
 for (const url of [...backgrounds,...portraitBackgrounds,...portraits]) {

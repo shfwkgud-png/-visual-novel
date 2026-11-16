@@ -17,6 +17,11 @@ window.PANDORA_HOGWARTS_ART = {
     'hogwarts_kitchens', 'prefects_bathroom', 'tri_black_lake_underwater', 'ministry_courtroom', 'tri_hedge_maze',
     'little_hangleton_graveyard', 'privet_drive_underpass', 'grimmauld_place', 'umbridge_office', 'hogs_head_interior',
     'room_of_requirement_training', 'st_mungos_ward', 'hall_of_prophecy', 'death_chamber_veil',
+    'room_of_hidden_things', 'horcrux_sea_cave', 'malfoy_manor', 'forest_campsite', 'godrics_hollow',
+    'gringotts_vault', 'shell_cottage', 'occupied_hogwarts', 'hogwarts_battle_courtyard', 'great_hall_aftermath',
+    'burrow_wedding', 'spinners_end', 'borgin_burkes', 'white_tomb', 'lovegood_house', 'kings_cross_limbo',
+    'muggle_prime_minister_office', 'slughorn_hideout', 'gaunt_shack', 'tom_riddle_orphanage',
+    'forest_of_dean_frozen_pool', 'godrics_hollow_churchyard', 'forest_final_clearing',
   ],
   backgrounds: {
     "hogwarts_courtyard": "호그와트 교정",
