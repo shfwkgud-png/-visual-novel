@@ -812,6 +812,16 @@ async function hogwartsArtCheck(ctx) {
   const { page } = ctx;
   await check(ctx, 'Hogwarts opens from the library and loads its own WebP portraits and house rooms', async () => {
     await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    const gallery = await page.locator('#detailChars .d-char').evaluateAll(cards => cards.map(card => ({
+      name: card.querySelector('.d-char-name').textContent,
+      image: card.querySelector('.d-char-img').style.backgroundImage
+    })));
+    assert.equal(gallery.length, 12);
+    assert.match(gallery[0].name, /해리/);
+    assert.ok(gallery.every(card => card.image.includes('sd_samples/characters/hogwarts/')));
+    await page.locator('#detailChars .d-char').first().click();
+    await page.waitForFunction(() => document.querySelector('#imgViewerImg')?.naturalWidth > 0);
+    await page.evaluate(() => closeImgViewer());
     await page.locator('#detailNewBtn').click();
     await page.waitForFunction(() => window._startPhase === 'mode');
     await drainDialogue(page);
@@ -824,9 +834,12 @@ async function hogwartsArtCheck(ctx) {
     await page.waitForFunction(() => gameState.hogwarts.house === '슬리데린' && !sendBtn.disabled);
     await drainDialogue(page);
     await page.waitForFunction(() => document.getElementById('sprite_harry')?.naturalWidth > 0);
+    await page.waitForFunction(() => [...document.querySelectorAll('#charLayer img')]
+      .every(img => getComputedStyle(img).opacity === '1'));
     const scene = await page.evaluate(() => ({
       art: [...document.querySelectorAll('#charLayer img')].map(img => [img.id, img.getAttribute('src'), img.naturalWidth]),
-      bg: bgUrlFor(currentBgFile), dorm: bgUrlFor('dormitory'), room: bgUrlFor('common_room')
+      bg: bgUrlFor(currentBgFile), dorm: bgUrlFor('dormitory'), room: bgUrlFor('common_room'),
+      filters: [bgLayer, document.getElementById('bgLayerB')].map(el => getComputedStyle(el).filter)
     }));
     const firstTurn = ctx.net.prompts.find(call => call.kind === 'main');
     assert.ok(firstTurn, 'the opening scene reached the model prompt');
@@ -839,10 +852,25 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(scene.bg, 'sd_samples/backgrounds/hogwarts/great_hall.webp');
     assert.equal(scene.dorm, 'sd_samples/backgrounds/hogwarts/slytherin_dormitory.webp');
     assert.equal(scene.room, 'sd_samples/backgrounds/hogwarts/slytherin_common_room.webp');
-    assert.equal(scene.art.length, 4);
+    assert.equal(scene.art.length, 2);
+    assert.deepEqual(scene.filters, ['none', 'none']);
     assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger.webp')));
     await page.screenshot({ path: path.join(ARTIFACTS, 'hogwarts-opening-' + (ctx.mobile ? 'mobile' : 'desktop') + '.png') });
+    // Old four-person history must restore the current speaker within the two-person stage.
+    const restored = await page.evaluate(() => {
+      rebuildSprites(['harry', 'ron', 'hermione', 'malfoy'], 'harry', 'normal', 'upper');
+      return { ids: [...shownSprites], speaker: document.querySelector('.char-sprite.speaking')?.id };
+    });
+    assert.deepEqual(restored.ids, ['malfoy', 'harry']);
+    assert.equal(restored.speaker, 'sprite_harry');
+    const rolled = await page.evaluate(() => {
+      ensureSprite('ron'); highlightSpeaker('ron', 'normal', 'upper');
+      ensureSprite('harry'); highlightSpeaker('harry', 'normal', 'upper');
+      ensureSprite('hermione'); highlightSpeaker('hermione', 'smile', 'upper');
+      return [...shownSprites];
+    });
+    assert.deepEqual(rolled, ['harry', 'hermione']);
     await page.evaluate(() => {
       setBg('common_room');
       rebuildSprites(['fred', 'aberforth'], 'fred', 'angry', 'upper');

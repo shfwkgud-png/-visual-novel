@@ -825,8 +825,8 @@
     transition: filter 0.6s ease;
   }
   /* Frontia식 배경 블라인드: 캐릭터가 서 있으면 배경을 블러+딤(인물 집중) */
-  body:has(#charLayer .char-sprite) #bgLayer,
-  body:has(#charLayer .char-sprite) #bgLayerB { filter: blur(6px) brightness(0.78); }
+  body:not([data-story="hogwarts"]):has(#charLayer .char-sprite) #bgLayer,
+  body:not([data-story="hogwarts"]):has(#charLayer .char-sprite) #bgLayerB { filter: blur(6px) brightness(0.78); }
   /* crossfade partner for #bgLayer (background switches fade, not cut) */
   #bgLayerB {
     position: fixed;
@@ -2164,7 +2164,7 @@
 
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=2"></script>
-<script src="storypacks/hogwarts-au/story.js?v=5"></script>
+<script src="storypacks/hogwarts-au/story.js?v=6"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
 <script src="storypacks/hogwarts-au/world.js?v=6"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -8970,7 +8970,11 @@ function openStoryDetail(id) {
     (saveInfoFor(id) ? `<span class="d-tag" style="color:#6fa8ff">진행 중</span>` : '') +
     (endingsFor(id).length ? `<span class="d-tag" style="color:var(--gold)">엔딩 ${endingsFor(id).length}개 달성</span>` : '');
   document.getElementById('detailDesc').textContent = s.desc || '';
-  document.getElementById('detailChars').innerHTML = charIds.slice(0, 12).map(cid => {
+  // Hogwarts has a larger simulation roster than its illustrated cast.
+  const galleryIds = s.id === 'hogwarts'
+    ? [...new Set(['harry', 'ron', 'hermione', 'malfoy', 'crabbe', 'goyle', ...charIds])].filter(cid => chars[cid]?.img)
+    : charIds;
+  document.getElementById('detailChars').innerHTML = galleryIds.slice(0, 12).map(cid => {
     const srcEsc = charImgSrc(cid, chars, s.id).replace(/'/g, '');
     return `<div class="d-char" onclick="ivView('${srcEsc}')" style="cursor:pointer"><div class="d-char-img" style="background-image:url('${srcEsc}')"></div>` +
       `<div class="d-char-name">${chars[cid].name}</div></div>`;

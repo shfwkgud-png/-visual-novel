@@ -126,6 +126,7 @@ new Function('window',storyScript)(window);
 const pack=window.PANDORA_HOGWARTS_STORY;
 assert(pack);
 assert.equal(pack.id,'hogwarts');
+assert.equal(pack.maxSprites,2);
 assert.equal(pack.endings.length,4);
 for (const id of ['malfoy','crabbe','goyle']) {
   assert.equal(pack.characters[id].gender,'여성');
