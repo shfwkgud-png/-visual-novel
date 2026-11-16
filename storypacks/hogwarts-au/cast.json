@@ -18,6 +18,13 @@
       "firstReferencedBook": 1
     },
     {
+      "id": "alecto",
+      "name": "알렉토 캐로",
+      "kind": "death_eater",
+      "affiliation": "DeathEaters",
+      "firstReferencedBook": 6
+    },
+    {
       "id": "alicia",
       "name": "앨리샤 스피넷",
       "kind": "student",
@@ -31,6 +38,13 @@
       "kind": "other",
       "affiliation": "unassigned",
       "firstReferencedBook": 4
+    },
+    {
+      "id": "amycus",
+      "name": "아미커스 캐로",
+      "kind": "death_eater",
+      "affiliation": "DeathEaters",
+      "firstReferencedBook": 6
     },
     {
       "id": "andromeda",
@@ -389,6 +403,13 @@
       "affiliation": "Gryffindor",
       "cohort": "older-cohort",
       "firstReferencedBook": 1
+    },
+    {
+      "id": "gibbon",
+      "name": "기번",
+      "kind": "death_eater",
+      "affiliation": "DeathEaters",
+      "firstReferencedBook": 6
     },
     {
       "id": "ginny",
@@ -913,6 +934,13 @@
       "name": "로즈메르타",
       "kind": "other",
       "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "rowle",
+      "name": "토르핀 롤",
+      "kind": "death_eater",
+      "affiliation": "DeathEaters",
       "firstReferencedBook": 6
     },
     {
