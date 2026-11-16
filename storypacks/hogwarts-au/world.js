@@ -182,11 +182,22 @@
     const m=/^routine_(\d{4})_(\d{2})_(\d{2})$/.exec(String(id||''));
     return m?routine(m[1]+'-'+m[2]+'-'+m[3],st):null;
   }
-  function optionsFor(ev) {
-    return ev.options.map(x=>'▶ 선택 ['+ev.id+'] '+x.id+' — '+x.label).concat(
-      ['▶ 선택 ['+ev.id+'] skip — 참여하지 않고 다음 사건으로 넘어간다']);
+  function canPreempt(st) {
+    return st.agency.broom_response==='investigated' && st.agency.clue_path==='records';
   }
-  function selectedOption(ev,id) {
+  function optionsFor(ev,st) {
+    const base=ev.options.map(x=>'▶ 선택 ['+ev.id+'] '+x.id+' — '+x.label);
+    if(ev.id==='stone_finale' && canPreempt(st))
+      base.push('▶ 선택 [stone_finale] preempt — 모은 단서로 교수진에게 먼저 진범을 밝힌다');
+    return base.concat(['▶ 선택 ['+ev.id+'] skip — 참여하지 않고 다음 사건으로 넘어간다']);
+  }
+  function selectedOption(ev,id,st) {
+    if(ev.id==='stone_finale' && id==='preempt' && canPreempt(st))
+      return {id:'preempt',label:'사전에 모은 단서로 교수진에게 진범을 밝힌다',
+        intent:'퀴디치 경기에서 조사한 이상 징후와 도서관의 기록을 함께 제시한다. 그 증거를 바탕으로 교수들이 사건이 터지기 전에 움직이도록 설득한다. 다른 학생들 역시 자신의 판단대로 행동한다.',
+        delta:{mcgonagall:3,hermione:2},flags:{stone_finale:'preempt'},
+        offscreen:'교수들이 검증된 단서에 따라 학교의 의심스러운 교수를 미리 조사한다. 원작의 함정문 대면은 그대로 반복되지 않는다.'};
+    if(id==='preempt')return null;
     if(id==='skip')return {id:'skip',label:'사건에 참여하지 않는다',intent:'사건 현장에 가지 않으며 직접 목격한 것으로 주장하지 않는다.',
       delta:{},flags:{},offscreen:'당신의 미참여와 무관하게 관련 인물들은 자신의 목적을 위해 행동했고 그 사건은 흘러갔다.'};
     return ev.options.find(x=>x.id===id);
@@ -228,14 +239,14 @@
     st.pending={id:event.id, offeredAt:event.date};
     return {id:event.id,title:event.title,date:event.date,slot:event.slot,kind:KIND[event.kind],
       background:event.background,intro:event.intro,
-      choices:optionsFor(event)};
+      choices:optionsFor(event,st)};
   }
   function start(st, selected) {
     ensure(st);
     const choice=typeof selected==='string'?parseChoice(selected):selected;
     if(!choice||!st.pending||st.pending.id!==choice.eventId||st.active) return null;
     const ev=getEvent(choice.eventId,st);
-    const opt=ev&&selectedOption(ev,choice.optionId);
+    const opt=ev&&selectedOption(ev,choice.optionId,st);
     if(!opt) return null;
     st.pending=null;
     st.active={id:ev.id,choice:opt.id,at:ev.date};
@@ -254,7 +265,7 @@
     ensure(st);
     if(!st.active) return null;
     const ev=getEvent(st.active.id,st);
-    const opt=selectedOption(ev,st.active.choice);
+    const opt=selectedOption(ev,st.active.choice,st);
     // Decide scene consequences exactly once, at the scene boundary.
     const effects=opt.delta||{};
     for(const [id,delta] of Object.entries(effects)) {
@@ -275,7 +286,7 @@
     ensure(st);
     if (st.pending) { const e=getEvent(st.pending.id,st);return e?{
       mode:'offer',id:e.id,title:e.title,intro:e.intro,
-      choices:optionsFor(e),background:e.background}:null; }
+      choices:optionsFor(e,st),background:e.background}:null; }
     if (st.active) { const e=getEvent(st.active.id,st); return e?{mode:'active',title:e.title,choice:st.active.choice}:null; }
     return {mode:'idle'};
   }
