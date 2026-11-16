@@ -1,0 +1,505 @@
+{
+  "schemaVersion": 1,
+  "book": 1,
+  "bookTitle": "마법사의 돌",
+  "span": "1991-1992",
+  "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/ps/",
+  "datePolicy": "정확한 날짜가 알려진 소수의 사건만 날짜를 부여하며, 기본은 학기·장 내 순서",
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "살아남은 아이",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "albus",
+        "mcgonagall",
+        "hagrid"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "1981년 릴리의 희생으로 볼드모트의 육체가 무너진 전력이 재확인된다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 더즐리 가문에서 자신의 마법적 배경을 모른 채 살아간다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "prehistory_known": false
+      }
+    },
+    {
+      "chapter": 2,
+      "title": "유리창 너머의 마법",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "dudley",
+        "petunia",
+        "vernon"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 의도하지 않은 마법 현상을 경험한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "더즐리 가족이 마법의 징후를 억누르려 한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 3,
+      "title": "도착하지 못한 편지",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "petunia",
+        "vernon"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "호그와트 입학 통지가 거듭 전달되지만 가족이 이를 차단한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 편지의 발신지와 존재를 의심하기 시작한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 4,
+      "title": "해그리드의 방문",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "hagrid"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해그리드가 해리의 마법사 신분과 부모의 죽음에 관한 일부 진실을 알려준다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 호그와트 입학을 받아들인다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "harry_knows_wizard": true
+      }
+    },
+    {
+      "chapter": 5,
+      "title": "다이애건 앨리",
+      "period": "summer",
+      "setting": "diagon_alley",
+      "actors": [
+        "harry",
+        "hagrid",
+        "malfoy",
+        "ollivander",
+        "quirrell"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "그린고트 금고 713의 마법사의 돌이 해그리드에 의해 안전하게 옮겨진다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 지팡이를 고르고 또래 말포이와 마주친다.",
+          "access": "local"
+        },
+        {
+          "step": 3,
+          "fact": "돌을 노린 금고 침입 시도가 무산된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "stone_location": "hogwarts"
+      }
+    },
+    {
+      "chapter": 6,
+      "title": "9와 4분의 3 승강장",
+      "period": "autumn",
+      "setting": "hogwarts_express",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "fred",
+        "george"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 론·헤르미온느와 처음 관계를 맺고 학교로 이동한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "말포이와 해리 사이의 경쟁 구도가 시작된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 7,
+      "title": "기숙사 배정",
+      "period": "autumn",
+      "setting": "great_hall",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "mcgonagall",
+        "albus",
+        "neville"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "분류모자가 학생들을 네 기숙사로 나눈다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리·론·헤르미온느는 그리핀도르, 말포이는 슬리데린에 배정된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "houses_assigned": true
+      }
+    },
+    {
+      "chapter": 8,
+      "title": "스네이프의 첫 수업",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "snape",
+        "hagrid",
+        "quirrell"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "스네이프가 해리에게 적대적 태도를 보인다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "학생들은 그린고트 사건과 수상한 교수들의 행동을 연결해 추측한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 9,
+      "title": "비밀 통로와 세 머리 개",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "neville",
+        "filch"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "비행 수업의 소동 뒤 해리가 그리핀도르 수색꾼으로 뽑힌다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "밤의 결투 약속은 함정이었고 학생들이 금지 구역에서 플러피를 목격한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "fluffy_discovered": true
+      }
+    },
+    {
+      "chapter": 10,
+      "title": "핼러윈 트롤 소동",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "quirrell",
+        "snape"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "교내에 트롤이 나타나 혼란이 일어난다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리와 론이 헤르미온느를 구하면서 세 사람이 가까워진다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "trio_formed": true
+      }
+    },
+    {
+      "chapter": 11,
+      "title": "수상한 퀴디치 경기",
+      "period": "autumn",
+      "setting": "quidditch_pitch",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "quirrell",
+        "snape",
+        "hagrid"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리의 빗자루에 저주가 걸리지만 스네이프가 이를 방해한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "학생들은 오히려 스네이프를 범인으로 오해한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "snape_wrongly_suspected": true
+      }
+    },
+    {
+      "chapter": 12,
+      "title": "소망의 거울",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "albus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 투명망토를 받는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "소망의 거울에서 가족에 대한 그리움을 마주하고 덤블도어의 경고를 듣는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "mirror_erised_known": true
+      }
+    },
+    {
+      "chapter": 13,
+      "title": "니콜라 플라멜",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "hagrid",
+        "quirrell",
+        "snape"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "돌의 소유자 니콜라 플라멜과 불사의 영약의 연관성이 밝혀진다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "퀴렐과 스네이프의 접촉이 학생들의 의심을 키운다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "stone_identity_known_to_trio": true
+      }
+    },
+    {
+      "chapter": 14,
+      "title": "해그리드의 용",
+      "period": "spring",
+      "setting": "hagrids_hut",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "hagrid",
+        "charlie",
+        "malfoy"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해그리드의 비밀 용 부화 사건으로 학생들이 야간 통행 규칙을 어긴다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "용을 보내는 과정에서 해리와 헤르미온느가 징계를 받는다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 15,
+      "title": "금지된 숲의 유니콘",
+      "period": "spring",
+      "setting": "forbidden_forest",
+      "actors": [
+        "harry",
+        "hermione",
+        "neville",
+        "hagrid",
+        "firenze",
+        "quirrell"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "누군가 유니콘의 피를 마셔 생명을 연장한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "text": "유니콘을 해친 자가 퀴렐과 결합한 볼드모트임은 이 시점에 대다수 인물에게 숨겨져 있다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 16,
+      "title": "함정문 아래",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "hagrid",
+        "quirrell",
+        "albus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리 일행이 마법사의 돌이 도난당할 것이라 판단한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "덤블도어가 학교를 비운 동안 세 사람이 함정문을 지나 보호 장치를 통과한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "stone_chamber_reached": true
+      }
+    },
+    {
+      "chapter": 17,
+      "title": "두 얼굴을 가진 자",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "quirrell",
+        "voldemort",
+        "albus",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "퀴렐이 볼드모트의 숙주이며 돌을 노린 진범임이 드러난다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 돌의 탈취를 막고 퀴렐은 죽으며 볼드모트의 잔존 의식은 도주한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "마법사의 돌은 이후 파괴되기로 결정된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "quirrell_alive": false,
+        "voldemort_stage": "disembodied",
+        "stone_destroyed": true
+      }
+    }
+  ]
+}
