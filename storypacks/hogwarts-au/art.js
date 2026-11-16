@@ -8,6 +8,11 @@ window.PANDORA_HOGWARTS_ART = {
     'dormitory', 'headmaster', 'quidditch', 'dueling', 'infirmary', 'night_garden', 'astronomy',
     'ballroom', 'hogsmeade', 'diagon_alley', 'platform_nine_three_quarters', 'hogwarts_express_compartment',
     'hagrid_hut', 'forbidden_forest', 'hogwarts_grounds',
+    'leaky_cauldron', 'privet_drive', 'surrey_zoo_reptile_house', 'hut_on_rock', 'fluffy_trapdoor',
+    'devils_snare_chamber', 'flying_keys_vault', 'mirror_vault', 'erised_abandoned_classroom',
+    'burrow', 'flourish_blotts', 'myrtle_bathroom', 'chamber_of_secrets', 'aragog_hollow', 'whomping_willow',
+    'wizard_chess_chamber', 'shrieking_shack', 'black_lake_night', 'azkaban_exterior',
+    'divination_classroom', 'knight_bus_interior',
   ],
   backgrounds: {
     "hogwarts_courtyard": "호그와트 교정",
