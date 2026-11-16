@@ -4,10 +4,6 @@
   "bookTitle": "죽음의 성물",
   "span": "1997-1998",
   "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/dh/",
-  "verifiedExactDates": {
-    "1997-07-27": "일곱 포터의 전투",
-    "1998-05-02": "호그와트 최후 전투와 볼드모트 사망"
-  },
   "epilogue": {
     "period": "2017",
     "status": "정사 후일담(본편 플레이 범위 밖)",
@@ -1169,6 +1165,26 @@
         "wizard_war_stage": "ended",
         "minister": "kingsley"
       }
+    }
+  ],
+  "timelineAnchors": [
+    {
+      "date": "1997-07-27",
+      "event": "일곱 포터의 전투",
+      "confidence": "lexicon_editor_inferred",
+      "source": "https://www.hp-lexicon.org/event/late-july-27-1997-battle-of-the-seven-potters/"
+    },
+    {
+      "date": "1997-08-01",
+      "event": "빌·플뢰르 결혼식과 마법부 함락",
+      "confidence": "lexicon_editor_inferred",
+      "source": "https://www.hp-lexicon.org/timeline/master-timeline/the-modern-era/the-second-rise-of-voldemort/harry-potters-seventh-year/"
+    },
+    {
+      "date": "1998-05-02",
+      "event": "호그와트 전투와 볼드모트 사망",
+      "confidence": "established_canon_date",
+      "source": "https://www.hp-lexicon.org/timeline/master-timeline/the-modern-era/the-second-rise-of-voldemort/harry-potters-seventh-year/"
     }
   ]
 }
