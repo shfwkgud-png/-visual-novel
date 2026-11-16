@@ -1,0 +1,927 @@
+{
+  "schemaVersion": 1,
+  "book": 6,
+  "bookTitle": "혼혈 왕자",
+  "span": "1996-1997",
+  "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/hbp/",
+  "verifiedExactDates": {
+    "1996-07": "말포이 임무와 깨지지 않는 맹세",
+    "1997-06-30": "천문탑의 무장해제와 덤블도어 사망"
+  },
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "다른 총리",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "fudge",
+        "scrimgeour",
+        "voldemort"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "머글 세계에서 벌어진 사고·살해 사건들이 볼드모트 전쟁과 연결된다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "코닐리어스 퍼지가 물러나고 루퍼스 스크림저가 마법부 장관이 된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "minister": "scrimgeour",
+        "wizard_war_stage": "open_war"
+      }
+    },
+    {
+      "chapter": 2,
+      "title": "스피너즈 엔드",
+      "period": "summer",
+      "setting": "spinners_end",
+      "actors": [
+        "snape",
+        "narcissa",
+        "bellatrix",
+        "malfoy"
+      ],
+      "access": "gm",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "나시사가 자녀 말포이의 위험한 임무를 걱정하며 스네이프에게 도움을 구한다.",
+          "access": "gm"
+        },
+        {
+          "step": 2,
+          "fact": "스네이프는 말포이를 보호하고 실패하면 임무를 대신하기로 깨지지 않는 맹세를 한다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "unbreakable_vow_active": true,
+        "malfoy_mission_started": true
+      }
+    },
+    {
+      "chapter": 3,
+      "title": "덤블도어의 방문",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "albus",
+        "petunia",
+        "vernon",
+        "dudley",
+        "sirius"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 해리를 데리러 와 시리우스의 유산과 크리처의 소유권 문제를 다룬다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 덤블도어의 손이 심하게 손상된 사실을 본다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "text": "덤블도어는 건트 가문의 반지 호크룩스를 파괴할 때 걸린 저주로 죽음을 앞둔다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "dumbledore_hand_cursed": true
+      }
+    },
+    {
+      "chapter": 4,
+      "title": "호러스 슬러그혼",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "albus",
+        "slughorn"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어와 해리가 호러스 슬러그혼에게 교수 복귀를 설득한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "슬러그혼의 인맥 선호와 톰 리들에 대한 과거 지식이 중요해진다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "slughorn_returned": true
+      }
+    },
+    {
+      "chapter": 5,
+      "title": "가족의 불화",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "fleur",
+        "bill",
+        "tonks",
+        "molly",
+        "arthur"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "빌과 플뢰르의 결혼을 둘러싼 가족 분위기가 거칠어진다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "통스의 침울한 모습이 주변인에게 오해를 낳는다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 6,
+      "title": "말포이의 비밀 거래",
+      "period": "summer",
+      "setting": "diagon_alley",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "narcissa",
+        "borgin"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "말포이가 보진과 버크스 상점에서 수상한 물건에 관해 거래한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "text": "말포이가 두 사라지는 장롱을 연결해 죽음을 먹는 자를 학교로 들일 계획을 세운다.",
+          "access": "gm"
+        },
+        {
+          "step": 3,
+          "fact": "해리는 말포이의 행동이 볼드모트 관련 임무라고 의심한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "cabinet_plot_active": true
+      }
+    },
+    {
+      "chapter": 7,
+      "title": "슬러그 클럽",
+      "period": "autumn",
+      "setting": "hogwarts_express",
+      "actors": [
+        "harry",
+        "slughorn",
+        "ginny",
+        "neville",
+        "malfoy",
+        "tonks"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "슬러그혼이 재능과 배경을 가진 학생을 사적으로 초대한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 말포이를 추적하다 발각되어 위험해진다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 8,
+      "title": "스네이프의 승리",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "snape",
+        "slughorn",
+        "harry",
+        "ron",
+        "hermione",
+        "albus"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "스네이프가 어둠의 마법 방어술 교수 자리를 차지하고 슬러그혼이 마법약을 맡는다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "과거부터 방어술 교직에 저주가 있다는 징후가 다시 강조된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "snape_teaches_defense": true
+      }
+    },
+    {
+      "chapter": 9,
+      "title": "혼혈 왕자의 교과서",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "slughorn",
+        "ron",
+        "hermione",
+        "snape"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 필기와 주문이 적힌 낡은 마법약 교과서를 손에 넣는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "책의 도움으로 슬러그혼에게서 행운의 약을 받는다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "text": "교과서의 주인은 젊은 스네이프다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "prince_textbook_harry": true
+      }
+    },
+    {
+      "chapter": 10,
+      "title": "건트 가문의 기억",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "riddle",
+        "morfin",
+        "merope"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 건트 가문의 유산과 톰 리들의 출생 배경을 기억으로 보여준다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "혈통 집착과 마법 물건의 수집이 볼드모트의 성향과 연결된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "gaunt_history_known_to_harry": true
+      }
+    },
+    {
+      "chapter": 11,
+      "title": "헤르미온느의 도움",
+      "period": "autumn",
+      "setting": "quidditch_pitch",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "mclaggen"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "그리핀도르 퀴디치 선발이 진행되고 론과 다른 후보 사이에 경쟁이 벌어진다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "친구 사이의 우정과 질투가 학생 생활에 영향을 준다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 12,
+      "title": "은과 오팔",
+      "period": "autumn",
+      "setting": "hogsmeade",
+      "actors": [
+        "harry",
+        "katie",
+        "malfoy",
+        "rosmerta",
+        "albus"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "케이티 벨이 저주받은 목걸이에 닿아 중상을 입는다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "text": "목걸이는 말포이가 덤블도어에게 보내려 했던 암살 수단이다.",
+          "access": "gm"
+        },
+        {
+          "step": 3,
+          "fact": "학교는 누군가 교수를 노린다고 의심한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "katie_cursed": true
+      }
+    },
+    {
+      "chapter": 13,
+      "title": "어린 톰 리들",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "riddle"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 고아원에 있던 톰 리들의 어린 시절 기억을 보여준다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "리들이 남을 지배하고 의미 있는 물건을 취득하는 성향이 확인된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "riddle_orphanage_memory_seen": true
+      }
+    },
+    {
+      "chapter": 14,
+      "title": "행운의 약",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "slughorn"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "퀴디치와 연애 감정 때문에 친구 사이가 흔들린다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "행운의 약을 둘러싼 오해가 론의 자신감과 경기 결과에 영향을 준다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 15,
+      "title": "깨지지 않는 맹세의 소문",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "malfoy",
+        "snape",
+        "slughorn",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 말포이와 스네이프의 비밀 대화를 일부 엿듣는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "말포이는 스네이프를 온전히 신뢰하지 않고 임무의 실패를 두려워한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_suspects_malfoy": true
+      }
+    },
+    {
+      "chapter": 16,
+      "title": "혹독한 크리스마스",
+      "period": "winter",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "arthur",
+        "scrimgeour",
+        "ginny"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "마법부가 해리의 상징성을 선전에 이용하려 하지만 해리는 거절한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "말포이 가문의 문제와 전쟁의 긴장이 가족 휴가에도 스며든다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 17,
+      "title": "불완전한 기억",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "slughorn",
+        "riddle"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 슬러그혼이 제공한 기억이 조작됐음을 보여준다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 과거 톰 리들이 무엇을 물었는지 알아내는 임무를 받는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "slughorn_memory_tampered_known": true
+      }
+    },
+    {
+      "chapter": 18,
+      "title": "생일의 독",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "slughorn",
+        "romilda"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "론이 본의 아니게 사랑의 묘약을 먹고 슬러그혼에게 도움을 청한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "독이 든 술을 마신 론이 위험해지자 해리가 해독법으로 살린다.",
+          "access": "local"
+        },
+        {
+          "step": 3,
+          "text": "독이 든 술은 말포이의 암살 계획과 이어진다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "ron_poisoned": true,
+        "ron_survived": true
+      }
+    },
+    {
+      "chapter": 19,
+      "title": "집요정의 미행",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "dobby",
+        "kreacher",
+        "malfoy",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 도비와 크리처에게 말포이의 행동을 조사하도록 시킨다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "말포이가 필요의 방에 반복해서 출입한다는 정보가 확보된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "malfoy_room_usage_known": true
+      }
+    },
+    {
+      "chapter": 20,
+      "title": "볼드모트의 요청",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "riddle",
+        "hepzibah",
+        "slughorn"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "톰 리들이 헵시바 스미스의 유물들에 관심을 가졌던 기억을 본다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "리들이 과거 덤블도어에게 방어술 교수직을 요구했다가 거절된 사실을 확인한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "founder_relic_clues": true
+      }
+    },
+    {
+      "chapter": 21,
+      "title": "들어갈 수 없는 방",
+      "period": "spring",
+      "setting": "room_requirement",
+      "actors": [
+        "harry",
+        "malfoy",
+        "moaning_myrtle",
+        "dobby",
+        "kreacher"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 말포이가 필요의 방에서 무엇을 하는지 알아내지 못한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "말포이는 두 사라지는 장롱을 연결하기 위해 준비를 계속한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 22,
+      "title": "장례식 이후",
+      "period": "spring",
+      "setting": "hagrids_hut",
+      "actors": [
+        "harry",
+        "slughorn",
+        "hagrid",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "아라고그의 장례가 열리고 해리가 행운의 약을 이용해 슬러그혼과 대화한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 마침내 손대지 않은 진짜 기억을 얻는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "slughorn_true_memory_acquired": true
+      }
+    },
+    {
+      "chapter": 23,
+      "title": "호크룩스",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "riddle",
+        "slughorn"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 리들의 진짜 질문이 영혼 분할과 다수 호크룩스 제작에 관한 것이었음을 알려준다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "일기장과 반지가 파괴된 호크룩스이며 로켓·잔·뱀 등의 후보가 정리된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_knows_horcrux_theory": true,
+        "horcrux_ring_destroyed": true
+      }
+    },
+    {
+      "chapter": 24,
+      "title": "섹튬셈프라",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "malfoy",
+        "snape",
+        "myrtle",
+        "ginny"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "화장실에서 해리와 말포이가 충돌하고 해리는 효과를 모르는 주문을 사용한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "말포이가 크게 다치지만 스네이프가 치료한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "해리는 징계를 받고 교과서의 위험성을 체감한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "malfoy_injured": true,
+        "malfoy_survived": true
+      }
+    },
+    {
+      "chapter": 25,
+      "title": "우연히 들은 예언자",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "trelawney",
+        "albus",
+        "snape"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "트릴로니가 과거 예언을 엿들은 사람이 스네이프였음을 해리에게 말한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "덤블도어가 호크룩스 탐색에 해리를 데려가려 한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_knows_snape_overheard_prophecy": true
+      }
+    },
+    {
+      "chapter": 26,
+      "title": "바닷가 동굴",
+      "period": "finale",
+      "setting": "sea_cave",
+      "actors": [
+        "harry",
+        "albus",
+        "regulus",
+        "kreacher"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어와 해리가 위험한 약물과 인페리우스가 지키는 동굴의 로켓을 확보한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "로켓은 진품이 아니며 R.A.B.라는 인물이 선수를 쳤다는 편지가 나온다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "덤블도어는 심각하게 쇠약해진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "fake_locket_found": true,
+        "real_locket_location": "unknown"
+      }
+    },
+    {
+      "chapter": 27,
+      "title": "벼락 맞은 탑",
+      "period": "finale",
+      "setting": "astronomy_tower",
+      "actors": [
+        "harry",
+        "albus",
+        "malfoy",
+        "snape",
+        "greyback",
+        "bellatrix"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "사라지는 장롱으로 죽음을 먹는 자들이 학교에 들어오고 교전이 벌어진다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "말포이가 덤블도어를 무장해제하지만 직접 살해하지 못한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "스네이프가 사전 합의에 따라 덤블도어를 죽인다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "dumbledore_alive": false,
+        "elder_wand_allegiance": "malfoy",
+        "tower_attacked": true
+      }
+    },
+    {
+      "chapter": 28,
+      "title": "왕자의 도주",
+      "period": "finale",
+      "setting": "hogwarts_grounds",
+      "actors": [
+        "harry",
+        "snape",
+        "malfoy",
+        "hagrid"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "스네이프와 죽음을 먹는 자들이 학교 밖으로 탈출한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "스네이프가 혼혈 왕자라는 책의 정체를 밝힌다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "prince_identity_known_to_harry": true
+      }
+    },
+    {
+      "chapter": 29,
+      "title": "피닉스의 애가",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "mcgonagall",
+        "ginny",
+        "bill",
+        "fleur",
+        "lupin",
+        "tonks"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어의 죽음과 빌의 부상이 학교와 기사단에 충격을 준다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "교직원들은 호그와트 운영을 이어갈지 논의한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "hogwarts_headmaster_vacant": true,
+        "bill_injured": true
+      }
+    },
+    {
+      "chapter": 30,
+      "title": "하얀 무덤",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "scrimgeour",
+        "mcgonagall"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어의 장례식에서 여러 세력이 모인다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 호크룩스 탐색을 위해 다음 학년도에 복귀하지 않기로 결심한다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "fact": "론과 헤르미온느가 함께하겠다고 약속한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "trio_horcrux_hunt_committed": true
+      }
+    }
+  ]
+}
