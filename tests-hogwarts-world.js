@@ -1,0 +1,138 @@
+'use strict';
+/* Offline living-world integration & regression test.
+   node tests-hogwarts-world.js
+   Tests deterministic story choices, calendar, NPC memory and 433 canon beats. */
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const dir=path.join(__dirname,'storypacks','hogwarts-au');
+const clock=require(path.join(dir,'time.js'));
+const world=require(path.join(dir,'world.js'));
+const engine=require(path.join(dir,'canon-engine.js'));
+const bridge=require(path.join(dir,'canon-bridge.js'));
+const read=(p)=>JSON.parse(fs.readFileSync(path.join(dir,p),'utf8'));
+const meta=read('canon-index.json'),cast=read('cast.json');
+const bundle=bridge.compile(engine,meta,meta.books.map(b=>read(b.path)),cast);
+
+assert.equal(bundle.ledger.events.length,433);
+assert.equal(bundle.dates.b01c07s01,'1991-09-01');
+assert.equal(bundle.dates.b01c10s01,'1991-10-31');
+assert.equal(bundle.dates[bundle.ledger.events.at(-1).id],'1998-05-02');
+assert.equal(bridge.sync(bundle,null,'1991-09-01',[]).progress.committed,15);
+
+let c=clock.createState(),s=world.createState();
+assert.equal(clock.advance(c,'친구에게 말한다').advanced,false);
+assert.equal(clock.advance(c,'▶ 다음 일정').advanced,false);
+assert.equal(clock.chooseHouse(c,'🐍 슬리데린').ok,true);
+assert.equal(clock.chooseHouse(c,'🦁 그리핀도르').ok,false);
+assert.equal(world.nextEvent(s,c.date).id,'first_invitations');
+let e=world.nextEvent(s,c.date),p=world.offer(s,e);
+assert.equal(p.choices.length,4);
+assert.equal(p.choices.filter(x=>x.includes('malfoy')).length,1);
+assert.equal(world.resume(JSON.parse(JSON.stringify(s))).mode,'offer');
+let shifted=clock.moveToScene(c,e.date,e.slot);
+assert(shifted.advanced);
+assert.equal(c.date,'1991-09-03');
+assert.equal(clock.moveToScene(c,'1991-09-02',0).advanced,false);
+assert.equal(clock.advance(c,'너와 더 오래 이야기하고 싶어').advanced,false);
+assert.equal(c.date,'1991-09-03');
+let scene=world.start(s,p.choices.find(x=>x.includes('hermione')));
+assert.equal(scene.id,'first_invitations');
+assert.equal(world.resume(JSON.parse(JSON.stringify(s))).mode,'active');
+assert(!world.finish(s).offscreen.includes('헤르미온느는 혼자'));
+assert.equal(s.ties.hermione,3);
+assert.equal(s.ties.malfoy,-1);
+assert.equal(s.agency.first_circle,'hermione');
+assert.equal(world.finish(s),null);
+const winter=world.EVENTS.find(x=>x.id==='winter_choice');
+assert(world.offer(s,winter).intro.includes('학기 초 모임에 오지'));
+assert.equal(world.ending(s),null);
+
+// Earned, non-automatic alternate finale: clues from two distinct earlier events.
+let alt=world.createState(),ac=clock.createState();
+clock.chooseHouse(ac,'🦅 레번클로');
+let eventCount=0;
+while (eventCount++<30) {
+  let ev=world.nextEvent(alt,ac.date);
+  if(!ev||ev.year>1)break;
+  const offer=world.offer(alt,ev);
+  assert(offer);
+  clock.moveToScene(ac,ev.date,ev.slot);
+  let selected=offer.choices.find(x=>{
+    if(ev.id==='first_quidditch')return x.includes('investigate');
+    if(ev.id==='mirror_rumor')return x.includes('records');
+    if(ev.id==='stone_finale')return x.includes('preempt');
+    return x.includes('skip');
+  });
+  assert(selected,'Missing eligible choice: '+ev.id);
+  assert(world.start(alt,selected),'Could not select '+ev.id);
+  assert(world.finish(alt),'Could not finish '+ev.id);
+}
+assert(alt.decisions.some(x=>x.id==='stone_finale'&&x.choice==='preempt'));
+const branch=bridge.sync(bundle,null,'1992-06-26',alt.decisions);
+assert.equal(branch.state.statuses.b01c17s01,'altered');
+assert.equal(branch.state.statuses.b01c17s02,'altered');
+assert.equal(branch.state.world.stone_destroyed,true);
+assert.equal(branch.progress.pending,0);
+
+const unknown=world.createState();
+const originalFinale=world.offer(unknown,world.EVENTS.find(x=>x.id==='stone_finale'));
+assert(!originalFinale.choices.some(x=>x.includes('preempt')));
+assert.equal(world.start(unknown,'▶ 선택 [stone_finale] preempt — unearned'),null);
+
+// Run a complete 7-school-year episode flow entirely offline.
+c=clock.createState();clock.chooseHouse(c,'🐍 슬리데린');s=world.createState();
+let count=0,seen=new Set(),canonState=null,year1=0;
+while(count++<130) {
+  const ev=world.nextEvent(s,c.date);
+  if(!ev)break;
+  assert(!seen.has(ev.id),'Duplicate event '+ev.id);
+  seen.add(ev.id);
+  const move=clock.moveToScene(c,ev.date,ev.slot);
+  assert.notEqual(move.reason,'clock-rewind');
+  assert.notEqual(move.reason,'invalid-event-time');
+  assert(clock.valid(c));
+  const offered=world.offer(s,ev);
+  assert(offered&&offered.choices.length>=3);
+  const chosen=world.start(s,offered.choices.at(-1)); // do not participate
+  assert(chosen);
+  assert(world.finish(s));
+  if(ev.year===1)year1++;
+  const snap=JSON.parse(JSON.stringify({c,s}));
+  assert(clock.valid(snap.c)&&world.valid(snap.s));
+  // Background canon is committed after player decision; never witnessed offscreen.
+  const res=bridge.sync(bundle,canonState,c.date,s.decisions);
+  canonState=res.state;
+  assert(!Object.keys(canonState.witnessed).length);
+}
+assert(year1>=11,'Missing year-one core events');
+assert(seen.has('battle_of_hogwarts'));
+assert.equal(c.date,'1998-05-02');
+assert.equal(world.nextEvent(s,c.date),null);
+assert.equal(bridge.sync(bundle,canonState,c.date,s.decisions).progress.committed,433);
+assert.equal(engine.playerKnowledge(bundle.ledger,canonState).some(x=>x.fact.includes('퀴렐이 볼드모트의 숙주')),false);
+assert.equal(world.ending(s).title,'호그와트 이후의 삶'); // skipped battle, fallback route
+
+// Built-in story must remain SFW-only and include reachable endings.
+const storyScript=fs.readFileSync(path.join(dir,'story.js'),'utf8');
+const window={};
+new Function('window',storyScript)(window);
+const pack=window.PANDORA_HOGWARTS_STORY;
+assert(pack);
+assert.equal(pack.id,'hogwarts');
+assert.equal(pack.endings.length,4);
+assert(!('cgManifest' in pack));
+
+const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
+assert(html.includes('storypacks/hogwarts-au/world.js?v=4'));
+assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=2'));
+assert(html.includes('moveToScene(clock,upcoming.date,upcoming.slot)'));
+assert(html.includes('gameState.hogwarts.world = PandoraHogwartsWorld.createState()'));
+assert(html.includes('await syncHogwartsCanon()'));
+assert(html.includes('World') && html.includes('7년의 여정을 돌아보고 결말'));
+const start=html.indexOf('<script>'),end=html.lastIndexOf('</script>');
+assert(start>=0&&end>start);
+new Function(html.slice(start+8,end));
+console.log(JSON.stringify({test:'hogwarts-living-world',result:'PASS',events:seen.size,
+  firstYearEvents:year1,canonBeats:canonState.cursor,year7:c.date,
+  alternateCanonBranch:branch.progress.altered,endingCount:pack.endings.length}));
