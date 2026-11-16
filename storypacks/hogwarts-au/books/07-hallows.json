@@ -953,7 +953,10 @@
         "goyle",
         "fred",
         "percy",
-        "mcgonagall"
+        "mcgonagall",
+        "lupin",
+        "tonks",
+        "colin"
       ],
       "access": "public",
       "beats": [
@@ -974,7 +977,7 @@
         },
         {
           "step": 4,
-          "fact": "전투 중 프레드가 사망한다.",
+          "fact": "호그와트 전투 과정에서 프레드, 루핀, 통스, 콜린 크리비 등 여러 인물이 목숨을 잃는다.",
           "access": "public"
         }
       ],
@@ -983,7 +986,10 @@
         "horcrux_diadem_destroyed": true,
         "crabbe_alive": false,
         "fred_alive": false,
-        "malfoy_rescued": true
+        "malfoy_rescued": true,
+        "lupin_alive": false,
+        "tonks_alive": false,
+        "colin_alive": false
       }
     },
     {
