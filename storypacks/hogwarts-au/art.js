@@ -13,6 +13,10 @@ window.PANDORA_HOGWARTS_ART = {
     'burrow', 'flourish_blotts', 'myrtle_bathroom', 'chamber_of_secrets', 'aragog_hollow', 'whomping_willow',
     'wizard_chess_chamber', 'shrieking_shack', 'black_lake_night', 'azkaban_exterior',
     'divination_classroom', 'knight_bus_interior',
+    'riddle_house', 'quidditch_world_cup_camp', 'quidditch_world_cup', 'ministry_atrium', 'tri_dragon_arena',
+    'hogwarts_kitchens', 'prefects_bathroom', 'tri_black_lake_underwater', 'ministry_courtroom', 'tri_hedge_maze',
+    'little_hangleton_graveyard', 'privet_drive_underpass', 'grimmauld_place', 'umbridge_office', 'hogs_head_interior',
+    'room_of_requirement_training', 'st_mungos_ward', 'hall_of_prophecy', 'death_chamber_veil',
   ],
   backgrounds: {
     "hogwarts_courtyard": "호그와트 교정",
