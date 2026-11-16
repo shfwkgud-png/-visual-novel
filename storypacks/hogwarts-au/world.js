@@ -185,6 +185,32 @@
   function canPreempt(st) {
     return st.agency.broom_response==='investigated' && st.agency.clue_path==='records';
   }
+  function introFor(ev,st) {
+    let intro=ev.intro;
+    const first=st.agency.first_circle;
+    if(ev.id==='winter_choice') {
+      if(first==='hermione') intro+='\n\n말포이는 학기 초 모임에 오지 않았던 일을 아직 기억한다. 오늘의 제안 역시 온전히 호의적이지 않을 수 있다.';
+      else if(first==='malfoy') intro+='\n\n말포이는 지난 모임에서 나눈 말을 기억한다. 초대가 있었다고 해서 신뢰가 완성된 건 아니다.';
+      else if(first==='independent') intro+='\n\n두 사람 모두 당신이 첫 초대를 거절했던 일을 기억한다. 이번 만남은 새로 시작해야 한다.';
+    }
+    if(ev.id==='spring_duel') {
+      const d=st.ties.malfoy||0,h=st.ties.hermione||0;
+      if(d>h) intro+='\n\n말포이는 당신이 자신에게 조금 더 가까운 사람이라고 여긴다. 그 기대는 오늘 공개적으로 시험받는다.';
+      else if(h>d) intro+='\n\n헤르미온느는 당신이 자신과 함께 조사했던 일을 기억한다. 말포이도 그때 당신의 선택을 잊지 않았다.';
+      else intro+='\n\n누구에게도 쉽게 편을 들어 주지 않았던 선택이 되돌아온다.';
+    }
+    if(ev.id==='end_of_first_year') {
+      if((st.ties.malfoy||0)>=3)intro+='\n\n말포이는 표현하지 않지만, 떠나기 전에 당신에게 따로 할 말이 있어 보인다.';
+      if((st.ties.hermione||0)>=3)intro+='\n\n헤르미온느는 여러 번 함께 공부하거나 조사했던 일을 적어 두었다.';
+    }
+    if(ev.id==='prince_secret') {
+      if((st.ties.malfoy||0)>=3)intro+='\n\n5년 전 첫 학기의 모임에서 시작된 신뢰가 있다면, 지금 그 흔적이 아주 작은 망설임으로 나타날 수 있다. 그렇다고 임무의 비밀을 바로 털어놓지는 않는다.';
+      else if((st.ties.malfoy||0)<0)intro+='\n\n오래전의 냉담함을 말포이는 아직 기억한다. 당신이 그 비밀에 접근하려면 먼저 불신부터 넘어서야 한다.';
+    }
+    if(ev.id==='hallows_school' && st.agency.phoenix==='resist')
+      intro+='\n\n엄브리지 시절 위험을 감수했던 학생들이 당신의 태도를 기억한다. 같은 사람들이 다시 도움을 청할 수도 있다.';
+    return intro;
+  }
   function optionsFor(ev,st) {
     const base=ev.options.map(x=>'▶ 선택 ['+ev.id+'] '+x.id+' — '+x.label);
     if(ev.id==='stone_finale' && canPreempt(st))
@@ -238,7 +264,7 @@
     if (!event || st.finished[event.id] || st.active || st.pending) return null;
     st.pending={id:event.id, offeredAt:event.date};
     return {id:event.id,title:event.title,date:event.date,slot:event.slot,kind:KIND[event.kind],
-      background:event.background,intro:event.intro,
+      background:event.background,intro:introFor(event,st),
       choices:optionsFor(event,st)};
   }
   function start(st, selected) {
@@ -285,7 +311,7 @@
   function resume(st) {
     ensure(st);
     if (st.pending) { const e=getEvent(st.pending.id,st);return e?{
-      mode:'offer',id:e.id,title:e.title,intro:e.intro,
+      mode:'offer',id:e.id,title:e.title,intro:introFor(e,st),
       choices:optionsFor(e,st),background:e.background}:null; }
     if (st.active) { const e=getEvent(st.active.id,st); return e?{mode:'active',title:e.title,choice:st.active.choice}:null; }
     return {mode:'idle'};
@@ -306,7 +332,20 @@
       +'- 인물 관계는 점수로 연애를 결정하지 않는다. 신뢰/경계는 말투, 초대, 도움, 비밀 공개에만 반영한다. '
       +'전지적 선지식·자동 복종·갑작스런 고백 금지.\n';
   }
+  function ending(st) {
+    ensure(st);
+    if(!st.finished.battle_of_hogwarts) return null;
+    const route=st.agency.finale;
+    const title=route==='defend'?'호그와트의 수호자'
+      :route==='save'?'한 사람을 지킨 마법사'
+      :route==='evacuate'?'살아남은 이들의 증언':'호그와트 이후의 삶';
+    const closest=Object.entries(st.ties).sort((a,b)=>b[1]-a[1])[0];
+    let note='1998년 5월. 호그와트를 뒤흔든 전쟁이 끝났다. 당신은 예언의 주인공이 아니었지만, 당신이 떠난 자리에 선택의 흔적이 남았다.';
+    if(closest && closest[1]>0)note+='\n\n오래 쌓아 온 신뢰 중 가장 크게 남은 인연은 '+({malfoy:'말포이',hermione:'헤르미온느',neville:'네빌',harry:'해리'}[closest[0]]||'한 친구')+'와의 관계였다.';
+    note+='\n\n그동안의 사건을 기억하는 이들은 각자의 삶으로 돌아간다. 호그와트의 7년은 이대로 당신만의 기록이 된다.';
+    return {title,narration:note};
+  }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,finish,resume,context,
+  return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,finish,resume,context,ending,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });
