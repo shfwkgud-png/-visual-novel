@@ -2165,9 +2165,9 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/story.js?v=1"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/world.js?v=3"></script>
+<script src="storypacks/hogwarts-au/world.js?v=4"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=1"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=2"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -14894,6 +14894,10 @@ function showChoices(choices) {
   if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsWorld &&
       gameState.hogwarts && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) {
     const hw = gameState.hogwarts.world;
+    // Ending cards are a deliberate end-of-story state, not another day.
+    if (hw.epilogue) {
+      if (!choices.includes('▶ 결말을 기록하고 엔딩 보기')) choices.push('▶ 결말을 기록하고 엔딩 보기');
+    } else
     // Only offer a scene-ending action when the player chooses to finish;
     // never count ordinary dialogue turns as hours or days.
     if (!hw.pending) {
@@ -15038,6 +15042,26 @@ async function handlePlayerInput(text) {
       gameState.hogwarts && PandoraHogwartsTime.valid(gameState.hogwarts)) {
     const clock = gameState.hogwarts, world = clock.world, hw = PandoraHogwartsWorld;
     if (hw.valid(world)) {
+      if (/^▶\s*7년의 여정을 돌아보고 결말을 이야기한다/.test(text)) {
+        const conclusion=hw.ending(world);
+        if (!conclusion) {
+          renderFixedStep('아직 마지막 사건을 겪지 않았습니다. 지금의 장면을 먼저 이어가세요.',
+            ['▶ 다음 장면 — 다음 사건·일상으로 진행']);return;
+        }
+        world.epilogue=conclusion.title;
+        gameState.event=null;
+        gameState.location='호그와트';
+        updateStatusUI();
+        renderFixedStep(conclusion.narration,['▶ 결말을 기록하고 엔딩 보기'],{
+          background:'hogwarts_courtyard',resetSprites:true});
+        autoSave();
+        return;
+      }
+      if (/^▶\s*결말을 기록하고 엔딩 보기/.test(text)) {
+        if(world.epilogue) { showEndingCard(world.epilogue); autoSave(); return; }
+        renderFixedStep('아직 엔딩이 확정되지 않았습니다. 마지막 사건을 완료하세요.',
+          ['▶ 다음 장면 — 다음 사건·일상으로 진행']);return;
+      }
       if (hw.isFinish(text)) {
         const result = hw.finish(world);
         if (!result) {
@@ -15067,8 +15091,9 @@ async function handlePlayerInput(text) {
         }
         const upcoming=hw.nextEvent(world,clock.date);
         if (!upcoming) {
-          renderFixedStep('호그와트에서의 7년이 마지막 장면을 향해 간다. 이미 겪은 선택과 관계를 바탕으로 결말을 만들어야 한다.',
-            ['▶ 7년의 여정을 돌아보고 결말을 이야기한다']);
+          const fin=hw.ending(world);
+          renderFixedStep(fin ? '호그와트에서 보낸 7년의 마지막 페이지다. 이제 직접 걸어온 길의 결말을 확인할 수 있다.' : '더는 등록된 주요 사건이 없습니다. 일상 대화를 이어가거나 마지막 장면을 돌아볼 수 있습니다.',
+            fin ? ['▶ 7년의 여정을 돌아보고 결말을 이야기한다'] : null);
           autoSave(); return;
         }
         const travel=PandoraHogwartsTime.moveToScene(clock,upcoming.date,upcoming.slot);
