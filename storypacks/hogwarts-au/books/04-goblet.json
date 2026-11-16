@@ -1,0 +1,1102 @@
+{
+  "schemaVersion": 1,
+  "book": 4,
+  "bookTitle": "불의 잔",
+  "span": "1994-1995",
+  "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/gf/",
+  "verifiedExactDates": {
+    "1994-08-25": "월드컵 결승",
+    "1994-11-24": "첫 번째 과제",
+    "1995-02-24": "두 번째 과제",
+    "1995-06-24": "세 번째 과제와 묘지 사건"
+  },
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "리들 가문의 집",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "voldemort",
+        "wormtail",
+        "nagini",
+        "frank_bryce"
+      ],
+      "access": "gm",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "볼드모트가 육체가 없는 상태로 페티그루의 도움을 받으며 계획을 세운다.",
+          "access": "gm"
+        },
+        {
+          "step": 2,
+          "fact": "그들의 대화를 들은 프랭크 브라이스가 살해된다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "frank_bryce_alive": false
+      }
+    },
+    {
+      "chapter": 2,
+      "title": "흉터의 통증",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "sirius"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 볼드모트 관련 악몽 뒤 흉터 통증을 느낀다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "시리우스에게 불안을 전한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "scar_visions_active": true
+      }
+    },
+    {
+      "chapter": 3,
+      "title": "퀴디치 월드컵 초대",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "arthur",
+        "molly"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 위즐리 가족의 월드컵 관람 초대를 받는다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "마법사회 대형 행사에 처음 본격적으로 참여하게 된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 4,
+      "title": "버로로의 귀환",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "fred",
+        "george",
+        "arthur",
+        "molly"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "위즐리 집에서 쌍둥이의 장난감 사업과 가족의 갈등을 목격한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "세 친구가 월드컵을 준비한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 5,
+      "title": "장난감과 사업 구상",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "fred",
+        "george",
+        "ron",
+        "harry",
+        "molly",
+        "arthur"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "프레드와 조지가 마법 장난감 사업을 준비하고 있음을 알게 된다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "위즐리 가족의 관계와 독립적 목표가 드러난다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 6,
+      "title": "포트키 이동",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "arthur",
+        "amos",
+        "cedric"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "포트키로 월드컵 경기장에 모인 관중들과 합류한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "디고리 부자와 다른 마법사회 인물들이 소개된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 7,
+      "title": "배그먼과 크라우치",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "arthur",
+        "bagman",
+        "barty_senior",
+        "cedric"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "마법부의 월드컵 운영자와 국제 교류 담당자들이 등장한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "바티 크라우치 집안과 윙키가 이후 사건의 실마리를 남긴다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 8,
+      "title": "퀴디치 월드컵 결승",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "krum",
+        "bagman"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "아일랜드가 우승하고 빅터 크룸의 화려한 경기가 주목받는다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "선수와 팬이 뒤섞인 대규모 마법 행사에서 문화적 차이가 드러난다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 9,
+      "title": "어둠의 표식",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "arthur",
+        "winky",
+        "bartyjr",
+        "lucius"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "월드컵 야영지에서 복면 마법사들이 머글을 공격한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "하늘에 어둠의 표식이 출현해 전쟁의 기억을 환기한다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "text": "표식 시전자는 죽음을 먹는 자들에게 포섭되기 전의 바티 크라우치 2세다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "dark_mark_seen": true
+      }
+    },
+    {
+      "chapter": 10,
+      "title": "마법부의 혼란",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "arthur",
+        "barty_senior",
+        "winky",
+        "harry",
+        "ron",
+        "hermione"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "표식 사건 이후 오러들과 관련자 사이에 책임 공방이 벌어진다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "윙키가 해고되고 크라우치 집안의 비밀이 더 깊이 묻힌다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "winky_dismissed": true
+      }
+    },
+    {
+      "chapter": 11,
+      "title": "호그와트로 가는 열차",
+      "period": "autumn",
+      "setting": "hogwarts_express",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "neville"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "학생들이 월드컵과 새 학년도에 관한 소문을 나눈다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "다른 학교가 방문한다는 기대가 커진다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 12,
+      "title": "트리위저드 시합 공지",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "albus",
+        "harry",
+        "ron",
+        "hermione",
+        "cedric"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 세 마법학교 시합을 연다고 알린다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "학교 간 대표 선발과 위험에 관한 규정이 제시된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "triwizard_announced": true
+      }
+    },
+    {
+      "chapter": 13,
+      "title": "새 방어술 교수",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "moody",
+        "bartyjr",
+        "harry",
+        "ron",
+        "hermione"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "앨러스터 무디로 알려진 교사가 호그와트에 도착한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "text": "무디는 이미 바티 크라우치 2세에게 감금되었고 가짜 무디가 폴리주스로 사칭한다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "fake_moody_at_hogwarts": true
+      }
+    },
+    {
+      "chapter": 14,
+      "title": "용서받지 못할 저주",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "moody",
+        "bartyjr",
+        "harry",
+        "ron",
+        "hermione",
+        "neville"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "새 교수가 세 가지 금지 저주를 실제 시연한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "네빌이 부모의 고문 기억과 연결된 충격을 받는다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 15,
+      "title": "두 학교의 도착",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "albus",
+        "karkaroff",
+        "maxime",
+        "fleur",
+        "krum",
+        "cedric"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "보바통과 덤스트랭 일행이 호그와트에 도착한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "학교 간 경쟁과 교류가 생활 전체에 영향을 준다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "visiting_schools_arrived": true
+      }
+    },
+    {
+      "chapter": 16,
+      "title": "불의 잔에 이름을 넣다",
+      "period": "autumn",
+      "setting": "great_hall",
+      "actors": [
+        "harry",
+        "albus",
+        "cedric",
+        "fleur",
+        "krum",
+        "moody",
+        "bartyjr"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "불의 잔이 세 학교 대표를 선정한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "예상치 못하게 해리가 추가 대표로 뽑혀 규칙이 뒤틀린다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "text": "가짜 무디가 별도 학교로 분류되도록 잔을 속여 해리를 지명시킨다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "champions_chosen": true,
+        "harry_forced_into_tournament": true
+      }
+    },
+    {
+      "chapter": 17,
+      "title": "네 번째 대표에 대한 의혹",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "cedric",
+        "fleur",
+        "krum",
+        "albus"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리의 자발적 참가 여부를 두고 학생과 교사 사이에 갈등이 커진다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "론과 해리의 관계가 일시적으로 멀어진다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 18,
+      "title": "지팡이 검사와 기사",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "rita",
+        "ollivander",
+        "cedric",
+        "fleur",
+        "krum"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "시합 대표들의 지팡이를 검사한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "리타 스키터의 기사가 해리와 헤르미온느를 둘러싼 왜곡된 여론을 만든다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 19,
+      "title": "첫 과제의 용",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "hagrid",
+        "cedric",
+        "moody",
+        "bartyjr",
+        "sirius"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 첫 과제에 용이 등장한다는 정보를 알게 된다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "가짜 무디는 해리가 통과하도록 간접적으로 유도한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 20,
+      "title": "첫 번째 과제",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "cedric",
+        "fleur",
+        "krum",
+        "albus"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "시합 대표들이 용을 상대로 황금 알을 확보한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 소환 마법을 활용해 성공하고 론과 화해한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "triwizard_task_one_done": true
+      }
+    },
+    {
+      "chapter": 21,
+      "title": "집요정 해방 운동",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "hermione",
+        "harry",
+        "ron",
+        "dobby",
+        "winky",
+        "hagrid"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "헤르미온느가 집요정의 처우를 문제 삼고 캠페인을 시작한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리 일행이 도비·윙키가 호그와트에서 일하고 있음을 알게 된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 22,
+      "title": "무도회 파트너",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "cho",
+        "cedric",
+        "parvati",
+        "krum"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "크리스마스 무도회가 공지되자 파트너를 정하는 과정에서 관계 갈등이 생긴다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 초 챙이 세드릭과 동행한다는 사실을 알게 된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 23,
+      "title": "크리스마스 무도회",
+      "period": "winter",
+      "setting": "great_hall",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "krum",
+        "fleur",
+        "cedric",
+        "hagrid",
+        "maxime",
+        "karkaroff",
+        "snape"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "무도회에서 헤르미온느와 크룸의 동행이 주목받는다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 카르카로프·스네이프와 해그리드의 비밀을 우연히 듣는다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 24,
+      "title": "스키터의 폭로",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "hermione",
+        "hagrid",
+        "rita",
+        "maxime",
+        "albus"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해그리드의 거인 혈통이 기사로 공개되며 편견이 드러난다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "덤블도어가 해그리드를 지지하고 학생들이 리타의 취재 방식을 의심한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 25,
+      "title": "황금 알과 눈",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "myrtle",
+        "moody",
+        "bartyjr",
+        "snape",
+        "barty_senior"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 목욕탕에서 황금 알의 수중 비밀을 해독한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "마루더즈 지도에 바티 크라우치 이름이 나타나고 가짜 무디가 지도를 빌려간다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 26,
+      "title": "두 번째 과제",
+      "period": "winter",
+      "setting": "black_lake",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "cedric",
+        "fleur",
+        "krum",
+        "dobby"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "대표들이 검은 호수의 인질을 구출하는 과제에 참여한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 길리위드 덕분에 호흡하고 플뢰르의 여동생까지 구한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "triwizard_task_two_done": true
+      }
+    },
+    {
+      "chapter": 27,
+      "title": "패드풋과의 비밀 연락",
+      "period": "spring",
+      "setting": "hogsmeade",
+      "actors": [
+        "harry",
+        "sirius",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "시리우스가 볼드모트의 추종 세력과 크라우치 가문의 과거를 경고한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리 일행의 조사 범위가 학교 밖으로 확대된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 28,
+      "title": "크라우치의 이상 행동",
+      "period": "spring",
+      "setting": "hogwarts_grounds",
+      "actors": [
+        "harry",
+        "krum",
+        "barty_senior",
+        "moody",
+        "bartyjr",
+        "albus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "정신이 혼란스러운 크라우치 1세가 덤블도어에게 도움을 요청하려 한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "text": "가짜 무디가 이를 방해하고 크라우치 1세를 살해해 증거를 숨긴다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "barty_senior_alive": false
+      }
+    },
+    {
+      "chapter": 29,
+      "title": "볼드모트의 꿈",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "albus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 볼드모트의 동향이 담긴 불안한 꿈을 반복해 본다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 위협을 덤블도어에게 보고한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 30,
+      "title": "펜시브의 재판 기억",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "karkaroff",
+        "bartyjr",
+        "barty_senior",
+        "lestrange"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 오래된 재판 기억에서 죽음을 먹는 자들의 이름을 확인한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "바티 크라우치 2세가 아즈카반에 수감됐던 사실이 암시된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 31,
+      "title": "미로의 마지막 과제",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "cedric",
+        "fleur",
+        "krum",
+        "moody",
+        "bartyjr"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "네 명의 대표가 미로를 통과하며 누군가가 시합을 조작하고 있음을 느낀다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리와 세드릭이 함께 우승컵을 잡는다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "triwizard_task_three_done": true
+      }
+    },
+    {
+      "chapter": 32,
+      "title": "묘지의 의식",
+      "period": "finale",
+      "setting": "little_hangleton",
+      "actors": [
+        "harry",
+        "cedric",
+        "wormtail",
+        "voldemort"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "우승컵이 포트키로 변해 해리와 세드릭을 묘지로 옮긴다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "세드릭이 살해되고 페티그루의 의식으로 볼드모트가 육체를 되찾는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "cedric_alive": false,
+        "voldemort_stage": "body_restored"
+      }
+    },
+    {
+      "chapter": 33,
+      "title": "죽음을 먹는 자의 소집",
+      "period": "finale",
+      "setting": "little_hangleton",
+      "actors": [
+        "voldemort",
+        "wormtail",
+        "lucius",
+        "bellatrix",
+        "harry"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "볼드모트가 어둠의 표식으로 충성파를 소집한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "추종자들의 충성심과 과거의 배신을 심문한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "death_eaters_regrouped": true
+      }
+    },
+    {
+      "chapter": 34,
+      "title": "연결되는 지팡이",
+      "period": "finale",
+      "setting": "little_hangleton",
+      "actors": [
+        "harry",
+        "voldemort",
+        "cedric"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리와 볼드모트의 쌍둥이 핵 지팡이가 충돌해 뜻밖의 역효과가 일어난다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 사망자의 잔영이 만든 틈을 타 포트키로 탈출한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_escaped_graveyard": true
+      }
+    },
+    {
+      "chapter": 35,
+      "title": "베리타세룸",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "bartyjr",
+        "moody",
+        "albus",
+        "snape",
+        "mcgonagall"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "가짜 무디의 정체가 바티 크라우치 2세로 드러난다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "진짜 무디가 트렁크에 감금되어 있던 사실과 시합 조작의 전모가 밝혀진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "fake_moody_exposed": true,
+        "moody_rescued": true
+      }
+    },
+    {
+      "chapter": 36,
+      "title": "두 갈래 길",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "fudge",
+        "snape",
+        "sirius",
+        "bartyjr"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "마법부 장관 퍼지가 볼드모트의 부활을 인정하지 않는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "바티 크라우치 2세가 디멘터의 입맞춤을 당해 증언이 사라진다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "덤블도어가 불사조 기사단 인맥을 다시 소집한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "ministry_denies_return": true,
+        "order_reactivated": true,
+        "bartyjr_testimony_lost": true
+      }
+    },
+    {
+      "chapter": 37,
+      "title": "다시 시작되는 전쟁",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "albus",
+        "rita",
+        "fred",
+        "george"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 학생들에게 세드릭의 죽음과 볼드모트의 귀환을 알린다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "헤르미온느가 리타의 불법 애니마구스 비밀을 확보한다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "fact": "해리가 상금을 쌍둥이의 가게에 투자하도록 건넨다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "school_knows_voldemort_return": true
+      }
+    }
+  ]
+}
