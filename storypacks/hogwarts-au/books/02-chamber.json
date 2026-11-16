@@ -1,0 +1,568 @@
+{
+  "schemaVersion": 1,
+  "book": 2,
+  "bookTitle": "비밀의 방",
+  "span": "1992-1993",
+  "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/cs/",
+  "datePolicy": "학기·장 순서 기반; 고정 날짜는 마스터 규칙에서 별도 제공",
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "잊힌 생일",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "petunia",
+        "vernon",
+        "dudley"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 친구들과 떨어진 채 여름을 보내며 편지 소식을 기다린다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 2,
+      "title": "도비의 경고",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "dobby"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "집요정 도비가 호그와트 복귀를 만류하며 위험을 암시한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "도비가 사고를 일으켜 해리의 외부 연락이 차단된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "dobby_warned": true
+      }
+    },
+    {
+      "chapter": 3,
+      "title": "버로의 여름",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "fred",
+        "george",
+        "molly",
+        "arthur",
+        "ginny"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "론과 형제들이 날아다니는 자동차로 해리를 구출한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 위즐리 집안과 가까워지고 지니를 만난다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 4,
+      "title": "서점의 충돌",
+      "period": "summer",
+      "setting": "diagon_alley",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "malfoy",
+        "lucius",
+        "arthur",
+        "lockhart"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "플루 이동 중 해리가 녹턴 앨리를 거쳐 다이애건 앨리에 합류한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "text": "루시우스가 톰 리들의 일기장을 지니의 물품에 몰래 끼워 넣는다.",
+          "access": "gm"
+        },
+        {
+          "step": 3,
+          "fact": "서점에서 루시우스와 아서가 대립하고 록하트가 등장한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "diary_holder": "ginny"
+      }
+    },
+    {
+      "chapter": 5,
+      "title": "버드나무에 충돌한 자동차",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "snape",
+        "mcgonagall"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "승강장이 막혀 해리와 론이 자동차로 학교에 향한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "버드나무와 충돌하고 학교 규율 위반으로 징계를 받는다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 6,
+      "title": "록하트의 수업",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "lockhart",
+        "colin"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "록하트가 어둠의 마법 방어술 교수로 들어오고 실력에 의심을 받는다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "맨드레이크 수업은 후일 석화 해제의 실마리가 된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 7,
+      "title": "혈통 모욕과 속삭임",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "malfoy",
+        "harry",
+        "ron",
+        "hermione",
+        "hagrid"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "순혈 중심의 차별 언어가 공개적으로 사용된다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리만 들을 수 있는 정체불명의 목소리가 성 안을 지난다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "blood_prejudice_escalates": true
+      }
+    },
+    {
+      "chapter": 8,
+      "title": "핼러윈의 경고문",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "myrtle",
+        "filch"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "필치의 고양이가 석화되고 비밀의 방이 열렸다는 벽의 경고가 나타난다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "학교 안에 후계자가 있다는 소문이 번진다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "chamber_open": true,
+        "school_fear": 1
+      }
+    },
+    {
+      "chapter": 9,
+      "title": "슬리데린의 전설",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "mcgonagall",
+        "myrtle"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "학생들이 살라자르 슬리데린의 비밀 시설에 관한 전설을 조사한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "학교에서 특정 혈통 학생이 위협받는다는 공포가 커진다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 10,
+      "title": "저주받은 블러저",
+      "period": "autumn",
+      "setting": "quidditch_pitch",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "dobby",
+        "lockhart",
+        "colin"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "도비가 조작한 블러저가 해리를 추격해 부상을 입힌다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "콜린 크리비까지 석화되어 안전 문제가 심각해진다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "school_fear": 2
+      }
+    },
+    {
+      "chapter": 11,
+      "title": "결투 클럽",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "malfoy",
+        "snape",
+        "lockhart",
+        "hermione",
+        "justin"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "결투 시연 중 해리의 파셀통그 능력이 드러난다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "공격 사건의 범인으로 해리를 의심하는 학생이 늘어난다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "harry_parseltongue_public": true
+      }
+    },
+    {
+      "chapter": 12,
+      "title": "폴리주스의 오해",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "crabbe",
+        "goyle",
+        "albus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리와 론이 변신약으로 슬리데린 학생을 가장해 말포이를 심문한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "말포이는 비밀의 방 사건을 실제로 통제하지 못하고 있음이 확인된다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "헤르미온느는 변신약 사고로 일시적으로 치료가 필요해진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "malfoy_culprit_theory_weakened": true
+      }
+    },
+    {
+      "chapter": 13,
+      "title": "톰 리들의 일기장",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "hermione",
+        "myrtle",
+        "riddle",
+        "hagrid"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 정체불명의 일기장에서 과거 모습을 재현하는 마법을 발견한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "text": "일기장은 어린 톰 리들의 영혼 조각이며 지니를 조종한다.",
+          "access": "gm"
+        },
+        {
+          "step": 3,
+          "fact": "일기장 속 기억이 해그리드를 범인처럼 보이게 한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "diary_holder": "harry"
+      }
+    },
+    {
+      "chapter": 14,
+      "title": "석화와 권력 개입",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "hagrid",
+        "albus",
+        "lucius",
+        "fudge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "헤르미온느 등이 추가로 석화되고 학교 운영 위기가 깊어진다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해그리드가 체포되고 덤블도어가 일시적으로 학교에서 물러난다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "fact": "잃어버린 일기장이 다시 지니에게 돌아간다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "albus_suspended": true,
+        "school_fear": 3,
+        "diary_holder": "ginny"
+      }
+    },
+    {
+      "chapter": 15,
+      "title": "거미의 증언",
+      "period": "spring",
+      "setting": "forbidden_forest",
+      "actors": [
+        "harry",
+        "ron",
+        "hagrid",
+        "aragog"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리와 론이 아라고그를 만나 당시 해그리드가 진범이 아니었음을 확인한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "거미들이 미스터리한 포식자를 두려워한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "hagrid_exoneration_clue": true
+      }
+    },
+    {
+      "chapter": 16,
+      "title": "비밀의 방을 여는 법",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "lockhart",
+        "myrtle"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "석화된 헤르미온느의 단서에서 바실리스크와 배관 이동 경로가 밝혀진다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "지니가 납치되고 록하트는 구출을 피하려다 자기 주문으로 기억을 잃는다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "해리가 화장실 아래 숨은 비밀의 방에 진입한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "basilisk_identified": true,
+        "chamber_entrance_found": true
+      }
+    },
+    {
+      "chapter": 17,
+      "title": "슬리데린의 후계자",
+      "period": "finale",
+      "setting": "chamber_of_secrets",
+      "actors": [
+        "harry",
+        "ginny",
+        "riddle",
+        "fawkes"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "text": "톰 리들의 기억이 지니의 생명을 소모하여 물리적 모습으로 되살아나려 한다.",
+          "access": "gm"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 피닉스의 도움으로 바실리스크를 쓰러뜨리고 독니로 일기장을 파괴한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "지니는 살아나고 리들의 영혼 조각이 사라진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "basilisk_alive": false,
+        "horcrux_diary_destroyed": true,
+        "ginny_rescued": true
+      }
+    },
+    {
+      "chapter": 18,
+      "title": "도비의 해방",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "ginny",
+        "lucius",
+        "dobby",
+        "ron",
+        "hermione"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 복귀하고 석화된 학생들이 회복된다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 루시우스의 소유물인 도비를 해방시키는 계기를 만든다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "fact": "비밀의 방 사건이 일단 종결된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "dobby_free": true,
+        "school_fear": 0,
+        "chamber_open": false
+      }
+    }
+  ]
+}
