@@ -47,9 +47,15 @@ assert(t.valid(restored));
 assert.equal(t.display(restored),t.display(state));
 assert.equal(t.advance(restored,'▶ 다음 학년').advanced,false);
 assert.match(t.context(restored),/AI 변경 불가/);
+const within=t.createState();
+t.chooseHouse(within,'🦁 그리핀도르');
+assert.equal(t.moveToScene(within,'1991-09-03',2).advanced,true);
+assert.equal(within.date,'1991-09-03');
+assert.equal(t.moveToScene(within,'1991-09-02',2).advanced,false);
+assert.equal(t.moveToScene(within,'1991-09-03',1).advanced,false);
 
 const html = fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/time.js?v=1'));
+assert(html.includes('storypacks/hogwarts-au/time.js?v=2'));
 assert(html.includes("window._startPhase = 'hogwarts_sort'"));
 assert(html.includes("s.time && !_isIdol && STORY.id !== 'hogwarts'"));
 assert(html.includes("STORY.id !== 'hogwarts' && typeof data.time"));
