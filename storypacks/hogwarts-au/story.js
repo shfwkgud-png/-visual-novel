@@ -39,6 +39,9 @@
   const art = window.PANDORA_HOGWARTS_ART || { backgrounds: {}, sprites: {} };
   const customBgs = Object.fromEntries(Object.entries(art.backgrounds).map(([key, label]) =>
     [key, { label, url: `sd_samples/backgrounds/hogwarts/${key}.webp` }]));
+  for (const key of ['great_hall', 'hogwarts_courtyard']) {
+    if (customBgs[key]) customBgs[key].portraitUrl = `sd_samples/backgrounds/hogwarts/${key}_portrait.webp`;
+  }
   if (customBgs.dormitory) customBgs.common_room = { ...customBgs.dormitory, label: '배정된 기숙사의 공용실' };
   const characters = Object.fromEntries(rows.map(([id, name, kind, house, year, auGender]) => {
     const role = (house && house !== 'unassigned' ? house + ' · ' : '') + (kindName[kind] || '마법 세계 인물');

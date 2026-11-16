@@ -802,6 +802,7 @@ function hogwartsArtReply(kind) {
       { char_id: 'mcgonagall', speaker: '맥고나걸 교수', emotion: 'normal', text: '슬리데린에 오신 것을 환영합니다.' },
       { char_id: 'malfoy', speaker: '드레이코 말포이', emotion: 'smile', text: '반가워. 길을 알아둘 필요는 있겠지.' },
       { char_id: 'hermione', speaker: '헤르미온느', emotion: 'smile', text: '책은 도서관에 있을 거야.' },
+      { char_id: 'ron', speaker: '론 위즐리', emotion: 'sad', text: '퍼시 형한테 또 한소리 듣겠네.' },
       { char_id: 'harry', speaker: '해리', emotion: 'angry', text: '일단 사실부터 확인하자.' }
     ],
     background: 'great_hall', mood: null, cg: null, ending: null, combat: false
@@ -812,12 +813,14 @@ async function hogwartsArtCheck(ctx) {
   const { page } = ctx;
   await check(ctx, 'Hogwarts opens from the library and loads its own WebP portraits and house rooms', async () => {
     await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    assert.match(await page.locator('#detailCover').getAttribute('style'), /hogwarts_courtyard_portrait\.webp/);
     const gallery = await page.locator('#detailChars .d-char').evaluateAll(cards => cards.map(card => ({
       name: card.querySelector('.d-char-name').textContent,
       image: card.querySelector('.d-char-img').style.backgroundImage
     })));
     assert.equal(gallery.length, 12);
     assert.match(gallery[0].name, /해리/);
+    assert.match(gallery[0].image, /harry\/2d\/1_neutral_v2\.webp/);
     assert.ok(gallery.every(card => card.image.includes('sd_samples/characters/hogwarts/')));
     await page.locator('#detailChars .d-char').first().click();
     await page.waitForFunction(() => document.querySelector('#imgViewerImg')?.naturalWidth > 0);
@@ -833,7 +836,8 @@ async function hogwartsArtCheck(ctx) {
     await page.locator('#choiceBox .choice-btn').filter({ hasText: '슬리데린' }).click();
     await page.waitForFunction(() => gameState.hogwarts.house === '슬리데린' && !sendBtn.disabled);
     await drainDialogue(page);
-    await page.waitForFunction(() => document.getElementById('sprite_harry')?.naturalWidth > 0);
+    await page.waitForFunction(() => ['harry', 'ron'].every(id => document.getElementById('sprite_' + id)?.naturalWidth === 1024)
+      && bgLayer.style.backgroundImage.includes('great_hall_portrait.webp'));
     await page.waitForFunction(() => [...document.querySelectorAll('#charLayer img')]
       .every(img => getComputedStyle(img).opacity === '1'));
     const scene = await page.evaluate(() => ({
@@ -849,13 +853,14 @@ async function hogwartsArtCheck(ctx) {
     assert.match(system, /서로 신뢰와 마음을 확인해 나가면 연애로 이어질 수 있다/);
     assert.ok(firstTurn.messages.some(message => message.content.includes('친구 무리로 굳어지기 전')),
       'the opening model prompt did not receive the unformed trio state');
-    assert.equal(scene.bg, 'sd_samples/backgrounds/hogwarts/great_hall.webp');
+    assert.equal(scene.bg, 'sd_samples/backgrounds/hogwarts/great_hall_portrait.webp');
     assert.equal(scene.dorm, 'sd_samples/backgrounds/hogwarts/slytherin_dormitory.webp');
     assert.equal(scene.room, 'sd_samples/backgrounds/hogwarts/slytherin_common_room.webp');
     assert.equal(scene.art.length, 2);
-    assert.deepEqual(scene.filters, ['none', 'none']);
+    assert.deepEqual(scene.filters, ['blur(6px) brightness(0.78)', 'blur(6px) brightness(0.78)']);
     assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
-    assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger.webp')));
+    assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v2.webp')));
+    assert.ok(scene.art.some(([id,src]) => id === 'sprite_ron' && src.endsWith('/4_sadness_v2.webp')));
     await page.screenshot({ path: path.join(ARTIFACTS, 'hogwarts-opening-' + (ctx.mobile ? 'mobile' : 'desktop') + '.png') });
     // Old four-person history must restore the current speaker within the two-person stage.
     const restored = await page.evaluate(() => {

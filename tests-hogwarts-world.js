@@ -138,11 +138,13 @@ assert.match(pack.worldLore,/여성 말포이는 해리를 명성과 기숙사 �
 assert.match(pack.characters.ron.personality,/친구 곁에 서는 용기/);
 assert(!('cgManifest' in pack));
 const backgrounds=new Set(Object.values(pack.customBgs).map(entry=>entry.url));
+const portraitBackgrounds=Object.values(pack.customBgs).map(entry=>entry.portraitUrl).filter(Boolean);
 const portraits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.emoImgs||{})));
 assert.equal(backgrounds.size,92);
 assert.equal(portraits.size,234);
-for (const id of ['crabbe','goyle']) assert.equal(Object.keys(pack.characters[id].emoImgs).length,6);
-for (const url of [...backgrounds,...portraits]) {
+assert.equal(portraitBackgrounds.length,2);
+for (const id of ['harry','ron','crabbe','goyle']) assert.equal(Object.keys(pack.characters[id].emoImgs).length,6);
+for (const url of [...backgrounds,...portraitBackgrounds,...portraits]) {
   assert.match(url,/^sd_samples\/(backgrounds|characters)\/hogwarts\/[a-z0-9_/]+\.webp$/);
   const bytes=fs.readFileSync(path.join(__dirname,url));
   assert.equal(bytes.toString('ascii',8,12),'WEBP',url);

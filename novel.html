@@ -825,8 +825,8 @@
     transition: filter 0.6s ease;
   }
   /* Frontia식 배경 블라인드: 캐릭터가 서 있으면 배경을 블러+딤(인물 집중) */
-  body:not([data-story="hogwarts"]):has(#charLayer .char-sprite) #bgLayer,
-  body:not([data-story="hogwarts"]):has(#charLayer .char-sprite) #bgLayerB { filter: blur(6px) brightness(0.78); }
+  body:has(#charLayer .char-sprite) #bgLayer,
+  body:has(#charLayer .char-sprite) #bgLayerB { filter: blur(6px) brightness(0.78); }
   /* crossfade partner for #bgLayer (background switches fade, not cut) */
   #bgLayerB {
     position: fixed;
@@ -2163,8 +2163,8 @@
 </div><!-- /#appFrame -->
 
 <script src="pandora-consistency.js?v=369"></script>
-<script src="storypacks/hogwarts-au/art.js?v=2"></script>
-<script src="storypacks/hogwarts-au/story.js?v=6"></script>
+<script src="storypacks/hogwarts-au/art.js?v=3"></script>
+<script src="storypacks/hogwarts-au/story.js?v=7"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
 <script src="storypacks/hogwarts-au/world.js?v=6"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -8960,7 +8960,11 @@ function openStoryDetail(id) {
   const s = allStories()[id];
   if (!s) return;
   detailStoryId = id;
-  document.getElementById('detailCover').style.background = coverBg(s);
+  const detailCover = document.getElementById('detailCover');
+  const portraitCover = s.customBgs?.hogwarts_courtyard;
+  const usePortraitCover = s.id === 'hogwarts' && portraitCover?.url === s.cover && portraitCover.portraitUrl;
+  detailCover.style.background = usePortraitCover ? coverBg({ ...s, cover: portraitCover.portraitUrl }) : coverBg(s);
+  if (usePortraitCover) detailCover.style.backgroundPosition = 'center 32%';
   document.getElementById('detailTitle').textContent = s.title;
   const chars = s.characters || {};
   const charIds = Object.keys(chars);
@@ -15453,7 +15457,8 @@ function bgUrlFor(key) {
     const tk = idolBgTierKey(key);
     if (tk !== key) return `sd_samples/backgrounds/idol/${tk}.webp`;
   }
-  if (STORY.customBgs && STORY.customBgs[key]) return STORY.customBgs[key].url;
+  const scene = STORY.customBgs?.[key];
+  if (scene) return scene.portraitUrl || scene.url;
   const sb = STORY_BG_FILES[STORY.id];
   if (sb && sb.includes(key)) return `sd_samples/backgrounds/${STORY.id}/${key}.webp`;
   return `background/${key}.webp`;
