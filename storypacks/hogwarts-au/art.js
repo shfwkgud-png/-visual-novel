@@ -1,5 +1,11 @@
 // Local WebP asset inventory for the existing Hogwarts story.
 window.PANDORA_HOGWARTS_ART = {
+  portraitBackgrounds: [
+    'great_hall', 'hogwarts_courtyard',
+    'gryffindor_common_room', 'slytherin_common_room', 'ravenclaw_common_room', 'hufflepuff_common_room',
+    'gryffindor_dormitory', 'slytherin_dormitory', 'ravenclaw_dormitory', 'hufflepuff_dormitory',
+    'corridor', 'classroom', 'library', 'potions',
+  ],
   backgrounds: {
     "hogwarts_courtyard": "호그와트 교정",
     "great_hall": "대연회장",

@@ -142,7 +142,10 @@ const portraitBackgrounds=Object.values(pack.customBgs).map(entry=>entry.portrai
 const portraits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.emoImgs||{})));
 assert.equal(backgrounds.size,92);
 assert.equal(portraits.size,234);
-assert.equal(portraitBackgrounds.length,2);
+const houseInteriors=['gryffindor','slytherin','ravenclaw','hufflepuff'].flatMap(house=>[house+'_common_room',house+'_dormitory']);
+for (const key of ['great_hall','hogwarts_courtyard',...houseInteriors]) {
+  assert.equal(pack.customBgs[key].portraitUrl,`sd_samples/backgrounds/hogwarts/${key}_portrait.webp`);
+}
 for (const id of ['harry','ron','crabbe','goyle']) assert.equal(Object.keys(pack.characters[id].emoImgs).length,6);
 for (const url of [...backgrounds,...portraitBackgrounds,...portraits]) {
   assert.match(url,/^sd_samples\/(backgrounds|characters)\/hogwarts\/[a-z0-9_/]+\.webp$/);

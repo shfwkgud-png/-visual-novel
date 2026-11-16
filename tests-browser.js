@@ -854,14 +854,37 @@ async function hogwartsArtCheck(ctx) {
     assert.ok(firstTurn.messages.some(message => message.content.includes('친구 무리로 굳어지기 전')),
       'the opening model prompt did not receive the unformed trio state');
     assert.equal(scene.bg, 'sd_samples/backgrounds/hogwarts/great_hall_portrait.webp');
-    assert.equal(scene.dorm, 'sd_samples/backgrounds/hogwarts/slytherin_dormitory.webp');
-    assert.equal(scene.room, 'sd_samples/backgrounds/hogwarts/slytherin_common_room.webp');
+    assert.equal(scene.dorm, 'sd_samples/backgrounds/hogwarts/slytherin_dormitory_portrait.webp');
+    assert.equal(scene.room, 'sd_samples/backgrounds/hogwarts/slytherin_common_room_portrait.webp');
     assert.equal(scene.art.length, 2);
     assert.deepEqual(scene.filters, ['blur(6px) brightness(0.78)', 'blur(6px) brightness(0.78)']);
     assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v2.webp')));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_ron' && src.endsWith('/4_sadness_v2.webp')));
     await page.screenshot({ path: path.join(ARTIFACTS, 'hogwarts-opening-' + (ctx.mobile ? 'mobile' : 'desktop') + '.png') });
+    const houseScenes = await page.evaluate(async () => {
+      const previous = gameState.hogwarts.house;
+      const scenes = {};
+      try {
+        for (const house of ['그리핀도르', '슬리데린', '레번클로', '후플푸프']) {
+          gameState.hogwarts.house = house;
+          scenes[house] = await Promise.all(['common_room', 'dormitory'].map(async key => {
+            const img = new Image();
+            img.src = bgUrlFor(key);
+            await img.decode();
+            return { filename: img.src.split('/').pop(), isPortrait: img.naturalHeight > img.naturalWidth };
+          }));
+        }
+      } finally {
+        gameState.hogwarts.house = previous;
+      }
+      return scenes;
+    });
+    for (const [house, slug] of Object.entries({ 그리핀도르: 'gryffindor', 슬리데린: 'slytherin', 레번클로: 'ravenclaw', 후플푸프: 'hufflepuff' })) {
+      assert.deepEqual(houseScenes[house], ['common_room', 'dormitory'].map(key => ({
+        filename: `${slug}_${key}_portrait.webp`, isPortrait: true
+      })));
+    }
     // Old four-person history must restore the current speaker within the two-person stage.
     const restored = await page.evaluate(() => {
       rebuildSprites(['harry', 'ron', 'hermione', 'malfoy'], 'harry', 'normal', 'upper');
@@ -881,7 +904,7 @@ async function hogwartsArtCheck(ctx) {
       rebuildSprites(['fred', 'aberforth'], 'fred', 'angry', 'upper');
     });
     await page.waitForFunction(() => document.getElementById('sprite_fred')?.naturalWidth > 0 &&
-      bgLayer.style.backgroundImage.includes('slytherin_common_room.webp'));
+      bgLayer.style.backgroundImage.includes('slytherin_common_room_portrait.webp'));
     assert.equal(await page.locator('#sprite_aberforth').count(), 0);
     assert.match(await page.locator('#sprite_fred').getAttribute('src'), /fred\/2d\/1_neutral\.webp$/);
     await page.evaluate(() => rebuildSprites(['crabbe', 'goyle'], 'goyle', 'sad', 'upper'));
