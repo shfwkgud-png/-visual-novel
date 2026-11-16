@@ -1,0 +1,1122 @@
+{
+  "schemaVersion": 1,
+  "book": 5,
+  "bookTitle": "불사조 기사단",
+  "span": "1995-1996",
+  "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/op/",
+  "verifiedExactDates": {
+    "1995-10-05": "DA 결성",
+    "1996-06-20": "마법부 미스터리 부서 충돌"
+  },
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "더들리와 디멘터",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "dudley",
+        "dementors",
+        "figg"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리와 더들리가 디멘터에게 습격당한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 자신들을 구하려다 공공장소에서 패트로누스를 사용한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "dementor_attack_summer": true
+      }
+    },
+    {
+      "chapter": 2,
+      "title": "부엉이 편지 소동",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "petunia",
+        "vernon",
+        "albus",
+        "fudge"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "마법부가 해리에게 규정 위반 징계를 통보한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "퇴학 조치가 보류되고 청문회가 예정된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "harry_ministry_hearing_pending": true
+      }
+    },
+    {
+      "chapter": 3,
+      "title": "선발대의 방문",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "moody",
+        "tonks",
+        "lupin",
+        "kingsley"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "불사조 기사단 선발대가 해리를 더즐리 집에서 데려온다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 정부와 덤블도어 세력 사이에 갈등이 있음을 인지한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 4,
+      "title": "그리몰드가 12번지",
+      "period": "summer",
+      "setting": "grimmauld",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "sirius",
+        "molly",
+        "kreacher"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "불사조 기사단의 비밀 본부가 소개된다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "시리우스의 가족사와 크리처의 적대적 태도가 드러난다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 5,
+      "title": "불사조 기사단",
+      "period": "summer",
+      "setting": "grimmauld",
+      "actors": [
+        "harry",
+        "sirius",
+        "lupin",
+        "molly",
+        "arthur",
+        "snape"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "볼드모트의 부활 사실을 알리는 독립 네트워크가 활동한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "스네이프가 기사단의 불편한 협력자로 등장한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "order_active": true
+      }
+    },
+    {
+      "chapter": 6,
+      "title": "블랙 가문의 유산",
+      "period": "summer",
+      "setting": "grimmauld",
+      "actors": [
+        "sirius",
+        "harry",
+        "kreacher",
+        "regulus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "블랙 가문의 순혈주의 역사와 장신구들이 소개된다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "text": "그 집에서 취급되는 목걸이 중 하나가 훗날 호크룩스 수색의 핵심인 슬리데린의 로켓이다.",
+          "access": "gm"
+        },
+        {
+          "step": 3,
+          "fact": "크리처와 시리우스 사이의 관계가 긴장을 낳는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 7,
+      "title": "마법부 건물",
+      "period": "summer",
+      "setting": "ministry",
+      "actors": [
+        "harry",
+        "arthur",
+        "fudge",
+        "kingsley"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 청문회를 위해 마법부에 들어간다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "마법부의 복잡한 부서와 통제 체계가 공개된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 8,
+      "title": "청문회",
+      "period": "summer",
+      "setting": "ministry",
+      "actors": [
+        "harry",
+        "albus",
+        "fudge",
+        "figg",
+        "umbridge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리의 마법 사용이 정당방위였음을 덤블도어가 증명한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 징계에서 벗어나지만 마법부와의 불신은 지속된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "harry_hearing_cleared": true
+      }
+    },
+    {
+      "chapter": 9,
+      "title": "위즐리 부인의 공포",
+      "period": "summer",
+      "setting": "grimmauld",
+      "actors": [
+        "molly",
+        "harry",
+        "sirius",
+        "ron",
+        "hermione"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "몰리가 보가트 앞에서 가족이 죽는 모습을 연이어 떠올린다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "불사조 기사단 구성원들의 전쟁 공포가 드러난다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 10,
+      "title": "루나 러브굿",
+      "period": "autumn",
+      "setting": "hogwarts_express",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "luna",
+        "neville",
+        "ginny"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 루나 러브굿을 알게 된다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "세스트랄을 볼 수 있는 학생과 볼 수 없는 학생의 차이가 제시된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 11,
+      "title": "분류모자의 경고",
+      "period": "autumn",
+      "setting": "great_hall",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "albus",
+        "umbridge",
+        "mcgonagall"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "분류모자가 기숙사 간 단결의 필요성을 노래한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "엄브리지의 첫 연설에서 정부의 간섭 방향이 드러난다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "umbridge_at_hogwarts": true
+      }
+    },
+    {
+      "chapter": 12,
+      "title": "엄브리지 교수",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "umbridge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "어둠의 마법 방어술 수업에서 실전 마법 교육이 배제된다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 볼드모트 부활을 주장하며 엄브리지와 충돌한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "defense_teaching_restricted": true
+      }
+    },
+    {
+      "chapter": 13,
+      "title": "엄브리지의 벌칙",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "umbridge",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "엄브리지가 고통을 주는 특수 깃펜으로 해리를 벌한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 교사의 폭력을 숨기지만 반감이 깊어진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 14,
+      "title": "퍼시와 패드풋",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "percy",
+        "sirius",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "퍼시가 론에게 해리와 거리를 두라고 경고한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "시리우스는 비밀 연락을 통해 학생들에게 정보를 전달한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 15,
+      "title": "호그와트 고등감찰관",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "umbridge",
+        "mcgonagall",
+        "harry",
+        "ron",
+        "hermione"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "엄브리지가 교사들을 평가하며 학교 자율성을 약화시킨다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "학생들이 행정 권력을 이용한 통제의 위험을 체감한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "school_ministry_control": 1
+      }
+    },
+    {
+      "chapter": 16,
+      "title": "호그스 헤드 회합",
+      "period": "autumn",
+      "setting": "hogsmeade",
+      "actors": [
+        "harry",
+        "hermione",
+        "ron",
+        "cho",
+        "luna",
+        "neville",
+        "ginny"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "학생들이 정규 수업 밖에서 방어 마법을 배우는 조직을 논의한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 동료들에게 볼드모트 부활과 실전 경험을 설명한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "da_formed": true
+      }
+    },
+    {
+      "chapter": 17,
+      "title": "제24호 교육 법령",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "umbridge",
+        "harry",
+        "ron",
+        "hermione"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "엄브리지가 허가받지 않은 학생 모임을 금지한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "방어 마법 학습 모임이 지하 활동으로 전환된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "student_clubs_banned": true
+      }
+    },
+    {
+      "chapter": 18,
+      "title": "덤블도어의 군대",
+      "period": "autumn",
+      "setting": "room_requirement",
+      "actors": [
+        "harry",
+        "hermione",
+        "ron",
+        "neville",
+        "luna",
+        "ginny",
+        "cho",
+        "dobby"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "도비가 필요의 방을 소개하고 학생들이 이곳에서 방어 마법을 훈련한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 다른 학생들의 실질적 지도자가 된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "da_training_active": true
+      }
+    },
+    {
+      "chapter": 19,
+      "title": "사자와 뱀",
+      "period": "autumn",
+      "setting": "quidditch_pitch",
+      "actors": [
+        "harry",
+        "malfoy",
+        "ron",
+        "fred",
+        "george",
+        "umbridge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "그리핀도르와 슬리데린의 경기 뒤 폭력 사태가 벌어진다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "엄브리지가 일부 선수들에게 장기 출전 금지 조치를 내린다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "harry_quidditch_banned": true
+      }
+    },
+    {
+      "chapter": 20,
+      "title": "해그리드의 귀환",
+      "period": "winter",
+      "setting": "hagrids_hut",
+      "actors": [
+        "hagrid",
+        "harry",
+        "ron",
+        "hermione",
+        "maxime"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해그리드가 거인들과 협상했지만 동맹 확보에 실패했다고 전한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "볼드모트 측도 거인 세력을 끌어들이려 하고 있음이 알려진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 21,
+      "title": "뱀의 시선",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "arthur",
+        "albus",
+        "ron",
+        "hermione",
+        "ginny"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 뱀의 시점에서 아서 위즐리의 습격을 목격한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "경고가 빨리 전달되어 아서가 구조된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "arthur_attacked": true,
+        "arthur_survived": true
+      }
+    },
+    {
+      "chapter": 22,
+      "title": "성 뭉고 병원",
+      "period": "winter",
+      "setting": "st_mungos",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ginny",
+        "molly",
+        "arthur"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "아서가 병원에서 회복한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "마법사회 치료 체계와 전쟁 피해자들의 상황이 드러난다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 23,
+      "title": "폐쇄 병동의 크리스마스",
+      "period": "winter",
+      "setting": "st_mungos",
+      "actors": [
+        "harry",
+        "neville",
+        "augusta",
+        "lockhart",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "네빌이 정신을 잃은 부모를 찾아간다는 사실이 알려진다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "기억을 잃은 록하트도 입원해 있다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "neville_parents_truth_known_to_trio": true
+      }
+    },
+    {
+      "chapter": 24,
+      "title": "오클러먼시",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "snape",
+        "albus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "스네이프가 해리에게 정신 침입을 막는 오클러먼시를 가르친다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "볼드모트와 해리 사이의 감각적 연결이 중대한 위험으로 여겨진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "occlumency_lessons_started": true
+      }
+    },
+    {
+      "chapter": 25,
+      "title": "스키터를 궁지에 몰다",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "hermione",
+        "rita",
+        "luna",
+        "umbridge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "아즈카반 죄수들이 탈옥하며 전쟁 위기가 커진다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "해리의 증언이 리타 스키터를 통해 퀴블러에 실린다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "azkaban_breakout": true,
+        "harry_interview_published": true
+      }
+    },
+    {
+      "chapter": 26,
+      "title": "보이는 것과 보이지 않는 것",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "cho",
+        "hermione",
+        "luna",
+        "umbridge",
+        "trelawney",
+        "firenze"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "퀴블러 기사가 학교에서 금지되지만 학생들의 관심을 더 끈다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "트릴로니가 해임되고 피렌체가 점술 교수로 채용된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "trelawney_removed": true
+      }
+    },
+    {
+      "chapter": 27,
+      "title": "밀고자와 켄타우로스",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "marietta",
+        "cho",
+        "harry",
+        "hermione",
+        "umbridge",
+        "albus",
+        "kingsley"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "마리에타의 밀고로 덤블도어의 군대 활동이 드러난다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "덤블도어가 학생을 보호하려 혐의를 떠안고 학교를 떠난다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "da_exposed": true,
+        "dumbledore_fled_school": true
+      }
+    },
+    {
+      "chapter": 28,
+      "title": "스네이프의 최악의 기억",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "snape",
+        "james",
+        "lily",
+        "sirius",
+        "lupin",
+        "umbridge"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "엄브리지가 교장 자리에 올라 학생 반발이 극심해진다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 펜시브에서 아버지가 학창시절 스네이프를 괴롭힌 일을 목격한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "umbridge_headmistress": true
+      }
+    },
+    {
+      "chapter": 29,
+      "title": "진로 상담",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "mcgonagall",
+        "umbridge"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "진로 상담 중 맥고나걸이 해리의 오러 진로를 적극적으로 지지한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "맥고나걸과 엄브리지의 공개적 갈등이 심화된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 30,
+      "title": "그롭",
+      "period": "spring",
+      "setting": "forbidden_forest",
+      "actors": [
+        "harry",
+        "hermione",
+        "ron",
+        "hagrid",
+        "grawp"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해그리드가 숲속에 숨긴 이복동생 그롭을 소개한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "그롭의 존재가 교내 안전과 해그리드의 교직에 위협이 된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "grawp_at_forest": true
+      }
+    },
+    {
+      "chapter": 31,
+      "title": "O.W.L. 시험",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "mcgonagall",
+        "hagrid",
+        "umbridge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "학생들이 주요 시험을 치르는 동안 엄브리지 세력이 해그리드를 공격한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "맥고나걸이 부상을 당하고 해리는 시리우스가 고문당한다는 시각을 경험한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "harry_sirius_false_vision": true
+      }
+    },
+    {
+      "chapter": 32,
+      "title": "벽난로의 덫",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "hermione",
+        "ron",
+        "umbridge",
+        "kreacher",
+        "snape"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리와 친구들이 시리우스의 생사를 확인하려 엄브리지 사무실을 이용한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "크리처의 거짓말이 시리우스가 마법부에 잡혀 있다고 믿게 만든다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "kreacher_trick_succeeded": true
+      }
+    },
+    {
+      "chapter": 33,
+      "title": "금지된 숲에서의 탈출",
+      "period": "finale",
+      "setting": "forbidden_forest",
+      "actors": [
+        "harry",
+        "hermione",
+        "umbridge",
+        "grawp",
+        "centaurs",
+        "ron",
+        "ginny",
+        "luna",
+        "neville"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "헤르미온느가 엄브리지를 숲으로 유인하고 켄타우로스가 개입한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "그롭의 도움을 받아 학생들이 런던으로 갈 방법을 찾는다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 34,
+      "title": "미스터리 부서",
+      "period": "finale",
+      "setting": "ministry",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "neville",
+        "luna",
+        "ginny"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "학생들이 세스트랄을 타고 마법부의 비밀 구역에 진입한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리의 이름이 적힌 예언 구슬을 발견한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "prophecy_orb_found": true
+      }
+    },
+    {
+      "chapter": 35,
+      "title": "장막 너머",
+      "period": "finale",
+      "setting": "ministry",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "neville",
+        "luna",
+        "ginny",
+        "sirius",
+        "bellatrix",
+        "lucius"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "루시우스와 죽음을 먹는 자들이 예언 구슬을 확보하려 학생들을 습격한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "불사조 기사단이 전투에 가세하지만 시리우스가 죽음의 장막 너머로 떨어진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "sirius_alive": false,
+        "prophecy_orb_destroyed": true
+      }
+    },
+    {
+      "chapter": 36,
+      "title": "그가 두려워한 유일한 사람",
+      "period": "finale",
+      "setting": "ministry",
+      "actors": [
+        "harry",
+        "albus",
+        "voldemort",
+        "bellatrix",
+        "fudge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어와 볼드모트가 마법부에서 충돌한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "퍼지와 관리들이 볼드모트의 귀환을 직접 목격한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "ministry_denies_return": false,
+        "voldemort_return_public": true
+      }
+    },
+    {
+      "chapter": 37,
+      "title": "잃어버린 예언",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "albus",
+        "neville"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "덤블도어가 트릴로니의 예언과 해리·볼드모트 관계를 알려준다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "예언의 대상이 네빌일 수도 있었고 볼드모트가 해리를 선택했음이 드러난다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_knows_prophecy": true
+      }
+    },
+    {
+      "chapter": 38,
+      "title": "제2차 전쟁의 시작",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "luna",
+        "neville",
+        "ginny",
+        "fudge"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "마법부가 볼드모트의 귀환을 인정하고 사태를 공식 전쟁으로 규정한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "기사단의 활동이 사실로 인정되지만 희생과 불신이 남는다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "wizard_war_stage": "open_war",
+        "school_ministry_control": 0
+      }
+    }
+  ]
+}
