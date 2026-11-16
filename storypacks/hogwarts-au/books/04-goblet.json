@@ -4,12 +4,6 @@
   "bookTitle": "불의 잔",
   "span": "1994-1995",
   "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/gf/",
-  "verifiedExactDates": {
-    "1994-08-25": "월드컵 결승",
-    "1994-11-24": "첫 번째 과제",
-    "1995-02-24": "두 번째 과제",
-    "1995-06-24": "세 번째 과제와 묘지 사건"
-  },
   "chapters": [
     {
       "chapter": 1,
@@ -1096,6 +1090,32 @@
       "effects": {
         "school_knows_voldemort_return": true
       }
+    }
+  ],
+  "timelineAnchors": [
+    {
+      "date": "1994-08-25",
+      "event": "퀴디치 월드컵 결승",
+      "confidence": "lexicon_editor_inferred",
+      "source": "https://www.hp-lexicon.org/event/august-25-1994-final-of-the-422nd-quidditch-world/"
+    },
+    {
+      "date": "1994-11-24",
+      "event": "첫 번째 과제",
+      "confidence": "novel_named_day_calendar_inferred",
+      "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/gf/"
+    },
+    {
+      "date": "1995-02-24",
+      "event": "두 번째 과제",
+      "confidence": "novel_named_day_calendar_inferred",
+      "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/gf/"
+    },
+    {
+      "date": "1995-06-24",
+      "event": "세 번째 과제·묘지",
+      "confidence": "novel_named_day_calendar_inferred",
+      "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/gf/"
     }
   ]
 }
