@@ -112,6 +112,21 @@
     return {advanced:true,action,before,after:{date:state.date,slot:state.slot,
       year:studyYear(state.date)},display:display(state)};
   }
+  // Only the existing living-world scheduler calls this after the player
+  // explicitly requests the next SCENE. Dates never move during dialogue.
+  function moveToScene(state, date, slot) {
+    if (!valid(state)) throw new Error('호그와트 시간 상태가 올바르지 않습니다.');
+    if (!state.house) return {advanced:false,reason:'sorting-pending'};
+    const d=String(date||''), targetSlot=Number(slot);
+    if (!parseISO(d) || d<state.date || d>END ||
+        !Number.isInteger(targetSlot) || targetSlot<0 || targetSlot>=SLOTS.length)
+      return {advanced:false,reason:'invalid-event-time'};
+    if(d===state.date && targetSlot<state.slot) return {advanced:false,reason:'clock-rewind'};
+    if(d===state.date && targetSlot===state.slot) return {advanced:false,reason:'same-scene-time'};
+    const old={date:state.date,slot:state.slot};
+    state.date=d;state.slot=targetSlot;state.transitions=(state.transitions||0)+1;
+    return {advanced:true,before:old,after:{date:d,slot:targetSlot},display:display(state)};
+  }
   function chooseHouse(state, choice, name, description) {
     if (!valid(state)) throw new Error('호그와트 시간 상태가 올바르지 않습니다.');
     if (state.house) return {ok:false,house:state.house,reason:'already-assigned'};
@@ -153,10 +168,10 @@
       +'- 현재: '+display(state)+' ('+weekday+'요일), '+phases[period]+'\n'
       +'- 적용할 원작 시기: 제'+yr+'권 '+books[yr-1]+' (이 학년도 바깥의 사건을 현재 진행형으로 만들지 마라).\n'
       +'- 시간은 게임이 전용 시계로만 변경한다. state_update.time 및 최상위 time을 출력하지 마라. 날짜·학년·기숙사 소속을 AI가 추정·갱신하지 마라.\n'
-      +'- 대화는 현재 시간에서 계속한다. 장면을 이동하더라도 날짜를 갑자기 넘기지 마라. 플레이어의 명시적 ▶ 시간 진행 행동에서만 시간의 경과를 서사로 반영한다.\n'
+      +'- 대화 중에는 시간이 고정된다. 플레이어가 장면을 마친 뒤 ▶ 다음 장면을 선택했을 때만 게임이 다음 장면의 공식 날짜로 이동시킨다. 하루에 여러 대화를 나눌 수 있고, 사건이 없으면 평범한 시간을 몽타주로 건너뛴다.\n'
       +'- 시간 건너뛰기가 선택되면 그 사이의 원작 사건을 무조건 주인공이 직접 목격한 것으로 만들지 마라. 공개 소식과 개인 지식은 구분한다.\n'
       +'- 시계가 현재 학년을 결정한다. 원작의 과거와 미래 비밀은 현재 날짜에 맞춰 숨겨라.\n';
   }
-  return Object.freeze({createState,valid,display,studyYear,phase,advance,chooseHouse,
+  return Object.freeze({createState,valid,display,studyYear,phase,advance,moveToScene,chooseHouse,
     actionCode,possibleActions,context,HOUSE_OPTIONS:HOUSE_OPTIONS.slice(),END});
 });
