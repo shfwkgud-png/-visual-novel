@@ -42,6 +42,8 @@ jobs:
           node tests-performance.js
           node tests-sync-worker.js
           node storypacks/hogwarts-au/canon.test.js
+          node tests-hogwarts-time.js
+          node tests-hogwarts-world.js
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15
