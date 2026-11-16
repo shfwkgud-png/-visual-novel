@@ -1,0 +1,1101 @@
+{
+  "schemaVersion": 1,
+  "version": "chapter-ledger-2026-11-16",
+  "interpretation": "성인 입학생 AU: 정사에 등장하는 학생들은 해당 학교 입학 시점부터 18세 이상. 기숙사·학제·학교명 유지.",
+  "actors": [
+    {
+      "id": "aberforth",
+      "name": "애버포스 덤블도어",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "albus",
+      "name": "알버스 덤블도어",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "alicia",
+      "name": "앨리샤 스피넷",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "amos",
+      "name": "에이머스 디고리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "andromeda",
+      "name": "안드로메다 통스",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "angelina",
+      "name": "안젤리나 존슨",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "anthony",
+      "name": "앤서니 골드스타인",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "aragog",
+      "name": "아라고그",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "ariana",
+      "name": "아리아나 덤블도어",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "arthur",
+      "name": "아서 위즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "augusta",
+      "name": "어거스타 롱바텀",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "bagman",
+      "name": "루도 배그먼",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "barty_senior",
+      "name": "바티 크라우치 1세",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "bartyjr",
+      "name": "바티 크라우치 2세",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "bathilda",
+      "name": "바틸다 백샷",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "bellatrix",
+      "name": "벨라트릭스 레스트랭",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "bill",
+      "name": "빌 위즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "binns",
+      "name": "커스버트 빈스",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "blaise",
+      "name": "블레이즈 자비니",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "bloody_baron",
+      "name": "피투성이 남작",
+      "kind": "ghost_or_spirit",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "borgin",
+      "name": "보진",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "buckbeak",
+      "name": "벅빅",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "cedric",
+      "name": "세드릭 디고리",
+      "kind": "student",
+      "affiliation": "Hufflepuff",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "centaurs",
+      "name": "켄타우로스들",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "charity",
+      "name": "차리티 버비지",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "charlie",
+      "name": "찰리 위즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "cho",
+      "name": "초 챙",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "colin",
+      "name": "콜린 크리비",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1992-cohort",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "crabbe",
+      "name": "빈센트 크래브",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "daphne",
+      "name": "다프네 그린그래스",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "dean",
+      "name": "딘 토머스",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "death_eaters",
+      "name": "죽음을 먹는 자들",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "dedalus",
+      "name": "디덜러스 디글",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "deen",
+      "name": "딘 토머스",
+      "kind": "alias",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "aliasOf": "dean",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "dementors",
+      "name": "디멘터들",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "dennis",
+      "name": "데니스 크리비",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "younger-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "dirk",
+      "name": "더크 크레스웰",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "dobby",
+      "name": "도비",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "doge",
+      "name": "엘피어스 도지",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "dudley",
+      "name": "더들리 더즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "ernie",
+      "name": "어니 맥밀런",
+      "kind": "student",
+      "affiliation": "Hufflepuff",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "ernie_bus",
+      "name": "어니 프랭",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "fat_lady",
+      "name": "뚱보 여인",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "fawkes",
+      "name": "퍽스",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "figg",
+      "name": "아라벨라 피그",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "filch",
+      "name": "아거스 필치",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "firenze",
+      "name": "피렌체",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "fleur",
+      "name": "플뢰르 들라쿠르",
+      "kind": "visiting_student",
+      "affiliation": "Beauxbatons",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "flitwick",
+      "name": "필리우스 플리트윅",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "frank_bryce",
+      "name": "프랭크 브라이스",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "fred",
+      "name": "프레드 위즐리",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "fudge",
+      "name": "코닐리어스 퍼지",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "george",
+      "name": "조지 위즐리",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "ginny",
+      "name": "지니 위즐리",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1992-cohort",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "goblins",
+      "name": "그린고트 도깨비들",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "goyle",
+      "name": "그레고리 고일",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "grawp",
+      "name": "그롭",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "gregorovitch",
+      "name": "그레고로비치",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "greyback",
+      "name": "펜리르 그레이백",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "grindelwald",
+      "name": "겔러트 그린델왈드",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "griphook",
+      "name": "그립훅",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "hagrid",
+      "name": "루베우스 해그리드",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "hannah",
+      "name": "해나 애벗",
+      "kind": "student",
+      "affiliation": "Hufflepuff",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "harry",
+      "name": "해리 포터",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "hedwig",
+      "name": "헤드위그",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "helena_ravenclaw",
+      "name": "헬레나 레번클로",
+      "kind": "ghost_or_spirit",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "hepzibah",
+      "name": "헵시바 스미스",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "hermione",
+      "name": "헤르미온느 그레인저",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "hestia",
+      "name": "헤스티아 존스",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "hooch",
+      "name": "롤랜다 후치",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "james",
+      "name": "제임스 포터",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "justin",
+      "name": "저스틴 핀치플레츨리",
+      "kind": "student",
+      "affiliation": "Hufflepuff",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "karkaroff",
+      "name": "이고르 카르카로프",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "katie",
+      "name": "케이티 벨",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "kingsley",
+      "name": "킹슬리 샤클볼트",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "kreacher",
+      "name": "크리처",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "krum",
+      "name": "빅터 크룸",
+      "kind": "visiting_student",
+      "affiliation": "Durmstrang",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "lavender",
+      "name": "라벤더 브라운",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "lee",
+      "name": "리 조던",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "lestrange",
+      "name": "레스트랭 일가",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "lily",
+      "name": "릴리 포터",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "lockhart",
+      "name": "질데로이 록하트",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "lucius",
+      "name": "루시우스 말포이",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "luna",
+      "name": "루나 러브굿",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "1992-cohort",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "lupin",
+      "name": "리무스 루핀",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "malfoy",
+      "name": "드레이코 말포이",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 1,
+      "auGender": "female",
+      "isOriginalCharacter": false,
+      "continuity": "원작 드레이코의 가문·성격·대사권한·임무를 유지하되 성별과 외형을 여성으로 대체"
+    },
+    {
+      "id": "marge",
+      "name": "마지 더즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "marietta",
+      "name": "마리에타 에지콤",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "mary_cattermole",
+      "name": "메리 캐터몰",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "maxime",
+      "name": "올림프 맥심",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "mcgonagall",
+      "name": "미네르바 맥고나걸",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "mclaggen",
+      "name": "코맥 맥라건",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "merope",
+      "name": "메로프 곤트",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "michael",
+      "name": "마이클 코너",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "millicent",
+      "name": "밀리센트 불스트로드",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "moaning_myrtle",
+      "name": "울보 머틀",
+      "kind": "alias",
+      "affiliation": "unassigned",
+      "aliasOf": "myrtle",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "molly",
+      "name": "몰리 위즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "moody",
+      "name": "앨러스터 무디",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "morfin",
+      "name": "모핀 곤트",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "mundungus",
+      "name": "먼던거스 플레처",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "myrtle",
+      "name": "울보 머틀",
+      "kind": "ghost_or_spirit",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "nagini",
+      "name": "나기니",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "narcissa",
+      "name": "나시사 말포이",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "nearly_headless_nick",
+      "name": "목이 달랑달랑한 닉",
+      "kind": "ghost_or_spirit",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "neville",
+      "name": "네빌 롱바텀",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "ollivander",
+      "name": "개릭 올리밴더",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "padma",
+      "name": "파드마 파틸",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "pansy",
+      "name": "팬시 파킨슨",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "parvati",
+      "name": "파르바티 파틸",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "peeves",
+      "name": "피브스",
+      "kind": "ghost_or_spirit",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "penelope",
+      "name": "퍼넬로피 클리어워터",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "percy",
+      "name": "퍼시 위즐리",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "pettigrew",
+      "name": "피터 페티그루",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "petunia",
+      "name": "페투니아 더즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "pomfrey",
+      "name": "포피 폼프리",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "quirrell",
+      "name": "퀴리너스 퀴렐",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "rabastan",
+      "name": "라바스탄 레스트랭",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "regulus",
+      "name": "레귤러스 블랙",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "riddle",
+      "name": "톰 마볼로 리들",
+      "kind": "alias",
+      "affiliation": "unassigned",
+      "aliasOf": "voldemort",
+      "firstReferencedBook": 2
+    },
+    {
+      "id": "rita",
+      "name": "리타 스키터",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "rodolphus",
+      "name": "로돌푸스 레스트랭",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "romilda",
+      "name": "로밀다 베인",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "younger-cohort",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "ron",
+      "name": "론 위즐리",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "rosmerta",
+      "name": "로즈메르타",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "scrimgeour",
+      "name": "루퍼스 스크림저",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "seamus",
+      "name": "시머스 피니건",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "sinistra",
+      "name": "오로라 시니스트라",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "sirius",
+      "name": "시리우스 블랙",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "slughorn",
+      "name": "호러스 슬러그혼",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 6
+    },
+    {
+      "id": "snape",
+      "name": "세베루스 스네이프",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "sprout",
+      "name": "포모나 스프라우트",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "stan",
+      "name": "스탠 션파이크",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "susan",
+      "name": "수전 본즈",
+      "kind": "student",
+      "affiliation": "Hufflepuff",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "ted_tonks",
+      "name": "테드 통스",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "terry",
+      "name": "테리 부트",
+      "kind": "student",
+      "affiliation": "Ravenclaw",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "theodore",
+      "name": "시어도어 노트",
+      "kind": "student",
+      "affiliation": "Slytherin",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "thicknesse",
+      "name": "파이어스 시크니스",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "tonks",
+      "name": "님파도라 통스",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "trelawney",
+      "name": "시빌 트릴로니",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 3
+    },
+    {
+      "id": "umbridge",
+      "name": "돌로레스 엄브리지",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 5
+    },
+    {
+      "id": "vector",
+      "name": "셉티마 벡터",
+      "kind": "staff",
+      "affiliation": "unassigned",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "vernon",
+      "name": "버넌 더즐리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "voldemort",
+      "name": "볼드모트",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 1
+    },
+    {
+      "id": "winky",
+      "name": "윙키",
+      "kind": "creature",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "wood",
+      "name": "올리버 우드",
+      "kind": "student",
+      "affiliation": "Gryffindor",
+      "cohort": "older-cohort",
+      "firstReferencedBook": null
+    },
+    {
+      "id": "wormtail",
+      "name": "웜테일",
+      "kind": "alias",
+      "affiliation": "unassigned",
+      "aliasOf": "pettigrew",
+      "firstReferencedBook": 4
+    },
+    {
+      "id": "xenophilius",
+      "name": "제노필리우스 러브굿",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "yaxley",
+      "name": "약슬리",
+      "kind": "other",
+      "affiliation": "unassigned",
+      "firstReferencedBook": 7
+    },
+    {
+      "id": "zacharias",
+      "name": "재커라이어스 스미스",
+      "kind": "student",
+      "affiliation": "Hufflepuff",
+      "cohort": "1991-cohort",
+      "firstReferencedBook": null
+    }
+  ]
+}
