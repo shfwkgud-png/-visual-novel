@@ -4,10 +4,6 @@
   "bookTitle": "혼혈 왕자",
   "span": "1996-1997",
   "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/hbp/",
-  "verifiedExactDates": {
-    "1996-07": "말포이 임무와 깨지지 않는 맹세",
-    "1997-06-30": "천문탑의 무장해제와 덤블도어 사망"
-  },
   "chapters": [
     {
       "chapter": 1,
@@ -926,6 +922,20 @@
       "effects": {
         "trio_horcrux_hunt_committed": true
       }
+    }
+  ],
+  "timelineAnchors": [
+    {
+      "date": "1996-07",
+      "event": "말포이의 임무와 깨지지 않는 맹세",
+      "confidence": "approximate_month",
+      "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/hbp/"
+    },
+    {
+      "date": "1997-06-30",
+      "event": "천문탑에서의 무장해제·덤블도어 사망",
+      "confidence": "lexicon_editor_inferred",
+      "source": "https://www.hp-lexicon.org/character/potter-family/harry-potter/"
     }
   ]
 }
