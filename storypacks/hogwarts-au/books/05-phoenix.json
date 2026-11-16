@@ -4,10 +4,6 @@
   "bookTitle": "불사조 기사단",
   "span": "1995-1996",
   "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/op/",
-  "verifiedExactDates": {
-    "1995-10-05": "DA 결성",
-    "1996-06-20": "마법부 미스터리 부서 충돌"
-  },
   "chapters": [
     {
       "chapter": 1,
@@ -1117,6 +1113,26 @@
         "wizard_war_stage": "open_war",
         "school_ministry_control": 0
       }
+    }
+  ],
+  "timelineAnchors": [
+    {
+      "date": "1995-10-05",
+      "event": "호그스 헤드의 방어 마법 모임",
+      "confidence": "lexicon_editor_inferred",
+      "source": "https://www.hp-lexicon.org/event/october-5-1995-on-the-first-hogsmeade-weekend/"
+    },
+    {
+      "date": "1995-10-09",
+      "event": "필요의 방에서 DA 첫 훈련",
+      "confidence": "lexicon_editor_inferred",
+      "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/op/op18/"
+    },
+    {
+      "date": "1996-06-20",
+      "event": "미스터리 부서 전투",
+      "confidence": "lexicon_editor_inferred",
+      "source": "https://www.hp-lexicon.org/event/june-1996-the-battle-of-the-department-of/"
     }
   ]
 }
