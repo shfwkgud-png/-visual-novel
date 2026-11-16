@@ -145,6 +145,52 @@
       {id:'separate',label:'전장 밖으로 사람들을 대피시킨다',intent:'대피와 보호를 맡으며 결과에 책임진다.',delta:{},flags:{finale:'evacuate'},offscreen:'성의 다른 구역 전투는 당신이 없이도 벌어진다.'}]}
   ];
   const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
+  // Long quiet stretches are condensed into occasional personal scenes,
+  // not simulated day-by-day. Reconstructed from the date after a reload.
+  function dayISO(date, delta) {
+    const t = new Date(date+'T00:00:00Z');
+    t.setUTCDate(t.getUTCDate()+delta);
+    return t.toISOString().slice(0,10);
+  }
+  function dayGap(a,b) { return Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/86400000); }
+  function routine(date, st) {
+    const id='routine_'+date.replace(/-/g,'_');
+    const i=(Number(date.replace(/-/g,''))+st.decisions.length)%3;
+    const themes=[
+      {title:'사라진 교실의 편지',bg:'library',actors:['hermione','malfoy'],
+       intro:'도서관 한쪽에 이름이 적히지 않은 편지가 놓였다. 내용보다 중요한 것은 누가 그것을 먼저 발견했고 누구에게 말했는지다.',
+       labels:['헤르미온느와 자료를 확인한다','말포이에게 편지를 보여준다','편지를 건드리지 않는다'],
+       delta:[{hermione:1},{malfoy:1},{}],intent:['공개 문서와 실제 발신인을 구분한다','말포이는 경계하면서도 자기 판단으로 반응한다','학교의 다른 인물들이 이 편지를 처리한다']},
+      {title:'기숙사의 작은 소문',bg:'dormitory',actors:['malfoy','neville'],
+       intro:'기숙사 사이에서 누군가의 실수에 관한 이야기가 퍼진다. 소문이 누구에게 불리하게 바뀌는지는 당신의 대응에 따라 달라진다.',
+       labels:['당사자에게 직접 사실을 확인한다','소문을 확산시키지 말자고 제안한다','이번 소동에는 관여하지 않는다'],
+       delta:[{neville:1},{malfoy:1},{}],intent:['몰래 듣지 말고 당사자에게 묻는다','기숙사 사이의 감정이 무엇인지 듣고 조정한다','소문을 다른 NPC가 독자적으로 정리한다']},
+      {title:'늦은 오후의 연습',bg:'dueling',actors:['harry','hermione','neville'],
+       intro:'그날의 연습에 초대받지 못한 학생도 있고, 먼저 찾아온 학생도 있다. 무슨 마법을 잘하고 못하는지는 누적된 연습과 준비로 갈린다.',
+       labels:['친구들과 기초 마법을 연습한다','혼자 취약한 주문을 연습한다','연습 대신 주변 상황을 살핀다'],
+       delta:[{harry:1,neville:1},{},{}],intent:['실패와 진전이 모두 있을 수 있는 훈련','꾸준히 연습하되 한 번에 고급 주문을 숙달하지 못한다','다른 학생들은 수업과 연습에 참여한다']}
+    ];
+    const x=themes[i];
+    return {id,year:Number(date.slice(0,4))-1990,date,slot:1,kind:'life',title:x.title,
+      background:x.bg,actors:x.actors,intro:x.intro,
+      options:x.labels.map((label,j)=>({id:'path'+j,label,intent:x.intent[j],
+        delta:x.delta[j],flags:{[id]:'path'+j},
+        offscreen:'다른 학생들은 플레이어의 참여와 무관하게 자신들의 일정과 관계를 이어간다.'}))};
+  }
+  function getEvent(id, st) {
+    if (EVENT_BY_ID[id]) return EVENT_BY_ID[id];
+    const m=/^routine_(\d{4})_(\d{2})_(\d{2})$/.exec(String(id||''));
+    return m?routine(m[1]+'-'+m[2]+'-'+m[3],st):null;
+  }
+  function optionsFor(ev) {
+    return ev.options.map(x=>'▶ 선택 ['+ev.id+'] '+x.id+' — '+x.label).concat(
+      ['▶ 선택 ['+ev.id+'] skip — 참여하지 않고 다음 사건으로 넘어간다']);
+  }
+  function selectedOption(ev,id) {
+    if(id==='skip')return {id:'skip',label:'사건에 참여하지 않는다',intent:'사건 현장에 가지 않으며 직접 목격한 것으로 주장하지 않는다.',
+      delta:{},flags:{},offscreen:'당신의 미참여와 무관하게 관련 인물들은 자신의 목적을 위해 행동했고 그 사건은 흘러갔다.'};
+    return ev.options.find(x=>x.id===id);
+  }
   function createState() {
     return { schemaVersion:1, finished:{}, active:null, pending:null, decisions:[],
       ties:{}, agency:{}, publicConsequences:[], lastTransition:null };
@@ -165,13 +211,16 @@
     ensure(st);
     // A manually skipped overdue event becomes a genuine off-screen event,
     // never an encounter the player retroactively attended.
+    let upcoming=null;
     for (const ev of EVENTS) {
       if (st.finished[ev.id] || (st.active && st.active.id===ev.id) ||
           (st.pending && st.pending.id===ev.id)) continue;
       if (ev.date < date) continue;
-      return ev;
+      upcoming=ev;break;
     }
-    return null;
+    if (!upcoming) return null;
+    if (dayGap(date,upcoming.date)>65) return routine(dayISO(date,45),st);
+    return upcoming;
   }
   function offer(st, event) {
     ensure(st);
@@ -179,14 +228,14 @@
     st.pending={id:event.id, offeredAt:event.date};
     return {id:event.id,title:event.title,date:event.date,slot:event.slot,kind:KIND[event.kind],
       background:event.background,intro:event.intro,
-      choices:event.options.map(x=>'▶ 선택 ['+event.id+'] '+x.id+' — '+x.label)};
+      choices:optionsFor(event)};
   }
   function start(st, selected) {
     ensure(st);
     const choice=typeof selected==='string'?parseChoice(selected):selected;
     if(!choice||!st.pending||st.pending.id!==choice.eventId||st.active) return null;
-    const ev=EVENT_BY_ID[choice.eventId];
-    const opt=ev&&ev.options.find(o=>o.id===choice.optionId);
+    const ev=getEvent(choice.eventId,st);
+    const opt=ev&&selectedOption(ev,choice.optionId);
     if(!opt) return null;
     st.pending=null;
     st.active={id:ev.id,choice:opt.id,at:ev.date};
@@ -204,8 +253,8 @@
   function finish(st) {
     ensure(st);
     if(!st.active) return null;
-    const ev=EVENT_BY_ID[st.active.id];
-    const opt=ev.options.find(o=>o.id===st.active.choice);
+    const ev=getEvent(st.active.id,st);
+    const opt=selectedOption(ev,st.active.choice);
     // Decide scene consequences exactly once, at the scene boundary.
     const effects=opt.delta||{};
     for(const [id,delta] of Object.entries(effects)) {
@@ -224,10 +273,10 @@
   }
   function resume(st) {
     ensure(st);
-    if (st.pending) { const e=EVENT_BY_ID[st.pending.id];return e?{
+    if (st.pending) { const e=getEvent(st.pending.id,st);return e?{
       mode:'offer',id:e.id,title:e.title,intro:e.intro,
-      choices:e.options.map(x=>'▶ 선택 ['+e.id+'] '+x.id+' — '+x.label),background:e.background}:null; }
-    if (st.active) { const e=EVENT_BY_ID[st.active.id]; return e?{mode:'active',title:e.title,choice:st.active.choice}:null; }
+      choices:optionsFor(e),background:e.background}:null; }
+    if (st.active) { const e=getEvent(st.active.id,st); return e?{mode:'active',title:e.title,choice:st.active.choice}:null; }
     return {mode:'idle'};
   }
   function context(st) {
@@ -235,7 +284,7 @@
     const recent=st.publicConsequences.slice(-10);
     const ties=Object.entries(st.ties).map(([id,n])=>id+': '+(n>0?'신뢰+':'경계')+n).join(', ');
     const last=recent.map(r=>'- '+r.title+' / 플레이어: '+r.choice+' / 현장 밖: '+r.offscreen).join('\n');
-    const active=st.active&&EVENT_BY_ID[st.active.id];
+    const active=st.active&&getEvent(st.active.id,st);
     return '\n\n## 호그와트 개인 세계선(실제 확정된 플레이 기록; 대사에 메타 상태 표기 금지)\n'
       +'- 유저 행동으로 쌓인 인상: '+(ties||'아직 초면')+'\n'
       +'- 관계/분기 확정: '+JSON.stringify(st.agency)+'\n'
@@ -246,7 +295,7 @@
       +'- 인물 관계는 점수로 연애를 결정하지 않는다. 신뢰/경계는 말투, 초대, 도움, 비밀 공개에만 반영한다. '
       +'전지적 선지식·자동 복종·갑작스런 고백 금지.\n';
   }
-  function titleFor(id){ const e=EVENT_BY_ID[id];return e&&e.title; }
+  function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
   return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,finish,resume,context,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });
