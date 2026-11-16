@@ -98,7 +98,8 @@
         }
       ],
       "effects": {
-        "dumbledore_hand_cursed": true
+        "dumbledore_hand_cursed": true,
+        "horcrux_ring_destroyed": true
       }
     },
     {
@@ -688,8 +689,7 @@
         }
       ],
       "effects": {
-        "harry_knows_horcrux_theory": true,
-        "horcrux_ring_destroyed": true
+        "harry_knows_horcrux_theory": true
       }
     },
     {
@@ -800,18 +800,22 @@
         "malfoy",
         "snape",
         "greyback",
-        "bellatrix"
+        "amycus",
+        "alecto",
+        "yaxley",
+        "gibbon",
+        "rowle"
       ],
       "access": "private",
       "beats": [
         {
           "step": 1,
-          "fact": "사라지는 장롱으로 죽음을 먹는 자들이 학교에 들어오고 교전이 벌어진다.",
+          "fact": "사라지는 장롱으로 캐로 남매·약슬리·펜리르 등 죽음을 먹는 자 세력이 학교에 들어오고 교직원·기사단과 교전한다.",
           "access": "private"
         },
         {
           "step": 2,
-          "fact": "말포이가 덤블도어를 무장해제하지만 직접 살해하지 못한다.",
+          "fact": "덤블도어가 해리를 투명망토 아래 움직이지 못하게 묶고, 말포이는 덤블도어를 무장해제하지만 직접 살해하지 못한다.",
           "access": "private"
         },
         {
