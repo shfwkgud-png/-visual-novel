@@ -1,0 +1,658 @@
+{
+  "schemaVersion": 1,
+  "book": 3,
+  "bookTitle": "아즈카반의 죄수",
+  "span": "1993-1994",
+  "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/pa/",
+  "datePolicy": "오해와 실제 사건을 분리하고 시간변환 사건은 인과적으로 동일한 밤에 정합시킨다",
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "마법 세계에서 온 우편",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 이전 두 해의 사건을 떠올리고 친구들의 선물을 받는다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "마법 세계와의 접촉은 더즐리 집에서도 계속된다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 2,
+      "title": "마지 이모의 방문",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "petunia",
+        "vernon",
+        "marge"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "마지의 모욕에 격분한 해리가 통제되지 않은 마법을 일으킨다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 집을 떠나고 학교 퇴학을 두려워한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 3,
+      "title": "나이트 버스",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "stan",
+        "ernie_bus",
+        "fudge"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 나이트 버스로 런던에 도착한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "시리우스 블랙 탈옥 때문에 마법부가 해리의 안전을 주시한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "sirius_escape_public": true
+      }
+    },
+    {
+      "chapter": 4,
+      "title": "리키 콜드런에서의 대기",
+      "period": "summer",
+      "setting": "diagon_alley",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "arthur",
+        "percy"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 다이애건 앨리에서 여름의 나머지를 보낸다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "블랙의 탈옥과 해리에 대한 위협이라는 관측이 퍼진다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 5,
+      "title": "디멘터가 탑승한 열차",
+      "period": "autumn",
+      "setting": "hogwarts_express",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "lupin",
+        "malfoy"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "호그와트 열차에 디멘터가 승차해 해리를 심하게 괴롭힌다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "루핀이 디멘터를 물리쳐 새 교사의 실력을 보인다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "dementors_at_hogwarts": true
+      }
+    },
+    {
+      "chapter": 6,
+      "title": "점술과 흉조",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "hermione",
+        "trelawney",
+        "lupin",
+        "hagrid"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "트릴로니가 해리에게 죽음의 징조를 예언한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "루핀이 어둠의 마법 방어술을 지도하며 벅빅이 수업 중 말포이를 다치게 한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "buckbeak_case_open": true
+      }
+    },
+    {
+      "chapter": 7,
+      "title": "보가트 수업",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "neville",
+        "lupin",
+        "snape",
+        "ron",
+        "hermione"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "루핀은 보가트에 대한 마법 훈련을 진행한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "학생들이 자신의 두려움을 드러내고 루핀의 교수법을 신뢰하게 된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 8,
+      "title": "찢어진 초상화",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "sirius",
+        "harry",
+        "ron",
+        "hermione",
+        "mcgonagall"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "시리우스가 성 안으로 침입한 듯한 사건이 발생한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "교내 경비가 강화되며 학생들은 방황하는 살인범이라는 이야기에 노출된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "hogwarts_security_high": true
+      }
+    },
+    {
+      "chapter": 9,
+      "title": "수색꾼의 패배",
+      "period": "autumn",
+      "setting": "quidditch_pitch",
+      "actors": [
+        "harry",
+        "cedric",
+        "dementors",
+        "lupin"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "디멘터 영향으로 해리가 퀴디치 경기 도중 실신한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "그리핀도르가 후플푸프에 패하고 해리의 빗자루가 파손된다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 10,
+      "title": "마루더즈 지도",
+      "period": "autumn",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "fred",
+        "george",
+        "ron",
+        "hermione",
+        "lupin"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "프레드와 조지가 해리에게 마루더즈 지도를 준다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 지도 덕분에 비밀 통로를 이용해 호그스미드에 갈 수 있다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "marauders_map_harry": true
+      }
+    },
+    {
+      "chapter": 11,
+      "title": "파이어볼트",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "mcgonagall",
+        "sirius"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 익명의 발신자로부터 파이어볼트를 받는다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "헤르미온느의 신고 때문에 빗자루가 검사에 들어가 친구 사이가 멀어진다.",
+          "access": "local"
+        },
+        {
+          "step": 3,
+          "text": "발신자는 실제로 시리우스이며 공격 목적이 아니다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 12,
+      "title": "패트로누스 훈련",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "lupin",
+        "hermione",
+        "ron"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "루핀이 해리에게 디멘터에 대응하는 패트로누스 마법을 가르친다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 부모를 잃던 순간의 기억에 맞서는 훈련을 한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "patronus_training_started": true
+      }
+    },
+    {
+      "chapter": 13,
+      "title": "기숙사에 침입한 블랙",
+      "period": "winter",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "sirius"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "시리우스가 그리핀도르 기숙사까지 침입했다는 흔적이 발견된다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "론의 애완 쥐 스캐버스를 둘러싼 갈등이 커진다.",
+          "access": "public"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 14,
+      "title": "스네이프의 추궁",
+      "period": "spring",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "snape",
+        "lupin",
+        "malfoy",
+        "hermione"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "호그스미드 외출이 적발될 위기에 처한 해리가 루핀의 도움으로 간신히 빠져나온다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "스네이프는 지도와 루핀의 관계를 수상하게 여긴다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 15,
+      "title": "그리핀도르의 퀴디치 우승",
+      "period": "spring",
+      "setting": "quidditch_pitch",
+      "actors": [
+        "harry",
+        "hermione",
+        "ron",
+        "malfoy",
+        "buckbeak",
+        "hagrid"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "벅빅에게 사형 판결이 내려져 해그리드가 낙담한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "그리핀도르가 슬리데린을 꺾고 퀴디치 우승컵을 얻는다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "gryffindor_quidditch_1994": true
+      }
+    },
+    {
+      "chapter": 16,
+      "title": "트릴로니의 진짜 예언",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "trelawney",
+        "hagrid",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "트릴로니가 볼드모트의 충복 귀환을 예고하는 실질적 예언을 한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "text": "예언은 곧 도망칠 피터 페티그루와 볼드모트의 다음 해 부활을 예고한다.",
+          "access": "gm"
+        },
+        {
+          "step": 3,
+          "fact": "학생들이 스캐버스의 생존 사실을 확인하고 벅빅의 처형이 임박한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "second_prophecy_uttered": true
+      }
+    },
+    {
+      "chapter": 17,
+      "title": "고양이·쥐·검은 개",
+      "period": "finale",
+      "setting": "shrieking_shack",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "sirius",
+        "lupin",
+        "pettigrew"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "검은 개가 론을 버드나무 아래 통로로 끌고 가고 일행이 비명을 지르는 오두막으로 들어간다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "시리우스가 범인이라고 단정했던 전제가 흔들리기 시작한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 18,
+      "title": "마루더즈의 과거",
+      "period": "finale",
+      "setting": "shrieking_shack",
+      "actors": [
+        "harry",
+        "lupin",
+        "sirius",
+        "pettigrew",
+        "snape",
+        "hermione",
+        "ron"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "루핀·시리우스·제임스·피터의 학교 시절과 애니마구스 비밀이 밝혀진다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "스캐버스는 사실 죽은 것으로 알려졌던 피터 페티그루다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "pettigrew_identity_revealed": true
+      }
+    },
+    {
+      "chapter": 19,
+      "title": "볼드모트의 진짜 하수인",
+      "period": "finale",
+      "setting": "shrieking_shack",
+      "actors": [
+        "harry",
+        "sirius",
+        "lupin",
+        "pettigrew",
+        "snape",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "포터 부부를 배신한 비밀유지자는 시리우스가 아니라 피터였음이 드러난다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 피터를 즉시 살해하지 못하게 막고 법적 처벌을 계획한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "sirius_innocence_known_by_trio": true,
+        "pettigrew_spared": true
+      }
+    },
+    {
+      "chapter": 20,
+      "title": "디멘터의 입맞춤 위기",
+      "period": "finale",
+      "setting": "hogwarts_grounds",
+      "actors": [
+        "harry",
+        "sirius",
+        "lupin",
+        "pettigrew",
+        "hermione",
+        "ron"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "보름달을 맞아 루핀이 늑대인간으로 변하면서 구속된 피터가 탈출한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "시리우스와 해리는 디멘터에게 포위된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "pettigrew_escaped": true
+      }
+    },
+    {
+      "chapter": 21,
+      "title": "시간을 거슬러",
+      "period": "finale",
+      "setting": "hogwarts_grounds",
+      "actors": [
+        "harry",
+        "hermione",
+        "albus",
+        "sirius",
+        "buckbeak"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "헤르미온느가 수업을 위해 쓰던 시간변환 장치를 공개한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리와 헤르미온느가 동일한 밤의 앞 시점으로 돌아가 벅빅을 구한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "패트로누스가 두 사람과 시리우스를 구하고 시리우스는 벅빅에 올라 탈출한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "buckbeak_alive": true,
+        "sirius_free": true,
+        "time_turner_known": true
+      }
+    },
+    {
+      "chapter": 22,
+      "title": "다시 온 편지",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "lupin",
+        "snape",
+        "sirius",
+        "ron",
+        "hermione"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "시리우스의 결백이 정부에 공식 입증되지는 못한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "루핀은 늑대인간이라는 사실이 드러나자 사임한다.",
+          "access": "local"
+        },
+        {
+          "step": 3,
+          "fact": "해리는 시리우스와 연락할 수 있는 경로를 남긴다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "lupin_professor": false,
+        "sirius_publicly_wanted": true
+      }
+    }
+  ]
+}
