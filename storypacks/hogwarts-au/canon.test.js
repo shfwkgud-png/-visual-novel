@@ -46,7 +46,7 @@ assert.equal(engine.progress(canon, all).canonical, 433);
 assert(!engine.playerKnowledge(canon, all, {limit:150}).some(x => x.source === 'GM 미래 기록'));
 
 const s = engine.createState();
-engine.advanceTo(canon, s, 'b02c13s01');
+engine.advanceTo(canon, s, 'b02c13s02');
 assert(!engine.playerKnowledge(canon, s, {limit:150}).some(x => x.id === 'b02c13s02'),
   'secret diary identity must not leak to player without discovery');
 engine.observe(canon, s, 'b02c13s02', '플레이어가 실제 일기장 내부의 비밀과 영혼 분할을 직접 증명함');
