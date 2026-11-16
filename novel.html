@@ -2163,6 +2163,7 @@
 </div><!-- /#appFrame -->
 
 <script src="pandora-consistency.js?v=369"></script>
+<script src="storypacks/hogwarts-au/story.js?v=1"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -2622,7 +2623,7 @@ const ENGINE_MOD_CG = `## 이벤트 CG 규칙 (cg 필드 — 성인 장면 연�
 - 여캐와의 성적 장면이 무르익으면 cg에 "여캐ID/씬키"를 실어라 (여캐 ID만 — 주인공·남캐 ID 금지). 행위 진행에 따라 씬키를 바꿔도 된다(전희→삽입→절정). 장면이 끝나거나 장소가 바뀌면 반드시 null. 유효 씬키 목록은 아래 '유효 캐릭터ID'·'유효 씬키' 블록을 따르고, 거기 없는 키는 지어내지 마라.
 - CG가 표시되는 동안에도 dialogue로 신음·대사·묘사를 계속 진행하라.`;
 // RPG 모듈을 받는 스토리(전투·성장·위계). 목록 밖(연애/미스터리/일상 시뮬)은 미주입.
-const RPG_STORIES = new Set(['nakin','muhyeop','murim','hunter','academy','cyber','hero','zombie','deathgame','gumiho','throne','voidship','isekai','kyungsung','palace']);
+const RPG_STORIES = new Set(['nakin','muhyeop','murim','hunter','academy','hogwarts','cyber','hero','zombie','deathgame','gumiho','throne','voidship','isekai','kyungsung','palace']);
 
 const NAKIN_ENDINGS = [
   { t: '복수의 검', cond: '다르칸·갈원 세력 처단 + 진실 공표', d: '복수는 이뤘으나 남는 공허까지 그릴 것' },
@@ -8435,7 +8436,9 @@ const BUILTIN_STORIES = {
     startPrompt: n => `게임 시작. 첫 장면을 보여줘. 밤의 동궁전 서고. 사흘 전 부왕이 칼을 들고 들이닥친 밤의 기억으로 잠 못 드는 세자 ${n}이(가) 서고에 들었다가 — 금서를 읽다 들킨 지밀나인 홍단이와 마주치는 장면으로 시작해줘. 법도대로면 벌을 내려야 하나, 그 겁 없는 눈이 숨 막히는 궁에서 처음 만나는 숨통인 순간. 촛불 하나의 거리, 신분의 벽, 그 긴장을 살려줘.`,
     startPromptText: '밤의 서고에서 세자 {이름}이(가) 금서를 읽다 들킨 궁녀 홍단이와 처음 마주치는 장면으로 시작해줘.',
     startChars: ['pl701']
-  }
+  },
+  // Add a single existing-engine story, with no changes to other stories.
+  ...(window.PANDORA_HOGWARTS_STORY ? { hogwarts: window.PANDORA_HOGWARTS_STORY } : {})
 };
 
 // ★★저장소 용량 진단·정리 (2026-08-01 유저: 스토리 편집 중 QuotaExceededError)
