@@ -2164,7 +2164,8 @@
 
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/story.js?v=1"></script>
-<script src="storypacks/hogwarts-au/time.js?v=1"></script>
+<script src="storypacks/hogwarts-au/time.js?v=2"></script>
+<script src="storypacks/hogwarts-au/world.js?v=2"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -4605,7 +4606,10 @@ function buildStatePrompt() {
   ldScrubFakeKin();   // 가짜 혈연이 프롬프트에 실리기 전에 제거
   let s = '\n\n## 현재 게임 상태 (이 시점의 확정 사실):\n과거 장면·요약·시작 설정과 충돌하면 아래 현재값을 기준으로 이어간다. 캐릭터의 말투·성격·관계 종류는 카드와 확정 기록을 유지하며, 친밀도만으로 새 관계를 만들지 않는다.\n';
   if (STORY.id === 'idol' && gameState.idol) s += IDOL_SIM.stateLine(gameState.idol);
-  if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime && PandoraHogwartsTime.valid(gameState.hogwarts)) s += PandoraHogwartsTime.context(gameState.hogwarts);
+  if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime && PandoraHogwartsTime.valid(gameState.hogwarts)) {
+    s += PandoraHogwartsTime.context(gameState.hogwarts);
+    if (window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) s += PandoraHogwartsWorld.context(gameState.hogwarts.world);
+  }
   // ★★관계 온도를 **매 턴 숫자로** 못 박는다(2026-08-04 유저: 소요가 자꾸 좋아하고, 전학생 리안이
   //   반 애들을 원래 알던 것처럼 군다). LORE에 규칙을 더 쌓는 대신, 지금 상태를 직접 들이민다 —
   //   고정 규칙은 묻히지만 "지금 소요 호감도 12"는 안 묻힌다.
@@ -11361,6 +11365,7 @@ function startGame(isContinue) {
     if (STORY.id === 'idol') gameState.idol = IDOL_SIM.init();
     if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
       gameState.hogwarts = PandoraHogwartsTime.createState();
+      if (window.PandoraHogwartsWorld) gameState.hogwarts.world = PandoraHogwartsWorld.createState();
       gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
     }
   try { document.body.dataset.story = STORY.id || ''; } catch {}
@@ -11453,6 +11458,7 @@ function restoreAndReplayInner(save, checkTimeflow) {
   gameState = save.gameState || gameState;
   if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
     if (!PandoraHogwartsTime.valid(gameState.hogwarts)) gameState.hogwarts = PandoraHogwartsTime.createState();
+    if (window.PandoraHogwartsWorld && !PandoraHogwartsWorld.valid(gameState.hogwarts.world)) gameState.hogwarts.world = PandoraHogwartsWorld.createState();
     gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
     window._startPhase = ['mode','setup','hogwarts_sort'].includes(save.startPhase) ? save.startPhase : 'playing';
     if (gameState.hogwarts.house) gameState.flags = { ...(gameState.flags || {}), 기숙사: gameState.hogwarts.house };
@@ -13728,7 +13734,8 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
       IDOL_SIM.setDayFrom(gameState.idol, s.time); syncIdolTime();
     }
     if (s.location) gameState.location = s.location;
-    if (s.event) {
+    if (s.event && !(STORY.id === 'hogwarts' && gameState.hogwarts &&
+        gameState.hogwarts.world && (gameState.hogwarts.world.active || gameState.hogwarts.world.pending))) {
       const _evChanged = s.event !== gameState.event;
       gameState.event = s.event;   // 현재 이벤트 배너 (프론티아 벤치마킹 B)
       // ★청문회·회의 등 새 서사 국면(event 배너)로 전환됐는데 이전 전투의 combat=true가 굳은 채
@@ -13738,7 +13745,9 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
       if (!stateOnly && _evChanged && gameState.combat && typeof s.combat !== 'boolean') {
         gameState.combat = false; gameState._combatStart = null;
       }
-    } else if (Object.prototype.hasOwnProperty.call(s, 'event') && s.event === null) {
+    } else if (Object.prototype.hasOwnProperty.call(s, 'event') && s.event === null &&
+        !(STORY.id === 'hogwarts' && gameState.hogwarts && gameState.hogwarts.world &&
+          (gameState.hogwarts.world.active || gameState.hogwarts.world.pending))) {
       // A confirmed ending clears the banner; it does not own the combat flag.
       gameState.event = null;
     }
@@ -14841,8 +14850,15 @@ function showChoices(choices) {
     const inj = idolPlanChoice();
     if (inj && !choices.some(c => c === inj)) choices = choices.concat([inj]);
   }
-  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsTime && PandoraHogwartsTime.valid(gameState.hogwarts)) {
-    for (const label of PandoraHogwartsTime.possibleActions(gameState.hogwarts)) if (!choices.includes(label)) choices.push(label);
+  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsWorld &&
+      gameState.hogwarts && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) {
+    const hw = gameState.hogwarts.world;
+    // Only offer a scene-ending action when the player chooses to finish;
+    // never count ordinary dialogue turns as hours or days.
+    if (!hw.pending) {
+      const label = hw.active ? '▶ 장면 마치기 — 결과를 확정하고 이어가기' : '▶ 다음 장면 — 다음 사건·일상으로 진행';
+      if (!choices.includes(label)) choices.push(label);
+    }
   }
   // ★★AI가 choices를 안 주는 턴이 간간이 있다(2026-08-04 유저: "간간이 선택지 안 나와").
   //   전엔 아이돌만 보장 선택지가 있었고 나머지 스토리는 입력창만 떴다. 어느 스토리든
@@ -14974,17 +14990,98 @@ async function handlePlayerInput(text) {
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
   if (idolRunInjected(text)) return;
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
-  // Hogwarts calendar: advance solely by explicit player command, never by real time or LLM text.
-  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsTime) {
-    const clockMove = PandoraHogwartsTime.advance(gameState.hogwarts, text);
-    if (clockMove.advanced) {
-      gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
-      gameState.flags = gameState.flags || {};
-      gameState.flags['학년도'] = PandoraHogwartsTime.studyYear(gameState.hogwarts.date);
-      updateStatusUI();
-    } else if (clockMove.reason === 'seven-years-finished') {
-      try { showStatToast('7학년 말에 도달했습니다. 현재의 선택으로 결말을 만들어 주세요.'); } catch {}
-      enterInputMode(); return;
+  // Hogwarts scenes: time, NPC schedules, and consequences have one deterministic owner.
+  // This is a separate routing path; every other PANDORA story still uses its old flow.
+  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' &&
+      window.PandoraHogwartsTime && window.PandoraHogwartsWorld &&
+      gameState.hogwarts && PandoraHogwartsTime.valid(gameState.hogwarts)) {
+    const clock = gameState.hogwarts, world = clock.world, hw = PandoraHogwartsWorld;
+    if (hw.valid(world)) {
+      if (hw.isFinish(text)) {
+        const result = hw.finish(world);
+        if (!result) {
+          renderFixedStep('현재 진행 중인 사건이 없습니다. 다음 장면으로 이동하거나 자유롭게 행동할 수 있습니다.',
+            ['▶ 다음 장면 — 다음 사건·일상으로 진행']);
+          return;
+        }
+        gameState.event = null;
+        gameState.combat = false; gameState._combatStart = null;
+        updateStatusUI();
+        renderFixedStep('그날의 일은 그렇게 마무리됐다.\n\n'+result.offscreen+
+          '\n\n누가 무엇을 기억하는지는 다음 만남에서 확인할 수 있다.',
+          ['▶ 다음 장면 — 다음 사건·일상으로 진행'],{resetSprites:true});
+        autoSave(); return;
+      }
+      if (hw.isNext(text)) {
+        if (world.active) {
+          renderFixedStep('이 장면은 아직 진행 중입니다. 대화를 이어가거나 직접 장면을 마무리할 수 있습니다.',
+            ['▶ 장면 마치기 — 결과를 확정하고 이어가기']);
+          return;
+        }
+        if (world.pending) {
+          const r=hw.resume(world);
+          renderFixedStep(r.intro,r.choices,{background:r.background,resetSprites:true});
+          return;
+        }
+        const upcoming=hw.nextEvent(world,clock.date);
+        if (!upcoming) {
+          renderFixedStep('호그와트에서의 7년이 마지막 장면을 향해 간다. 이미 겪은 선택과 관계를 바탕으로 결말을 만들어야 한다.',
+            ['▶ 7년의 여정을 돌아보고 결말을 이야기한다']);
+          autoSave(); return;
+        }
+        const travel=PandoraHogwartsTime.moveToScene(clock,upcoming.date,upcoming.slot);
+        if (travel.reason==='invalid-event-time'||travel.reason==='clock-rewind') {
+          try { showStatToast('⚠ 시간·일정 불일치 — 진행을 중단했습니다.',true); } catch {}
+          enterInputMode(); return;
+        }
+        gameState.time=PandoraHogwartsTime.display(clock);
+        gameState.flags=gameState.flags||{};
+        gameState.flags['학년도']=PandoraHogwartsTime.studyYear(clock.date);
+        gameState.status='호그와트 '+gameState.flags['학년도']+'학년 · '+clock.house;
+        gameState.event=upcoming.title;
+        gameState.location=upcoming.title;
+        gameState.combat=false;gameState._combatStart=null;
+        const offer=hw.offer(world,upcoming);
+        if (!offer) { enterInputMode();return; }
+        updateStatusUI();
+        renderFixedStep('['+gameState.time+']\n\n'+offer.intro,offer.choices,
+          {background:offer.background,resetSprites:true});
+        autoSave();return;
+      }
+      const chosen=hw.parseChoice(text);
+      if (chosen) {
+        const scene=hw.start(world,chosen);
+        if (!scene) {
+          const recovery=hw.resume(world);
+          if (recovery && recovery.mode==='offer')
+            renderFixedStep(recovery.intro,recovery.choices,{background:recovery.background,resetSprites:true});
+          else enterInputMode();
+          return;
+        }
+        gameState.event=scene.title;
+        gameState.location=scene.location;
+        updateStatusUI();
+        if (chosen.optionId==='skip') {
+          const skipped=hw.finish(world);
+          gameState.event=null;
+          renderFixedStep('당신은 이 사건에 직접 참여하지 않았다.\n\n'+skipped.offscreen+
+            '\n\n그 시간은 되돌릴 수 없다.', ['▶ 다음 장면 — 다음 사건·일상으로 진행'],
+            {background:scene.background,resetSprites:true});
+          autoSave();return;
+        }
+        dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,
+          bgFile:currentBgFile,sprites:[...shownSprites]});
+        gameHistory.push({role:'user',content:scene.instruction});
+        autoSave();
+        await callGemini(scene.actors);
+        return;
+      }
+      if (world.pending) {
+        const r=hw.resume(world);
+        renderFixedStep('먼저 이 장면에서 어떻게 할지 정해 주세요.\n\n'+r.intro,
+          r.choices,{background:r.background,resetSprites:true});
+        return;
+      }
     }
   }
   // ★막간 컷(대표 부재)에서 「▶ 계속」을 누르면 시점을 대표에게 돌린다
