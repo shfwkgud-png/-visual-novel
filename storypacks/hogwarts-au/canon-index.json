@@ -305,9 +305,72 @@
   ],
   "causalEdges": [
     {
+      "from": "b01c05s01",
+      "to": "b01c16s02",
+      "why": "돌이 호그와트에 들어오지 않았다면 함정문의 보호 장치와 침입 사건은 원작대로 발생하지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b01c16s02",
+      "to": "b01c17s01",
+      "why": "해리가 보호 장치를 통과하지 않았다면 원작 결말의 퀴렐 대면 방식은 달라진다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b02c04s02",
+      "to": "b02c13s02",
+      "why": "루시우스가 일기장을 지니에게 전달하지 않았다면 지니의 소유·조종 경로가 성립하지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b02c04s02",
+      "to": "b02c17s01",
+      "why": "원래 방식의 지니 조종과 리들 되살아남은 일기장 투입에 의존한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b02c13s02",
+      "to": "b02c17s01",
+      "why": "일기장에 붙은 영혼 조각이 지니 생명을 흡수하는 인과가 필요하다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
       "from": "b02c17s02",
-      "to": "b06c23s02",
-      "why": "첫 일기장 파괴가 호크룩스 확인의 강력한 증거가 된다.",
+      "to": "b02c18s02",
+      "why": "해리가 루시우스의 일기장 책임을 역이용하는 도비 해방 경로의 전제가 된다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b03c18s02",
+      "to": "b03c19s01",
+      "why": "스캐버스의 정체를 알지 못하면 시리우스의 누명을 원작처럼 설명할 수 없다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b04c13s02",
+      "to": "b04c16s03",
+      "why": "가짜 무디의 불의 잔 조작은 바티 크라우치 2세의 학교 침입과 연결된다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b04c16s02",
+      "to": "b04c31s02",
+      "why": "해리가 네 번째 대표가 되지 않았다면 원작 방식으로 우승컵을 잡을 수 없다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b04c31s02",
+      "to": "b04c32s01",
+      "why": "원작 묘지 포트키 이동은 해리와 세드릭이 대회 우승컵을 함께 잡는 사건에 의존한다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
@@ -315,6 +378,48 @@
       "from": "b03c20s01",
       "to": "b04c32s02",
       "why": "페티그루가 살아서 도주해야 원작 방식의 부활 의식을 실행한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b04c32s02",
+      "to": "b04c33s01",
+      "why": "볼드모트의 원작 방식 죽음을 먹는 자 소집은 육체 부활을 전제로 한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b05c16s01",
+      "to": "b05c18s01",
+      "why": "호그스 헤드에서 수업 모임을 만들지 않았다면 필요의 방 정규 훈련은 달라진다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b05c18s01",
+      "to": "b05c27s01",
+      "why": "비밀 훈련이 실제로 운영되어야 밀고로 발각되는 사건이 원래 형태로 발생한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b05c31s02",
+      "to": "b05c32s01",
+      "why": "해리가 시리우스의 위험한 환상을 보지 않았다면 원래 방식의 조사는 시작되지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b05c32s02",
+      "to": "b05c34s01",
+      "why": "크리처의 오도와 구출 결심은 원래 방식의 마법부 침입을 이끈다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b05c34s02",
+      "to": "b05c35s01",
+      "why": "예언실에 들어가 예언 구슬을 찾아야 원작 방식의 함정이 발동된다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
@@ -333,9 +438,16 @@
       "notAutoCanonical": true
     },
     {
-      "from": "b06c02s02",
-      "to": "b06c27s03",
-      "why": "깨지지 않는 맹세와 계획이 스네이프의 탑 행동으로 이어진다.",
+      "from": "b02c17s02",
+      "to": "b06c23s02",
+      "why": "첫 일기장 파괴가 호크룩스 확인의 강력한 증거가 된다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c23s02",
+      "to": "b06c26s01",
+      "why": "호크룩스의 존재와 추적 동기를 인지한 뒤에 원작 방식의 동굴 원정이 시작된다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
@@ -347,16 +459,23 @@
       "notAutoCanonical": true
     },
     {
-      "from": "b06c26s02",
-      "to": "b07c09s02",
-      "why": "가짜 로켓 속 R.A.B.가 다음 권 조사의 출발점이다.",
+      "from": "b06c02s02",
+      "to": "b06c27s03",
+      "why": "깨지지 않는 맹세와 계획이 스네이프의 탑 행동으로 이어진다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
     {
-      "from": "b06c27s02",
-      "to": "b07c23s04",
-      "why": "말포이가 덤블도어를 무장해제했기에 지팡이 소유권이 말포이에게 간다.",
+      "from": "b06c27s01",
+      "to": "b06c27s03",
+      "why": "학교로 죽음을 먹는 자를 들이지 못했다면 탑에서 벌어진 스네이프의 행동 방식도 달라진다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c26s02",
+      "to": "b07c09s02",
+      "why": "가짜 로켓 속 R.A.B.가 다음 권 조사의 출발점이다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
@@ -375,9 +494,30 @@
       "notAutoCanonical": true
     },
     {
-      "from": "b07c23s04",
-      "to": "b07c36s04",
-      "why": "해리의 말포이 제압이 최후 지팡이 충성권 계산에 영향을 준다.",
+      "from": "b06c27s02",
+      "to": "b07c23s04",
+      "why": "말포이가 덤블도어를 무장해제했기에 지팡이 소유권이 말포이에게 간다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c23s03",
+      "to": "b07c24s01",
+      "why": "도비가 탈출을 위해 희생된 사건이 조개껍데기 오두막에서의 매장·각성에 영향을 준다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c26s02",
+      "to": "b07c27s01",
+      "why": "그린고트 금고 습격이 볼드모트에게 호크룩스가 추적되고 있다는 사실을 알리는 실마리가 된다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c27s01",
+      "to": "b07c28s01",
+      "why": "남은 호크룩스가 학교에 있다는 판단이 호그스미드로 이동하게 한다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
@@ -389,6 +529,13 @@
       "notAutoCanonical": true
     },
     {
+      "from": "b07c30s01",
+      "to": "b07c31s01",
+      "why": "교수진이 학교를 장악하고 방어에 나서야 정규 호그와트 전투의 전개가 성립한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
       "from": "b07c29s02",
       "to": "b07c31s02",
       "why": "레번클로 보관 위치를 알아야 필요의 방에서 회수할 수 있다.",
@@ -396,16 +543,16 @@
       "notAutoCanonical": true
     },
     {
-      "from": "b07c31s01",
-      "to": "b07c36s04",
-      "why": "잔 파괴는 볼드모트가 필멸이 되기 위한 필요조건이다.",
+      "from": "b07c32s02",
+      "to": "b07c33s01",
+      "why": "스네이프의 기억을 전달받지 않았다면 그 비밀을 원작대로 알 수 없다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
     {
-      "from": "b07c31s02",
-      "to": "b07c36s04",
-      "why": "보관 파괴는 볼드모트가 필멸이 되기 위한 필요조건이다.",
+      "from": "b07c07s01",
+      "to": "b07c34s02",
+      "why": "덤블도어의 유품인 스니치에서 부활의 돌이 나오는 경로의 선행조건이다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
@@ -424,9 +571,65 @@
       "notAutoCanonical": true
     },
     {
+      "from": "b07c34s03",
+      "to": "b07c36s01",
+      "why": "숲에서 해리가 저항 없이 저주를 받은 뒤에야 나시사의 생존 확인/거짓 보고가 성립한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b02c17s02",
+      "to": "b07c36s04",
+      "why": "일기장에 붙은 볼드모트 영혼 조각도 파괴되어야 원작대로 완전한 최후를 맞는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c03s03",
+      "to": "b07c36s04",
+      "why": "건트 반지 영혼 조각의 파괴가 완료되지 않으면 최종 완전한 결말은 달라진다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c19s02",
+      "to": "b07c36s04",
+      "why": "슬리데린 로켓의 영혼 조각도 파괴되어야 최종 결말이 성립한다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c23s04",
+      "to": "b07c36s04",
+      "why": "해리의 말포이 제압이 최후 지팡이 충성권 계산에 영향을 준다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c31s01",
+      "to": "b07c36s04",
+      "why": "잔 파괴는 볼드모트가 필멸이 되기 위한 필요조건이다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c31s02",
+      "to": "b07c36s04",
+      "why": "보관 파괴는 볼드모트가 필멸이 되기 위한 필요조건이다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
       "from": "b07c35s01",
       "to": "b07c36s04",
       "why": "해리의 영혼 조각 파괴는 마지막 전투의 생사 판정에 영향을 준다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b07c35s02",
+      "to": "b07c36s04",
+      "why": "해리에게 붙은 의도치 않은 영혼 조각의 파괴가 최후의 결과에 영향을 준다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     },
