@@ -2165,7 +2165,9 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/story.js?v=1"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/world.js?v=2"></script>
+<script src="storypacks/hogwarts-au/world.js?v=3"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=1"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -4609,6 +4611,8 @@ function buildStatePrompt() {
   if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime && PandoraHogwartsTime.valid(gameState.hogwarts)) {
     s += PandoraHogwartsTime.context(gameState.hogwarts);
     if (window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) s += PandoraHogwartsWorld.context(gameState.hogwarts.world);
+    if (HOGWARTS_CANON_BUNDLE && gameState.hogwarts.canon && window.PandoraHogwartsBridge)
+      s += PandoraHogwartsBridge.context(HOGWARTS_CANON_BUNDLE,gameState.hogwarts.canon);
   }
   // ★★관계 온도를 **매 턴 숫자로** 못 박는다(2026-08-04 유저: 소요가 자꾸 좋아하고, 전학생 리안이
   //   반 애들을 원래 알던 것처럼 군다). LORE에 규칙을 더 쌓는 대신, 지금 상태를 직접 들이민다 —
@@ -11331,6 +11335,43 @@ function setProvider(p) {
   try { const c = JSON.parse(localStorage.getItem('vn_cfg') || '{}'); c.provider = p; localStorage.setItem('vn_cfg', JSON.stringify(c)); } catch {}
 }
 
+// Hogwarts-only canon bundle. Fetch once, cache, never make other stories wait.
+// If static JSON is unavailable, the scene scheduler still plays and stores
+// the retryable error instead of claiming offscreen history was verified.
+let HOGWARTS_CANON_BUNDLE=null;
+let HOGWARTS_CANON_PENDING=null;
+async function syncHogwartsCanon() {
+  if (STORY.id!=='hogwarts'||!gameState||!gameState.hogwarts ||
+      !window.PandoraHogwartsBridge||!window.PandoraHogwartsCanon) return false;
+  const hp=gameState.hogwarts;
+  try {
+    if (!HOGWARTS_CANON_BUNDLE) {
+      if (!HOGWARTS_CANON_PENDING)
+        HOGWARTS_CANON_PENDING=PandoraHogwartsBridge.load(window.fetch.bind(window),PandoraHogwartsCanon);
+      HOGWARTS_CANON_BUNDLE=await HOGWARTS_CANON_PENDING;
+    }
+    // A player-facing event is still undecided. Offscreen canon for its
+    // date must not resolve BEFORE the player chooses (Halloween troll etc).
+    let through=hp.date;
+    if (hp.world&&(hp.world.pending||hp.world.active)) {
+      const d=new Date(hp.date+'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate()-1);
+      through=d.toISOString().slice(0,10);
+    }
+    const result=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,hp.canon,through,
+      hp.world&&hp.world.decisions||[]);
+    hp.canon=result.state;
+    hp.canonProgress=result.progress.committed;
+    delete hp.canonSyncError;
+    return true;
+  } catch(e) {
+    hp.canonSyncError=String(e&&e.message||e);
+    HOGWARTS_CANON_PENDING=null;
+    try { console.warn('[Hogwarts canon]',e); } catch {}
+    return false;
+  }
+}
+
 // ===== START =====
 function startGame(isContinue) {
   if (PROVIDER === 'gemini') {
@@ -15006,6 +15047,7 @@ async function handlePlayerInput(text) {
         }
         gameState.event = null;
         gameState.combat = false; gameState._combatStart = null;
+        await syncHogwartsCanon(); // commit canon only AFTER participant outcome is known
         updateStatusUI();
         renderFixedStep('그날의 일은 그렇게 마무리됐다.\n\n'+result.offscreen+
           '\n\n누가 무엇을 기억하는지는 다음 만남에서 확인할 수 있다.',
@@ -15039,10 +15081,14 @@ async function handlePlayerInput(text) {
         gameState.flags['학년도']=PandoraHogwartsTime.studyYear(clock.date);
         gameState.status='호그와트 '+gameState.flags['학년도']+'학년 · '+clock.house;
         gameState.event=upcoming.title;
-        gameState.location=upcoming.title;
+        const hwPlace={great_hall:'호그와트 대연회장',corridor:'호그와트 복도',library:'호그와트 도서관',
+          potions:'호그와트 마법약 교실',dormitory:'기숙사',quidditch:'퀴디치 경기장',
+          night_garden:'야간 교정',dueling:'결투 수업장',hogwarts_courtyard:'호그와트 교정'};
+        gameState.location=hwPlace[upcoming.background]||'호그와트';
         gameState.combat=false;gameState._combatStart=null;
         const offer=hw.offer(world,upcoming);
         if (!offer) { enterInputMode();return; }
+        await syncHogwartsCanon(); // pending scene defers same-date canon outcome until choice ends
         updateStatusUI();
         renderFixedStep('['+gameState.time+']\n\n'+offer.intro,offer.choices,
           {background:offer.background,resetSprites:true});
@@ -15064,6 +15110,7 @@ async function handlePlayerInput(text) {
         if (chosen.optionId==='skip') {
           const skipped=hw.finish(world);
           gameState.event=null;
+          await syncHogwartsCanon(); // unseen historical events still occur off-screen
           renderFixedStep('당신은 이 사건에 직접 참여하지 않았다.\n\n'+skipped.offscreen+
             '\n\n그 시간은 되돌릴 수 없다.', ['▶ 다음 장면 — 다음 사건·일상으로 진행'],
             {background:scene.background,resetSprites:true});
@@ -15128,7 +15175,9 @@ async function handlePlayerInput(text) {
     window._startPhase = 'playing';
     gameHistory.push({role:'user',content:text+'\n\n[시스템 확정: 분류모자가 '+pick.house+' 배정을 선언했다. 이 기숙사는 7년간 유지된다. 주인공은 해리 포터가 아니며, 원작 인물과 처음 만나는 상황이다. 분류가 막 끝난 대연회장에서 같은 기숙사 학생들과 첫 대화를 시작하라.]'});
     dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
-    updateStatusUI(); autoSave();
+    updateStatusUI();
+    await syncHogwartsCanon(); // confirm train and sorting chapters without spoilers
+    autoSave();
     await callGemini(['mcgonagall']); return;
   }
   if (window._startPhase === 'mode') {
