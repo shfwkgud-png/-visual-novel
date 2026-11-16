@@ -859,7 +859,7 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(scene.art.length, 2);
     assert.deepEqual(scene.filters, ['blur(6px) brightness(0.78)', 'blur(6px) brightness(0.78)']);
     assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
-    assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v2.webp')));
+    assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v4.webp')));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_ron' && src.endsWith('/4_sadness_v2.webp')));
     await page.screenshot({ path: path.join(ARTIFACTS, 'hogwarts-opening-' + (ctx.mobile ? 'mobile' : 'desktop') + '.png') });
     const houseScenes = await page.evaluate(async () => {
@@ -912,6 +912,29 @@ async function hogwartsArtCheck(ctx) {
       document.getElementById('sprite_crabbe')?.naturalWidth === 1024 &&
       document.getElementById('sprite_goyle')?.naturalWidth === 1024);
     assert.match(await page.locator('#sprite_goyle').getAttribute('src'), /goyle\/2d\/4_sadness\.webp$/);
+    for (const [id, emotion, file] of [
+      ['harry', 'angry', '3_anger_v4'],
+      ['george', 'smile', '2_joy_v2'],
+      ['kingsley', 'smile', '2_joy_v2'],
+      ['moody', 'smile', '2_joy_v2'],
+      ['theodore', 'normal', '1_neutral_v2'],
+    ]) {
+      await page.evaluate(id => rebuildSprites(['malfoy', id], id, 'normal', 'upper'), id);
+      await page.waitForFunction(id => {
+        const img = document.getElementById('sprite_' + id);
+        return img?.naturalWidth === 1024 && img.style.getPropertyValue('--arScale');
+      }, id);
+      const before = await page.locator('#sprite_' + id).evaluate(img => Number(img.style.getPropertyValue('--arScale')));
+      await page.evaluate(({ id, emotion }) => highlightSpeaker(id, emotion, 'upper'), { id, emotion });
+      await page.waitForFunction(({ id, file }) => {
+        const img = document.getElementById('sprite_' + id);
+        return img?.currentSrc.endsWith('/' + file + '.webp') && img.complete && img.naturalWidth === 1024;
+      }, { id, file });
+      const after = await page.locator('#sprite_' + id).evaluate(img => Number(img.style.getPropertyValue('--arScale')));
+      assert.ok(Math.abs(before - after) <= 0.13, id + ' jumps in size when its expression changes');
+      assert.equal(await page.locator('#charLayer img').count(), 2);
+      if (ctx.mobile) await page.screenshot({ path: path.join(ARTIFACTS, id + '-' + emotion + '-mobile.png') });
+    }
   });
 }
 
