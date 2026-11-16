@@ -1,0 +1,1174 @@
+{
+  "schemaVersion": 1,
+  "book": 7,
+  "bookTitle": "죽음의 성물",
+  "span": "1997-1998",
+  "source": "https://www.hp-lexicon.org/source/the-harry-potter-novels/dh/",
+  "verifiedExactDates": {
+    "1997-07-27": "일곱 포터의 전투",
+    "1998-05-02": "호그와트 최후 전투와 볼드모트 사망"
+  },
+  "epilogue": {
+    "period": "2017",
+    "status": "정사 후일담(본편 플레이 범위 밖)",
+    "note": "19년 뒤 다음 세대의 호그와트 진학은 엔딩 후일담으로만 선택적으로 사용한다."
+  },
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "어둠의 마왕의 귀환 계획",
+      "period": "summer",
+      "setting": "malfoy_manor",
+      "actors": [
+        "voldemort",
+        "snape",
+        "lucius",
+        "narcissa",
+        "malfoy",
+        "bellatrix",
+        "charity"
+      ],
+      "access": "gm",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "죽음을 먹는 자들이 말포이 저택에서 새 전쟁 전략을 논의한다.",
+          "access": "gm"
+        },
+        {
+          "step": 2,
+          "fact": "볼드모트가 루시우스의 지팡이를 빼앗고 머글학 교수 차리티 버비지를 살해한다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "charity_alive": false,
+        "malfoy_manor_death_eater_hq": true
+      }
+    },
+    {
+      "chapter": 2,
+      "title": "덤블도어를 추모하며",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "albus",
+        "doge",
+        "rita"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 덤블도어의 부고와 전기에서 과거를 둘러싼 불편한 단서를 발견한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "호크룩스 추적과 교장의 유산이 갈림길이 된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 3,
+      "title": "더즐리 가족의 이주",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "petunia",
+        "vernon",
+        "dudley",
+        "hestia",
+        "dedalus"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "불사조 기사단이 더즐리 가족을 숨겨 보호한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리가 이전의 보호 마법을 벗어나기로 결심한다.",
+          "access": "local"
+        }
+      ],
+      "effects": {
+        "privet_drive_protection_ended": true
+      }
+    },
+    {
+      "chapter": 4,
+      "title": "일곱 명의 해리",
+      "period": "summer",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "moody",
+        "hagrid",
+        "tonks",
+        "lupin",
+        "george",
+        "hedwig",
+        "voldemort"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "기사단이 폴리주스로 일곱 명의 해리를 만들어 각기 다른 경로로 이동시킨다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "매복한 죽음을 먹는 자들이 공격하고 헤드위그와 무디가 희생된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "moody_alive": false,
+        "hedwig_alive": false,
+        "harry_extracted": true
+      }
+    },
+    {
+      "chapter": 5,
+      "title": "쓰러진 전사",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "george",
+        "lupin",
+        "tonks",
+        "molly"
+      ],
+      "access": "local",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "기사단의 생존자들이 버로에서 재집결한다.",
+          "access": "local"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 무디의 죽음과 조지의 부상에 책임감을 느낀다.",
+          "access": "local"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 6,
+      "title": "잠옷 입은 구울",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "molly",
+        "arthur",
+        "ginny"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "세 친구가 학교에 돌아가지 않고 호크룩스를 찾을 계획을 준비한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "론의 부재를 숨기기 위한 거짓 병치레를 마련한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "trio_not_returning_to_school": true
+      }
+    },
+    {
+      "chapter": 7,
+      "title": "덤블도어의 유언",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "scrimgeour",
+        "albus"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "스크림저가 덤블도어의 유품인 딜루미네이터·동화책·스니치를 전달한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "그리핀도르의 검은 정부가 인도하지 않는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "bequests_received": true
+      }
+    },
+    {
+      "chapter": 8,
+      "title": "빌과 플뢰르의 결혼식",
+      "period": "summer",
+      "setting": "burrow",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "bill",
+        "fleur",
+        "luna",
+        "kingsley",
+        "doge",
+        "xenophilius"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "결혼식 도중 마법부가 함락됐다는 경고가 전해진다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "스크림저가 살해되고 죽음을 먹는 자들이 결혼식장을 덮친다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "minister": "thicknesse",
+        "ministry_fallen": true,
+        "scrimgeour_alive": false
+      }
+    },
+    {
+      "chapter": 9,
+      "title": "안전한 은신처",
+      "period": "summer",
+      "setting": "grimmauld",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "kreacher",
+        "death_eaters"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "세 친구가 그리몰드가 12번지에 은신하고 호크룩스 수색에 집중한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "레귤러스 블랙의 약자인 R.A.B.가 로켓 사건과 연결된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "rab_clue_found": true
+      }
+    },
+    {
+      "chapter": 10,
+      "title": "크리처의 이야기",
+      "period": "summer",
+      "setting": "grimmauld",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "kreacher",
+        "regulus",
+        "voldemort"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "크리처가 레귤러스가 볼드모트를 배신해 진짜 로켓을 가져왔던 과거를 설명한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "로켓은 문둥구스 플레처의 손을 거쳐 사라졌음이 밝혀진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "real_locket_history_known": true
+      }
+    },
+    {
+      "chapter": 11,
+      "title": "문둥구스의 거래",
+      "period": "summer",
+      "setting": "grimmauld",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "mundungus",
+        "kreacher",
+        "umbridge"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "문둥구스를 찾아내 로켓이 엄브리지에게 넘어갔음을 확인한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "세 친구가 마법부 침입을 계획한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "real_locket_location": "umbridge"
+      }
+    },
+    {
+      "chapter": 12,
+      "title": "마법은 힘이다",
+      "period": "autumn",
+      "setting": "ministry",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "umbridge",
+        "yaxley",
+        "thicknesse"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "세 친구가 직원들의 신분을 변장해 점령된 마법부로 침투한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "정권이 머글 출신 마법사들을 조직적으로 박해하고 있음을 확인한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "ministry_infiltrated": true
+      }
+    },
+    {
+      "chapter": 13,
+      "title": "머글 태생 등록위원회",
+      "period": "autumn",
+      "setting": "ministry",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "umbridge",
+        "mary_cattermole"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "엄브리지의 재판장에서 로켓을 빼앗고 박해받는 가족을 탈출시킨다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "정체가 의심받자 세 친구의 기존 은신처가 노출된다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "horcrux_locket_in_trio_hands": true,
+        "grimmauld_safe": false
+      }
+    },
+    {
+      "chapter": 14,
+      "title": "도둑",
+      "period": "autumn",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "voldemort",
+        "gregorovitch",
+        "grindelwald"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 볼드모트의 시각을 통해 강력한 지팡이의 행방을 추적하는 모습을 본다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "그레고로비치와 금발 도둑의 관계가 수수께끼로 남는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 15,
+      "title": "도깨비의 복수",
+      "period": "autumn",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "griphook",
+        "ted_tonks",
+        "dirk",
+        "deen"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "도망자들의 대화에서 마법부 권력과 그리핀도르의 검에 관한 사실을 듣는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "호크룩스 로켓의 심리적 영향으로 론이 한동안 일행을 떠난다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "ron_left_hunt": true
+      }
+    },
+    {
+      "chapter": 16,
+      "title": "고드릭 골짜기",
+      "period": "winter",
+      "setting": "godrics_hollow",
+      "actors": [
+        "harry",
+        "hermione",
+        "albus",
+        "lily",
+        "james"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리와 헤르미온느가 해리의 고향에 가 부모 묘지를 찾는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "바틸다 백샷을 단서로 덤블도어의 과거를 추적한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {}
+    },
+    {
+      "chapter": 17,
+      "title": "바틸다의 비밀",
+      "period": "winter",
+      "setting": "godrics_hollow",
+      "actors": [
+        "harry",
+        "hermione",
+        "nagini",
+        "voldemort",
+        "bathilda"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "바틸다의 모습을 이용한 나기니의 함정에서 해리와 헤르미온느가 탈출한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "도주 과정에서 해리의 지팡이가 부러진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_wand_broken": true,
+        "nagini_trap_survived": true
+      }
+    },
+    {
+      "chapter": 18,
+      "title": "덤블도어의 삶과 거짓",
+      "period": "winter",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "hermione",
+        "albus",
+        "grindelwald",
+        "ariana",
+        "aberforth"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "리타 스키터의 책을 통해 덤블도어와 그린델왈드의 관계가 드러난다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 스승의 과거 선택과 신뢰에 의문을 품는다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_doubts_dumbledore": true
+      }
+    },
+    {
+      "chapter": 19,
+      "title": "은빛 암사슴",
+      "period": "winter",
+      "setting": "forest_of_dean",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "snape"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "은빛 암사슴 패트로누스가 해리를 그리핀도르 검이 숨은 곳으로 안내한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "귀환한 론이 해리를 구하고 검으로 로켓을 파괴한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "text": "검의 위치를 알려준 패트로누스는 스네이프가 보냈다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "ron_left_hunt": false,
+        "horcrux_locket_destroyed": true
+      }
+    },
+    {
+      "chapter": 20,
+      "title": "제노필리우스 러브굿",
+      "period": "winter",
+      "setting": "lovegood_house",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "xenophilius",
+        "luna"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "세 친구가 죽음의 성물 문양에 대한 정보를 얻기 위해 러브굿의 집을 찾는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "루나가 이미 납치되었음이 드러난다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "luna_captured": true
+      }
+    },
+    {
+      "chapter": 21,
+      "title": "삼 형제의 이야기",
+      "period": "winter",
+      "setting": "lovegood_house",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "xenophilius"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "죽음의 성물이 딱총나무 지팡이·부활의 돌·투명망토라는 해석이 제시된다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "제노필리우스는 루나를 구하려 일행을 죽음을 먹는 자에게 넘기려 한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "hallows_legend_known": true
+      }
+    },
+    {
+      "chapter": 22,
+      "title": "죽음의 성물",
+      "period": "spring",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "voldemort"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 성물과 호크룩스 중 어느 것을 우선할지 갈등한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "불법 라디오 방송으로 저항 세력이 살아 있음을 확인한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "금기어 발언으로 추적 장치가 활성화되어 일행의 보호막이 무너진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "trio_snatchers_detected": true
+      }
+    },
+    {
+      "chapter": 23,
+      "title": "말포이 저택",
+      "period": "spring",
+      "setting": "malfoy_manor",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "malfoy",
+        "narcissa",
+        "bellatrix",
+        "dobby",
+        "ollivander",
+        "griphook",
+        "wormtail",
+        "luna"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "세 친구가 포획되어 말포이 저택에 끌려간다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "말포이가 해리의 정체 확인을 망설이고 벨라트릭스가 헤르미온느를 고문한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "도비가 포로를 탈출시키지만 벨라트릭스의 공격으로 죽는다.",
+          "access": "private"
+        },
+        {
+          "step": 4,
+          "fact": "해리가 말포이의 지팡이 소유권을 장악하는 계기가 발생한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "dobby_alive": false,
+        "elder_wand_allegiance": "harry",
+        "malfoy_manor_escaped": true,
+        "wormtail_alive": false
+      }
+    },
+    {
+      "chapter": 24,
+      "title": "지팡이 제작자",
+      "period": "spring",
+      "setting": "shell_cottage",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "ollivander",
+        "griphook",
+        "bill",
+        "voldemort"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 도비를 묻고 성물보다 호크룩스를 우선하기로 결심한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "올리밴더에게 지팡이 충성 관계를 묻고 그린고트 침입을 준비한다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "text": "볼드모트가 덤블도어의 무덤에서 딱총나무 지팡이를 훔친다.",
+          "access": "gm"
+        }
+      ],
+      "effects": {
+        "voldemort_has_elder_wand": true
+      }
+    },
+    {
+      "chapter": 25,
+      "title": "조개껍데기 오두막",
+      "period": "spring",
+      "setting": "shell_cottage",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "griphook",
+        "bill",
+        "fleur",
+        "lupin"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "그립훅이 그리핀도르의 검을 대가로 금고 침입에 협력하기로 한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "루핀이 아들 테디의 출생을 알린다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "gringotts_plan_ready": true
+      }
+    },
+    {
+      "chapter": 26,
+      "title": "그린고트 대탈출",
+      "period": "finale",
+      "setting": "gringotts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "griphook",
+        "bellatrix"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "헤르미온느가 벨라트릭스의 모습으로 그린고트 레스트랭 금고에 침입한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "일행이 후플푸프의 잔을 확보한 뒤 용을 타고 탈출한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "horcrux_cup_retrieved": true
+      }
+    },
+    {
+      "chapter": 27,
+      "title": "마지막 은신처",
+      "period": "finale",
+      "setting": "outside",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "voldemort"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "볼드모트가 호크룩스 도난을 알게 되어 남은 물건들을 확인하러 다닌다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리는 다음 목적지가 호그와트의 숨겨진 보관소라고 판단한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "voldemort_knows_horcrux_hunt": true
+      }
+    },
+    {
+      "chapter": 28,
+      "title": "사라진 거울",
+      "period": "finale",
+      "setting": "hogsmeade",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "aberforth",
+        "neville"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "애버포스가 학생들을 호그와트 안으로 들이는 비밀 통로를 알려준다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "네빌이 캐로 남매의 교내 폭압과 학생 저항 조직을 설명한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "hogwarts_secret_passage_open": true,
+        "da_resistance_active": true
+      }
+    },
+    {
+      "chapter": 29,
+      "title": "사라진 보관",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "luna",
+        "helena_ravenclaw",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리가 레번클로의 유령에게서 보관의 과거를 듣는다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "볼드모트가 보관을 필요의 방에 숨겼다는 사실이 밝혀진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "diadem_location_known": true
+      }
+    },
+    {
+      "chapter": 30,
+      "title": "스네이프의 축출",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "mcgonagall",
+        "snape",
+        "harry",
+        "flitwick",
+        "sprout",
+        "slughorn"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "교수들이 학교를 장악한 스네이프와 대치하고 스네이프는 도주한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "맥고나걸이 성의 방어와 학생들의 대피를 조직한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "snape_headmaster": false,
+        "hogwarts_resistance_battle": true
+      }
+    },
+    {
+      "chapter": 31,
+      "title": "호그와트 전투",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "ron",
+        "hermione",
+        "neville",
+        "malfoy",
+        "crabbe",
+        "goyle",
+        "fred",
+        "percy",
+        "mcgonagall"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "론과 헤르미온느가 바실리스크 독니로 후플푸프의 잔을 파괴한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "필요의 방에서 크래브가 통제할 수 없는 마법의 불을 사용해 죽고 보관도 파괴된다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "fact": "해리가 말포이와 고일을 화염에서 구한다.",
+          "access": "public"
+        },
+        {
+          "step": 4,
+          "fact": "전투 중 프레드가 사망한다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "horcrux_cup_destroyed": true,
+        "horcrux_diadem_destroyed": true,
+        "crabbe_alive": false,
+        "fred_alive": false,
+        "malfoy_rescued": true
+      }
+    },
+    {
+      "chapter": 32,
+      "title": "딱총나무 지팡이의 오판",
+      "period": "finale",
+      "setting": "shrieking_shack",
+      "actors": [
+        "voldemort",
+        "snape",
+        "nagini",
+        "harry",
+        "ron",
+        "hermione"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "볼드모트가 지팡이 주인을 스네이프라고 오해해 나기니에게 그를 공격하게 한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "죽어가는 스네이프가 해리에게 기억을 전달한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "snape_alive": false,
+        "snape_memories_transferred": true
+      }
+    },
+    {
+      "chapter": 33,
+      "title": "왕자의 이야기",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "snape",
+        "albus",
+        "lily",
+        "james"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "스네이프가 릴리와의 관계 및 덤블도어와의 비밀 협조를 지켰음이 드러난다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "해리 자신에게 볼드모트의 영혼 조각이 붙어 있으며 이를 없애려면 죽음을 감수해야 한다는 사실이 밝혀진다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "스네이프의 덤블도어 살해가 미리 계획된 행동이었다는 사실이 밝혀진다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_knows_own_soul_fragment": true,
+        "snape_allegiance_revealed": true
+      }
+    },
+    {
+      "chapter": 34,
+      "title": "다시 금지된 숲으로",
+      "period": "finale",
+      "setting": "forbidden_forest",
+      "actors": [
+        "harry",
+        "voldemort",
+        "nagini",
+        "neville",
+        "lily",
+        "james",
+        "sirius",
+        "lupin"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 네빌에게 나기니를 없애야 한다는 말을 남긴다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "황금 스니치에 숨은 부활의 돌로 사랑하는 이들의 모습을 보고 숲에 들어간다.",
+          "access": "private"
+        },
+        {
+          "step": 3,
+          "fact": "해리가 저항하지 않고 볼드모트의 살인 저주를 받아들인다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "harry_submitted_to_curse": true
+      }
+    },
+    {
+      "chapter": 35,
+      "title": "킹스 크로스",
+      "period": "finale",
+      "setting": "limbo",
+      "actors": [
+        "harry",
+        "albus",
+        "voldemort"
+      ],
+      "access": "private",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "해리는 사후와 같은 공간에서 덤블도어의 설명을 듣고 영혼 조각의 소멸을 이해한다.",
+          "access": "private"
+        },
+        {
+          "step": 2,
+          "fact": "죽음 대신 삶으로 돌아가기로 결정한다.",
+          "access": "private"
+        }
+      ],
+      "effects": {
+        "horcrux_harry_destroyed": true,
+        "harry_alive": true
+      }
+    },
+    {
+      "chapter": 36,
+      "title": "계획의 결함",
+      "period": "finale",
+      "setting": "hogwarts",
+      "actors": [
+        "harry",
+        "voldemort",
+        "narcissa",
+        "neville",
+        "nagini",
+        "molly",
+        "bellatrix",
+        "ron",
+        "hermione",
+        "ginny"
+      ],
+      "access": "public",
+      "beats": [
+        {
+          "step": 1,
+          "fact": "나시사는 해리가 살아 있음을 알지만 아들의 안위를 위해 거짓 보고한다.",
+          "access": "public"
+        },
+        {
+          "step": 2,
+          "fact": "네빌이 나기니를 죽여 마지막 독립 호크룩스를 없앤다.",
+          "access": "public"
+        },
+        {
+          "step": 3,
+          "fact": "몰리가 벨라트릭스를 쓰러뜨리고 해리와 볼드모트의 최후 결투가 벌어진다.",
+          "access": "public"
+        },
+        {
+          "step": 4,
+          "fact": "딱총나무 지팡이의 진짜 충성 대상이 해리이므로 볼드모트의 살인 저주가 반사되어 그가 죽는다.",
+          "access": "public"
+        }
+      ],
+      "effects": {
+        "nagini_alive": false,
+        "horcrux_nagini_destroyed": true,
+        "bellatrix_alive": false,
+        "voldemort_alive": false,
+        "wizard_war_stage": "ended",
+        "minister": "kingsley"
+      }
+    }
+  ]
+}
