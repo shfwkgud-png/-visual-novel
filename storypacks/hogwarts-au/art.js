@@ -5,6 +5,9 @@ window.PANDORA_HOGWARTS_ART = {
     'gryffindor_common_room', 'slytherin_common_room', 'ravenclaw_common_room', 'hufflepuff_common_room',
     'gryffindor_dormitory', 'slytherin_dormitory', 'ravenclaw_dormitory', 'hufflepuff_dormitory',
     'corridor', 'classroom', 'library', 'potions',
+    'dormitory', 'headmaster', 'quidditch', 'dueling', 'infirmary', 'night_garden', 'astronomy',
+    'ballroom', 'hogsmeade', 'diagon_alley', 'platform_nine_three_quarters', 'hogwarts_express_compartment',
+    'hagrid_hut', 'forbidden_forest', 'hogwarts_grounds',
   ],
   backgrounds: {
     "hogwarts_courtyard": "호그와트 교정",
