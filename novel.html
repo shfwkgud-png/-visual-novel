@@ -2164,6 +2164,7 @@
 
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/story.js?v=1"></script>
+<script src="storypacks/hogwarts-au/time.js?v=1"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -4604,6 +4605,7 @@ function buildStatePrompt() {
   ldScrubFakeKin();   // 가짜 혈연이 프롬프트에 실리기 전에 제거
   let s = '\n\n## 현재 게임 상태 (이 시점의 확정 사실):\n과거 장면·요약·시작 설정과 충돌하면 아래 현재값을 기준으로 이어간다. 캐릭터의 말투·성격·관계 종류는 카드와 확정 기록을 유지하며, 친밀도만으로 새 관계를 만들지 않는다.\n';
   if (STORY.id === 'idol' && gameState.idol) s += IDOL_SIM.stateLine(gameState.idol);
+  if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime && PandoraHogwartsTime.valid(gameState.hogwarts)) s += PandoraHogwartsTime.context(gameState.hogwarts);
   // ★★관계 온도를 **매 턴 숫자로** 못 박는다(2026-08-04 유저: 소요가 자꾸 좋아하고, 전학생 리안이
   //   반 애들을 원래 알던 것처럼 군다). LORE에 규칙을 더 쌓는 대신, 지금 상태를 직접 들이민다 —
   //   고정 규칙은 묻히지만 "지금 소요 호감도 12"는 안 묻힌다.
@@ -8984,7 +8986,7 @@ function openStoryDetail(id) {
   document.getElementById('timeflowChk').checked = timeflowOn(id);
   // ★시간 무개념 스토리(hero=v345·timeloop=하루반복·idol=앱 소유)는 '세계 시간 흐름' 옵션 자체가 모순 — 숨김(2026-08-24)
   { const _tfRow = document.getElementById('timeflowRow');
-    if (_tfRow) _tfRow.style.display = ['hero', 'timeloop', 'idol'].includes(id) ? 'none' : ''; }
+    if (_tfRow) _tfRow.style.display = ['hero', 'timeloop', 'idol', 'hogwarts'].includes(id) ? 'none' : ''; }
   const sv = saveInfoFor(id);
   const cbtn = document.getElementById('detailContinueBtn');
   cbtn.disabled = !sv;
@@ -11058,6 +11060,7 @@ function autoSave() {
     dialogueLog,
     playerName,
     playerDesc,
+    startPhase: STORY.id === 'hogwarts' ? (window._startPhase || 'playing') : null,
     provider: PROVIDER,
     nimUrl: NIM_URL,
     apiKey: API_KEY,
@@ -11356,6 +11359,10 @@ function startGame(isContinue) {
       player: { abilities: [], injuries: (ini.injuries || []).slice(), note: '' }
     };
     if (STORY.id === 'idol') gameState.idol = IDOL_SIM.init();
+    if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
+      gameState.hogwarts = PandoraHogwartsTime.createState();
+      gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
+    }
   try { document.body.dataset.story = STORY.id || ''; } catch {}
     gameHistory = []; storySummary = ''; summaryIndex = 0; turnCount = 0;
     // ★되감기 스냅샷도 새 판에서 비운다(2026-08-15): 스토리별 키라 안 지우면 지난 판 기록이
@@ -11444,6 +11451,12 @@ function restoreAndReplayInner(save, checkTimeflow) {
   histDropped = save.histDropped || 0;
   dlogDropped = save.dlogDropped || 0;
   gameState = save.gameState || gameState;
+  if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
+    if (!PandoraHogwartsTime.valid(gameState.hogwarts)) gameState.hogwarts = PandoraHogwartsTime.createState();
+    gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
+    window._startPhase = ['mode','setup','hogwarts_sort'].includes(save.startPhase) ? save.startPhase : 'playing';
+    if (gameState.hogwarts.house) gameState.flags = { ...(gameState.flags || {}), 기숙사: gameState.hogwarts.house };
+  }
   window._pendingEvent = save.pendingEvent ? { ...save.pendingEvent } : null;
   if (STORY.id === 'idol' && gameState.idol) {
     migrateIdolSave(gameState.idol);                    // 구 세이브 필드 보정
@@ -11488,7 +11501,7 @@ function restoreAndReplayInner(save, checkTimeflow) {
   applyLegacySaveConnection(save);
   // world time flow: if enabled and real time passed, the world moved on too
   // ★시간 무개념 스토리 제외(2026-08-24): hero=시간 개념 없음(v345)·timeloop=하루 반복이 컨셉·idol=시간은 앱(sim) 소유
-  const _noTimeflow = new Set(['hero', 'timeloop', 'idol']);
+  const _noTimeflow = new Set(['hero', 'timeloop', 'idol', 'hogwarts']);
   if (checkTimeflow && !_noTimeflow.has(STORY.id) && timeflowOn(STORY.id) && save.savedAt && Date.now() - save.savedAt > 3 * 3600000) {
     window._timeSkipNote = humanGap(Date.now() - save.savedAt);
   }
@@ -13697,7 +13710,7 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
   }   // ← !stateOnly (화면·연출 처리 끝. 이하 상태 적용부는 stateOnly와 공유)
   // ★분리 모드 본편의 시간(2026-09-16 실세이브: 60턴 기록 중 time 1건 — 한 장면만 보는 추출기는 날짜를 거의 안 민다).
   //   전체 맥락을 가진 본편 모델이 최상위 time을 쓴다 — 추출기와 같은 단조 가드를 거치므로 되돌아가지는 않는다.
-  if (typeof data.time === 'string' && data.time.trim() && !(STORY.id === 'idol' && gameState.idol)) {
+  if (STORY.id !== 'hogwarts' && typeof data.time === 'string' && data.time.trim() && !(STORY.id === 'idol' && gameState.idol)) {
     gameState.time = mergeTimeValue(gameState.time, data.time, STORY.id);
   }
   if (data.state_update) {
@@ -13705,12 +13718,12 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
     // ★재화·평판 변화 가시화(2026-08-24 전수감사: 친밀도·진영·주사위는 토스트인데 돈·평판만 무음이었음)
     if (s.rep) { gameState.rep += s.rep; if (!replaying) showStatToast(`${s.rep > 0 ? '👑' : '📉'} 평판 ${s.rep > 0 ? '+' : ''}${s.rep} (${gameState.rep})`); }
     if (s.gold) { gameState.gold += s.gold; if (!replaying) showStatToast(`💰 ${s.gold > 0 ? '+' : ''}${s.gold}G (${gameState.gold}G)`); }
-    if (s.status) gameState.status = s.status;
+    if (s.status && !(STORY.id === 'hogwarts' && /[1-7]학년|기숙사|그리핀도르|슬리데린|레번클로|후플푸프/.test(s.status))) gameState.status = s.status;
     // ★아이돌: **주차는** 시뮬이 소유한다(AI가 주차를 모른 채 밀면 요일이 엉킨다 — 2026-07-26).
     //   단 주 안의 요일·시각은 AI/유저가 바꿀 수 있다 — 대괄호 안 주차 표기만 떼고 나머지를 받는다.
     const _isIdol = (typeof STORY !== 'undefined' && STORY && STORY.id === 'idol' && gameState.idol);
     // ★시간은 모델 소유(2026-08-19 시간 장치 폐지) — 앱은 받아 적되, 되돌아가는 값은 거부한다(2026-09-14).
-    if (s.time && !_isIdol) gameState.time = mergeTimeValue(gameState.time, s.time, STORY.id);
+    if (s.time && !_isIdol && STORY.id !== 'hogwarts') gameState.time = mergeTimeValue(gameState.time, s.time, STORY.id);
     else if (s.time && _isIdol) {
       IDOL_SIM.setDayFrom(gameState.idol, s.time); syncIdolTime();
     }
@@ -13738,7 +13751,7 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
       if (!s.combat) gameState._combatStart = null;
     }
     // ★진영 선택(2026-08-11): 선택이 상태로 남지 않으면 몇 턴 뒤 소멸한다 — 구조화 필드로 영구화
-    if (typeof s.faction === 'string' && s.faction.trim()) {
+    if (typeof s.faction === 'string' && s.faction.trim() && !(STORY.id === 'hogwarts' && /그리핀도르|슬리데린|레번클로|후플푸프/.test(s.faction))) {
       const _fr = routeFactionValue(STORY.id, s.faction);
       if (_fr && _fr.kind === 'class') {
         // 1부의 반 배정이 faction으로 잘못 온 경우 — 진영이 아니라 소속 단위로 기록한다
@@ -13764,7 +13777,13 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
     } catch {}
     // ★월례 회의 방침(state_update.war.action) — 수신 즉시 앱이 한 달을 굴린다(전투·세력 AI 포함)
     if (s.war && gameState.war) { try { warApplyDirective(s.war, replaying); } catch {} }
-    if (s.flags) Object.assign(gameState.flags, s.flags);
+    if (s.flags) {
+      if (STORY.id === 'hogwarts') {
+        const safeFlags = { ...s.flags };
+        for (const k of ['기숙사','학년도','학년','학기','날짜','시간']) delete safeFlags[k];
+        Object.assign(gameState.flags, safeFlags);
+      } else Object.assign(gameState.flags, s.flags);
+    }
 
     // Merge character relationship/status updates
     // ★아이돌 시뮬: AI는 "무슨 행동을 했는지"만 뱉고, 수치 계산은 여기서(결정론)
@@ -14822,6 +14841,9 @@ function showChoices(choices) {
     const inj = idolPlanChoice();
     if (inj && !choices.some(c => c === inj)) choices = choices.concat([inj]);
   }
+  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsTime && PandoraHogwartsTime.valid(gameState.hogwarts)) {
+    for (const label of PandoraHogwartsTime.possibleActions(gameState.hogwarts)) if (!choices.includes(label)) choices.push(label);
+  }
   // ★★AI가 choices를 안 주는 턴이 간간이 있다(2026-08-04 유저: "간간이 선택지 안 나와").
   //   전엔 아이돌만 보장 선택지가 있었고 나머지 스토리는 입력창만 떴다. 어느 스토리든
   //   **최소 하나는 준다** — 유저가 매번 직접 타이핑하게 만들지 않는다.
@@ -14952,6 +14974,19 @@ async function handlePlayerInput(text) {
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
   if (idolRunInjected(text)) return;
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
+  // Hogwarts calendar: advance solely by explicit player command, never by real time or LLM text.
+  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsTime) {
+    const clockMove = PandoraHogwartsTime.advance(gameState.hogwarts, text);
+    if (clockMove.advanced) {
+      gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
+      gameState.flags = gameState.flags || {};
+      gameState.flags['학년도'] = PandoraHogwartsTime.studyYear(gameState.hogwarts.date);
+      updateStatusUI();
+    } else if (clockMove.reason === 'seven-years-finished') {
+      try { showStatToast('7학년 말에 도달했습니다. 현재의 선택으로 결말을 만들어 주세요.'); } catch {}
+      enterInputMode(); return;
+    }
+  }
   // ★막간 컷(대표 부재)에서 「▶ 계속」을 누르면 시점을 대표에게 돌린다
   if (/^▶\s*계속/.test(String(text || '')) && gameState && gameState.idol) {
     gameState.idol._absent = false;
@@ -14982,6 +15017,23 @@ async function handlePlayerInput(text) {
     autoSave();
     return;
   }
+  if (window._startPhase === 'hogwarts_sort' && STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
+    const pick = PandoraHogwartsTime.chooseHouse(gameState.hogwarts, text, playerName, playerDesc);
+    if (!pick.ok) {
+      renderFixedStep('분류모자가 고개를 기울인다. 네 기숙사 중 한 곳을 택하거나 모자에게 맡겨야 한다.', PandoraHogwartsTime.HOUSE_OPTIONS);
+      autoSave(); return;
+    }
+    gameState.flags = gameState.flags || {};
+    gameState.flags['기숙사'] = pick.house;
+    gameState.flags['학년도'] = 1;
+    gameState.status = '호그와트 1학년 · ' + pick.house;
+    gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
+    window._startPhase = 'playing';
+    gameHistory.push({role:'user',content:text+'\n\n[시스템 확정: 분류모자가 '+pick.house+' 배정을 선언했다. 이 기숙사는 7년간 유지된다. 주인공은 해리 포터가 아니며, 원작 인물과 처음 만나는 상황이다. 분류가 막 끝난 대연회장에서 같은 기숙사 학생들과 첫 대화를 시작하라.]'});
+    dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
+    updateStatusUI(); autoSave();
+    await callGemini(['mcgonagall']); return;
+  }
   if (window._startPhase === 'mode') {
     dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
     gameHistory.push({ role: 'user', content: text });
@@ -15007,6 +15059,12 @@ async function handlePlayerInput(text) {
     // ★STORY.protagonist는 건드리지 않는다(팩 기본값 유지) — 여기 name을 덮으면
     //   callGemini의 defName이 플레이어이름이 돼 로어의 원작이름 치환이 무효화됨(하윤 잔존 버그).
     updateStatusUI && updateStatusUI();
+    if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
+      if (!PandoraHogwartsTime.valid(gameState.hogwarts)) gameState.hogwarts = PandoraHogwartsTime.createState();
+      window._startPhase = 'hogwarts_sort';
+      renderFixedStep('1991년 9월 1일 저녁, 호그와트 대연회장. 맥고나걸 교수가 당신의 이름을 부른다. 촛불 아래 낡은 분류모자가 머리 위로 내려온다.\n\n네 기숙사 중 하나를 직접 선택하거나 분류모자에게 결정을 맡길 수 있다. 배정은 앞으로 7년간 유지된다.', PandoraHogwartsTime.HOUSE_OPTIONS, {background:'great_hall',resetSprites:true});
+      autoSave(); return;
+    }
     window._startPhase = 'playing';
     const defN = (STORY.protagonist && STORY.protagonist.name) || '';   // 원작 주인공 기본 이름
     let aiEx = `\n\n[캐릭터 설정 확정: 이름 ${playerName}, ${playerDesc}. 이 설정을 주인공에게 영구 반영하라.]`;
@@ -16807,7 +16865,7 @@ function clearSlot(n) {
 }
 
 // ===== WORLD TIME FLOW (per-story option) =====
-function timeflowOn(id) { return localStorage.getItem('vn_timeflow_' + id) === '1'; }
+function timeflowOn(id) { return id === 'hogwarts' ? false : localStorage.getItem('vn_timeflow_' + id) === '1'; }
 function setTimeflow(on) {
   if (!detailStoryId) return;
   localStorage.setItem('vn_timeflow_' + detailStoryId, on ? '1' : '0');
