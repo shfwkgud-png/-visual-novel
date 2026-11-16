@@ -145,6 +145,9 @@
     const diverged=Object.entries(state.statuses).filter(x=>x[1]!=='canonical').slice(-8);
     return '\n\n## 호그와트 사건 장부(게임 시스템 확정; NPC 미래 지식 아님)\n'
       +'- 이 세계에서 이미 지난 원작 사건 '+p.committed+'/'+p.total+'개. 발생하지 않은 미래 사건을 현재 일로 말하지 마라.\n'
+      +(state.world.trio_formed===true
+        ? '- 현재 관계: 해리·론·헤르미온느 세 사람의 우정이 형성됐다. 서로 도우면서도 성격과 의견이 다를 수 있다.\n'
+        : '- 현재 관계: 해리와 론이 먼저 가까워졌고, 헤르미온느는 아직 두 사람과 같은 친구 무리로 굳어지기 전이다.\n')
       +'- 플레이어에게 공개된 소식만 이용해 대사와 반응을 구성하라:\n'
       +(recent||'- 아직 공개 소식 없음')+'\n'
       +(diverged.length?'- 변경된 원작 인과가 존재한다. 원래 역사대로 억지로 복원하지 마라. 변경 사건: '+diverged.map(x=>x[0]+':'+x[1]).join(', ')+'\n':'')

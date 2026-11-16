@@ -17,11 +17,11 @@
   // (e.g. Halloween). Other dates are scenario pacing, NOT asserted novel canon.
   const EVENTS = [
     { id:'first_invitations', year:1, date:'1991-09-03', slot:2, kind:'person',
-      title:'같은 저녁, 다른 두 통의 초대', background:'corridor', actors:['malfoy','hermione'],
+      title:'같은 저녁, 다른 두 통의 초대', background:'corridor', actors:['malfoy','crabbe','goyle','hermione'],
       intro:'입학식이 끝난 지 이틀째. 헤르미온느는 함께 도서관에서 과제를 조사하자고 한다. 거의 동시에 여성 말포이는 슬리데린 학생들의 비공식 모임에 당신을 초대한다. 두 약속은 같은 저녁이다. 누군가의 하루는 당신이 없어도 계속된다.',
       options:[
         {id:'malfoy',label:'말포이의 모임에 간다',intent:'말포이의 사교 모임에 참석한다. 말포이는 쉽게 마음을 열지 않으며 혈통과 가문에 대한 날 선 질문을 한다.',delta:{malfoy:3,hermione:-1},flags:{first_circle:'malfoy'},offscreen:'헤르미온느는 혼자 과제를 조사했고, 도와주지 않은 일을 기억한다.'},
-        {id:'hermione',label:'헤르미온느와 도서관에서 공부한다',intent:'도서관에서 헤르미온느를 돕는다. 그녀는 실제 실력과 태도를 보고 판단하며 호의적으로 미리 굴지 않는다.',delta:{malfoy:-1,hermione:3},flags:{first_circle:'hermione'},offscreen:'말포이는 블레이즈와 팬시를 데리고 모임을 열었고, 당신의 불참을 기억한다.'},
+        {id:'hermione',label:'헤르미온느와 도서관에서 공부한다',intent:'도서관에서 헤르미온느를 돕는다. 그녀는 실제 실력과 태도를 보고 판단하며 호의적으로 미리 굴지 않는다.',delta:{malfoy:-1,hermione:3},flags:{first_circle:'hermione'},offscreen:'말포이는 크래브와 고일과 함께 모임을 열었고, 당신의 불참을 기억한다.'},
         {id:'alone',label:'두 약속 모두 거절하고 혼자 탐색한다',intent:'성의 비밀 통로를 혼자 탐색한다. 발견이나 위험은 현재 능력에 맞게 제한한다.',delta:{malfoy:-1,hermione:-1},flags:{first_circle:'independent'},offscreen:'말포이는 자신의 모임을 진행하고, 헤르미온느는 혼자 과제를 마쳤다.'}
       ]},
     { id:'snape_class',year:1,date:'1991-09-09',slot:1,kind:'life',
@@ -114,7 +114,7 @@
     {id:'azkaban_opening',year:3,date:'1993-09-04',slot:1,kind:'plot',title:'디멘터의 그림자',background:'corridor',actors:['harry','lupin','malfoy'],intro:'아즈카반 탈옥 소식과 함께 학교 주변의 디멘터 경계가 강화된다.',options:[
       {id:'study',label:'루핀에게 방어법을 묻는다',intent:'학습과 연습에 실제 시간이 필요하다.',delta:{lupin:2},flags:{dementor:'study'},offscreen:'시리우스의 행방을 아무도 자동으로 알지 못한다.'},
       {id:'observe',label:'당장의 안전을 챙기고 사건을 관찰한다',intent:'증거 없는 단정 없이 관찰한다.',delta:{},flags:{dementor:'observe'},offscreen:'보안 강화는 계속된다.'}]},
-    {id:'pettigrew_crossroads',year:3,date:'1994-06-06',slot:3,kind:'plot',title:'비명을 지르는 오두막의 비밀',background:'night_garden',actors:['harry','ron','hermione','lupin','sirius'],intro:'오두막 근처에서 다툼이 벌어지고 시리우스 블랙의 정체를 둘러싼 이야기들이 충돌한다. 무엇을 믿을지는 지금껏 확인한 증거에 달렸다.',options:[
+    {id:'pettigrew_crossroads',year:3,date:'1994-06-06',slot:3,kind:'plot',title:'비명을 지르는 오두막의 비밀',background:'shrieking_shack',actors:['harry','ron','hermione','lupin','sirius'],intro:'오두막 근처에서 다툼이 벌어지고 시리우스 블랙의 정체를 둘러싼 이야기들이 충돌한다. 무엇을 믿을지는 지금껏 확인한 증거에 달렸다.',options:[
       {id:'intervene',label:'정면으로 진실 확인에 나선다',intent:'증거를 직접 확인해 행동한다. 피터가 도망칠지 여부는 실제 행동과 실패 가능성을 고려한다.',delta:{harry:1},flags:{pettigrew:'investigate'},offscreen:'누구의 생존과 탈출도 단정하지 말고 실제 결과가 기록될 때만 확정한다.'},
       {id:'stay',label:'섣부른 개입보다 안전한 증언을 남긴다',intent:'관찰한 범위만 증언한다.',delta:{},flags:{pettigrew:'witness'},offscreen:'오두막에서 벌어지는 다른 사건들은 각자 독립적으로 진행된다.'}]},
     {id:'goblet_tournament',year:4,date:'1994-10-31',slot:2,kind:'plot',title:'불의 잔의 이름',background:'great_hall',actors:['harry','cedric','malfoy'],intro:'트리위저드 대표가 발표되고 규칙을 벗어난 이름이 나온다. 학교 전체가 편을 나누기 시작한다.',options:[
@@ -135,11 +135,11 @@
     {id:'prince_tower',year:6,date:'1997-06-30',slot:3,kind:'plot',title:'천문탑의 밤',background:'astronomy',actors:['malfoy','snape','albus'],intro:'호그와트의 안전이 흔들리는 밤. 누군가의 선택이 전쟁의 시작을 알릴 수 있다.',options:[
       {id:'intervene',label:'지금까지 파악한 증거로 개입을 시도한다',intent:'선행 사건과 실제 관찰·실력이 부족하면 실패할 수 있다. 결과는 행동의 증거로 기록해야 한다.',delta:{},flags:{tower:'intervene_attempt'},offscreen:'지팡이 충성권과 생존 여부는 임의로 재작성하지 않는다.'},
       {id:'protect',label:'다른 학생들의 피난을 돕는다',intent:'구출과 생존을 우선한다.',delta:{},flags:{tower:'evacuation'},offscreen:'천문탑에서 벌어지는 핵심 선택은 별도의 인물들이 수행한다.'}]},
-    {id:'hallows_school',year:7,date:'1997-09-02',slot:1,kind:'plot',title:'점령된 학교',background:'great_hall',actors:['mcgonagall','neville','ginny'],intro:'정권이 바뀐 뒤 호그와트에 새로운 통제가 내려온다. 해리 일행은 정규 수업에 없다. 남은 학생들은 협력, 저항, 은둔의 갈림길에 선다.',options:[
+    {id:'hallows_school',year:7,date:'1997-09-02',slot:1,kind:'plot',title:'점령된 학교',background:'occupied_hogwarts',actors:['mcgonagall','neville','ginny'],intro:'정권이 바뀐 뒤 호그와트에 새로운 통제가 내려온다. 해리 일행은 정규 수업에 없다. 남은 학생들은 협력, 저항, 은둔의 갈림길에 선다.',options:[
       {id:'resist',label:'신뢰하는 동료와 비밀리에 저항한다',intent:'실패하면 실제 처벌과 관계의 위험이 뒤따른다.',delta:{neville:2},flags:{hallows:'resist'},offscreen:'학교 밖 해리 일행은 자신들의 임무를 계속한다.'},
       {id:'hide',label:'주변 사람들의 안전을 먼저 지킨다',intent:'위험을 줄이되 다른 학생의 선택을 대신하지 않는다.',delta:{},flags:{hallows:'hide'},offscreen:'저항은 다른 학생들을 통해 이어질 수 있다.'},
       {id:'comply',label:'공식 통제 안에서 살아남을 방법을 찾는다',intent:'협력이 가져올 도덕적·관계적 대가를 직면한다.',delta:{},flags:{hallows:'comply'},offscreen:'서로 다른 선택을 한 친구들이 멀어질 수 있다.'}]},
-    {id:'battle_of_hogwarts',year:7,date:'1998-05-02',slot:3,kind:'plot',title:'호그와트 최후의 밤',background:'great_hall',actors:['neville','mcgonagall','malfoy','harry'],intro:'학교로 전쟁이 몰려온다. 모든 사람의 운명과 지난 7년의 선택이 한밤에 모인다.',options:[
+    {id:'battle_of_hogwarts',year:7,date:'1998-05-02',slot:3,kind:'plot',title:'호그와트 최후의 밤',background:'hogwarts_battle_courtyard',actors:['neville','mcgonagall','malfoy','harry'],intro:'학교로 전쟁이 몰려온다. 모든 사람의 운명과 지난 7년의 선택이 한밤에 모인다.',options:[
       {id:'defend',label:'학교를 지키는 사람들과 함께 싸운다',intent:'능력과 관계에 맞는 역할을 맡으며 누구의 생존도 보장하지 않는다.',delta:{neville:2},flags:{finale:'defend'},offscreen:'해리의 최종 대결은 이 세계의 기존 인과를 따른다.'},
       {id:'save',label:'전쟁 속에서 소중한 사람을 구한다',intent:'지난 7년간 실제로 맺은 관계와 위험을 기준으로 특정 인물을 돕는다.',delta:{},flags:{finale:'save'},offscreen:'다른 전투 구역도 독립적으로 진행된다.'},
       {id:'separate',label:'전장 밖으로 사람들을 대피시킨다',intent:'대피와 보호를 맡으며 결과에 책임진다.',delta:{},flags:{finale:'evacuate'},offscreen:'성의 다른 구역 전투는 당신이 없이도 벌어진다.'}]}
@@ -161,7 +161,7 @@
        intro:'도서관 한쪽에 이름이 적히지 않은 편지가 놓였다. 내용보다 중요한 것은 누가 그것을 먼저 발견했고 누구에게 말했는지다.',
        labels:['헤르미온느와 자료를 확인한다','말포이에게 편지를 보여준다','편지를 건드리지 않는다'],
        delta:[{hermione:1},{malfoy:1},{}],intent:['공개 문서와 실제 발신인을 구분한다','말포이는 경계하면서도 자기 판단으로 반응한다','학교의 다른 인물들이 이 편지를 처리한다']},
-      {title:'기숙사의 작은 소문',bg:'dormitory',actors:['malfoy','neville'],
+      {title:'기숙사의 작은 소문',bg:'common_room',actors:['malfoy','neville'],
        intro:'기숙사 사이에서 누군가의 실수에 관한 이야기가 퍼진다. 소문이 누구에게 불리하게 바뀌는지는 당신의 대응에 따라 달라진다.',
        labels:['당사자에게 직접 사실을 확인한다','소문을 확산시키지 말자고 제안한다','이번 소동에는 관여하지 않는다'],
        delta:[{neville:1},{malfoy:1},{}],intent:['몰래 듣지 말고 당사자에게 묻는다','기숙사 사이의 감정이 무엇인지 듣고 조정한다','소문을 다른 NPC가 독자적으로 정리한다']},

@@ -19,6 +19,10 @@ assert.equal(bundle.dates.b01c07s01,'1991-09-01');
 assert.equal(bundle.dates.b01c10s01,'1991-10-31');
 assert.equal(bundle.dates[bundle.ledger.events.at(-1).id],'1998-05-02');
 assert.equal(bridge.sync(bundle,null,'1991-09-01',[]).progress.committed,15);
+const beforeTroll=bridge.sync(bundle,null,'1991-10-30',[]).state;
+assert.match(bridge.context(bundle,beforeTroll),/친구 무리로 굳어지기 전/);
+const afterTroll=bridge.sync(bundle,beforeTroll,'1991-10-31',[]).state;
+assert.match(bridge.context(bundle,afterTroll),/세 사람의 우정이 형성됐다/);
 
 let c=clock.createState(),s=world.createState();
 assert.equal(clock.advance(c,'친구에게 말한다').advanced,false);
@@ -37,6 +41,7 @@ assert.equal(clock.moveToScene(c,'1991-09-02',0).advanced,false);
 assert.equal(clock.advance(c,'너와 더 오래 이야기하고 싶어').advanced,false);
 assert.equal(c.date,'1991-09-03');
 let scene=world.start(s,p.choices.find(x=>x.includes('hermione')));
+assert.ok(['crabbe','goyle'].every(id=>scene.actors.includes(id)));
 assert.equal(scene.id,'first_invitations');
 assert.equal(world.resume(JSON.parse(JSON.stringify(s))).mode,'active');
 assert(!world.finish(s).offscreen.includes('헤르미온느는 혼자'));
@@ -116,16 +121,37 @@ assert.equal(world.ending(s).title,'호그와트 이후의 삶'); // skipped bat
 // Built-in story must remain SFW-only and include reachable endings.
 const storyScript=fs.readFileSync(path.join(dir,'story.js'),'utf8');
 const window={};
+new Function('window',fs.readFileSync(path.join(dir,'art.js'),'utf8'))(window);
 new Function('window',storyScript)(window);
 const pack=window.PANDORA_HOGWARTS_STORY;
 assert(pack);
 assert.equal(pack.id,'hogwarts');
 assert.equal(pack.endings.length,4);
+for (const id of ['malfoy','crabbe','goyle']) {
+  assert.equal(pack.characters[id].gender,'여성');
+  assert.equal(cast.actors.find(actor=>actor.id===id).auGender,'female');
+}
+assert.match(pack.worldLore,/말포이는 경쟁 구도 속에서도 해리에게 사적인 호감/);
+assert.match(pack.worldLore,/서로 신뢰와 마음을 확인해 나가면 연애로 이어질 수 있다/);
+assert.match(pack.worldLore,/여성 말포이는 해리를 명성과 기숙사 경쟁의 맞수로 대하고, 론에게는 위즐리 가문의 형편과 가치관을 빌미로 비꼬며, 헤르미온느에게는 머글 태생이라는 혈통 편견/);
+assert.match(pack.characters.ron.personality,/친구 곁에 서는 용기/);
 assert(!('cgManifest' in pack));
+const backgrounds=new Set(Object.values(pack.customBgs).map(entry=>entry.url));
+const portraits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.emoImgs||{})));
+assert.equal(backgrounds.size,92);
+assert.equal(portraits.size,234);
+for (const id of ['crabbe','goyle']) assert.equal(Object.keys(pack.characters[id].emoImgs).length,6);
+for (const url of [...backgrounds,...portraits]) {
+  assert.match(url,/^sd_samples\/(backgrounds|characters)\/hogwarts\/[a-z0-9_/]+\.webp$/);
+  const bytes=fs.readFileSync(path.join(__dirname,url));
+  assert.equal(bytes.toString('ascii',8,12),'WEBP',url);
+}
+assert(!pack.characters.fred.emoImgs.angry);
+assert.equal(Object.values(pack.characters).filter(card=>card.img).length,70);
 
 const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/world.js?v=4'));
-assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=2'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=6'));
+assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=3'));
 assert(html.includes('moveToScene(clock,upcoming.date,upcoming.slot)'));
 assert(html.includes('gameState.hogwarts.world = PandoraHogwartsWorld.createState()'));
 assert(html.includes('await syncHogwartsCanon()'));

@@ -275,7 +275,7 @@ async function createFixturePage(origin, mobile, options = {}) {
         held.reached.release();
         await held.resume.promise;
       }
-      const reply = options.longSession ? longSessionReply(kind, net.mainTurn) : fixtureReply(kind, user);
+      const reply = options.reply ? options.reply(kind) : options.longSession ? longSessionReply(kind, net.mainTurn) : fixtureReply(kind, user);
       if (options.integrated && kind === 'main') Object.assign(reply, fixtureReply('state', user));
       await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse(reply) });
       return;
@@ -793,6 +793,72 @@ async function longSessionChecks(ctx) {
   });
 }
 
+
+function hogwartsArtReply(kind) {
+  if (kind !== 'main') return { state_update: {}, choices: ['친구들에게 인사한다'], chronicle: [] };
+  return {
+    narration: '대연회장에서 분류가 끝나고 학생들이 이야기를 나눈다.',
+    dialogue: [
+      { char_id: 'mcgonagall', speaker: '맥고나걸 교수', emotion: 'normal', text: '슬리데린에 오신 것을 환영합니다.' },
+      { char_id: 'malfoy', speaker: '드레이코 말포이', emotion: 'smile', text: '반가워. 길을 알아둘 필요는 있겠지.' },
+      { char_id: 'hermione', speaker: '헤르미온느', emotion: 'smile', text: '책은 도서관에 있을 거야.' },
+      { char_id: 'harry', speaker: '해리', emotion: 'angry', text: '일단 사실부터 확인하자.' }
+    ],
+    background: 'great_hall', mood: null, cg: null, ending: null, combat: false
+  };
+}
+
+async function hogwartsArtCheck(ctx) {
+  const { page } = ctx;
+  await check(ctx, 'Hogwarts opens from the library and loads its own WebP portraits and house rooms', async () => {
+    await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    await page.locator('#detailNewBtn').click();
+    await page.waitForFunction(() => window._startPhase === 'mode');
+    await drainDialogue(page);
+    await page.locator('#choiceBox .choice-btn').filter({ hasText: '스토리 모드' }).click();
+    await page.waitForFunction(() => window._startPhase === 'setup');
+    await enterText(page, FIRST_INPUT);
+    await page.waitForFunction(() => window._startPhase === 'hogwarts_sort');
+    await drainDialogue(page);
+    await page.locator('#choiceBox .choice-btn').filter({ hasText: '슬리데린' }).click();
+    await page.waitForFunction(() => gameState.hogwarts.house === '슬리데린' && !sendBtn.disabled);
+    await drainDialogue(page);
+    await page.waitForFunction(() => document.getElementById('sprite_harry')?.naturalWidth > 0);
+    const scene = await page.evaluate(() => ({
+      art: [...document.querySelectorAll('#charLayer img')].map(img => [img.id, img.getAttribute('src'), img.naturalWidth]),
+      bg: bgUrlFor(currentBgFile), dorm: bgUrlFor('dormitory'), room: bgUrlFor('common_room')
+    }));
+    const firstTurn = ctx.net.prompts.find(call => call.kind === 'main');
+    assert.ok(firstTurn, 'the opening scene reached the model prompt');
+    const system = firstTurn.messages[0].content;
+    assert.match(system, /여성 말포이는 해리를 명성과 기숙사 경쟁의 맞수로 대하고/);
+    assert.match(system, /말포이는 경쟁 구도 속에서도 해리에게 사적인 호감/);
+    assert.match(system, /서로 신뢰와 마음을 확인해 나가면 연애로 이어질 수 있다/);
+    assert.ok(firstTurn.messages.some(message => message.content.includes('친구 무리로 굳어지기 전')),
+      'the opening model prompt did not receive the unformed trio state');
+    assert.equal(scene.bg, 'sd_samples/backgrounds/hogwarts/great_hall.webp');
+    assert.equal(scene.dorm, 'sd_samples/backgrounds/hogwarts/slytherin_dormitory.webp');
+    assert.equal(scene.room, 'sd_samples/backgrounds/hogwarts/slytherin_common_room.webp');
+    assert.equal(scene.art.length, 4);
+    assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
+    assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger.webp')));
+    await page.screenshot({ path: path.join(ARTIFACTS, 'hogwarts-opening-' + (ctx.mobile ? 'mobile' : 'desktop') + '.png') });
+    await page.evaluate(() => {
+      setBg('common_room');
+      rebuildSprites(['fred', 'aberforth'], 'fred', 'angry', 'upper');
+    });
+    await page.waitForFunction(() => document.getElementById('sprite_fred')?.naturalWidth > 0 &&
+      bgLayer.style.backgroundImage.includes('slytherin_common_room.webp'));
+    assert.equal(await page.locator('#sprite_aberforth').count(), 0);
+    assert.match(await page.locator('#sprite_fred').getAttribute('src'), /fred\/2d\/1_neutral\.webp$/);
+    await page.evaluate(() => rebuildSprites(['crabbe', 'goyle'], 'goyle', 'sad', 'upper'));
+    await page.waitForFunction(() =>
+      document.getElementById('sprite_crabbe')?.naturalWidth === 1024 &&
+      document.getElementById('sprite_goyle')?.naturalWidth === 1024);
+    assert.match(await page.locator('#sprite_goyle').getAttribute('src'), /goyle\/2d\/4_sadness\.webp$/);
+  });
+}
+
 (async () => {
   try {
     const origin = await startServer();
@@ -802,6 +868,11 @@ async function longSessionChecks(ctx) {
     if (process.env.PANDORA_BROWSER_EXECUTABLE) launch.executablePath = process.env.PANDORA_BROWSER_EXECUTABLE;
     browser = await playwright[engineName].launch(launch);
     for (const mobile of engineName === 'webkit' ? [true] : [false, true]) {
+      const hogwartsCtx = await createFixturePage(origin, mobile, {
+        freeMode: true, integrated: true, reply: hogwartsArtReply, capturePrompts: true
+      });
+      try { await hogwartsArtCheck(hogwartsCtx); }
+      finally { await hogwartsCtx.context.close(); }
       const ctx = await createFixturePage(origin, mobile);
       try { await playthrough(ctx); }
       finally { await ctx.context.close(); }

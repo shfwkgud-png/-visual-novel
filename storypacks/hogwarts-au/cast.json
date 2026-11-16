@@ -226,7 +226,8 @@
       "kind": "student",
       "affiliation": "Slytherin",
       "cohort": "1991-cohort",
-      "firstReferencedBook": 2
+      "firstReferencedBook": 2,
+      "auGender": "female"
     },
     {
       "id": "daphne",
@@ -432,7 +433,8 @@
       "kind": "student",
       "affiliation": "Slytherin",
       "cohort": "1991-cohort",
-      "firstReferencedBook": 2
+      "firstReferencedBook": 2,
+      "auGender": "female"
     },
     {
       "id": "grawp",

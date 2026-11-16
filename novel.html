@@ -2163,11 +2163,12 @@
 </div><!-- /#appFrame -->
 
 <script src="pandora-consistency.js?v=369"></script>
-<script src="storypacks/hogwarts-au/story.js?v=2"></script>
+<script src="storypacks/hogwarts-au/art.js?v=2"></script>
+<script src="storypacks/hogwarts-au/story.js?v=5"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/world.js?v=4"></script>
+<script src="storypacks/hogwarts-au/world.js?v=6"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=2"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=3"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -14104,7 +14105,7 @@ function ensureSprite(charId) {
   try { document.body.dataset.story = (STORY && STORY.id) || ''; } catch {}
   // Extras / unregistered ids (마법사 A etc.) have NO sprite — never create a
   // layout slot for them, or the scene spaces itself as if they were present.
-  if (!CHARACTERS[charId]) return;
+  if (!CHARACTERS[charId] || (STORY.id === 'hogwarts' && !CHARACTERS[charId].img)) return;
   // ★동시 표시 인원 캡(2026-07-22 유저: "3명부터 너무 작아짐 — 말하는 순서대로 2명만"):
   //   STORY.maxSprites(lovediary=2) 초과 시 가장 오래 안 말한 캐릭 퇴장(롤링 2인 무대).
   //   shownSprites는 highlightSpeaker가 발화 시마다 recency 순으로 재정렬 — [0]=가장 오래 침묵.
@@ -15109,7 +15110,7 @@ async function handlePlayerInput(text) {
         const hwPlace={great_hall:'호그와트 대연회장',corridor:'호그와트 복도',library:'호그와트 도서관',
           potions:'호그와트 마법약 교실',dormitory:'기숙사',quidditch:'퀴디치 경기장',
           night_garden:'야간 교정',dueling:'결투 수업장',hogwarts_courtyard:'호그와트 교정'};
-        gameState.location=hwPlace[upcoming.background]||'호그와트';
+        gameState.location=hwPlace[upcoming.background]||STORY.customBgs?.[upcoming.background]?.label||'호그와트';
         gameState.combat=false;gameState._combatStart=null;
         const offer=hw.offer(world,upcoming);
         if (!offer) { enterInputMode();return; }
@@ -15364,6 +15365,7 @@ function detectActiveChars(history) {
 // 스토리별 신형 배경 매니페스트(sd_samples/backgrounds/<story>/<key>.webp).
 // 구형 background/ 폴더는 매니페스트에 없는 키의 최후 폴백(사실상 낙인의검 계열 전용 — 유저 지시 2026-07-15).
 const STORY_BG_FILES = {"academy":["academy_courtyard","alchemy_lab","ballroom","campus","city_street","classroom","continent_map","dining_hall","dorm_hallway","dorm_room","duel_arena","forbidden_library","great_hall","headmaster_office","infirmary","night_garden","rank_arena","rooftop","training_ground"],"cyber":["club_nova","corp_tower","cyberspace","gang_hideout","megacity_night","neon_alley","ripperdoc","slum_clinic"],"deathgame":["control_room","dormitory","game_room_trap","lobby_hall","underground_passage"],"exroom":["date_drive","date_seaside","house_bedroom","house_kitchen","house_living","x_room"],"gumiho":["afterlife_office","bukhansan","cafe_college","club_succubus","fortune_shop","goblin_pawnshop","hangang_night","shrine"],"hero":["back_deal","broadcast_studio","city_incident","management_bureau","starforce_lobby","training_hall","vigilante_hideout"],"hunter":["black_market","dungeon_cave","gate_break","gate_rift","guild_tower","hospital_er","hunter_assoc","porter_room"],"inferno":["couple_game_beach","heaven_pool","heaven_suite","hell_island_beach","hell_island_camp","sunset_deck"],"isekai":["adventurer_guild","border_fortress","capital_street","demon_castle","demon_parlor","dungeon_boss_hall","dungeon_forest","frontier_village","guild_tavern","mine_depths","mine_village","palace_hall","smithy","snow_forest","summon_hall","summon_room","throne_hall","village_night"],"kyungsung":["detective_office","gisaeng_house","jongno_street","myeongdong_cathedral","pawnshop","police_station","research_lab"],"loveisland":["beach_day","date_spot","observation_studio","sunset_deck","villa_bedroom","villa_lounge","villa_pool"],"muhyeop":["brothel_manhwaru","cheonma_hall","demon_cult_hall","gaekjan_inn","geomchong_field","imperial_office","inn_courtyard","manhwaru","murim_alliance","murimmaeng_hall","sacheondangga","secluded_cave","snow_peak","sword_valley","tangfamily_garden"],"murim":["arhat_hall","bamboo_forest","bing_palace_hall","blood_altar","cloud_cliff","daeung_hall","dalma_cave","dharma_cave","discipline_hall","evil_sect_den","five_mountains_hall","heaven_demon_hall","herb_field","herb_village","heretic_lair","huashan_ruins","hwasan_ruins","ice_plain","imperial_office","inn_hall","jaso_kitchen","kitchen_furnace","library_stacks","main_temple","market_street","mountain_gate","nahan_hall","plum_peak","precept_hall","prison_cell","river_ferry","scripture_pavilion","sado_hall","sealed_cave","snow_mountain","snow_road","sorim_yard","sword_tomb","taegeuk_hall","taiji_hall","temple_gate","training_platform","wudang_yard","abandoned_temple"],"nakin":["arena","bern_alley_dawn","bern_alley_night","catacomb","cathedral","harbor_docks","pirate_deck","tavern_interior","throne_hall","witch_hut"],"palace":["court_assembly","east_palace","palace_corridor","queen_quarters","rear_garden","royal_clinic","throne_hall"],"romance":["fine_restaurant","hangang_night","hospital_vip","hotel_suite","js_office","mansion_living","mansion_study","secretary_desk"],"signalhouse":["date_cafe","house_bedroom","house_kitchen","house_living","house_rooftop","house_yard","night_street"],"throne":["court_hall","dungeon","north_wall","private_chamber","royal_library","sun_temple","throne_room"],"timeloop":["accident_alley","alley_cafe","convenience_store","flower_shop","fortune_house","police_station"],"voidship":["bridge","coldsleep","crew_lounge","engine_room","free_port","space_orbit"],"zombie":["apartment_barricade","convenience_store","empty_avenue","hospital_infected","research_lab","rooftop_refuge","subway_underground"]};
+if (BUILTIN_STORIES.hogwarts) STORY_BG_FILES.hogwarts = Object.keys(BUILTIN_STORIES.hogwarts.customBgs);
 let currentBgFile = null;
 
 // ===== NSFW CG MANIFEST — R2 실물 목록 실측(_r2_uploaded.txt 2026-07-16) =====
@@ -15438,6 +15440,11 @@ function idolBgTierKey(key) {
   return lv > 0 ? key + (lv + 1) : key;
 }
 function bgUrlFor(key) {
+  if (STORY.id === 'hogwarts' && (key === 'dormitory' || key === 'common_room')) {
+    const houses = { 그리핀도르: 'gryffindor', 슬리데린: 'slytherin', 레번클로: 'ravenclaw', 후플푸프: 'hufflepuff' };
+    const house = houses[gameState?.hogwarts?.house];
+    if (house && STORY.customBgs?.[house + '_' + key]) key = house + '_' + key;
+  }
   if (STORY && STORY.id === 'idol') {
     const tk = idolBgTierKey(key);
     if (tk !== key) return `sd_samples/backgrounds/idol/${tk}.webp`;
