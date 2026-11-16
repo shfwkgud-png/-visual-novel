@@ -41,7 +41,12 @@
         finale:[(year+1)+'-06-01',(year+1)+'-06-30']
       };
       // Book 7's final battle is May 2, 1998, not June.
-      if(b===7)phaseWindow.finale=['1998-05-02','1998-05-02'];
+      // Its preceding spring chapters must also fit before May 2: otherwise
+      // the monotonic-date guard would silently push the battle to May 31.
+      if(b===7) {
+        phaseWindow.spring=['1998-03-01','1998-05-01'];
+        phaseWindow.finale=['1998-05-02','1998-05-02'];
+      }
       const cDate={};
       for(const [phase,chapters] of Object.entries(byPeriod)){
         const win=phaseWindow[phase];
