@@ -153,6 +153,30 @@
       {id:'separate',label:'전장 밖으로 사람들을 대피시킨다',intent:'대피와 보호를 맡으며 결과에 책임진다.',delta:{},flags:{finale:'evacuate'},offscreen:'성의 다른 구역 전투는 당신이 없이도 벌어진다.'}]}
   ];
   const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
+  // Alternate outcome for a successfully sealed sixth-year cabinet.
+  // The original funeral cannot replay if Dumbledore is still alive.
+  const ALT_EVENTS = {
+    tower_survival_morning:{
+      id:'tower_survival_morning',year:6,date:'1997-06-13',slot:1,kind:'aftermath',
+      title:'봉쇄 다음 날의 호그와트',background:'great_hall',
+      actors:['albus','mcgonagall','malfoy','snape'],
+      intro:'천문탑에서의 침입 시도가 좌절된 다음 날, 덤블도어는 살아 있다. 교직원들은 밤새 봉쇄한 경로를 조사하고 학생들 사이에는 서로 다른 소문이 퍼진다. 누구를 탓할지, 무엇을 공개할지 아직 정해지지 않았다.',
+      options:[
+        {id:'report',label:'교수진에게 지난밤 확보한 증거와 경위를 보고한다',
+         intent:'정확히 확인한 침입 경로와 조사를 보고한다. 증인이 보지 못한 일은 덧붙이지 않는다.',
+         delta:{mcgonagall:2},flags:{tower_aftermath:'reported'},
+         offscreen:'교수진이 보안 절차를 강화하며 감시망을 재정비한다.'},
+        {id:'malfoy',label:'말포이와 따로 대화해 그가 내린 선택을 듣는다',
+         intent:'강압적으로 비밀을 캐묻지 않고 그가 책임을 어떻게 받아들이는지 확인한다.',
+         delta:{malfoy:1},flags:{tower_aftermath:'malfoy'},
+         offscreen:'학교의 조사와 말포이 가족의 압박은 계속된다.'},
+        {id:'school',label:'불안해하는 학생들의 일상 회복을 돕는다',
+         intent:'기숙사 학생들이 밤새 겪은 공포를 덜고 새 일정에 적응하도록 돕는다.',
+         delta:{neville:1},flags:{tower_aftermath:'student_support'},
+         offscreen:'교수진과 기사단은 침입 시도의 책임자를 추적한다.'}
+      ]
+    }
+  };
   // Long quiet stretches are condensed into occasional personal scenes,
   // not simulated day-by-day. Reconstructed from the date after a reload.
   function dayISO(date, delta) {
@@ -190,6 +214,7 @@
   }
   function getEvent(id, st) {
     if (EVENT_BY_ID[id]) return EVENT_BY_ID[id];
+    if (ALT_EVENTS[id]) return ALT_EVENTS[id];
     if (CHAPTER_CATALOG?.byId[id] && CHAPTER_CATALOG.byId[id].interactive)
       return CHAPTER_HELPER.eventFor(CHAPTER_CATALOG.byId[id],st);
     const m=/^routine_(\d{4})_(\d{2})_(\d{2})$/.exec(String(id||''));
@@ -312,7 +337,7 @@
       return {...event,slot:currentSlot};
     return event;
   }
-  function nextEvent(st, date, currentSlot) {
+  function nextEvent(st, date, currentSlot, canonState) {
     ensure(st);
     // A manually skipped overdue event becomes a genuine off-screen event,
     // never an encounter the player retroactively attended.
@@ -323,7 +348,12 @@
       if (ev.date < date) continue;
       upcoming=ev;break;
     }
-    const oneChapter=CHAPTER_CATALOG && CHAPTER_HELPER && CHAPTER_HELPER.nextPlayable(CHAPTER_CATALOG,st,date,upcoming);
+    const alt=ALT_EVENTS.tower_survival_morning;
+    if(st.agency.tower==='sealed_cabinet' && !st.finished[alt.id] &&
+       st.active?.id!==alt.id && st.pending?.id!==alt.id && alt.date>=date &&
+       (!upcoming||alt.date<=upcoming.date))upcoming=alt;
+    const oneChapter=CHAPTER_CATALOG && CHAPTER_HELPER &&
+      CHAPTER_HELPER.nextPlayable(CHAPTER_CATALOG,st,date,upcoming,canonState);
     if(oneChapter)return fitSceneSlot(oneChapter,date,currentSlot);
     if (!upcoming) return null;
     if (dayGap(date,upcoming.date)>65) return routine(dayISO(date,45),st);
