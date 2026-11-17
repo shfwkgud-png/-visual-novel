@@ -15315,8 +15315,8 @@ async function handlePlayerInput(text) {
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
   if (STORY.id==='hogwarts' && gameState?.hogwarts && window.PandoraHogwartsChapters &&
       !PandoraHogwartsChapters.getLoaded()) await syncHogwartsCanon();
-  if (handleHogwartsMagicCommand(text))return;
-  if (handleHogwartsFreeCast(text))return;
+  if (typeof handleHogwartsMagicCommand==='function' && handleHogwartsMagicCommand(text))return;
+  if (typeof handleHogwartsFreeCast==='function' && handleHogwartsFreeCast(text))return;
   // Hogwarts scenes: time, NPC schedules, and consequences have one deterministic owner.
   // This is a separate routing path; every other PANDORA story still uses its old flow.
   if (STORY.id === 'hogwarts' && window._startPhase === 'playing' &&
