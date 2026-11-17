@@ -970,7 +970,7 @@
       "access": "private",
       "exposure": "private_location",
       "interactive": false,
-      "pairedEvent": "winter_choice",
+      "pairedEvent": null,
       "category": "social",
       "slot": 2,
       "arrival": "호그와트 교내에서 「소망의 거울」과 관련된 움직임이 시작된다. 론 위즐리을(를) 비롯한 인물들 각자의 목적에 따라 행동한다. 당신이 직접 확인한 행동과 아직 모르는 결과는 구분해야 한다.",
@@ -1133,9 +1133,9 @@
         "malfoy"
       ],
       "access": "local",
-      "exposure": "nearby_school",
+      "exposure": "offcampus",
       "interactive": false,
-      "pairedEvent": "spring_duel",
+      "pairedEvent": null,
       "category": "mystery",
       "slot": 1,
       "arrival": "해그리드의 오두막에서 「해그리드의 용」과 관련된 움직임이 시작된다. 론 위즐리을(를) 비롯한 인물들 각자의 목적에 따라 행동한다. 당신이 직접 확인한 행동과 아직 모르는 결과는 구분해야 한다.",
@@ -1381,7 +1381,7 @@
       "title": "두 얼굴을 가진 자",
       "bookTitle": "마법사의 돌",
       "phase": "finale",
-      "date": "1992-06-12",
+      "date": "1992-06-07",
       "setting": "hogwarts",
       "background": "corridor",
       "actors": [
@@ -2032,7 +2032,7 @@
       "title": "핼러윈의 경고문",
       "bookTitle": "비밀의 방",
       "phase": "autumn",
-      "date": "1992-10-25",
+      "date": "1992-10-31",
       "setting": "hogwarts",
       "background": "corridor",
       "actors": [
@@ -2756,7 +2756,7 @@
       "title": "비밀의 방을 여는 법",
       "bookTitle": "비밀의 방",
       "phase": "finale",
-      "date": "1993-06-01",
+      "date": "1993-06-15",
       "setting": "hogwarts",
       "background": "corridor",
       "actors": [
@@ -4386,7 +4386,7 @@
       "title": "고양이·쥐·검은 개",
       "bookTitle": "아즈카반의 죄수",
       "phase": "finale",
-      "date": "1994-06-05",
+      "date": "1994-06-15",
       "setting": "shrieking_shack",
       "background": "shrieking_shack",
       "actors": [
@@ -4457,7 +4457,7 @@
       "title": "마루더즈의 과거",
       "bookTitle": "아즈카반의 죄수",
       "phase": "finale",
-      "date": "1994-06-10",
+      "date": "1994-06-15",
       "setting": "shrieking_shack",
       "background": "shrieking_shack",
       "actors": [
@@ -4612,7 +4612,7 @@
       "title": "디멘터의 입맞춤 위기",
       "bookTitle": "아즈카반의 죄수",
       "phase": "finale",
-      "date": "1994-06-20",
+      "date": "1994-06-15",
       "setting": "hogwarts_grounds",
       "background": "hogwarts_grounds",
       "actors": [
@@ -4687,7 +4687,7 @@
       "title": "시간을 거슬러",
       "bookTitle": "아즈카반의 죄수",
       "phase": "finale",
-      "date": "1994-06-25",
+      "date": "1994-06-15",
       "setting": "hogwarts_grounds",
       "background": "hogwarts_grounds",
       "actors": [
@@ -6066,7 +6066,7 @@
       "title": "불의 잔에 이름을 넣다",
       "bookTitle": "불의 잔",
       "phase": "autumn",
-      "date": "1994-10-21",
+      "date": "1994-10-31",
       "setting": "great_hall",
       "background": "great_hall",
       "actors": [
@@ -7321,7 +7321,7 @@
       "title": "미로의 마지막 과제",
       "bookTitle": "불의 잔",
       "phase": "finale",
-      "date": "1995-06-01",
+      "date": "1995-06-24",
       "setting": "hogwarts",
       "background": "corridor",
       "actors": [
@@ -7420,7 +7420,7 @@
       "title": "묘지의 의식",
       "bookTitle": "불의 잔",
       "phase": "finale",
-      "date": "1995-06-05",
+      "date": "1995-06-24",
       "setting": "little_hangleton",
       "background": null,
       "actors": [
@@ -7502,7 +7502,7 @@
       "title": "죽음을 먹는 자의 소집",
       "bookTitle": "불의 잔",
       "phase": "finale",
-      "date": "1995-06-10",
+      "date": "1995-06-24",
       "setting": "little_hangleton",
       "background": null,
       "actors": [
@@ -7577,7 +7577,7 @@
       "title": "연결되는 지팡이",
       "bookTitle": "불의 잔",
       "phase": "finale",
-      "date": "1995-06-15",
+      "date": "1995-06-24",
       "setting": "little_hangleton",
       "background": null,
       "actors": [
@@ -7647,7 +7647,7 @@
       "title": "베리타세룸",
       "bookTitle": "불의 잔",
       "phase": "finale",
-      "date": "1995-06-20",
+      "date": "1995-06-25",
       "setting": "hogwarts",
       "background": "corridor",
       "actors": [
@@ -7721,7 +7721,7 @@
       "title": "두 갈래 길",
       "bookTitle": "불의 잔",
       "phase": "finale",
-      "date": "1995-06-25",
+      "date": "1995-06-26",
       "setting": "hogwarts",
       "background": "corridor",
       "actors": [
@@ -8281,9 +8281,9 @@
         "regulus"
       ],
       "access": "private",
-      "exposure": "offcampus",
+      "exposure": "private_location",
       "interactive": false,
-      "pairedEvent": "phoenix_decree",
+      "pairedEvent": null,
       "category": "mystery",
       "slot": 1,
       "arrival": "다른 장소에서 「블랙 가문의 유산」과 관련된 움직임이 시작된다. 해리 포터을(를) 비롯한 인물들 각자의 목적에 따라 행동한다. 당신이 직접 확인한 행동과 아직 모르는 결과는 구분해야 한다.",
@@ -10536,7 +10536,7 @@
       "title": "미스터리 부서",
       "bookTitle": "불사조 기사단",
       "phase": "finale",
-      "date": "1996-06-13",
+      "date": "1996-06-17",
       "setting": "ministry",
       "background": "ministry_atrium",
       "actors": [
@@ -10630,9 +10630,9 @@
         "lucius"
       ],
       "access": "private",
-      "exposure": "offcampus",
+      "exposure": "private_location",
       "interactive": false,
-      "pairedEvent": "phoenix_department",
+      "pairedEvent": null,
       "category": "danger",
       "slot": 3,
       "arrival": "마법부에서 「장막 너머」과 관련된 움직임이 시작된다. 론 위즐리을(를) 비롯한 인물들 각자의 목적에 따라 행동한다. 당신이 직접 확인한 행동과 아직 모르는 결과는 구분해야 한다.",
@@ -10698,7 +10698,7 @@
       "title": "그가 두려워한 유일한 사람",
       "bookTitle": "불사조 기사단",
       "phase": "finale",
-      "date": "1996-06-21",
+      "date": "1996-06-17",
       "setting": "ministry",
       "background": "ministry_atrium",
       "actors": [
@@ -12941,7 +12941,7 @@
       "title": "바닷가 동굴",
       "bookTitle": "혼혈 왕자",
       "phase": "finale",
-      "date": "1997-06-06",
+      "date": "1997-06-12",
       "setting": "sea_cave",
       "background": null,
       "actors": [
@@ -13133,7 +13133,7 @@
       "title": "왕자의 도주",
       "bookTitle": "혼혈 왕자",
       "phase": "finale",
-      "date": "1997-06-18",
+      "date": "1997-06-12",
       "setting": "hogwarts_grounds",
       "background": "hogwarts_grounds",
       "actors": [
@@ -13204,7 +13204,7 @@
       "title": "피닉스의 애가",
       "bookTitle": "혼혈 왕자",
       "phase": "finale",
-      "date": "1997-06-24",
+      "date": "1997-06-13",
       "setting": "hogwarts",
       "background": "corridor",
       "actors": [
@@ -14239,9 +14239,9 @@
         "thicknesse"
       ],
       "access": "private",
-      "exposure": "offcampus",
+      "exposure": "private_location",
       "interactive": false,
-      "pairedEvent": "hallows_school",
+      "pairedEvent": null,
       "category": "social",
       "slot": 1,
       "arrival": "마법부에서 「마법은 힘이다」과 관련된 움직임이 시작된다. 론 위즐리을(를) 비롯한 인물들 각자의 목적에 따라 행동한다. 당신이 직접 확인한 행동과 아직 모르는 결과는 구분해야 한다.",
