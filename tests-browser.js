@@ -342,12 +342,19 @@ async function waitForStoryChoice(page, sought) {
   for(let attempt=0; attempt<115; attempt++) {
     const button=page.locator('#choiceBox .choice-btn').filter({hasText:sought});
     if(await button.count() && await button.first().isVisible()) return;
-    // Choice buttons can overlap the dialogue on narrow mobile viewports.
-    // Advancing narration through the same app nav handler avoids accidentally
-    // selecting a second magic-menu option while a choice becomes visible.
-    await page.evaluate(()=>{
-      if(isShowing||waitingForTap)navNext();
-    });
+    // Hogwarts magic submenus are overlaid near the dialogue on narrow mobile
+    // viewports. For that one menu, advance narration through the app nav
+    // handler; retain real taps for ordinary cinematic story progression.
+    if(/마법 연습/.test(sought)){
+      await page.evaluate(()=>{if(isShowing||waitingForTap)navNext();});
+    } else if(await page.locator('#dialoguePanel').isVisible()) {
+      const box=await page.locator('#dialoguePanel').boundingBox();
+      if(box) {
+        const x=box.x+box.width*0.8,y=box.y+Math.min(box.height-2,14);
+        if(await page.evaluate(()=>navigator.maxTouchPoints>0))await page.touchscreen.tap(x,y);
+        else await page.mouse.click(x,y);
+      }
+    }
     await page.waitForTimeout(70);
   }
   const debug=await page.evaluate(()=>({
