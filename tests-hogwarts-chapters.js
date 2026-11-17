@@ -113,7 +113,7 @@ const publicId='b01c10s01';
 sc.statuses[publicId]='canonical';
 const pub=catalog.byId.b01c10;
 assert(chapters.unsafeBeat(pub,publicId,sc,false));
-const local=catalog.byId.b03c07;
+const local=catalog.byId.b02c07; // local-access bloodline incident
 sc.statuses[local.beats[0].id]='canonical';
 assert.equal(chapters.unsafeBeat(local,local.beats[0].id,sc,false),null);
 assert(chapters.unsafeBeat(local,local.beats[0].id,sc,true));
