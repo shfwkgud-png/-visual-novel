@@ -338,6 +338,33 @@ async function drainDialogue(page) {
   throw new Error('Dialogue did not reach an input boundary: ' + await page.evaluate(() => JSON.stringify({ inputMode, busy: sendBtn.disabled, replaying, isShowing, waitingForTap, queued: dialogueQueue.length, phase: window._startPhase })));
 }
 
+async function waitForStoryChoice(page, sought) {
+  for(let attempt=0; attempt<115; attempt++) {
+    const button=page.locator('#choiceBox .choice-btn').filter({hasText:sought});
+    if(await button.count() && await button.first().isVisible()) return;
+    if(await page.locator('#dialoguePanel').isVisible()) {
+      const box=await page.locator('#dialoguePanel').boundingBox();
+      if(box) {
+        const x=box.x+box.width*0.8,y=box.y+Math.min(box.height-2,14);
+        if(await page.evaluate(()=>navigator.maxTouchPoints>0))await page.touchscreen.tap(x,y);
+        else await page.mouse.click(x,y);
+      }
+    }
+    await page.waitForTimeout(70);
+  }
+  const debug=await page.evaluate(()=>({
+    phase:window._startPhase,clock:gameState?.hogwarts?.date,
+    house:gameState?.hogwarts?.house,
+    director:gameState?.hogwarts?.scene,
+    pending:gameState?.hogwarts?.world?.pending,
+    active:gameState?.hogwarts?.world?.active,
+    choiceTexts:[...document.querySelectorAll('#choiceBox .choice-btn')].map(x=>x.textContent),
+    queue:dialogueQueue.length,inputMode,isShowing,waitingForTap,
+    currentBgFile,windowPending:window._pendingChoices
+  }));
+  throw Error('Hogwarts choice not presented: '+sought+' | '+JSON.stringify(debug));
+}
+
 async function enterText(page, text) {
   await drainDialogue(page);
   await page.locator('#userInput').fill(text);
@@ -851,7 +878,7 @@ async function hogwartsArtCheck(ctx) {
     assert(arrival.speakers.some(x=>x==='덤블도어'));
     assert(arrival.speakers.some(x=>x==='슬리데린 반장'));
     await page.locator('#choiceBox .choice-btn').filter({hasText:'다음 장면'}).click();
-    await drainDialogue(page);
+    await waitForStoryChoice(page,'헤르미온느와 도서관');
     await page.locator('#choiceBox .choice-btn').filter({hasText:'헤르미온느와 도서관'}).click();
     await drainDialogue(page);
     await page.waitForFunction(() => ['harry', 'ron'].every(id => document.getElementById('sprite_' + id)?.naturalWidth === 1024)
