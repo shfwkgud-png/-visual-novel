@@ -48,7 +48,12 @@
       for(const spell of candidates){
         const rec=magic.spells[spell.id]||(magic.spells[spell.id]=
           {xp:0,attempts:0,success:0,firstLearned:null});
-        rec.xp=Math.max(rec.xp,next.allMasteredAtStart?320:90);
+        const words=[spell.name,spell.incantation].filter(Boolean).map(w=>String(w).toLowerCase());
+        const lower=next.description.toLowerCase();
+        const at=words.map(w=>lower.indexOf(w)).find(i=>i>=0);
+        const near=at>=0?lower.slice(Math.max(0,at-20),at+42):'';
+        const mastered=next.allMasteredAtStart||/(숙달|통달|완벽하게\s*구사|자유자재로\s*시전)/.test(near);
+        rec.xp=Math.max(rec.xp,mastered?320:90);
         if(!rec.firstLearned)rec.firstLearned='before_admission';
       }
       if(candidates.length)next.initialKnowledgeApplied=true;
