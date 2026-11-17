@@ -296,7 +296,7 @@
     };
     const variant=actors[result.id]?.[choice];
     let narration=variant?.[0] || '사건은 한 장면에서 끝나지 않았다. 그날 만난 사람들은 자신의 일정으로 돌아갔고, 서로 다른 기억을 갖게 됐다.';
-    if(result.actions?.length)narration+=' 당신은 그 사이 직접 '+result.actions.length+'번의 행동을 시도했다. 행동의 성공이나 실패는 실제 대화에서 확인된 사실을 따른다.';
+    if(result.actions?.length)narration+=' 당신이 그날 직접 나섰던 일도 누군가의 기억에 남아 있다.';
     const offscreen=String(result.offscreen||'');
     if(offscreen && !narration.includes(offscreen))narration+='\n\n한편, '+offscreen;
     return {narration,dialogue:variant?.[1]?[variant[1]]:[],background:null,resetSprites:false};
