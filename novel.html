@@ -2167,7 +2167,8 @@
 <script src="storypacks/hogwarts-au/story.js?v=8"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=5"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/world.js?v=9"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=1"></script>
+<script src="storypacks/hogwarts-au/world.js?v=10"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
 <script src="storypacks/hogwarts-au/canon-bridge.js?v=3"></script>
 <script>
@@ -4618,6 +4619,10 @@ function buildStatePrompt() {
       s += '- 장소에 들어갈 때 당연히 일어날 인물의 반응은 별도 장면으로 재생하며 다른 곳으로 순간이동시키지 않는다.\n';
     }
     if (window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) s += PandoraHogwartsWorld.context(gameState.hogwarts.world);
+    if (window.PandoraHogwartsChapters && gameState.hogwarts.chapters && gameState.hogwarts.canon &&
+        PandoraHogwartsChapters.valid(gameState.hogwarts.chapters))
+      s += PandoraHogwartsChapters.currentContext(PandoraHogwartsChapters.getLoaded(),
+        gameState.hogwarts.chapters,gameState.hogwarts.world,gameState.hogwarts.canon);
     if (HOGWARTS_CANON_BUNDLE && gameState.hogwarts.canon && window.PandoraHogwartsBridge)
       s += PandoraHogwartsBridge.context(HOGWARTS_CANON_BUNDLE,gameState.hogwarts.canon);
   }
@@ -11365,6 +11370,20 @@ async function syncHogwartsCanon() {
         HOGWARTS_CANON_PENDING=PandoraHogwartsBridge.load(window.fetch.bind(window),PandoraHogwartsCanon);
       HOGWARTS_CANON_BUNDLE=await HOGWARTS_CANON_PENDING;
     }
+    // Register each of the 198 source-grounded chapter scenarios before the
+    // next-event director can select a playable chapter.
+    let chapterCatalog=null;
+    if (window.PandoraHogwartsChapters && window.PandoraHogwartsWorld) {
+      try {
+        chapterCatalog=await PandoraHogwartsChapters.load(window.fetch.bind(window),HOGWARTS_CANON_BUNDLE);
+        PandoraHogwartsWorld.installChapterCatalog(chapterCatalog,PandoraHogwartsChapters);
+        if (!PandoraHogwartsChapters.valid(hp.chapters))hp.chapters=PandoraHogwartsChapters.createState();
+        delete hp.chaptersLoadError;
+      } catch(e) {
+        hp.chaptersLoadError=String(e?.message||e);
+        try { console.warn('[Hogwarts chapter playbook]',e); } catch {}
+      }
+    }
     // A player-facing event is still undecided. Offscreen canon for its
     // date must not resolve BEFORE the player chooses (Halloween troll etc).
     let through=hp.date;
@@ -11376,6 +11395,8 @@ async function syncHogwartsCanon() {
     const result=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,hp.canon,through,
       hp.world&&hp.world.decisions||[]);
     hp.canon=result.state;
+    if (chapterCatalog && hp.chapters && PandoraHogwartsChapters.valid(hp.chapters))
+      PandoraHogwartsChapters.sync(chapterCatalog,hp.chapters,through,hp.canon,hp.world);
     if (window.PandoraHogwartsScenes && PandoraHogwartsScenes.valid(hp.scene) &&
         hp.scene.phase==='transition' && hp.scene.cursor===0 && result.advanced.length) {
       const publicEvents=result.advanced.filter(x=>x.outcome==='canonical')
@@ -11422,8 +11443,7 @@ function runHogwartsAutomaticScene() {
   if (step.mode==='event' && window.PandoraHogwartsWorld) {
     const hw=PandoraHogwartsWorld, world=hp.world;
     if (!hw.valid(world)||!world.pending||world.pending.id!==step.eventId) return false;
-    const event=hw.EVENTS.find(e=>e.id===step.eventId);
-    if (event && event.kind==='plot') {
+    if (hw.shouldStartAmbient(world)) {
       const opened=hw.startAmbient(world);
       if (opened) {
         gameState.event=opened.title;updateStatusUI();
@@ -11482,6 +11502,7 @@ function startGame(isContinue) {
       gameState.hogwarts = PandoraHogwartsTime.createState();
       if (window.PandoraHogwartsWorld) gameState.hogwarts.world = PandoraHogwartsWorld.createState();
       if (window.PandoraHogwartsScenes) gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
+      if (window.PandoraHogwartsChapters) gameState.hogwarts.chapters=PandoraHogwartsChapters.createState();
       gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
     }
   try { document.body.dataset.story = STORY.id || ''; } catch {}
@@ -11575,6 +11596,8 @@ function restoreAndReplayInner(save, checkTimeflow) {
   if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
     if (!PandoraHogwartsTime.valid(gameState.hogwarts)) gameState.hogwarts = PandoraHogwartsTime.createState();
     if (window.PandoraHogwartsWorld && !PandoraHogwartsWorld.valid(gameState.hogwarts.world)) gameState.hogwarts.world = PandoraHogwartsWorld.createState();
+    if (window.PandoraHogwartsChapters && !PandoraHogwartsChapters.valid(gameState.hogwarts.chapters))
+      gameState.hogwarts.chapters=PandoraHogwartsChapters.createState();
     if (window.PandoraHogwartsScenes && !PandoraHogwartsScenes.valid(gameState.hogwarts.scene)) {
       gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
       if (gameState.hogwarts.house) gameState.hogwarts.scene.arrivalCompleted=true; // existing save migration
@@ -15127,6 +15150,8 @@ async function handlePlayerInput(text) {
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
   if (idolRunInjected(text)) return;
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
+  if (STORY.id==='hogwarts' && gameState?.hogwarts && window.PandoraHogwartsChapters &&
+      !PandoraHogwartsChapters.getLoaded()) await syncHogwartsCanon();
   // Hogwarts scenes: time, NPC schedules, and consequences have one deterministic owner.
   // This is a separate routing path; every other PANDORA story still uses its old flow.
   if (STORY.id === 'hogwarts' && window._startPhase === 'playing' &&
@@ -15173,8 +15198,11 @@ async function handlePlayerInput(text) {
         gameState.combat = false; gameState._combatStart = null;
         await syncHogwartsCanon(); // commit canon only AFTER participant outcome is known
         updateStatusUI();
-        const after=window.PandoraHogwartsScenes
-          ? PandoraHogwartsScenes.outcomeBeat(result,world) : null;
+        const after=(window.PandoraHogwartsChapters && PandoraHogwartsChapters.getLoaded() &&
+            gameState.hogwarts.canon && /^b\d{2}c\d{2}$/.test(result.id))
+          ? PandoraHogwartsChapters.ending(PandoraHogwartsChapters.getLoaded(),result.id,
+              world,gameState.hogwarts.canon)
+          : (window.PandoraHogwartsScenes ? PandoraHogwartsScenes.outcomeBeat(result,world) : null);
         renderFixedStep(after?.narration || ('그날의 사건이 마무리됐다.\n\n'+result.offscreen),
           ['▶ 다음 장면 — 다음 사건·일상으로 진행'],
           {dialogue:after?.dialogue || [],resetSprites:false});
@@ -15191,7 +15219,7 @@ async function handlePlayerInput(text) {
           renderFixedStep(r.intro,r.choices,{background:r.background,resetSprites:true});
           return;
         }
-        const upcoming=hw.nextEvent(world,clock.date);
+        const upcoming=hw.nextEvent(world,clock.date,clock.slot);
         if (!upcoming) {
           const fin=hw.ending(world);
           renderFixedStep(fin ? '호그와트에서 보낸 7년의 마지막 페이지다. 이제 직접 걸어온 길의 결말을 확인할 수 있다.' : '더는 등록된 주요 사건이 없습니다. 일상 대화를 이어가거나 마지막 장면을 돌아볼 수 있습니다.',
