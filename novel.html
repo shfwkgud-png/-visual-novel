@@ -2167,7 +2167,8 @@
 <script src="storypacks/hogwarts-au/story.js?v=9"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=7"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=4"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5"></script>
 <script src="storypacks/hogwarts-au/chapter-director.js?v=7"></script>
 <script src="storypacks/hogwarts-au/world.js?v=13"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -11752,6 +11753,14 @@ function restoreAndReplayInner(save, checkTimeflow) {
       gameState.hogwarts.chapters=PandoraHogwartsChapters.createState();
     if (window.PandoraHogwartsMagic && !PandoraHogwartsMagic.valid(gameState.hogwarts.magic))
       gameState.hogwarts.magic=PandoraHogwartsMagic.createState(gameState.hogwarts.date);
+    // Legacy save migration: keep spells, exams, branches and world clock intact.
+    if (window.PandoraHogwartsProfile && window.PandoraHogwartsMagic &&
+        PandoraHogwartsMagic.valid(gameState.hogwarts.magic)) {
+      const pp=PandoraHogwartsProfile.ensure(gameState.hogwarts.magic);
+      if(!pp.configured && String(save.playerDesc||'').trim())
+        PandoraHogwartsProfile.configure(gameState.hogwarts.magic,save.playerDesc,
+          {spells:PandoraHogwartsMagic.SPELLS,worldMode:gameState.freeMode?'free':'canon_centered'});
+    }
     if (window.PandoraHogwartsScenes && !PandoraHogwartsScenes.valid(gameState.hogwarts.scene)) {
       gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
       if (gameState.hogwarts.house) gameState.hogwarts.scene.arrivalCompleted=true; // existing save migration
@@ -15551,19 +15560,29 @@ async function handlePlayerInput(text) {
     window._modeChosen = true;
     window._startPhase = 'setup';
     window._pendingPlayerLine = text; window._genText = text;
-    renderFixedStep('당신은 이 이야기에서 누구입니까? 캐릭터를 설정해 주세요.\n형식: 이름/나이/성별/특징 (예: 무진/24살/남/떠돌이 검객) — 성별은 생략해도 됩니다.', null);
+    renderFixedStep(STORY.id==='hogwarts'
+      ?'호그와트에서 어떤 인물로 살아가고 싶나요?\n이름/나이/성별/특징 형식 또는 자유로운 문장으로 설정하세요. 천재성, 입학 전 배운 주문, 능력 은폐, 어둠의 마법 적성도 적을 수 있습니다. 이름을 생략하면 기존 이름을 사용합니다.'
+      :'당신은 이 이야기에서 누구입니까? 캐릭터를 설정해 주세요.\n형식: 이름/나이/성별/특징 (예: 무진/24살/남/떠돌이 검객) — 성별은 생략해도 됩니다.', null);
     autoSave();
     return;
   }
   if (window._startPhase === 'setup') {
+    const hpSetup=STORY.id==='hogwarts'&&window.PandoraHogwartsProfile
+      ?PandoraHogwartsProfile.parseSetup(text,playerName):null;
     const p = String(text).trim().match(/^([^/\n]{1,12})\s*\/\s*(\d{1,3})\s*살?\s*(?:\/\s*(남|여)(?:자|성)?)?\s*\/\s*(.{1,60})$/);
     dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
     gameHistory.push({ role: 'user', content: text });
     window._pendingPlayerLine = text; window._genText = text;
-    if (!p) { renderFixedStep('형식이 맞지 않습니다. "이름/나이/특징" 으로 입력해 주세요. (예: 무진/24살/떠돌이 검객)', null); return; }
-    playerName = p[1].trim();
-    const gp = p[3] ? `${p[3]}성, ` : '';
-    playerDesc = `${p[2]}살 ${gp}${p[4].trim()}`;
+    if (!p&&!hpSetup) { renderFixedStep('형식이 맞지 않습니다. 이름/나이/특징 또는 자유로운 자연어로 작성해 주세요.', null); return; }
+    playerName = hpSetup ? hpSetup.name : p[1].trim();
+    const gp = p?.[3] ? `${p[3]}성, ` : '';
+    playerDesc = hpSetup ? hpSetup.description : `${p[2]}살 ${gp}${p[4].trim()}`;
+    if(STORY.id==='hogwarts'&&window.PandoraHogwartsProfile&&window.PandoraHogwartsMagic&&
+       PandoraHogwartsMagic.valid(gameState?.hogwarts?.magic)) {
+      PandoraHogwartsProfile.configure(gameState.hogwarts.magic,playerDesc,
+        {spells:PandoraHogwartsMagic.SPELLS,worldMode:window._freeMode?'free':'canon_centered'});
+      syncHogwartsMagicSkills();
+    }
     if (gameState) gameState.name = playerName;
     // ★STORY.protagonist는 건드리지 않는다(팩 기본값 유지) — 여기 name을 덮으면
     //   callGemini의 defName이 플레이어이름이 돼 로어의 원작이름 치환이 무효화됨(하윤 잔존 버그).
