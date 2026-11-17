@@ -170,6 +170,31 @@
       dialogue:[],background:null,resetSprites:false
     };
   }
+  // Chronological, one-beat-at-a-time presentation AFTER the scene resolves.
+  // This is a visible result, not a new player choice. Original facts only
+  // display if canonical, public (or witnessed locally); private/GM never leak.
+  function outcomeSequence(catalog,eventId,world,canonState){
+    if(!catalog||!canonState||!world?.finished?.[eventId])return [];
+    const own=catalog.byId[eventId]?[catalog.byId[eventId]]:[];
+    const linked=catalog.byMajor[eventId]?.map(id=>catalog.byId[id])||[];
+    const chapters=own.concat(linked).filter(Boolean);
+    if(!chapters.length)return [];
+    const direct=world.finished[eventId].choice!=='skip';
+    const sequence=[];
+    for(const chapter of chapters)for(const beat of chapter.beats) {
+      const visible=unsafeBeat(chapter,beat.id,canonState,direct);
+      if(!visible)continue;
+      const changed=visible.status!=='canonical';
+      const headline=changed?'원래의 역사에서 벗어난 결과':chapter.title;
+      sequence.push({
+        id:'canon_'+beat.id,chapterId:chapter.id,beatId:beat.id,
+        background:chapter.background,
+        narration:(sequence.length?'한편, ':'')+headline+'. '+visible.narration,
+        access:beat.access,status:visible.status
+      });
+    }
+    return sequence;
+  }
   function currentContext(catalog,state,world,canonState){
     if(!catalog||!valid(state))return '';
     const played=Object.entries(world?.finished||{}).filter(([id])=>/^b\d{2}c\d{2}$/.test(id)).slice(-7);
@@ -186,5 +211,5 @@
       +'- 인과관계가 끊긴 사건은 원작 결말을 강제로 복구하지 마라. 원인을 공개적으로 알 수 없는 경우 새 전개를 사실처럼 선포하지 말고 조사와 후속 행동으로 해결하라.\n';
   }
   return Object.freeze({compile,load,getLoaded,eventFor,nextPlayable,linkedMajor,decorateMajor,
-    createState,valid,sync,unsafeBeat,ending,currentContext});
+    createState,valid,sync,unsafeBeat,ending,outcomeSequence,currentContext});
 });
