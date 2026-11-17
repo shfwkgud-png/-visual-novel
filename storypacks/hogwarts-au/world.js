@@ -198,6 +198,23 @@
   function canPreempt(st) {
     return st.agency.broom_response==='investigated' && st.agency.clue_path==='records';
   }
+  // Earned branches require preparations made in DIFFERENT earlier chapters;
+  // a single improvised assertion cannot rewrite years of canonical history.
+  function canCapturePettigrew(st) {
+    return st.agency.dementor==='study' &&
+      st.agency.chapter_b03c08==='inquire' &&
+      st.agency.chapter_b03c13==='engage';
+  }
+  function canSealCabinet(st) {
+    return st.agency.prince==='investigate' &&
+      st.agency.chapter_b06c12==='inquire' &&
+      st.agency.chapter_b06c18==='inquire';
+  }
+  function canGuardWand(st) {
+    return st.agency.prince==='approached' &&
+      (st.ties.malfoy||0)>=3 &&
+      st.agency.chapter_b06c12==='engage';
+  }
   function introFor(ev,st) {
     let intro=ev.intro;
     const first=st.agency.first_circle;
@@ -216,6 +233,12 @@
       if((st.ties.malfoy||0)>=3)intro+='\n\n말포이는 표현하지 않지만, 떠나기 전에 당신에게 따로 할 말이 있어 보인다.';
       if((st.ties.hermione||0)>=3)intro+='\n\n헤르미온느는 여러 번 함께 공부하거나 조사했던 일을 적어 두었다.';
     }
+    if(ev.id==='goblet_graveyard' && st.agency.pettigrew==='captured')
+      intro+='\n\n페티그루가 구금되었으므로 원작 방식으로 그가 부활 의식을 집행할 수는 없다. 경기와 우승컵의 위험은 여전히 남지만 묘지에서 일어날 일은 전혀 다른 인과로 풀어야 한다.';
+    if(ev.id==='prince_tower' && canSealCabinet(st))
+      intro+='\n\n이전 학기 독이 든 물건들의 출처를 조사하며 모은 단서가 있다. 지금까지 준비한 경비 계획을 실행하면 숨어 있던 침입 경로를 봉쇄할 기회를 얻는다.';
+    if(ev.id==='prince_tower' && canGuardWand(st))
+      intro+='\n\n말포이와 오래 쌓아 온 신뢰, 위험 물품 수색 때 함께 익힌 대응이 있다. 그와 대치하는 순간 지팡이 소유권을 바꿀 수 있는 무장해제를 막을 기회가 생긴다.';
     if(ev.id==='prince_secret') {
       if((st.ties.malfoy||0)>=3)intro+='\n\n5년 전 첫 학기의 모임에서 시작된 신뢰가 있다면, 지금 그 흔적이 아주 작은 망설임으로 나타날 수 있다. 그렇다고 임무의 비밀을 바로 털어놓지는 않는다.';
       else if((st.ties.malfoy||0)<0)intro+='\n\n오래전의 냉담함을 말포이는 아직 기억한다. 당신이 그 비밀에 접근하려면 먼저 불신부터 넘어서야 한다.';
@@ -230,6 +253,12 @@
     const base=ev.options.map(x=>'▶ 선택 ['+ev.id+'] '+x.id+' — '+x.label);
     if(ev.id==='stone_finale' && canPreempt(st))
       base.push('▶ 선택 [stone_finale] preempt — 모은 단서로 교수진에게 먼저 진범을 밝힌다');
+    if(ev.id==='pettigrew_crossroads' && canCapturePettigrew(st))
+      base.push('▶ 선택 [pettigrew_crossroads] capture — 확보한 목격 증거와 루핀의 도움으로 페티그루를 구금한다');
+    if(ev.id==='prince_tower' && canSealCabinet(st))
+      base.push('▶ 선택 [prince_tower] seal_cabinet — 독극물 추적 기록으로 침입 통로를 찾아 미리 봉쇄한다');
+    if(ev.id==='prince_tower' && canGuardWand(st))
+      base.push('▶ 선택 [prince_tower] guard_wand — 말포이와 협력해 덤블도어의 무장해제를 저지한다');
     return base.concat(['▶ 선택 ['+ev.id+'] skip — 참여하지 않고 다음 사건으로 넘어간다']);
   }
   function selectedOption(ev,id,st) {
@@ -238,7 +267,22 @@
         intent:'퀴디치 경기에서 조사한 이상 징후와 도서관의 기록을 함께 제시한다. 그 증거를 바탕으로 교수들이 사건이 터지기 전에 움직이도록 설득한다. 다른 학생들 역시 자신의 판단대로 행동한다.',
         delta:{mcgonagall:3,hermione:2},flags:{stone_finale:'preempt'},
         offscreen:'교수들이 검증된 단서에 따라 학교의 의심스러운 교수를 미리 조사한다. 원작의 함정문 대면은 그대로 반복되지 않는다.'};
-    if(id==='preempt')return null;
+    if(ev.id==='pettigrew_crossroads' && id==='capture' && canCapturePettigrew(st))
+      return {id,label:'루핀과 협력해 페티그루의 도주를 막고 구금한다',
+        intent:'3학년에 확보한 초상화 목격자 진술·기숙사 침입 자료·루핀의 훈련을 활용해 관계자들과 협력한다. 페티그루가 탈출하지 못한 것이 확정된 뒤 시리우스의 혐의를 재심사하도록 정식 증거를 보존한다.',
+        delta:{lupin:2,harry:2},flags:{pettigrew:'captured'},confirmedBySystem:true,
+        offscreen:'페티그루는 구금되어 볼드모트에게 돌아가지 못한다. 원작 4권에서 페티그루가 준비하는 부활 의식은 그 형태로 성립할 수 없다.'};
+    if(ev.id==='prince_tower' && id==='seal_cabinet' && canSealCabinet(st))
+      return {id,label:'사전에 확보한 기록으로 침입용 장롱 통로를 봉쇄한다',
+        intent:'사전에 기록된 저주 물품과 독극물 사건의 공통 경로를 교수에게 제시해 같은 날 밤 보안 절차를 실행한다. 장롱 경로가 차단되어 죽음을 먹는 자들이 그 방식으로 학교에 진입하지 못한다.',
+        delta:{mcgonagall:2,malfoy:-2},flags:{tower:'sealed_cabinet'},confirmedBySystem:true,
+        offscreen:'장롱을 이용한 침입이 차단되었으므로 원작 그대로 천문탑 습격과 스네이프의 행동을 되풀이할 수 없다. 관련 인과는 다른 세계선으로 진행된다.'};
+    if(ev.id==='prince_tower' && id==='guard_wand' && canGuardWand(st))
+      return {id,label:'말포이와의 신뢰를 바탕으로 덤블도어의 무장해제를 저지한다',
+        intent:'장기간 쌓인 말포이와의 신뢰와 대응 경험을 활용해 그가 덤블도어를 무장해제하기 전에 개입하고 지팡이의 소유권 이전을 차단한다. 이후 말포이의 반응과 선택을 실제로 보여준다.',
+        delta:{malfoy:1},flags:{tower:'guarded_wand'},confirmedBySystem:true,
+        offscreen:'덤블도어의 지팡이가 원작처럼 말포이에게 넘어가지 않았다. 훗날 말포이를 제압하더라도 딱총나무 지팡이의 충성권이 해리에게 자동 승계되지 않는다.'};
+    if(['preempt','capture','seal_cabinet','guard_wand'].includes(id))return null;
     if(id==='observe' && (ev.kind==='plot'||ev.autoStart))
       return {id:'observe',label:'현장에서 사건이 진행되는 모습을 본다',
         intent:'공개된 상황과 지금 나타난 인물의 행동으로 사건을 시작한다. 플레이어의 행동·대사·태도를 대신 결정하지 않는다.',
@@ -349,7 +393,9 @@
       instruction:'[호그와트 사건 진행 중 플레이어의 실제 개입] '+ev.title+'\n'
         +'사용자가 직접 선택한 행동: '+opt.label+'\n'
         +'의도: '+opt.intent+'\n'
-        +'행동의 성공을 자동 확정하지 말고 실제 장면의 결과와 NPC 반응을 이어서 보여라. '
+        +(opt.confirmedBySystem
+          ? '사전에 준비한 독립 증거가 충족되어 이 특정 행동의 핵심 결과는 게임 시스템에서 확정한다. 그 성공의 구체적 장면과 NPC의 자율적인 반응을 보여라. 다른 결과까지 자동 성공시키지 마라. '
+          : '행동의 성공을 자동 확정하지 말고 실제 장면의 결과와 NPC 반응을 이어서 보여라. ')
         +'사건의 날짜와 장소, 다른 사람의 독립 행동은 보존하라.'};
   }
   // Ordinary free-text roleplay must not vanish when a scripted event ends.
