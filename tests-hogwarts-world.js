@@ -55,6 +55,15 @@ assert.equal(world.ending(s),null);
 assert.equal(world.isNext('▶ 다음 장면 — 다음 사건·일상으로 진행'),true);
 assert.equal(world.isFinish('▶ 장면 마치기 — 결과를 확정하고 이어가기'),true);
 assert.equal(world.isNext('▶ 다음 장면을 자세히 설명한다'),false);
+const freeTalk=world.createState();
+world.offer(freeTalk,world.EVENTS.find(x=>x.id==='halloween_troll'));
+world.startAmbient(freeTalk);
+assert.equal(world.noteAction(freeTalk,'교수에게 트롤의 위치를 알린다'),true);
+assert.match(world.context(freeTalk),/성공 확정 아님/);
+world.finish(freeTalk);
+assert.equal(freeTalk.decisions[0].choice,'freeform');
+assert.deepEqual(freeTalk.decisions[0].actions,['교수에게 트롤의 위치를 알린다']);
+
 
 // Earned, non-automatic alternate finale: clues from two distinct earlier events.
 let alt=world.createState(),ac=clock.createState();
@@ -159,7 +168,7 @@ assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,70);
 
 const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/world.js?v=7'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=8'));
 assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=3'));
 assert(html.includes('moveToScene(clock,upcoming.date,upcoming.slot)'));
 assert(html.includes('gameState.hogwarts.world = PandoraHogwartsWorld.createState()'));
