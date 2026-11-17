@@ -56,7 +56,13 @@ for(const house of HOUSE){
   assert.equal(returnBeats[2].background,byHouse[house].key);
   assert.equal(saved.lastLocation,byHouse[house].key);
   assert.equal(D.startRoomReturn(saved,house),false);
-  tests+=17;
+  const news=D.createState();news.arrivalCompleted=true;news.lastLocation='library';
+  const publicEvent={id:'notice_'+house,title:'학기 소식',background:'corridor',date:'1991-10-31',year:1};
+  D.stageEvent(news,{date:'1991-09-01',slot:1},publicEvent,house,{agency:{}});
+  assert.equal(D.injectNews(news,[{id:'secret',access:'gm',fact:'never leak'},
+    {id:'public',access:'public',fact:'학교에서 공개된 발표가 있었다.'}]),1);
+  assert(D.take(news).beat.narration.includes('공개된 발표'));
+  tests+=20;
 }
 // A live public incident occurs without an explicit "make this happen" choice.
 let st=W.createState();
@@ -127,7 +133,7 @@ assert.equal(clock.slot,3);
 tests+=3;
 // All patches are guarded under STORY.id === hogwarts.
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=2'));
+assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=3'));
 assert(html.includes('PandoraHogwartsScenes.startArrival('));
 assert(html.includes('runHogwartsAutomaticScene()'));
 assert(html.includes('PandoraHogwartsScenes.startRoomReturn('));
