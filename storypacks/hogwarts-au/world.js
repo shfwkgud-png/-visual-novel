@@ -143,7 +143,7 @@
     {id:'prince_tower',year:6,date:'1997-06-12',slot:3,kind:'plot',title:'천문탑의 밤',background:'astronomy',actors:['malfoy','snape','albus'],intro:'호그와트의 안전이 흔들리는 밤. 누군가의 선택이 전쟁의 시작을 알릴 수 있다.',options:[
       {id:'intervene',label:'지금까지 파악한 증거로 개입을 시도한다',intent:'선행 사건과 실제 관찰·실력이 부족하면 실패할 수 있다. 결과는 행동의 증거로 기록해야 한다.',delta:{},flags:{tower:'intervene_attempt'},offscreen:'지팡이 충성권과 생존 여부는 임의로 재작성하지 않는다.'},
       {id:'protect',label:'다른 학생들의 피난을 돕는다',intent:'구출과 생존을 우선한다.',delta:{},flags:{tower:'evacuation'},offscreen:'천문탑에서 벌어지는 핵심 선택은 별도의 인물들이 수행한다.'}]},
-    {id:'hallows_school',year:7,date:'1997-09-02',slot:1,kind:'plot',title:'점령된 학교',background:'occupied_hogwarts',actors:['mcgonagall','neville','ginny'],intro:'정권이 바뀐 뒤 호그와트에 새로운 통제가 내려온다. 해리 일행은 정규 수업에 없다. 남은 학생들은 협력, 저항, 은둔의 갈림길에 선다.',options:[
+    {id:'hallows_school',year:7,date:'1997-09-02',slot:1,kind:'plot',title:'마법부의 학교 통제',background:'occupied_hogwarts',actors:['mcgonagall','neville','ginny'],intro:'정권이 바뀐 뒤 호그와트에 새로운 통제가 내려온다. 해리 일행은 정규 수업에 없다. 남은 학생들은 협력, 저항, 은둔의 갈림길에 선다.',options:[
       {id:'resist',label:'신뢰하는 동료와 비밀리에 저항한다',intent:'실패하면 실제 처벌과 관계의 위험이 뒤따른다.',delta:{neville:2},flags:{hallows:'resist'},offscreen:'학교 밖 해리 일행은 자신들의 임무를 계속한다.'},
       {id:'hide',label:'주변 사람들의 안전을 먼저 지킨다',intent:'위험을 줄이되 다른 학생의 선택을 대신하지 않는다.',delta:{},flags:{hallows:'hide'},offscreen:'저항은 다른 학생들을 통해 이어질 수 있다.'},
       {id:'comply',label:'공식 통제 안에서 살아남을 방법을 찾는다',intent:'협력이 가져올 도덕적·관계적 대가를 직면한다.',delta:{},flags:{hallows:'comply'},offscreen:'서로 다른 선택을 한 친구들이 멀어질 수 있다.'}]},
@@ -258,6 +258,8 @@
       if((st.ties.malfoy||0)>=3)intro+='\n\n말포이는 표현하지 않지만, 떠나기 전에 당신에게 따로 할 말이 있어 보인다.';
       if((st.ties.hermione||0)>=3)intro+='\n\n헤르미온느는 여러 번 함께 공부하거나 조사했던 일을 적어 두었다.';
     }
+    if(ev.id==='hallows_school' && st.agency.tower==='sealed_cabinet')
+      intro='마법부의 새 정권이 호그와트에 통제를 요구한다. 하지만 덤블도어는 살아 있고, 교수진과 학생들 사이에서는 누구의 명령을 따를지 논쟁이 벌어진다. 학교 전체가 이미 점령됐다고 가정할 수는 없다.';
     if(ev.id==='goblet_graveyard' && st.agency.pettigrew==='captured')
       intro+='\n\n페티그루가 구금되었으므로 원작 방식으로 그가 부활 의식을 집행할 수는 없다. 경기와 우승컵의 위험은 여전히 남지만 묘지에서 일어날 일은 전혀 다른 인과로 풀어야 한다.';
     if(ev.id==='prince_tower' && canSealCabinet(st))
