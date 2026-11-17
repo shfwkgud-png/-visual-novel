@@ -38,9 +38,10 @@
     next.initialKnowledgeApplied=!!prev.initialKnowledgeApplied;
     next.worldMode=opts?.worldMode==='free'?'free':'canon_centered';
     const catalogue=Array.isArray(opts?.spells)?opts.spells:[];
+    const aliases=opts?.aliases||(typeof globalThis!=='undefined'&&globalThis.PandoraHogwartsMagic?.ALIASES)||{};
     // Backstory knowledge must be explicit. "I'm a prodigy" is not a spellbook.
     if(/(이미|입학\s*전부터|과거에).{0,90}(배웠|익혔|숙달|시전할\s*수)/.test(next.description))
-      next.alreadyKnown=catalogue.filter(sp=>[sp.name,sp.incantation].some(w=>
+      next.alreadyKnown=catalogue.filter(sp=>[sp.name,sp.incantation,...(aliases[sp.id]||[])].some(w=>
         String(w||'').length>=3&&next.description.toLowerCase().includes(w.toLowerCase()))).map(sp=>sp.id);
     magic.profile=next;
     if(!next.initialKnowledgeApplied){
@@ -48,7 +49,7 @@
       for(const spell of candidates){
         const rec=magic.spells[spell.id]||(magic.spells[spell.id]=
           {xp:0,attempts:0,success:0,firstLearned:null});
-        const words=[spell.name,spell.incantation].filter(Boolean).map(w=>String(w).toLowerCase());
+        const words=[spell.name,spell.incantation,...(aliases[spell.id]||[])].filter(Boolean).map(w=>String(w).toLowerCase());
         const lower=next.description.toLowerCase();
         const at=words.map(w=>lower.indexOf(w)).find(i=>i>=0);
         const near=at>=0?lower.slice(Math.max(0,at-20),at+42):'';
