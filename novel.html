@@ -14404,7 +14404,7 @@ function showNextDialogue() {
     // ★분리 모드: 후행 추출이 아직 도는 중이면 폴백 선택지를 만들지 않고 입력창만 연다 —
     //   후행이 도착하면 fireStateExtract가 진짜 선택지를 표시한다(이중 생성·경합 방지).
     if ((window._splitExtractPending || pendingStateExtractEntry()) && window._pendingChoices == null) { enterInputMode(); return; }
-    if (runHogwartsAutomaticScene()) return;
+    if (typeof runHogwartsAutomaticScene==='function' && runHogwartsAutomaticScene()) return;
     showChoices(window._pendingChoices);
     return;
   }
