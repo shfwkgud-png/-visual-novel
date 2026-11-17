@@ -77,7 +77,7 @@
     return {id:chapter.id,year:chapter.book,date:chapter.date,slot:chapter.slot,
       title:chapter.title,background:chapter.background,actors:chapter.actors,
       kind:'chapter',autoStart:true,chapterId:chapter.id,
-      intro:chapter.arrival+history,
+      intro:(chapter.sceneCue || chapter.arrival)+history,
       options,
       chapterFacts:chapter.beats.filter(b=>['public','local'].includes(b.access)).map(b=>({id:b.id,access:b.access})),
       endingPrompt:'당사자가 무엇을 실제로 확인했는지와 시도만 한 행동을 구분한다.'};
@@ -155,8 +155,8 @@
     if(b.access==='gm'||b.access==='private')return null;
     if(b.access==='local'&&!directPresence)return null;
     const status=canonState.statuses[beatId];
-    if(status==='pending')return {id:beatId,narration:'앞선 선택으로 기존 인과가 깨졌다. 해당 사건의 원래 결말은 확정되지 않았다.',status};
-    if(status==='altered'||status==='prevented')return {id:beatId,narration:'이 사건의 원래 전개는 이미 변했다. 새로운 결과는 세계선의 검증된 기록을 따라야 한다.',status};
+    if(status==='pending')return {id:beatId,narration:'상황이 예상과 다르게 흘렀고, 현장에선 아직 결말을 확정하지 못했다.',status};
+    if(status==='altered'||status==='prevented')return {id:beatId,narration:'사건은 예상과 다르게 전개되었고, 관련 인물들이 다음 행동을 준비하기 시작했다.',status};
     if(status!=='canonical')return null;
     return {id:beatId,narration:b.fact,status};
   }
@@ -167,10 +167,10 @@
     const direct=selection!=='skip';
     const texts=[];
     for(const b of c.beats){const allowed=unsafeBeat(c,b.id,canonState,direct);if(allowed)texts.push(allowed.narration);}
-    const results=texts.length?texts.join(' '):'이 장의 중요한 진실은 아직 공개되지 않았다. 다른 인물들은 각자의 장소에서 행동을 이어갔다.';
+    const results=texts.length?texts.join(' '):'정확한 사정은 아직 알려지지 않았다. 자리에 없었던 사람들에 대해서는 누구도 섣불리 단정하지 않는다.';
     const result=option?.consequence||(selection==='freeform'?'당신이 실제로 시도한 행동은 기록에 남는다.':'플레이어의 참여 여부와 무관하게 다른 인물의 시간은 흐른다.');
     return {
-      narration:'「'+c.title+'」에서 확인 가능한 결과: '+results+'\n\n'+result,
+      narration:'「'+c.title+'」의 일이 지나간 뒤, 학생들은 저마다 보고 들은 일을 이야기했다. '+results+'\n\n'+(selection==='skip'?'당신은 그 현장을 떠났고, 다른 인물들은 각자의 시간 속에서 움직였다.':'당신이 한 행동을 기억하는 사람들이 남았다.'),
       dialogue:[],background:null,resetSprites:false
     };
   }
@@ -189,7 +189,7 @@
       const visible=unsafeBeat(chapter,beat.id,canonState,direct);
       if(!visible)continue;
       const changed=visible.status!=='canonical';
-      const headline=changed?'원래의 역사에서 벗어난 결과':chapter.title;
+      const headline=changed?'예상과 달라진 소식':chapter.title;
       sequence.push({
         id:'canon_'+beat.id,chapterId:chapter.id,beatId:beat.id,
         background:chapter.background,
