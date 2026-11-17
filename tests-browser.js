@@ -896,8 +896,23 @@ async function hogwartsArtCheck(ctx) {
     await waitForStoryChoice(page,'헤르미온느와 도서관');
     await page.locator('#choiceBox .choice-btn').filter({hasText:'헤르미온느와 도서관'}).click();
     await drainDialogue(page);
-    await page.waitForFunction(() => ['harry', 'ron'].every(id => document.getElementById('sprite_' + id)?.naturalWidth === 1024)
-      && bgLayer.style.backgroundImage.includes('great_hall_portrait.webp'));
+    try {
+      await page.waitForFunction(() => ['harry', 'ron'].every(id => document.getElementById('sprite_' + id)?.naturalWidth === 1024)
+        && bgLayer.style.backgroundImage.includes('great_hall_portrait.webp'),null,{timeout:22000});
+    } catch(error) {
+      const state=await page.evaluate(()=>({
+        date:gameState?.hogwarts?.date,
+        scene:gameState?.hogwarts?.scene,
+        worldActive:gameState?.hogwarts?.world?.active,
+        currentBgFile,background:bgLayer.style.backgroundImage,
+        sprites:['harry','ron'].map(id=>({id,src:document.getElementById('sprite_'+id)?.src,
+          width:document.getElementById('sprite_'+id)?.naturalWidth})),
+        choices:[...document.querySelectorAll('#choiceBox .choice-btn')].map(x=>x.textContent),
+        inputMode,isShowing,waitingForTap,queued:dialogueQueue.length,
+        recent:gameHistory.slice(-2).map(x=>String(x.content||'').slice(0,80))
+      }));
+      throw new Error('Hogwarts art/story transition never resolved: '+JSON.stringify(state)+'; '+error.message);
+    }
     await page.waitForFunction(() => [...document.querySelectorAll('#charLayer img')]
       .every(img => getComputedStyle(img).opacity === '1'));
     const scene = await page.evaluate(() => ({
