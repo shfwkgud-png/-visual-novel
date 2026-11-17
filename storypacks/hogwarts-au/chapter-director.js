@@ -85,9 +85,19 @@
   function nextPlayable(catalog,st,date,major){
     if(!catalog||!st||!st.finished)return null;
     const ceiling=major?.date||null;
+    const paired=catalog.byMajor?.[major?.id]||[];
+    const pairedChapters=paired.map(id=>catalog.byId[id]).filter(Boolean);
+    const firstMajorChapter=pairedChapters.length?
+      pairedChapters.reduce((min,p)=>p.book*100+p.chapter<min.book*100+min.chapter?p:min):null;
     for(const c of catalog.upcoming){
       if(c.date<date)continue;
-      if(ceiling && c.date>=ceiling)break; // canonical scripted scene owns equal-date encounters
+      if(ceiling && c.date>ceiling)break;
+      if(ceiling && c.date===ceiling){
+        // Same-day chapters must retain book order before the flagship
+        // (e.g. expulsion of Snape before the Battle of Hogwarts).
+        if(!firstMajorChapter ||
+          c.book*100+c.chapter>=firstMajorChapter.book*100+firstMajorChapter.chapter)break;
+      }
       if(st.finished[c.id]||st.pending?.id===c.id||st.active?.id===c.id)continue;
       return eventFor(c,st);
     }
