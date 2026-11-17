@@ -862,7 +862,7 @@ function hogwartsArtReply(kind, user = '', body = {}) {
   return {
     ...(sleeping ? {time:'1991년 9월 4일 아침'} : {}),
     narration,
-    dialogue: capture?[{char_id:'lupin',speaker:'리무스 루핀',text:'신병을 인계했네.'},
+    dialogue: capture?[{char_id:'lupin',speaker:'lupin',text:'신병을 인계했네.'},
       {char_id:'harry',speaker:'해리 포터',text:'도망치지 못했어.'}]:switched?[
       {char_id:'hermione',speaker:'헤르미온느',text:'알겠어. 난 여기서 공부할게.'},
       {char_id:'malfoy',speaker:'드레이코 말포이',text:'이쪽으로 와.'}]:[
