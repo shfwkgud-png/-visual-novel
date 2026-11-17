@@ -2167,7 +2167,7 @@
 <script src="storypacks/hogwarts-au/story.js?v=9"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=7"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=1"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=2"></script>
 <script src="storypacks/hogwarts-au/chapter-director.js?v=7"></script>
 <script src="storypacks/hogwarts-au/world.js?v=13"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -11526,6 +11526,9 @@ function handleHogwartsMagicCommand(text){
       options.push(...api.SUBJECTS.filter(x=>x.group==='선택'&&!st.electives.includes(x.id))
         .slice(0,3).map(x=>'▶ 선택과목 ['+x.id+'] — '+x.name));
     if(year>=5&&!st.darkAccess)options.push('▶ 금서 열람 — 위험한 지식에 접근한다');
+    if(year>=6 && !st.licences?.apparition) options.push('▶ 마법 자격시험 [apparition] — 순간이동 면허');
+    if(year>=7 && !st.licences?.animagus) options.push('▶ 마법 자격시험 [animagus] — 애니마구스 등록');
+    if(st.exams.OWL_1996)title+='\n\n5학년 O.W.L. 성적: '+Object.entries(st.exams.OWL_1996).map(([id,g])=>(api.SUBJECTS.find(x=>x.id===id)?.name||id)+': '+g).join(', ');
   } else if(cmd.kind==='lessons'){
     const menu=api.practiceChoices(st,year,ctx,cmd.page);
     title='학년별 주문·마법약 실습\n\n'
@@ -11556,6 +11559,8 @@ function handleHogwartsMagicCommand(text){
         +'\n판정 '+result.roll+' / 성공 기준 '+result.threshold+' · '+result.rank
         +(result.violation?'\n사용한 마법에 관한 징계·조사 기록이 남았다.':'')
       :'시전할 수 없다.\n\n'+result.reason;
+    st.lastCast=result.ok?result:null;
+    if(result.ok&&result.violation){gameState.flags=gameState.flags||{};gameState.flags['마법법위반기록']=true;}
     syncHogwartsMagicSkills();
     options=['▶ 마법 수업 — 주문 연습','▶ 마법 도감 — 교과서로'];
   } else if(cmd.kind==='elective'){
@@ -11563,6 +11568,10 @@ function handleHogwartsMagicCommand(text){
     title=result.ok?('선택과목: '+(result.subject||'이미 신청됨')+'\n\n현재 선택 과목: '
       +st.electives.map(id=>api.SUBJECTS.find(x=>x.id===id)?.name).join(', ')):
       '신청할 수 없다.\n\n'+result.reason;
+    options=['▶ 마법 도감 — 교과서로'];
+  } else if(cmd.kind==='certify'){
+    const result=api.certify(st,cmd.id,ctx);
+    title=(result.ok?'자격 취득\n\n':'시험·등록 결과\n\n')+result.reason;
     options=['▶ 마법 도감 — 교과서로'];
   } else if(cmd.kind==='dark'){
     const result=api.seekDarkAccess(st,ctx);
@@ -11577,7 +11586,7 @@ function handleHogwartsMagicCommand(text){
     title='마법책을 덮고 다시 주변을 살핀다.';
     options=hogwartsMagicBack();
   }
-  options.push(close);
+  if(cmd.kind!=='close')options.push(close);
   renderFixedStep(title, [...new Set(options)], {resetSprites:false});
   autoSave();
   return true;
