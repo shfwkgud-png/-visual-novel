@@ -25,7 +25,7 @@ assert(curated.every(x=>x.participation.options.every(p=>p.label.length>=12 &&
 assert.equal(catalog.summary.chapters,198);
 assert.equal(catalog.summary.beats,433);
 assert.equal(catalog.summary.interactive+catalog.summary.paired+catalog.summary.offscreen,198);
-assert.equal(catalog.causalEdges.length,48);
+assert.equal(catalog.causalEdges.length,55);
 assert.equal(new Set(catalog.chapters.map(x=>x.id)).size,198);
 assert.equal(new Set(catalog.chapters.map(x=>x.arrival)).size,198);
 assert.equal(catalog.chapters.reduce((n,c)=>n+c.beats.length,0),433);
@@ -145,15 +145,15 @@ assert.equal(altered.state.statuses.b01c17s01,'altered');
 assert.equal(altered.state.statuses.b01c17s02,'altered');
 assert(!chapters.ending(catalog,'b06c27',restored,altered.state));
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/chapter-director.js?v=6'));
-assert(html.includes('storypacks/hogwarts-au/world.js?v=12'));
+assert(html.includes('storypacks/hogwarts-au/chapter-director.js?v=7'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=13'));
 assert(html.includes('PandoraHogwartsWorld.installChapterCatalog'));
 assert(html.includes('PandoraHogwartsChapters.currentContext'));
 assert(html.includes('PandoraHogwartsChapters.ending('));
-assert(html.includes('hw.nextEvent(world,clock.date,clock.slot)'));
+assert(html.includes('hw.nextEvent(world,clock.date,clock.slot,clock.canon)'));
 new Function(html.slice(html.indexOf('<script>')+8,html.lastIndexOf('</script>')));
 console.log(JSON.stringify({test:'hogwarts-all-chapters',result:'PASS',
-  chapters:catalog.summary.chapters,beats:catalog.summary.beats,causalEdges:48,
+  chapters:catalog.summary.chapters,beats:catalog.summary.beats,causalEdges:55,
   interactive:catalog.summary.interactive,linked:catalog.summary.paired,
   offscreen:catalog.summary.offscreen,playableEncounters:observed.length,
   sevenYearCompletion:date.date}));
