@@ -835,6 +835,24 @@ async function hogwartsArtCheck(ctx) {
     await drainDialogue(page);
     await page.locator('#choiceBox .choice-btn').filter({ hasText: '슬리데린' }).click();
     await page.waitForFunction(() => gameState.hogwarts.house === '슬리데린' && !sendBtn.disabled);
+    // New Hogwarts opening: the headmaster's welcome, feast, prefect escort
+    // and the Slytherin entrance all play as ordinary narration (no choice).
+    await drainDialogue(page);
+    const arrival=await page.evaluate(() => ({
+      finished:gameState.hogwarts.scene.arrivalCompleted,
+      visited:gameState.hogwarts.scene.visited,
+      bg:currentBgFile,
+      speakers:dialogueLog.map(x=>x.speaker)
+    }));
+    assert.equal(arrival.finished,true);
+    assert(arrival.visited.arrival_speech && arrival.visited.arrival_feast &&
+      arrival.visited.arrival_entrance && arrival.visited.arrival_common_room);
+    assert.equal(arrival.bg,'slytherin_common_room');
+    assert(arrival.speakers.some(x=>x==='덤블도어'));
+    assert(arrival.speakers.some(x=>x==='슬리데린 반장'));
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'다음 장면'}).click();
+    await drainDialogue(page);
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'헤르미온느와 도서관'}).click();
     await drainDialogue(page);
     await page.waitForFunction(() => ['harry', 'ron'].every(id => document.getElementById('sprite_' + id)?.naturalWidth === 1024)
       && bgLayer.style.backgroundImage.includes('great_hall_portrait.webp'));
@@ -900,6 +918,10 @@ async function hogwartsArtCheck(ctx) {
     });
     assert.deepEqual(rolled, ['harry', 'hermione']);
     await page.evaluate(() => {
+      // Rendering asset assay: the actual entrance gate is tested above and
+      // in tests-hogwarts-scenes. Mark it completed before setting the room
+      // background directly in this isolated visual/sprite test.
+      gameState.hogwarts.scene.lastLocation='slytherin_common_room';
       setBg('common_room');
       rebuildSprites(['fred', 'aberforth'], 'fred', 'angry', 'upper');
     });
