@@ -235,6 +235,9 @@
       s.visited[beat.id]=1;
       if(beat.background)s.lastLocation=beat.background;
       if(beat.id==='arrival_common_room')s.arrivalCompleted=true;
+      if(s.cursor>=s.queue.length && !s.followUp){
+        s.phase='idle';s.queue=[];s.cursor=0;
+      }
       return {mode:'beat',beat};
     }
     if(s.followUp){
