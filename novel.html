@@ -2165,7 +2165,7 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
 <script src="storypacks/hogwarts-au/story.js?v=8"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=4"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=5"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
 <script src="storypacks/hogwarts-au/world.js?v=8"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -15173,9 +15173,11 @@ async function handlePlayerInput(text) {
         gameState.combat = false; gameState._combatStart = null;
         await syncHogwartsCanon(); // commit canon only AFTER participant outcome is known
         updateStatusUI();
-        renderFixedStep('그날의 일은 그렇게 마무리됐다.\n\n'+result.offscreen+
-          '\n\n누가 무엇을 기억하는지는 다음 만남에서 확인할 수 있다.',
-          ['▶ 다음 장면 — 다음 사건·일상으로 진행'],{resetSprites:true});
+        const after=window.PandoraHogwartsScenes
+          ? PandoraHogwartsScenes.outcomeBeat(result,world) : null;
+        renderFixedStep(after?.narration || ('그날의 사건이 마무리됐다.\n\n'+result.offscreen),
+          ['▶ 다음 장면 — 다음 사건·일상으로 진행'],
+          {dialogue:after?.dialogue || [],resetSprites:false});
         autoSave(); return;
       }
       if (hw.isNext(text)) {
@@ -15251,9 +15253,12 @@ async function handlePlayerInput(text) {
           const skipped=hw.finish(world);
           gameState.event=null;
           await syncHogwartsCanon(); // unseen historical events still occur off-screen
-          renderFixedStep('당신은 이 사건에 직접 참여하지 않았다.\n\n'+skipped.offscreen+
-            '\n\n그 시간은 되돌릴 수 없다.', ['▶ 다음 장면 — 다음 사건·일상으로 진행'],
-            {background:scene.background,resetSprites:true});
+          const after=window.PandoraHogwartsScenes
+            ? PandoraHogwartsScenes.outcomeBeat(skipped,world) : null;
+          renderFixedStep('당신은 현장에서 물러나기로 했다.\n\n'+
+            (after?.narration || skipped.offscreen),
+            ['▶ 다음 장면 — 다음 사건·일상으로 진행'],
+            {dialogue:after?.dialogue || [],resetSprites:false});
           autoSave();return;
         }
         dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,
