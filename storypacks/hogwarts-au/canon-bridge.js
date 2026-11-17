@@ -81,7 +81,12 @@
   function compile(canonEngine,index,books,cast){
     if(!canonEngine)throw Error('Hogwarts canon engine missing');
     const ledger=canonEngine.compile(index,books,cast);
-    return Object.freeze({engine:canonEngine,ledger,dates:schedule(ledger)});
+    const worldTypes={pettigrew_captured:'boolean',cabinet_entry_blocked:'boolean',
+      draco_disarm_prevented:'boolean',albus_survived_tower:'boolean',
+      graveyard_ritual_failed:'boolean',quirrell_exposed_early:'boolean',stone_under_staff_guard:'boolean'};
+    for(const e of ledger.events)for(const [key,value] of Object.entries(e.effects))
+      worldTypes[key]=typeof value;
+    return Object.freeze({engine:canonEngine,ledger,dates:schedule(ledger),worldTypes});
   }
   async function load(fetchImpl,engine){
     if(cached)return cached;
@@ -107,6 +112,57 @@
     }
     return bundle.engine.createState();
   }
+  function readSceneChanges(bundle,changes,scene,state){
+    if(changes==null)return [];
+    if(!Array.isArray(changes)||changes.length>12)throw Error('호그와트 사건 결과 형식 오류');
+    const seen=new Set();
+    return changes.map(change=>{
+      const event=change && typeof change.id==='string' &&
+        Object.prototype.hasOwnProperty.call(bundle.ledger.byId,change.id) && bundle.ledger.byId[change.id];
+      if(!event || seen.has(event.id) || !['altered','prevented'].includes(change.outcome) ||
+         typeof change.evidence!=='string' || change.evidence.trim().length<8 ||
+         !scene.includes(change.evidence) || typeof change.summary!=='string' ||
+         change.summary.trim().length<8 || (state && event.index<state.cursor &&
+           state.statuses[event.id]!=='pending'))throw Error('호그와트 사건 결과의 장면 근거를 확인할 수 없습니다');
+      seen.add(event.id);
+      const effects={};
+      if(change.effects!=null && (typeof change.effects!=='object'||Array.isArray(change.effects)))
+        throw Error('호그와트 세계 상태 형식 오류');
+      for(const [key,value] of Object.entries(change.effects||{})){
+        if(!Object.prototype.hasOwnProperty.call(bundle.worldTypes,key) || typeof value!==bundle.worldTypes[key] ||
+           (typeof value==='string'&&value.length>100) ||
+           (typeof value==='number'&&!Number.isFinite(value)))throw Error('확인되지 않은 호그와트 세계 상태');
+        effects[key]=value;
+      }
+      if(change.outcome==='altered'&&!Object.keys(effects).length)
+        throw Error('변경된 사건에는 실제 세계 상태가 필요합니다');
+      return {id:event.id,outcome:change.outcome,reason:change.summary.trim().slice(0,600),
+        evidence:change.evidence.slice(0,600),effects};
+    });
+  }
+  function outcomeContext(bundle,state,date){
+    if(!bundle)return '';
+    const landmarks=new Set(['b01c17s01','b03c20s01','b06c27s01','b06c27s02']);
+    const nearby=bundle.ledger.events.filter(e=>
+      (!state||e.index>=state.cursor||state.statuses[e.id]==='pending') &&
+      (state?.statuses[e.id]==='pending'||landmarks.has(e.id)||Math.abs(Date.parse(bundle.dates[e.id])-Date.parse(date))<=14*ISODAY));
+    return '\n[참조 가능한 사건 ID — 아직 일어나지 않은 사건의 예고는 결과가 아니다]\n'
+      +nearby.map(e=>e.id+' '+e.fact+' / 원래 상태 '+JSON.stringify(e.effects)).join('\n')
+      +'\n[세계 상태 키와 값의 형식 — 이번 장면이 실제 바꾼 값만]\n'+JSON.stringify(bundle.worldTypes)+'\n';
+  }
+  function stageSceneHistory(bundle,state,decisions){
+    const changes=new Map();
+    for(const decision of decisions||[])for(const change of decision.outcome?.canon||[])
+      changes.set(change.id,change);
+    for(const change of changes.values()){
+      const event=bundle.ledger.byId[change.id];
+      if(!event)continue;
+      const options={outcome:change.outcome,reason:change.reason,
+        evidence:'displayed_scene: '+change.evidence,effects:change.effects};
+      if(state.statuses[event.id]==='pending')bundle.engine.resolvePending(bundle.ledger,state,event.id,options);
+      else if(event.index>=state.cursor)bundle.engine.intervene(bundle.ledger,state,event.id,options);
+    }
+  }
   function applyVerifiedBranch(bundle,state,decisions){
     // The player can unlock this only by collecting independent clues then
     // choosing to notify the headmaster before the chamber confrontation.
@@ -129,14 +185,17 @@
     const routes=[
       {id:'pettigrew_crossroads',choice:'capture',target:'b03c20s01',
        outcome:'prevented',
+       effects:{pettigrew_captured:true},
        reason:'루핀과 증거를 준비한 플레이어가 페티그루의 원작 탈출을 막고 구금한 확정 분기',
        evidence:'hogwarts_verified_capture_with_prior_chapter_clues'},
       {id:'prince_tower',choice:'seal_cabinet',target:'b06c27s01',
        outcome:'prevented',
+       effects:{cabinet_entry_blocked:true},
        reason:'수개월의 독극물·저주 물품 조사를 통해 장롱 침입 경로를 사전에 봉쇄한 확정 분기',
        evidence:'hogwarts_verified_cabinet_closure_from_investigation'},
       {id:'prince_tower',choice:'guard_wand',target:'b06c27s02',
        outcome:'prevented',
+       effects:{draco_disarm_prevented:true,elder_wand_allegiance:'albus'},
        reason:'말포이의 신뢰를 얻어 덤블도어의 무장해제를 실제로 저지한 확정 분기',
        evidence:'hogwarts_verified_wand_guard_with_prior_trust'}
     ];
@@ -145,7 +204,7 @@
       const e=bundle.ledger.byId[r.target];
       if(!e || e.index<state.cursor || state.futureInterventions[r.target])continue;
       bundle.engine.intervene(bundle.ledger,state,r.target,{
-        outcome:r.outcome,reason:r.reason,evidence:r.evidence
+        outcome:r.outcome,reason:r.reason,evidence:r.evidence,effects:r.effects
       });
     }
   }
@@ -156,7 +215,7 @@
         outcome,reason,evidence,effects:effects||{}
       });return true;
     };
-    if(hasChoice(decisions,'pettigrew_crossroads','capture')&&
+    if(state.world.pettigrew_captured===true&&
        state.statuses.b03c20s01==='prevented'){
       state.world.pettigrew_captured=true;
       resolve('b04c32s02','altered',
@@ -164,7 +223,7 @@
         {graveyard_ritual_failed:true,voldemort_stage:'disembodied'},
         'verified_captured_pettigrew_disrupts_resurrection');
     }
-    if(hasChoice(decisions,'prince_tower','seal_cabinet')&&
+    if(state.world.cabinet_entry_blocked===true&&
        state.statuses.b06c27s01==='prevented'){
       state.world.cabinet_entry_blocked=true;
       if(resolve('b06c27s03','prevented',
@@ -173,7 +232,7 @@
         state.world.albus_survived_tower=true;
       }
     }
-    if(hasChoice(decisions,'prince_tower','guard_wand')&&
+    if(state.world.draco_disarm_prevented===true&&
        state.statuses.b06c27s02==='prevented'){
       state.world.draco_disarm_prevented=true;
       resolve('b07c23s04','prevented',
@@ -187,6 +246,7 @@
     const state=restoredOrFresh(bundle,record);
     applyVerifiedBranch(bundle,state,decisions);
     stageEarnedHistory(bundle,state,decisions);
+    stageSceneHistory(bundle,state,decisions);
     let target=null;
     for(const e of bundle.ledger.events) {
       if(bundle.dates[e.id]<=date)target=e;
@@ -195,7 +255,7 @@
     const advanced=target?bundle.engine.advanceTo(bundle.ledger,state,target.id,{explicitWitness:false}):[];
     // A changed original confrontation cannot be silently re-run with its
     // original consequences; resolve the dependent chain via a distinct outcome.
-    if(Array.isArray(decisions)&&decisions.some(x=>x.id==='stone_finale'&&x.choice==='preempt')){
+    if(state.world.stone_under_staff_guard===true){
       const alternatives=[
         ['b01c17s02',{quirrell_alive:false,voldemort_stage:'disembodied',stone_destroyed:true}],
         ['b01c17s03',{stone_destroyed:true}]
@@ -230,5 +290,5 @@
       +'정사 사건이 다른 장소에서 일어나더라도 주인공을 자동으로 현장에 이동시키지 마라.\n';
   }
   function status(){return {loaded:!!cached,error:loadError};}
-  return Object.freeze({compile,load,sync,context,schedule,status,restoredOrFresh});
+  return Object.freeze({compile,load,sync,context,schedule,status,restoredOrFresh,readSceneChanges,outcomeContext});
 });

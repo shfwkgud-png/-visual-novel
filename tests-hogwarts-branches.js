@@ -77,6 +77,9 @@ const altEvent=W.nextEvent(alternateWorld,'1997-06-12',3,sstate);
 assert.equal(altEvent.id,'tower_survival_morning');
 const altOffer=W.offer(alternateWorld,altEvent);
 assert(W.start(alternateWorld,altOffer.choices[0]));
+const morning='교수들은 봉쇄된 장롱을 점검했다. 살아남은 덤블도어가 학생들의 안전을 확인했다.';
+assert(W.recordOutcome(alternateWorld,{event_id:altEvent.id,summary:morning,evidence:morning,
+  complete:true,choice:W.parseChoice(altOffer.choices[0]).optionId,ties:{}},morning,{date:altEvent.date,turn:1}));
 assert(W.finish(alternateWorld));
 const later=W.nextEvent(alternateWorld,'1997-06-13',1,sstate);
 assert(!['b06c29','b06c30','tower_survival_morning'].includes(later?.id),

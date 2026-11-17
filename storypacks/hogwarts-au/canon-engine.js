@@ -122,7 +122,7 @@
       const loc = opts.playerPlace || state.playerPlace;
       if (opts.explicitWitness === true && loc && loc === event.setting && event.access !== 'gm')
         state.witnessed[event.id] = '직접 현장 목격';
-    } else if (result === 'altered') {
+    } else if (result === 'altered' || result === 'prevented') {
       Object.assign(state.world, intervention.effects);
     } else if (result === 'pending') {
       state.pending[event.id] = reason;
@@ -172,7 +172,7 @@
     assert(typeof resolution.evidence === 'string' && resolution.evidence.trim().length >= 6, 'evidence missing');
     assert(resolution.outcome !== 'altered' || isRecord(resolution.effects), 'changed branch effects missing');
     state.statuses[id] = resolution.outcome;
-    if (resolution.outcome === 'altered') Object.assign(state.world, resolution.effects);
+    Object.assign(state.world, resolution.effects || {});
     delete state.pending[id];
     state.journal.push({ id, outcome:resolution.outcome, reason:resolution.reason, resolution:true });
     return true;
@@ -198,7 +198,8 @@
       const personallyKnown = own(state.witnessed, e.id);
       if (e.access !== 'public' && !personallyKnown) continue;
       if (e.access === 'gm' && !personallyKnown) continue;
-      known.push({ id:e.id, chapter:e.chapter, book:e.book, fact:e.fact,
+      const changed=status==='altered' && [...state.journal].reverse().find(x=>x.id===e.id);
+      known.push({ id:e.id, chapter:e.chapter, book:e.book, fact:changed ? changed.reason : e.fact,
         source:personallyKnown ? state.witnessed[e.id] : '공개된 사건' });
     }
     return known.slice(-limit);

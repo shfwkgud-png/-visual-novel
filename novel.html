@@ -2166,14 +2166,14 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
 <script src="storypacks/hogwarts-au/story.js?v=9"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=8"></script>
-<script src="storypacks/hogwarts-au/time.js?v=3"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4"></script>
 <script src="storypacks/hogwarts-au/profile.js?v=1"></script>
 <script src="storypacks/hogwarts-au/magic.js?v=5"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=7"></script>
-<script src="storypacks/hogwarts-au/world.js?v=14"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=5"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=8"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=6"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -2451,7 +2451,7 @@ function stateExtractContract(rpg) {
 - player.abilities는 새로 확인·습득한 능력, player.note는 바뀐 현재 상황이다. player.injuries는 부상 변화가 확인된 턴에만 현재 남은 전체 목록을 보내고, 이번 장면에서 명시적으로 치료된 것만 뺀다. 상태가 불분명하면 기존 부상을 보존한다.
 - flags는 새로 확정된 설정·진행·비밀 단계만 담는다. 의도·계획·비유·가정·선택지를 이미 성립한 사건으로 기록하지 않는다.
 ${rpg ? '- RPG 성장: player.stats는 바뀐 능력치의 새 값(1~100), player.skills는 실제 사용·수련·습득한 스킬의 {rank, xp}, player.tier와 chars의 tier/allegiance는 근거 있는 변화만 기록한다. 현재 수치를 모르면 임의의 초기값·승급을 만들지 않는다.\n' : ''}- choices는 현재 장면에서 가능한 행동·대사 2~4개다. 실제 그 자리에 있는 대상만 사용하고, 서로 다른 방향이며 적어도 하나는 상황을 바꾸는 구체적 선택이어야 한다. combat 중에도 생성하며 표시 여부는 앱이 결정한다.
-- chronicle은 이번 턴에 새로 확정된 사실 0~3줄이다. 사용자 설정 정정·약속·죽음·비밀 공개·관계 전환을 우선하고, 추측·반복·문체 감상은 넣지 않는다.${typeof PandoraConsistency !== 'undefined' ? PandoraConsistency.responseContract() : ''}`;
+- chronicle은 이번 턴에 새로 확정된 사실 0~3줄이다. 사용자 설정 정정·약속·죽음·비밀 공개·관계 전환을 우선하고, 추측·반복·문체 감상은 넣지 않는다.${typeof PandoraConsistency !== 'undefined' ? PandoraConsistency.responseContract() : ''}${typeof hogwartsOutcomeContract==='function'?hogwartsOutcomeContract():''}`;
 }
 function sceneOutputContract(split, rpg = false) {
   const schema = {
@@ -11385,28 +11385,7 @@ async function syncHogwartsCanon() {
         try { console.warn('[Hogwarts chapter playbook]',e); } catch {}
       }
     }
-    // A player-facing event is still undecided. Offscreen canon for its
-    // date must not resolve BEFORE the player chooses (Halloween troll etc).
-    let through=hp.date;
-    if (hp.world&&(hp.world.pending||hp.world.active)) {
-      const d=new Date(hp.date+'T00:00:00Z');
-      d.setUTCDate(d.getUTCDate()-1);
-      through=d.toISOString().slice(0,10);
-    }
-    const result=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,hp.canon,through,
-      hp.world&&hp.world.decisions||[]);
-    hp.canon=result.state;
-    if (chapterCatalog && hp.chapters && PandoraHogwartsChapters.valid(hp.chapters))
-      PandoraHogwartsChapters.sync(chapterCatalog,hp.chapters,through,hp.canon,hp.world);
-    if (window.PandoraHogwartsScenes && PandoraHogwartsScenes.valid(hp.scene) &&
-        hp.scene.phase==='transition' && hp.scene.cursor===0 && result.advanced.length) {
-      const publicEvents=result.advanced.filter(x=>x.outcome==='canonical')
-        .map(x=>HOGWARTS_CANON_BUNDLE.ledger.byId[x.id])
-        .filter(x=>x && x.access==='public');
-      PandoraHogwartsScenes.injectNews(hp.scene,publicEvents);
-    }
-    hp.canonProgress=result.progress.committed;
-    delete hp.canonSyncError;
+    commitHogwartsCanon(hp,chapterCatalog);
     return true;
   } catch(e) {
     hp.canonSyncError=String(e&&e.message||e);
@@ -11416,6 +11395,29 @@ async function syncHogwartsCanon() {
   }
 }
 
+// Loaded assets let the scene receipt and its world consequences save atomically.
+function commitHogwartsCanon(hp,chapterCatalog=window.PandoraHogwartsChapters?.getLoaded()){
+  let through=hp.date;
+  if(hp.world&&(hp.world.pending||hp.world.active)){
+    const held=hp.world.active?.at||hp.world.pending?.offeredAt||hp.date;
+    const d=new Date((held<hp.date?held:hp.date)+'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate()-1);through=d.toISOString().slice(0,10);
+  }
+  const decisions=(hp.world?.decisions||[]).concat(hp.world?.active?.outcome
+    ?[{id:hp.world.active.id,outcome:hp.world.active.outcome}]:[]);
+  const result=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,hp.canon,through,decisions);
+  hp.canon=result.state;
+  if(chapterCatalog&&hp.chapters&&PandoraHogwartsChapters.valid(hp.chapters))
+    PandoraHogwartsChapters.sync(chapterCatalog,hp.chapters,through,hp.canon,hp.world);
+  if(window.PandoraHogwartsScenes&&PandoraHogwartsScenes.valid(hp.scene)&&
+     hp.scene.phase==='transition'&&hp.scene.cursor===0&&result.advanced.length){
+    const publicEvents=result.advanced.filter(x=>x.outcome==='canonical')
+      .map(x=>HOGWARTS_CANON_BUNDLE.ledger.byId[x.id]).filter(x=>x?.access==='public');
+    PandoraHogwartsScenes.injectNews(hp.scene,publicEvents);
+  }
+  hp.canonProgress=result.progress.committed;delete hp.canonSyncError;
+}
+
 // Hogwarts-only scene auto-play (narration taps, never consent/choice prompts).
 // Every beat is committed to the ordinary save-state before it is displayed.
 function runHogwartsAutomaticScene() {
@@ -11423,11 +11425,12 @@ function runHogwartsAutomaticScene() {
       !window.PandoraHogwartsScenes || !gameState?.hogwarts || replaying ||
       window._isRestoring || window._stream?.active) return false;
   const hp=gameState.hogwarts, director=PandoraHogwartsScenes;
-  if (!director.valid(hp.scene)||!director.hasPending(hp.scene)) return false;
+  if (!director.valid(hp.scene)||hp.scene.paused||!director.hasPending(hp.scene)) return false;
   const step=director.take(hp.scene);
   if (!step) return false;
   if (step.mode==='beat') {
     const beat=step.beat;
+    hp.scene.paused=beat.id.startsWith('arrival_')&&director.hasPending(hp.scene);
     if (beat.slot!==null && beat.slot!==undefined && beat.slot>hp.slot) {
       PandoraHogwartsTime.moveToScene(hp,hp.date,beat.slot);
       gameState.time=PandoraHogwartsTime.display(hp);
@@ -11465,6 +11468,14 @@ function runHogwartsAutomaticScene() {
     }
   }
   return false;
+}
+
+function continueHogwartsArrival(){
+  const scene=STORY.id==='hogwarts'&&gameState?.hogwarts?.scene;
+  if(!scene?.paused||sendBtn.disabled||window._inputRequest||dialogueQueue.length)return false;
+  scene.paused=false;inputMode=false;waitingForTap=false;inputBar.style.display='none';
+  if(!runHogwartsAutomaticScene())enterInputMode();
+  return true;
 }
 
 // ── Hogwarts course / spellbook / law interface, confined to Hogwarts ──
@@ -13738,7 +13749,8 @@ function applyStateExtract(task, sx) {
     }
     // Replaying the saved prose does not mean this uncommitted state was applied.
     replaying = false;
-    processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, meta.activeCharIds, null, true);
+    processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, meta.activeCharIds, null, true,
+      {scene:merged,userText:meta.userText});
     if (consistencyReview) PandoraConsistency.commit(gameState, consistencyReview);
     commitPendingEventFrom(sx, meta.pendingEvent, meta.turn);
     merged.state_update = sx.state_update;
@@ -13876,6 +13888,7 @@ ${settled || '없음'}
 [장면 인물] ${present || '없음'}
 ${consistency && typeof PandoraConsistency !== 'undefined' ? PandoraConsistency.contextPrompt(consistency) : ''}
 [플레이어 입력] ${userText || '(없음)'}
+[본편 응답의 현재 시각 — 실제 시간 경과가 본문으로 입증될 때만 반영] ${mainData.time || mainData.state_update?.time || '변경 없음'}
 [이번 턴 장면]
 ${scene}`;
     const raw = await llmSmall(sys, usr, 2500, 0.3, { task: 'state', json: true });
@@ -14019,28 +14032,56 @@ function fixSpeakerIds(data) {
 //   (tickTimeSlot·resetTimeSlot·timeFlowNudge·advanceTimeSlotIfStale·TIME_SLOT_* 전부 제거.
 //    세이브의 _slotTurns 잔재는 무해 — 아무도 안 읽는다.)
 
-function applyHogwartsSceneState(data) {
+function hogwartsOutcomeContract(){
+  if(typeof STORY==='undefined'||STORY.id!=='hogwarts'||!window.PandoraHogwartsWorld||
+     !gameState?.hogwarts?.world||!PandoraHogwartsWorld.valid(gameState.hogwarts.world))return '';
+  return PandoraHogwartsWorld.outcomeContract(gameState.hogwarts.world)
+    +(window.PandoraHogwartsBridge?PandoraHogwartsBridge.outcomeContext(
+      HOGWARTS_CANON_BUNDLE,gameState.hogwarts.canon,gameState.hogwarts.date):'');
+}
+function applyHogwartsSceneState(data,activeCharIds=[],source) {
   if (STORY.id !== 'hogwarts' || replaying || !window.PandoraHogwartsTime ||
       !PandoraHogwartsTime.valid(gameState.hogwarts)) return;
   const hp = gameState.hogwarts, before = hp.date, state = data.state_update || {};
-  PandoraHogwartsTime.readSceneTime(hp, data.time || state.time);
+  const result=state.hogwarts,world=hp.world;
+  if(result && window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(world)){
+    const shown=source?.scene||data;
+    const scene=[shown.narration||'',...(shown.dialogue||[]).map(d=>d.text||'')].join('\n');
+    if(result.time && !PandoraHogwartsTime.readSceneTime(hp,result.time.value,
+      {...result.time,scene,userText:source?.userText??window._genText??''}))
+      throw Error('실제 시간 경과의 근거와 날짜가 맞지 않습니다');
+    if(result.canon?.length && !HOGWARTS_CANON_BUNDLE)throw Error('사건 장부를 불러온 뒤 결과를 다시 확인해야 합니다');
+    const canon=HOGWARTS_CANON_BUNDLE
+      ? PandoraHogwartsBridge.readSceneChanges(HOGWARTS_CANON_BUNDLE,result.canon,scene,hp.canon) : [];
+    const actors=[...new Set([...activeCharIds,...(shown.dialogue||[]).map(d=>d.char_id)])]
+      .filter(id=>Object.prototype.hasOwnProperty.call(CHARACTERS,id));
+    if(!PandoraHogwartsWorld.recordOutcome(world,{...result,canon},scene,
+      {date:hp.date,turn:turnCount,actors}))throw Error('장면에서 실제 확인된 결과만 기록할 수 있습니다');
+  }else if(data.state_update && world?.active?.needsResult){
+    throw Error('이번 행동의 실제 결과가 누락되어 다시 확인해야 합니다');
+  }
   if (hp.world?.active && window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(hp.world) &&
-      (hp.date > hp.world.active.at || (Object.prototype.hasOwnProperty.call(state,'event') && state.event === null))) {
+      result && (result.complete===true || hp.date > hp.world.active.at)) {
     PandoraHogwartsWorld.finish(hp.world);
     gameState.event = null;
   }
+  if(world?.active&&window.PandoraHogwartsWorld)gameState.event=PandoraHogwartsWorld.resume(world).title;
   gameState.time = PandoraHogwartsTime.display(hp);
   if (hp.house) {
     gameState.flags = {...(gameState.flags || {}), 학년도:PandoraHogwartsTime.studyYear(hp.date)};
     if (!gameState.status || /^호그와트 [1-7]학년/.test(gameState.status))
       gameState.status = '호그와트 '+gameState.flags.학년도+'학년 · '+hp.house;
   }
-  if (hp.date !== before && window.PandoraHogwartsMagic && PandoraHogwartsMagic.valid(hp.magic)) {
-    PandoraHogwartsMagic.passiveSchool(hp.magic, before, hp.date);
-    syncHogwartsMagicSkills();
+  if (hp.date !== before) {
+    if(hp.scene)delete hp.scene.interrupted;
+    if(window.PandoraHogwartsMagic && PandoraHogwartsMagic.valid(hp.magic)){
+      PandoraHogwartsMagic.passiveSchool(hp.magic, before, hp.date);
+      syncHogwartsMagicSkills();
+    }
   }
+  if(result&&HOGWARTS_CANON_BUNDLE)commitHogwartsCanon(hp);
 }
-function processResponse(data, activeCharIds, streamed, stateOnly) {
+function processResponse(data, activeCharIds, streamed, stateOnly, source) {
   // ★stateOnly(2026-08-24 분리 파이프라인): 후행 상태 추출 결과만 적용하는 모드.
   //   화면(배경·CG·무드·대사 큐)은 본편이 이미 처리했으므로 건드리지 않고,
   //   state_update·chronicle 적용부만 공유한 뒤 렌더 경로 진입 전에 빠져나간다.
@@ -14082,7 +14123,6 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
     }
   } catch {}
   }   // ← !stateOnly (화면·연출 처리 끝. 이하 상태 적용부는 stateOnly와 공유)
-  if (typeof applyHogwartsSceneState === 'function') applyHogwartsSceneState(data);
   // ★분리 모드 본편의 시간(2026-09-16 실세이브: 60턴 기록 중 time 1건 — 한 장면만 보는 추출기는 날짜를 거의 안 민다).
   //   전체 맥락을 가진 본편 모델이 최상위 time을 쓴다 — 추출기와 같은 단조 가드를 거치므로 되돌아가지는 않는다.
   if (STORY.id !== 'hogwarts' && typeof data.time === 'string' && data.time.trim() && !(STORY.id === 'idol' && gameState.idol)) {
@@ -14296,6 +14336,7 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
     }
     updateStatusUI();
   }
+  if (typeof applyHogwartsSceneState === 'function') applyHogwartsSceneState(data,activeCharIds,source);
   // Auto-register any speaking NPC as "met" even without explicit state_update
   (data.dialogue || []).forEach(d => {
     if (d.char_id && CHARACTERS[d.char_id] && !gameState.metChars[d.char_id]) {
@@ -14666,6 +14707,12 @@ function showNextDialogue() {
     // ★분리 모드: 후행 추출이 아직 도는 중이면 폴백 선택지를 만들지 않고 입력창만 연다 —
     //   후행이 도착하면 fireStateExtract가 진짜 선택지를 표시한다(이중 생성·경합 방지).
     if ((window._splitExtractPending || pendingStateExtractEntry()) && window._pendingChoices == null) { enterInputMode(); return; }
+    if(STORY.id==='hogwarts'&&gameState?.hogwarts?.scene?.paused){
+      enterInputMode();waitingForTap=true;
+      const hint=document.getElementById('continueHint');
+      hint.textContent='▼ 탭하여 계속';hint.style.display='block';
+      return;
+    }
     if (typeof runHogwartsAutomaticScene==='function' && runHogwartsAutomaticScene()) return;
     showChoices(window._pendingChoices);
     return;
@@ -14928,6 +14975,7 @@ function scheduleAuto() {
 function navNext() {
   clearTimeout(autoTimer);
   if (historyMode) { historyForward(); return; }
+  if(inputMode && typeof continueHogwartsArrival==='function'&&continueHogwartsArrival())return;
   if (inputMode) return;
   if (isShowing) {
     clearInterval(window._typeTimer);
@@ -14973,6 +15021,7 @@ function handleTap(x) {
   // ★"입력 대기인데 미표시 대사가 큐에 남음"은 모순 상태(스트림 종료·고정 스텝 등 레이스로 발생) —
   //   큐가 남아 있으면 입력 모드여도 탭으로 이어서 재생한다(큐 소진 시 showNextDialogue가 입력을 다시 연다)
   if (inputMode) {
+    if(typeof continueHogwartsArrival==='function'&&continueHogwartsArrival())return;
     if (dialogueQueue.length === 0) return;
     inputMode = false;
     inputBar.style.display = 'none';
@@ -15394,6 +15443,8 @@ async function handlePlayerInput(text) {
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
   if (idolRunInjected(text)) return;
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
+  if(STORY.id==='hogwarts'&&gameState?.hogwarts?.scene?.paused&&window.PandoraHogwartsScenes)
+    PandoraHogwartsScenes.interrupt(gameState.hogwarts.scene);
   if (STORY.id==='hogwarts' && gameState?.hogwarts) await syncHogwartsCanon();
   if (typeof handleHogwartsMagicCommand==='function' && handleHogwartsMagicCommand(text))return;
   if (typeof handleHogwartsDarkResearch==='function' && handleHogwartsDarkResearch(text))return;
@@ -15437,8 +15488,10 @@ async function handlePlayerInput(text) {
       if (hw.isFinish(text)) {
         const result = hw.finish(world);
         if (!result) {
-          renderFixedStep('현재 진행 중인 사건이 없습니다. 다음 장면으로 이동하거나 자유롭게 행동할 수 있습니다.',
-            ['▶ 다음 장면 — 다음 사건·일상으로 진행']);
+          renderFixedStep(world.active
+            ? '아직 방금 행동의 결과를 확인하지 못했습니다. 다시 답변을 받거나 대화를 이어가 주세요.'
+            : '현재 진행 중인 사건이 없습니다. 다음 장면으로 이동하거나 자유롭게 행동할 수 있습니다.',
+            world.active ? null : ['▶ 다음 장면 — 다음 사건·일상으로 진행']);
           return;
         }
         gameState.event = null;

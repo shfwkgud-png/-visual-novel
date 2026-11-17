@@ -18,6 +18,15 @@ let tests=0;
 const savedAction={speaker:'퍼시 위즐리',char_id:'percy',text:D.HOUSES['그리핀도르'].arrival.answer};
 assert.equal(D.normalizeDialogue({...savedAction}).speaker,'나레이터');
 assert.equal(D.normalizeDialogue({...savedAction,isPlayer:true}).speaker,'퍼시 위즐리');
+const interrupted=D.createState();D.startArrival(interrupted,'그리핀도르','윤서');
+D.take(interrupted);interrupted.paused=true;
+const pausedSave=JSON.parse(JSON.stringify(interrupted));
+assert(D.interrupt(pausedSave));
+assert.equal(D.hasPending(pausedSave),false);
+assert.equal(pausedSave.arrivalCompleted,false);
+assert.equal(pausedSave.visited.arrival_speech,undefined);
+assert.equal(pausedSave.interrupted.length,5);
+assert.match(D.describe(pausedSave),/이미 일어난 일로 간주하지 않는다/);
 for(const house of HOUSE){
   const state=D.createState();
   assert.equal(D.startArrival(state,house,'윤서'),true);
@@ -103,6 +112,9 @@ assert(options.some(s=>s.includes('rescue')));
 const action=W.interrupt(st,options.find(x=>x.includes('teachers')));
 assert.equal(action.choice,'teachers');
 assert.equal(W.interrupt(st,options[0]),null);
+const reported='맥고나걸은 전달받은 위치를 확인한 뒤 교수들과 함께 복도를 봉쇄했다.';
+assert(W.recordOutcome(st,{event_id:'halloween_troll',summary:reported,evidence:reported,
+  complete:true,choice:'teachers',ties:{}},reported,{date:troll.date,turn:1}));
 assert.equal(W.finish(st).id,'halloween_troll');
 assert.equal(st.finished.halloween_troll.choice,'teachers');
 tests+=8;
@@ -114,6 +126,9 @@ assert.equal(W.startAmbient(st).id,'first_invitations');
 assert.equal(st.active.choice,'observe');
 assert.equal(st.agency.first_circle,undefined);
 assert(W.interrupt(st,personal.choices.find(x=>x.includes('hermione'))));
+const studied='헤르미온느와 함께 자료를 찾아 과제를 완성했다. 그녀는 도움에 감사를 표했다.';
+assert(W.recordOutcome(st,{event_id:invite.id,summary:studied,evidence:studied,
+  complete:true,choice:'hermione',ties:{hermione:3}},studied,{date:invite.date,turn:1,actors:['hermione']}));
 assert(W.finish(st));
 assert.equal(st.ties.hermione,3);
 tests+=5;
@@ -158,7 +173,7 @@ assert.equal(clock.slot,3);
 tests+=3;
 // All patches are guarded under STORY.id === hogwarts.
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=8'));
+assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=9'));
 assert(html.includes('PandoraHogwartsScenes.startArrival('));
 assert(html.includes('runHogwartsAutomaticScene()'));
 assert(html.includes('PandoraHogwartsScenes.startRoomReturn('));

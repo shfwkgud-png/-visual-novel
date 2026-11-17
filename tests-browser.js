@@ -275,8 +275,9 @@ async function createFixturePage(origin, mobile, options = {}) {
         held.reached.release();
         await held.resume.promise;
       }
-      const reply = options.reply ? options.reply(kind, user) : options.longSession ? longSessionReply(kind, net.mainTurn) : fixtureReply(kind, user);
-      if (options.integrated && kind === 'main') Object.assign(reply, fixtureReply('state', user));
+      const reply = options.reply ? options.reply(kind, user, body) : options.longSession ? longSessionReply(kind, net.mainTurn) : fixtureReply(kind, user);
+      if (options.integrated && kind === 'main') Object.assign(reply,
+        options.reply ? options.reply('state', user, body) : fixtureReply('state', user));
       await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse(reply) });
       return;
     }
@@ -834,12 +835,36 @@ async function longSessionChecks(ctx) {
 }
 
 
-function hogwartsArtReply(kind, user = '') {
-  if (kind !== 'main') return { state_update: {}, choices: ['친구들에게 인사한다'], chronicle: [] };
+const HOGWARTS_CAPTURE_SCENE='루핀은 결박된 페티그루의 지팡이를 회수했다. 도주를 막은 일행은 목격 증거와 함께 그를 마법부 경비대에 인계했다.';
+function hogwartsArtReply(kind, user = '', body = {}) {
+  const input=/\[플레이어 입력\] ([\s\S]*?)\n\[본편 응답/.exec(user)?.[1]||user;
+  const capture=/페티그루.{0,50}구금/.test(input);
+  const switched=input.includes('약속을 취소')&&input.includes('말포이');
+  const sleeping=/침실에서 잠을 잔다/.test(input);
+  const narration=capture?HOGWARTS_CAPTURE_SCENE:switched
+    ?'헤르미온느는 취소를 듣고 책을 덮었다. 말포이는 빈 의자를 내주며 모임에 온 당신을 맞았다.'
+    :sleeping?'기숙사 침대에서 잠든 뒤 다음 날 아침에 눈을 떴다.'
+    :'대연회장에서 분류가 끝나고 학생들이 이야기를 나눈다.';
+  if (kind !== 'main') {
+    const system=body.messages?.find(x=>x.role==='system')?.content||'';
+    const event=/event_id는 (null|"[^"]+")이다/.exec(system);
+    const button=capture&&input.includes('[호그와트 사건 진행 중 플레이어의 실제 개입]');
+    return {state_update:{event:null,hogwarts:{event_id:event?JSON.parse(event[1]):null,
+      summary:narration,evidence:narration,complete:capture||switched||sleeping,
+      choice:capture?(button?'capture':'freeform'):switched?'malfoy':null,
+      ties:capture?{lupin:2,harry:2}:switched?{hermione:-1,malfoy:2}:{},
+      canon:capture&&!button?[{id:'b03c20s01',outcome:'prevented',
+        summary:'페티그루가 구금되어 원작 탈출이 발생하지 않았다.',evidence:narration,effects:{pettigrew_captured:true}}]:[],
+      ...(sleeping?{time:{value:'1991-09-04 아침',days:1,evidence:narration}}:{})}},
+      choices:['친구들에게 인사한다'],chronicle:[]};
+  }
   return {
-    ...(/침실에서 잠을 잔다/.test(user) ? {time:'1991년 9월 4일 아침'} : {}),
-    narration: '대연회장에서 분류가 끝나고 학생들이 이야기를 나눈다.',
-    dialogue: [
+    ...(sleeping ? {time:'1991년 9월 4일 아침'} : {}),
+    narration,
+    dialogue: capture?[{char_id:'lupin',speaker:'리무스 루핀',text:'신병을 인계했네.'},
+      {char_id:'harry',speaker:'해리 포터',text:'도망치지 못했어.'}]:switched?[
+      {char_id:'hermione',speaker:'헤르미온느',text:'알겠어. 난 여기서 공부할게.'},
+      {char_id:'malfoy',speaker:'드레이코 말포이',text:'이쪽으로 와.'}]:[
       { char_id: 'mcgonagall', speaker: '맥고나걸 교수', emotion: 'normal', text: '슬리데린에 오신 것을 환영합니다.' },
       { char_id: 'malfoy', speaker: '드레이코 말포이', emotion: 'smile', text: '반가워. 길을 알아둘 필요는 있겠지.' },
       { char_id: 'hermione', speaker: '헤르미온느', emotion: 'smile', text: '책은 도서관에 있을 거야.' },
@@ -848,6 +873,101 @@ function hogwartsArtReply(kind, user = '') {
     ],
     background: 'great_hall', mood: null, cg: null, ending: null, combat: false
   };
+}
+
+async function hogwartsRPCheck(ctx){
+  const {page,net}=ctx;
+  await check(ctx,'Hogwarts arrival accepts a real interruption without a forced corridor jump',async()=>{
+    await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    await page.locator('#detailNewBtn').click();
+    await drainDialogue(page);
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'스토리 모드'}).click();
+    await page.waitForFunction(()=>window._startPhase==='setup');
+    await enterText(page,FIRST_INPUT);
+    await page.waitForFunction(()=>window._startPhase==='hogwarts_sort');
+    await drainDialogue(page);
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'그리핀도르'}).click();
+    for(let i=0;i<20;i++){
+      if(await page.evaluate(()=>gameState.hogwarts.scene.paused&&inputMode&&!isShowing&&dialogueQueue.length===0))break;
+      await page.evaluate(()=>navNext());await page.waitForTimeout(50);
+    }
+    assert(await page.locator('#inputBar').isVisible());
+    assert.equal(await page.evaluate(()=>!!gameState.hogwarts.scene.visited.arrival_speech),false);
+    await page.locator('#userInput').fill('교수님, 연설 전에 학교생활에 관해 질문해도 될까요?');
+    await page.locator('#sendBtn').click();
+    await drainDialogue(page);
+    await page.waitForFunction(()=>gameHistory.at(-1)?._stateExtract?.status==='applied');
+    assert.deepEqual(await page.evaluate(()=>({phase:gameState.hogwarts.scene.phase,
+      queued:gameState.hogwarts.scene.queue.length,room:!!gameState.hogwarts.scene.visited.arrival_common_room,
+      place:gameState.location})),{phase:'idle',queued:0,room:false,place:'호그와트 대연회장'});
+  });
+  await check(ctx,'Hogwarts click and free text commit the same causal world through the real recorder',async()=>{
+    const worlds=[];
+    for(const input of ['button','typed']){
+      await page.evaluate(async()=>{
+        await ensureStateExtractReady();
+        const hp=gameState.hogwarts;
+        hp.date='1994-06-15';hp.slot=3;hp.scene=PandoraHogwartsScenes.createState();
+        hp.world=PandoraHogwartsWorld.createState();
+        hp.world.agency={dementor:'study',chapter_b03c08:'inquire',chapter_b03c13:'engage'};
+        hp.canon=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,null,'1994-06-14',[]).state;
+        PandoraHogwartsWorld.offer(hp.world,PandoraHogwartsWorld.EVENTS.find(x=>x.id==='pettigrew_crossroads'));
+        PandoraHogwartsWorld.startAmbient(hp.world);
+        gameState.time=PandoraHogwartsTime.display(hp);gameState.location='비명을 지르는 오두막';
+        gameState.event='비명을 지르는 오두막의 비밀';
+        document.getElementById('choiceBox')?.remove();
+        showChoices(PandoraHogwartsWorld.activeChoices(hp.world));
+      });
+      const held={reached:deferred(),resume:deferred()};net.holdState=held;
+      try{
+        if(input==='button')await page.locator('#choiceBox .choice-btn').filter({hasText:'확보한 목격 증거'}).click();
+        else await enterText(page,'확보한 목격 증거와 루핀의 도움으로 페티그루를 구금한다');
+        await held.reached.promise;
+        assert.equal(await page.evaluate(async()=>{await syncHogwartsCanon();return gameState.hogwarts.canon.statuses.b03c20s01||null;}),null,
+          'canon must wait for the displayed action receipt');
+      }finally{held.resume.release();}
+      await page.waitForFunction(()=>gameHistory.at(-1)?._stateExtract?.status==='applied'&&!sendBtn.disabled);
+      await drainDialogue(page);
+      const state=await page.evaluate(async()=>{
+        await syncHogwartsCanon();
+        const hp=gameState.hogwarts;
+        PandoraHogwartsTime.moveToScene(hp,'1995-06-24',2);
+        await syncHogwartsCanon();
+        gameState.time=PandoraHogwartsTime.display(hp);autoSave();
+        return {escape:hp.canon.statuses.b03c20s01,ritual:hp.canon.statuses.b04c32s02,
+          captured:hp.canon.world.pettigrew_captured,ties:hp.world.ties,active:hp.world.active};
+      });
+      assert.deepEqual(state,{escape:'prevented',ritual:'altered',captured:true,ties:{lupin:2,harry:2},active:null});
+      worlds.push(state);
+    }
+    assert.deepEqual(worlds[0],worlds[1]);
+    await flushLocalSave(page);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.getElementById('mainScreen')?.style.display==='flex');
+    await page.locator('.enter-btn').click();
+    await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    await page.locator('#detailContinueBtn').click();
+    await drainDialogue(page);
+    assert.deepEqual(await page.evaluate(()=>({captured:gameState.hogwarts.canon.world.pettigrew_captured,
+      ritual:gameState.hogwarts.canon.statuses.b04c32s02})),{captured:true,ritual:'altered'});
+  });
+  await check(ctx,'Hogwarts a cancelled study plan records the actual meeting and relationship',async()=>{
+    await page.evaluate(async()=>{
+      await syncHogwartsCanon();
+      const hp=gameState.hogwarts;
+      hp.date='1991-09-03';hp.slot=2;hp.world=PandoraHogwartsWorld.createState();
+      hp.canon=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,null,'1991-09-02',[]).state;
+      const p=PandoraHogwartsWorld.offer(hp.world,PandoraHogwartsWorld.EVENTS.find(x=>x.id==='first_invitations'));
+      PandoraHogwartsWorld.start(hp.world,p.choices.find(x=>x.includes('] hermione —')));
+      gameState.time=PandoraHogwartsTime.display(hp);gameState.event='겹친 약속';
+      document.getElementById('choiceBox')?.remove();enterInputMode();
+    });
+    await enterText(page,'헤르미온느에게 약속을 취소한다고 말하고 말포이의 모임에 간다.');
+    await page.waitForFunction(()=>gameHistory.at(-1)?._stateExtract?.status==='applied');
+    await drainDialogue(page);
+    assert.deepEqual(await page.evaluate(()=>({circle:gameState.hogwarts.world.agency.first_circle,
+      ties:gameState.hogwarts.world.ties})),{circle:'malfoy',ties:{hermione:-1,malfoy:2}});
+  });
 }
 
 async function hogwartsArtCheck(ctx) {
@@ -1161,6 +1281,9 @@ async function hogwartsArtCheck(ctx) {
       });
       try { await hogwartsArtCheck(hogwartsCtx); }
       finally { await hogwartsCtx.context.close(); }
+      const hogwartsRPCtx=await createFixturePage(origin,mobile,{freeMode:true,reply:hogwartsArtReply,capturePrompts:true});
+      try{await hogwartsRPCheck(hogwartsRPCtx);}
+      finally{await hogwartsRPCtx.context.close();}
       const ctx = await createFixturePage(origin, mobile);
       try { await playthrough(ctx); }
       finally { await ctx.context.close(); }

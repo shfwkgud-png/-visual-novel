@@ -170,6 +170,7 @@
   function ending(catalog,id,worldState,canonState){
     const c=catalog?.byId?.[id];if(!c||!worldState?.finished?.[id]||!canonState)return null;
     const record=worldState.finished[id],selection=record.choice;
+    if(record.outcome)return {narration:record.outcome.summary,dialogue:[],background:null,resetSprites:false};
     const option=c.participation.options.find(x=>x.id===selection);
     const direct=selection!=='skip';
     const texts=[];
@@ -186,6 +187,7 @@
   // display if canonical, public (or witnessed locally); private/GM never leak.
   function outcomeSequence(catalog,eventId,world,canonState){
     if(!catalog||!canonState||!world?.finished?.[eventId])return [];
+    if(world.finished[eventId].outcome)return [];
     const own=catalog.byId[eventId]?[catalog.byId[eventId]]:[];
     const linked=catalog.byMajor[eventId]?.map(id=>catalog.byId[id])||[];
     const chapters=own.concat(linked).filter(Boolean);

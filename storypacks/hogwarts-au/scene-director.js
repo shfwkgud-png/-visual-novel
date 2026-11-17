@@ -114,7 +114,7 @@
         [d(h.guide,h.guideId,'흩어지지 말고 따라오세요. 학교는 넓고 밤의 복도에는 출입이 금지된 구역도 있습니다.')],{slot:3}),
       b('arrival_entrance','corridor',h.arrival.narrator,
         [d(h.arrival.speaker,h.arrival.id,h.arrival.line),
-         d(h.arrival.reply,h.arrival.replyId,h.arrival.answer)],
+         d('나레이터',null,h.arrival.answer)],
         {location:h.entrance}),
       b('arrival_common_room',h.home,
         '문을 통과하자 '+house+' 공용실이 펼쳐진다. 여러 학생이 짐을 내려놓고 자리를 잡는다. 반장은 침실 방향과 아침 첫 일정을 안내한다. 이제부터 이곳이 당신의 학교생활을 보내는 집이다.',
@@ -220,7 +220,7 @@
         '일정을 마친 당신은 수업을 듣던 곳에서 나와 자신의 기숙사를 향한다. 이어지는 복도를 따라 걸으며 다른 학생들이 오가는 모습을 본다.',[]),
       b('return_entrance_'+(s.sceneNonce+1),'corridor',h.arrival.narrator,
         [d(h.arrival.speaker,h.arrival.id,h.arrival.line),
-         d(h.arrival.reply,h.arrival.replyId,h.arrival.answer)],{location:h.entrance}),
+         d('나레이터',null,h.arrival.answer)],{location:h.entrance}),
       b('return_home_'+(s.sceneNonce+1),h.home,
         '허가된 출입 절차를 마치고 '+house+' 공용실에 들어선다. 학생들은 저마다 다른 일을 하며 지내고 있다. 이곳에서는 자유롭게 대화하거나 다음 일정을 계획할 수 있다.',[],
         {location:house+' 공용실'})
@@ -256,6 +256,13 @@
   }
   function hasPending(s){return valid(s)&&
     (s.cursor<s.queue.length||!!s.followUp);}
+  function interrupt(s){
+    ensure(s);
+    if(!s.paused)return false;
+    s.interrupted=s.queue.slice(s.cursor).map(beat=>beat.narration);
+    s.paused=false;s.phase='idle';s.queue=[];s.cursor=0;s.followUp=null;
+    return true;
+  }
   // The canon fact list is played as normal dialogue pages, not as
   // extra choices. Only the chapter director can supply visibility-checked
   // entries; old novel histories retain their existing flow.
@@ -274,6 +281,8 @@
   }
   function outcomeBeat(result,world){
     if(!result || typeof result.id!=='string')return null;
+    const actual=world?.finished?.[result.id]?.outcome;
+    if(actual)return {narration:actual.summary,dialogue:[],background:null,resetSprites:false};
     const choice=world?.finished?.[result.id]?.choice || 'observe';
     const actors={
       first_invitations:{
@@ -311,7 +320,9 @@
   function describe(s){
     if(!valid(s))return '';
     return '호그와트 장면 단계: '+s.phase+', 현재 '+s.cursor+'/'+s.queue.length+
-      ', 입학식 진행 완료: '+s.arrivalCompleted+'. 장소 이동은 실제 도착 비트가 완결되어야 확정된다.';
+      ', 입학식 진행 완료: '+s.arrivalCompleted+'. 장소 이동은 실제 도착 비트가 완결되어야 확정된다.'
+      +(s.interrupted?.length?'\n플레이어가 입학 도중 개입했다. 현재 대화·행동에서 이어가며 장소나 주인공 행동을 강제하지 않는다. '
+        +'남은 학교 절차는 NPC 일정에 맞춰 자연스럽게 진행하되 이미 일어난 일로 간주하지 않는다: '+s.interrupted.join(' / '):'');
   }
-  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,stageCanonResults,outcomeBeat,take,hasPending,describe,arrival,onEnter,daysBetween,normalizeDialogue,HOUSES});
+  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,stageCanonResults,outcomeBeat,take,hasPending,interrupt,describe,arrival,onEnter,daysBetween,normalizeDialogue,HOUSES});
 });
