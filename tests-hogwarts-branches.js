@@ -61,10 +61,26 @@ notEarned('prince_tower',{prince:'investigate',chapter_b06c12:'inquire'},'seal_c
 const sealed=earned('prince_tower',{
   prince:'investigate',chapter_b06c12:'inquire',chapter_b06c18:'inquire'
 },{},'seal_cabinet');
+assert.equal(catalog.causalEdges.length,55);
 let sstate=runBranch(sealed,'1998-05-02',{
   b06c27s01:'prevented',b06c27s03:'prevented'
 },{cabinet_entry_blocked:true,albus_survived_tower:true});
 assert.equal(sstate.statuses.b07c01s01,'canonical','unrelated book 7 enemy meeting should still occur');
+assert.equal(sstate.statuses.b06c29s01,'pending','no lament if Dumbledore survived');
+assert.equal(sstate.statuses.b06c30s01,'pending','no funeral if Dumbledore survived');
+assert(C.blockedByHistory(catalog.byId.b06c29,sstate));
+assert(C.blockedByHistory(catalog.byId.b06c30,sstate));
+const alternateWorld=W.createState();
+alternateWorld.agency.tower='sealed_cabinet';
+alternateWorld.finished.prince_tower={choice:'seal_cabinet',date:'1997-06-12'};
+const altEvent=W.nextEvent(alternateWorld,'1997-06-12',3,sstate);
+assert.equal(altEvent.id,'tower_survival_morning');
+const altOffer=W.offer(alternateWorld,altEvent);
+assert(W.start(alternateWorld,altOffer.choices[0]));
+assert(W.finish(alternateWorld));
+const later=W.nextEvent(alternateWorld,'1997-06-13',1,sstate);
+assert(!['b06c29','b06c30','tower_survival_morning'].includes(later?.id),
+  'the original funeral must not return as a fallback scene');
 
 notEarned('prince_tower',{prince:'approached',chapter_b06c12:'engage'},'guard_wand');
 const guarded=earned('prince_tower',{
