@@ -116,13 +116,13 @@
       {id:'investigate',label:'현장의 소문과 증거를 구분한다',intent:'직접 확인 가능한 흔적만 조사한다.',delta:{hermione:1},flags:{chamber:'investigate'},offscreen:'학교의 공포는 다른 인물들의 선택에도 영향을 미친다.'},
       {id:'protect',label:'불안해하는 기숙사 학생들을 돕는다',intent:'기숙사 내에서 실제로 믿는 사람들을 돕는다.',delta:{neville:1},flags:{chamber:'protect'},offscreen:'다른 학생들도 자신들의 방식으로 대응한다.'},
       {id:'distance',label:'거리를 두고 변화를 주시한다',intent:'의심과 불확실성을 인정한다.',delta:{},flags:{chamber:'distance'},offscreen:'사건은 당신이 없더라도 진행된다.'}]},
-    {id:'chamber_finale',year:2,date:'1993-06-01',slot:2,kind:'plot',title:'사라진 학생',background:'corridor',actors:['harry','ron','ginny'],intro:'학교의 봉쇄가 강화되며 한 학생이 사라졌다는 소식이 전해진다. 학교 전체가 긴장에 휩싸인다.',options:[
+    {id:'chamber_finale',year:2,date:'1993-06-15',slot:2,kind:'plot',title:'사라진 학생',background:'corridor',actors:['harry','ron','ginny'],intro:'학교의 봉쇄가 강화되며 한 학생이 사라졌다는 소식이 전해진다. 학교 전체가 긴장에 휩싸인다.',options:[
       {id:'search',label:'확인된 범위에서 수색을 돕는다',intent:'단서를 좇되 위험에 따른 대가를 인정한다.',delta:{ginny:1},flags:{chamber_end:'search'},offscreen:'해리는 자신이 발견한 단서를 활용해 독립적으로 움직인다.'},
       {id:'staff',label:'교직원과 함께 질서를 유지한다',intent:'학생 안전을 보조한다.',delta:{mcgonagall:1},flags:{chamber_end:'staff'},offscreen:'비밀의 방 내부는 직접 목격하지 않는 한 알지 못한다.'}]},
-    {id:'azkaban_opening',year:3,date:'1993-09-04',slot:1,kind:'plot',title:'디멘터의 그림자',background:'corridor',actors:['harry','lupin','malfoy'],intro:'아즈카반 탈옥 소식과 함께 학교 주변의 디멘터 경계가 강화된다.',options:[
+    {id:'azkaban_opening',year:3,date:'1993-09-01',slot:1,kind:'plot',title:'디멘터가 탄 열차',background:'hogwarts_express_compartment',actors:['harry','lupin','malfoy'],intro:'호그와트 특급열차의 실내가 갑자기 어두워진다. 디멘터의 존재를 감지한 학생들이 얼어붙고, 루핀 교수는 객실의 학생들을 보호하려 움직인다. 사건을 어떻게 받아들일지 당신이 결정할 수 있다.',options:[
       {id:'study',label:'루핀에게 방어법을 묻는다',intent:'학습과 연습에 실제 시간이 필요하다.',delta:{lupin:2},flags:{dementor:'study'},offscreen:'시리우스의 행방을 아무도 자동으로 알지 못한다.'},
       {id:'observe',label:'당장의 안전을 챙기고 사건을 관찰한다',intent:'증거 없는 단정 없이 관찰한다.',delta:{},flags:{dementor:'observe'},offscreen:'보안 강화는 계속된다.'}]},
-    {id:'pettigrew_crossroads',year:3,date:'1994-06-06',slot:3,kind:'plot',title:'비명을 지르는 오두막의 비밀',background:'shrieking_shack',actors:['harry','ron','hermione','lupin','sirius'],intro:'오두막 근처에서 다툼이 벌어지고 시리우스 블랙의 정체를 둘러싼 이야기들이 충돌한다. 무엇을 믿을지는 지금껏 확인한 증거에 달렸다.',options:[
+    {id:'pettigrew_crossroads',year:3,date:'1994-06-15',slot:3,kind:'plot',title:'비명을 지르는 오두막의 비밀',background:'shrieking_shack',actors:['harry','ron','hermione','lupin','sirius'],intro:'오두막 근처에서 다툼이 벌어지고 시리우스 블랙의 정체를 둘러싼 이야기들이 충돌한다. 무엇을 믿을지는 지금껏 확인한 증거에 달렸다.',options:[
       {id:'intervene',label:'정면으로 진실 확인에 나선다',intent:'증거를 직접 확인해 행동한다. 피터가 도망칠지 여부는 실제 행동과 실패 가능성을 고려한다.',delta:{harry:1},flags:{pettigrew:'investigate'},offscreen:'누구의 생존과 탈출도 단정하지 말고 실제 결과가 기록될 때만 확정한다.'},
       {id:'stay',label:'섣부른 개입보다 안전한 증언을 남긴다',intent:'관찰한 범위만 증언한다.',delta:{},flags:{pettigrew:'witness'},offscreen:'오두막에서 벌어지는 다른 사건들은 각자 독립적으로 진행된다.'}]},
     {id:'goblet_tournament',year:4,date:'1994-10-31',slot:2,kind:'plot',title:'불의 잔의 이름',background:'great_hall',actors:['harry','cedric','malfoy'],intro:'트리위저드 대표가 발표되고 규칙을 벗어난 이름이 나온다. 학교 전체가 편을 나누기 시작한다.',options:[
@@ -140,7 +140,7 @@
     {id:'prince_secret',year:6,date:'1996-09-08',slot:2,kind:'person',title:'말포이가 숨긴 것',background:'corridor',actors:['malfoy','snape'],intro:'여성 말포이는 전과 다르게 행동한다. 교복 뒤에 감춘 사정과 가족의 압박을 누구에게도 쉽게 털어놓지 않는다.',options:[
       {id:'reach',label:'억지로 캐묻지 않고 다가간다',intent:'1~5학년의 관계 기록대로 말포이가 신뢰하거나 경계하도록 한다.',delta:{malfoy:1},flags:{prince:'approached'},offscreen:'말포이는 자신의 임무를 혼자 감당하려는 선택을 계속한다.'},
       {id:'investigate',label:'수상한 행동을 객관적으로 조사한다',intent:'증거 없는 의심을 확정 사실로 바꾸지 않는다.',delta:{malfoy:-1},flags:{prince:'investigate'},offscreen:'다른 학생들도 평소와 달라진 말포이를 느끼기 시작한다.'}]},
-    {id:'prince_tower',year:6,date:'1997-06-30',slot:3,kind:'plot',title:'천문탑의 밤',background:'astronomy',actors:['malfoy','snape','albus'],intro:'호그와트의 안전이 흔들리는 밤. 누군가의 선택이 전쟁의 시작을 알릴 수 있다.',options:[
+    {id:'prince_tower',year:6,date:'1997-06-12',slot:3,kind:'plot',title:'천문탑의 밤',background:'astronomy',actors:['malfoy','snape','albus'],intro:'호그와트의 안전이 흔들리는 밤. 누군가의 선택이 전쟁의 시작을 알릴 수 있다.',options:[
       {id:'intervene',label:'지금까지 파악한 증거로 개입을 시도한다',intent:'선행 사건과 실제 관찰·실력이 부족하면 실패할 수 있다. 결과는 행동의 증거로 기록해야 한다.',delta:{},flags:{tower:'intervene_attempt'},offscreen:'지팡이 충성권과 생존 여부는 임의로 재작성하지 않는다.'},
       {id:'protect',label:'다른 학생들의 피난을 돕는다',intent:'구출과 생존을 우선한다.',delta:{},flags:{tower:'evacuation'},offscreen:'천문탑에서 벌어지는 핵심 선택은 별도의 인물들이 수행한다.'}]},
     {id:'hallows_school',year:7,date:'1997-09-02',slot:1,kind:'plot',title:'점령된 학교',background:'occupied_hogwarts',actors:['mcgonagall','neville','ginny'],intro:'정권이 바뀐 뒤 호그와트에 새로운 통제가 내려온다. 해리 일행은 정규 수업에 없다. 남은 학생들은 협력, 저항, 은둔의 갈림길에 선다.',options:[
