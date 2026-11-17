@@ -224,7 +224,7 @@
   function parseManualTravel(text,house) {
     const x=String(text||'').trim().replace(/^[([]/,'').replace(/[)\]]$/,'');
     if (!HOUSES[house])return null;
-    if (/^(?:나는\s*)?(?:기숙사|공용실|내 방)\s*(?:로|에)\s*(?:가|돌아가|향해|이동)/.test(x))
+    if (/^(?:나는\s*)?(?:기숙사|공용실|내 방)\s*(?:로|에)\s*(?:돌아가|돌아간|돌아갈|가|간|갈|향해|향하|이동하|이동)/.test(x))
       return HOUSES[house].home;
     return null;
   }
