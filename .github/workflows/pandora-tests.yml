@@ -46,6 +46,7 @@ jobs:
           node tests-hogwarts-world.js
           node tests-hogwarts-scenes.js
           node tests-hogwarts-chapters.js
+          node tests-hogwarts-branches.js
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15
