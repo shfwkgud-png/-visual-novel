@@ -14046,7 +14046,7 @@ function applyHogwartsSceneState(data,activeCharIds=[],source) {
   const result=state.hogwarts,world=hp.world;
   if(result && window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(world)){
     const shown=source?.scene||data;
-    const scene=[shown.narration||'',...(shown.dialogue||[]).map(d=>d.text||'')].join('\n');
+    const scene=[shown.narration||'',...(shown.dialogue||[]).map(d=>`${d.speaker}: ${d.text||''}`)].join('\n');
     if(result.time && !PandoraHogwartsTime.readSceneTime(hp,result.time.value,
       {...result.time,scene,userText:source?.userText??window._genText??''}))
       throw Error('실제 시간 경과의 근거와 날짜가 맞지 않습니다');

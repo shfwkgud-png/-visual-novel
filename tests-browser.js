@@ -849,12 +849,13 @@ function hogwartsArtReply(kind, user = '', body = {}) {
     const system=body.messages?.find(x=>x.role==='system')?.content||'';
     const event=/event_id는 (null|"[^"]+")이다/.exec(system);
     const button=capture&&input.includes('[호그와트 사건 진행 중 플레이어의 실제 개입]');
+    const evidence=capture?'리무스 루핀: 신병을 인계했네.':narration;
     return {state_update:{event:null,hogwarts:{event_id:event?JSON.parse(event[1]):null,
-      summary:narration,evidence:narration,complete:capture||switched||sleeping,
+      summary:narration,evidence,complete:capture||switched||sleeping,
       choice:capture?(button?'capture':'freeform'):switched?'malfoy':null,
       ties:capture?{lupin:2,harry:2}:switched?{hermione:-1,malfoy:2}:{},
       canon:capture&&!button?[{id:'b03c20s01',outcome:'prevented',
-        summary:'페티그루가 구금되어 원작 탈출이 발생하지 않았다.',evidence:narration,effects:{pettigrew_captured:true}}]:[],
+        summary:'페티그루가 구금되어 원작 탈출이 발생하지 않았다.',evidence,effects:{pettigrew_captured:true}}]:[],
       ...(sleeping?{time:{value:'1991-09-04 아침',days:1,evidence:narration}}:{})}},
       choices:['친구들에게 인사한다'],chronicle:[]};
   }
