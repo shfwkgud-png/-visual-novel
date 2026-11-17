@@ -13194,7 +13194,9 @@
       "continuity": {
         "previous": "b06c27",
         "future": [],
-        "dependencies": []
+        "dependencies": [
+          "b06c27s01"
+        ]
       }
     },
     {
@@ -13290,7 +13292,9 @@
       "continuity": {
         "previous": "b06c28",
         "future": [],
-        "dependencies": []
+        "dependencies": [
+          "b06c27s03"
+        ]
       },
       "sceneCue": "성 안에 충격적인 사망 소식이 퍼진다. 학생과 교직원들은 어떤 말을 해야 할지 몰라 한다."
     },
@@ -13395,7 +13399,11 @@
       "continuity": {
         "previous": "b06c29",
         "future": [],
-        "dependencies": []
+        "dependencies": [
+          "b06c27s03",
+          "b06c30s01",
+          "b06c30s02"
+        ]
       },
       "sceneCue": "교정에 많은 사람이 모여 떠난 교장을 추모할 준비를 한다. 서로 다른 세력이 같은 자리에 서 있다."
     },
@@ -13540,7 +13548,9 @@
       "continuity": {
         "previous": "b07c01",
         "future": [],
-        "dependencies": []
+        "dependencies": [
+          "b06c27s03"
+        ]
       }
     },
     {
@@ -13911,7 +13921,9 @@
         "future": [
           "b07c34"
         ],
-        "dependencies": []
+        "dependencies": [
+          "b06c27s03"
+        ]
       }
     },
     {
@@ -16685,6 +16697,55 @@
       "from": "b07c36s02",
       "to": "b07c36s04",
       "why": "나기니가 파괴돼야 독립 호크룩스가 더 남지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c27s01",
+      "to": "b06c28s01",
+      "why": "장롱 침입이 차단되면 침입자들이 원래 방식으로 도주하는 장면은 발생하지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c27s03",
+      "to": "b06c29s01",
+      "why": "덤블도어가 살아 있다면 피닉스의 장송과 사망 소식은 발생하지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c27s03",
+      "to": "b06c30s01",
+      "why": "덤블도어의 실제 사망 없이는 장례식을 치를 수 없다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c30s01",
+      "to": "b06c30s02",
+      "why": "원작 장례식 이후의 결심은 그 장례가 실제로 열렸다는 전제에서 나온다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c30s02",
+      "to": "b06c30s03",
+      "why": "해리의 독립적인 추적 결심이 없다면 그 방식의 동행 약속도 달라진다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c27s03",
+      "to": "b07c02s01",
+      "why": "사망하지 않은 덤블도어의 추모 기사와 애도는 원래대로 발생하지 않는다.",
+      "ifBroken": "pending_branch_resolution",
+      "notAutoCanonical": true
+    },
+    {
+      "from": "b06c27s03",
+      "to": "b07c07s01",
+      "why": "덤블도어가 살아 있으면 사망을 전제로 한 유언장 절차가 자동으로 성립하지 않는다.",
       "ifBroken": "pending_branch_resolution",
       "notAutoCanonical": true
     }
