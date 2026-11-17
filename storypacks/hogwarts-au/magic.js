@@ -182,8 +182,11 @@
         const eligible=subj.year<=schoolYear(to) &&
           (subj.group==='필수'||subj.group==='1학년 필수'&&schoolYear(to)===1||
            subj.group==='선택'&&s.electives.includes(subj.id));
-        if(eligible)s.subjectXP[subj.id]=Math.min(500,
-          (s.subjectXP[subj.id]||0)+Math.min(60,months*9));
+        if(eligible){
+          const beforeXP=s.subjectXP[subj.id]||0;
+          s.subjectXP[subj.id]=Math.max(beforeXP,
+            Math.min(125,beforeXP+Math.min(50,months*8)));
+        }
       }
     }
     // An ordinary school term teaches foundational magic off-screen,
