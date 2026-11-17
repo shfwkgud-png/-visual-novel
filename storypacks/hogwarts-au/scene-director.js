@@ -61,6 +61,13 @@
     hogwarts_courtyard:'호그와트 교정',astronomy:'천문탑',hogsmeade:'호그스미드',
     hogwarts_express_compartment:'호그와트 특급열차',occupied_hogwarts:'점령된 호그와트'
   };
+  function resolveBackground(background,house) {
+    const h=HOUSES[house];
+    if(!h)return background;
+    if(background==='common_room')return h.home;
+    if(background==='dormitory')return h.tag+'_dormitory';
+    return background;
+  }
   const introLine=(n,speaker,id,text,reply=null)=>({
     title:n,narration:'',dialogue:[{speaker,char_id:id||null,text},...(reply||[])],background:null
   });
@@ -133,7 +140,7 @@
       '학교생활이 계속되는 가운데 다음 일정이 다가왔다. 학생들은 저마다 바쁜 하루를 보내며 복도에서 스쳐 지나갔다.',[]);
   }
   function onEnter(event,house,world){
-    const bg=event.background;
+    const bg=resolveBackground(event.background,house);
     const year=event.year||1;
     let intro,dialogue=[];
     if(bg==='great_hall'){
@@ -175,12 +182,36 @@
     const steps=[];
     const jump=periodTransition(event,clock,world);
     if(jump)steps.push(jump);
-    if(s.lastLocation!==event.background||jump)steps.push(onEnter(event,house,world));
+    if(s.lastLocation!==resolveBackground(event.background,house)||jump)steps.push(onEnter(event,house,world));
     if(!steps.length)steps.push(b('continuity_'+event.id,event.background,
       '같은 장소에서 사람들이 차례로 자신의 일을 이어 간다. 다음 사건은 앞선 대화와 움직임의 연장선에서 시작된다.',[]));
     s.phase='transition';s.queue=steps;s.cursor=0;s.followUp={type:'event',id:event.id};
     s.sceneNonce++;
     return true;
+  }
+  function startRoomReturn(s,house) {
+    ensure(s);
+    const h=HOUSES[house];
+    if(!h||s.phase!=='idle'||s.followUp||s.lastLocation===h.home)return false;
+    const stages=[
+      b('return_corridor_'+(s.sceneNonce+1),'corridor',
+        '일정을 마친 당신은 수업을 듣던 곳에서 나와 자신의 기숙사를 향한다. 이어지는 복도를 따라 걸으며 다른 학생들이 오가는 모습을 본다.',[]),
+      b('return_entrance_'+(s.sceneNonce+1),'corridor',h.arrival.narrator,
+        [d(h.arrival.speaker,h.arrival.id,h.arrival.line),
+         d(h.arrival.reply,h.arrival.replyId,h.arrival.answer)],{location:h.entrance}),
+      b('return_home_'+(s.sceneNonce+1),h.home,
+        '허가된 출입 절차를 마치고 '+house+' 공용실에 들어선다. 학생들은 저마다 다른 일을 하며 지내고 있다. 이곳에서는 자유롭게 대화하거나 다음 일정을 계획할 수 있다.',[],
+        {location:house+' 공용실'})
+    ];
+    s.phase='transition';s.queue=stages;s.cursor=0;s.followUp=null;s.sceneNonce++;
+    return true;
+  }
+  function parseManualTravel(text,house) {
+    const x=String(text||'').trim().replace(/^[([]/,'').replace(/[)\]]$/,'');
+    if (!HOUSES[house])return null;
+    if (/^(?:나는\s*)?(?:기숙사|공용실|내 방)\s*(?:로|에)\s*(?:가|돌아가|향해|이동)/.test(x))
+      return HOUSES[house].home;
+    return null;
   }
   function take(s){
     ensure(s);
@@ -205,5 +236,5 @@
     return '호그와트 장면 단계: '+s.phase+', 현재 '+s.cursor+'/'+s.queue.length+
       ', 입학식 진행 완료: '+s.arrivalCompleted+'. 장소 이동은 실제 도착 비트가 완결되어야 확정된다.';
   }
-  return Object.freeze({createState,valid,startArrival,stageEvent,take,hasPending,describe,arrival,onEnter,daysBetween, HOUSES});
+  return Object.freeze({createState,valid,startArrival,stageEvent,startRoomReturn,parseManualTravel,resolveBackground,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
 });
