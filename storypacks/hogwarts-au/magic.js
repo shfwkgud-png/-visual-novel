@@ -273,10 +273,10 @@
     const year=schoolYear(date);
     if(spell.year>year)return {ok:false,id,reason:'현재 학년의 실력으로 안정적으로 다룰 수 없는 기술이다.'};
     if(spell.id==='apparition'){
-      if(!ctx.licences?.apparition)return {ok:false,id,reason:'순간이동 면허가 필요하다.'};
+      if(!s.licences?.apparition)return {ok:false,id,reason:'순간이동 면허가 필요하다.'};
       if(ctx.inHogwarts!==false)return {ok:false,id,reason:'호그와트 경내에서는 일반적으로 순간이동이 불가능하다.'};
     }
-    if(spell.id==='animagus'&&!ctx.licences?.animagus)
+    if(spell.id==='animagus'&&!s.licences?.animagus)
       return {ok:false,id,reason:'애니마구스 등록과 장기 훈련을 먼저 마쳐야 한다.'};
     const counter=++s.practice.castCount;
     const roll=1+hash(date+'cast'+id+counter+String(ctx.target||''))%100;
