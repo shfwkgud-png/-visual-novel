@@ -99,13 +99,97 @@ assert.equal(M.cast(licence,'apparition',{date:'1996-09-07',inHogwarts:true}).ok
 assert.equal(M.cast(licence,'apparition',{date:'1996-09-07',inHogwarts:false}).ok,true);
 assert(M.certify(licence,'apparition',{date:'1996-09-07',location:'마법약 교실'}).ok===false);
 const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/magic.js?v=4'));
+assert(html.includes('storypacks/hogwarts-au/profile.js?v=1'));
+assert(html.includes('storypacks/hogwarts-au/magic.js?v=5'));
+assert(html.includes('handleHogwartsFreeStudy(text)'));
+assert(html.includes('PandoraHogwartsProfile.configure('));
 assert(html.includes('PandoraHogwartsMagic.createState'));
 assert(html.includes('PandoraHogwartsMagic.passiveSchool('));
 assert(html.includes('handleHogwartsMagicCommand(text)'));
 assert(html.includes('handleHogwartsFreeCast(text)'));
 assert(html.includes("STORY.id!=='hogwarts' && s.player.skills"));
 assert(html.includes('PandoraHogwartsMagic.context('));
+
+const P=require('./storypacks/hogwarts-au/profile.js');
+const custom='나는 호그와트 역사상 가장 뛰어난 마법적 재능을 가진 천재다. 처음 보는 주문도 빠르게 익히며, 특히 어둠의 마법에 천부적인 소질이 있다. 하지만 이 능력을 남들에게 숨기고 평범한 학생처럼 살아가고 싶다.';
+const gifted=M.createState('1991-09-01');
+const profile=P.configure(gifted,custom,{spells:M.SPELLS,worldMode:'canon_centered'});
+assert.equal(profile.aptitude.general,100,'historical prodigy should have maximal potential');
+assert.equal(profile.aptitude.learning,100);
+assert.equal(profile.aptitude.dark,100);
+assert.equal(profile.concealAbilities,true,'wants to conceal talent');
+assert.equal(profile.worldMode,'canon_centered');
+assert.equal(gifted.spells.crucio,undefined,'potential is not forbidden spell knowledge');
+assert.equal(gifted.spells.accio,undefined,'potential is not a pre-learned charm');
+assert.equal(M.cast(gifted,'lumos',{date:'1991-09-03'}).ok,false,'genius cannot cast an unlearned spell');
+assert.equal(M.lesson(gifted,'accio',{date:'1991-09-03',location:'마법 주문학 교실'}).ok,false,
+ 'school syllabus still respects class age');
+assert.equal(M.lesson(gifted,'accio',{date:'1991-09-03',location:'호그와트 대연회장',selfStudy:true}).ok,false,
+ 'no independent source of knowledge means no study');
+const study={date:'1991-09-03',location:'호그와트 도서관',selfStudy:true,studyMethod:'book'};
+const giftedLesson=M.lesson(gifted,'accio',study);
+assert(giftedLesson.ok,'prodigy can research advanced magic instead of waiting for class');
+assert(giftedLesson.gain>20,'prodigy gains faster than ordinary class');
+assert(P.parseFreeStudy('도서관에서 아씨오를 독학한다',M.findIncantation).id==='accio');
+assert.equal(P.parseFreeStudy('아씨오 주문을 어떻게 배워?',M.findIncantation),null);
+assert.equal(M.lesson(gifted,'crucio',{date:'1991-09-04',location:'금서 도서관',
+  selfStudy:true,studyMethod:'book',darkStudy:true}).ok,false,'dark aptitude alone cannot unlock cursed texts');
+assert.equal(M.seekDarkAccess(gifted,{date:'1991-09-04',location:'금서 도서관'}).ok,true,
+ 'early forbidden research should not have an arbitrary fifth-year lock');
+assert.equal(gifted.infractions.at(-1).discovered,false,'secret book research not automatically reported');
+assert.equal(P.recordObserved(gifted,'stupefy',{date:'1991-09-04'}),false,
+ 'mere player intention cannot forge a witnessed lesson');
+assert.equal(P.recordObserved(gifted,'stupefy',{date:'1991-09-04',verifiedSceneEvidence:'actual scene record'}),true);
+assert.equal(M.lesson(gifted,'stupefy',{date:'1991-09-05',location:'복도',selfStudy:true,
+  studyMethod:'observation'}).ok,true,'observed spell can be studied away from class');
+for(const date of ['1991-09-06','1991-09-07','1991-09-08','1991-09-09']){
+  if((gifted.spells.crucio?.xp||0)>=M.LESSON_THRESHOLD)break;
+  for(let j=0;j<3;j++){
+    if((gifted.spells.crucio?.xp||0)>=M.LESSON_THRESHOLD)break;
+    const result=M.lesson(gifted,'crucio',{date,location:'금서 도서관',selfStudy:true,
+      studyMethod:'book',darkStudy:true});
+    assert(result.ok,'unlicensed private research is possible after knowledge access');
+  }
+}
+assert((gifted.spells.crucio?.xp||0)>=M.LESSON_THRESHOLD,'genius can learn early without ordinary courses');
+const secret=M.cast(gifted,'crucio',{date:'1991-09-10',target:'무인 훈련용 모형',
+  witnesses:[],concealAttempt:true});
+assert(secret.ok);
+assert.equal(secret.violation,'unforgivable');
+assert.equal(secret.exposed,false,'no witness means no automatic exposure');
+assert.equal(gifted.infractions.at(-1).discovered,false);
+assert.deepEqual(Object.keys(gifted.profile.knownBy),[],'NPC cannot infer private actions without evidence');
+const publicCast=M.cast(gifted,'crucio',{date:'1991-09-10',target:'훈련용 모형',witnesses:['snape']});
+assert(publicCast.ok);
+assert.equal(publicCast.exposed,true);
+assert.equal(gifted.profile.knownBy.snape.observations.length,1);
+assert.equal(gifted.profile.knownBy.harry,undefined);
+assert.equal(gifted.infractions.at(-1).discovered,true);
+assert.equal(gifted.infractions.at(-1).witnesses[0],'snape');
+const savedGifted=JSON.parse(JSON.stringify(gifted));
+assert(M.valid(savedGifted));
+assert.equal(P.ensure(savedGifted).knownBy.snape.observations.length,1,'witness records survive saves');
+const oldSave=M.createState('1991-09-03');
+delete oldSave.profile;
+oldSave.spells.lumos={xp:75,attempts:2,success:1,firstLearned:'1991-09-02'};
+const migrated=P.ensure(oldSave);
+assert.equal(migrated.aptitude.general,50);
+assert.equal(oldSave.spells.lumos.xp,75,'profile migration preserves old spell progress');
+const baseline=M.createState('1991-09-03');
+assert.equal(P.ensure(baseline).aptitude.general,50);
+assert.equal(M.lesson(baseline,'accio',study).ok,false,
+ 'ordinary student cannot bypass the syllabus via gifted self-study');
+const explicit=M.createState('1991-09-03');
+P.configure(explicit,'나는 입학 전부터 모든 주문과 마법을 이미 숙달했다',{spells:M.SPELLS});
+assert((explicit.spells.avada_kedavra?.xp||0)>=320,
+ 'explicit already mastered magic is a different character background than latent talent');
+assert.equal(M.cast(explicit,'apparition',{date:'1991-09-03',inHogwarts:true}).ok,false,
+ 'even an overpowered character cannot override Hogwarts anti-Apparition wards');
+assert.match(M.context(gifted,{date:'1991-09-10'}),/NPC별 실제 목격/);
+const parsed=P.parseSetup('나는 천재이며 이 힘을 숨긴다','신입생');
+assert(parsed?.description.includes('천재'));
+assert.equal(P.parseSetup('조아라/19/여/나는 어둠의 마법 천재','신입생').name,'조아라');
+
 new Function(html.slice(html.indexOf('<script>')+8,html.lastIndexOf('</script>')));
 console.log(JSON.stringify({test:'hogwarts-magic',result:'PASS',subjects:SUBJECTS.length,spells:SPELLS.length,
   forbiddenCurses:3,grimoirePages:M.page(state,1,0).pages,
