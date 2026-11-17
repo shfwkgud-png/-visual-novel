@@ -175,8 +175,8 @@ assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,70);
 
 const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/world.js?v=12'));
-assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=4'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=13'));
+assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=5'));
 assert(html.includes('moveToScene(clock,upcoming.date,upcoming.slot)'));
 assert(html.includes('gameState.hogwarts.world = PandoraHogwartsWorld.createState()'));
 assert(html.includes('await syncHogwartsCanon()'));
