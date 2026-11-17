@@ -15861,29 +15861,41 @@ function bgUrlFor(key) {
 // Crossfade to a new background: paint the B layer, fade it in over the old
 // image, then commit it to the base layer (no hard cuts).
 let _bgFading = false;
+let _bgTransitionRevision = 0;
 function crossfadeBg(url) {
+  // Previous async loads and 750ms fades must NEVER paint over a newer scene.
+  // This caused state="great_hall" while the visible canvas showed "corridor".
+  const revision=++_bgTransitionRevision;
   const b = document.getElementById('bgLayerB');
   if (!b || _bgFading) {   // fallback / re-entrancy: hard set
+    _bgFading=false;
     bgLayer.style.backgroundImage = `url('${url}')`;
     if (b) { b.style.transition = 'none'; b.style.opacity = 0; void b.offsetWidth; b.style.transition = ''; }
     return;
   }
-  _bgFading = true;
-  const img = new Image();
-  img.onload = () => {
-    b.style.backgroundImage = `url('${url}')`;
-    b.style.opacity = 1;
-    setTimeout(() => {
-      bgLayer.style.backgroundImage = `url('${url}')`;
-      b.style.transition = 'none';
-      b.style.opacity = 0;
+  _bgFading=true;
+  const img=new Image();
+  img.onload=()=>{
+    if(revision!==_bgTransitionRevision)return;
+    b.style.backgroundImage=`url('${url}')`;
+    b.style.opacity=1;
+    setTimeout(()=>{
+      if(revision!==_bgTransitionRevision)return;
+      bgLayer.style.backgroundImage=`url('${url}')`;
+      b.style.transition='none';
+      b.style.opacity=0;
       void b.offsetWidth;
-      b.style.transition = '';
-      _bgFading = false;
-    }, 750);
+      b.style.transition='';
+      _bgFading=false;
+    },750);
   };
-  img.onerror = () => { bgLayer.style.backgroundImage = `url('${url}')`; _bgFading = false; };
-  img.src = url;
+  img.onerror=()=>{
+    if(revision!==_bgTransitionRevision)return;
+    bgLayer.style.backgroundImage=`url('${url}')`;
+    b.style.opacity=0;
+    _bgFading=false;
+  };
+  img.src=url;
 }
 // ===== EVENT CG (full-screen NSFW / event illustration) =====
 let currentCG = null;
