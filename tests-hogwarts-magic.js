@@ -183,6 +183,11 @@ const explicit=M.createState('1991-09-03');
 P.configure(explicit,'나는 입학 전부터 모든 주문과 마법을 이미 숙달했다',{spells:M.SPELLS});
 assert((explicit.spells.avada_kedavra?.xp||0)>=320,
  'explicit already mastered magic is a different character background than latent talent');
+const oneKnown=M.createState('1991-09-03');
+P.configure(oneKnown,'나는 입학 전부터 루모스를 숙달했다',{spells:M.SPELLS});
+assert((oneKnown.spells.lumos?.xp||0)>=300,'explicitly mastered spell must have full mastery');
+assert.equal(oneKnown.spells.crucio,undefined,'a single mastered spell does not unlock dark curses');
+assert.equal(P.infer('실력을 숨긴다').concealAbilities,true,'natural Korean concealment declension recognized');
 assert.equal(M.cast(explicit,'apparition',{date:'1991-09-03',inHogwarts:true}).ok,false,
  'even an overpowered character cannot override Hogwarts anti-Apparition wards');
 assert.match(M.context(gifted,{date:'1991-09-10'}),/NPC별 실제 목격/);
