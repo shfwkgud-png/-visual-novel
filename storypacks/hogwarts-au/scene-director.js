@@ -249,6 +249,22 @@
   }
   function hasPending(s){return valid(s)&&
     (s.cursor<s.queue.length||!!s.followUp);}
+  // The canon fact list is played as normal dialogue pages, not as
+  // extra choices. Only the chapter director can supply visibility-checked
+  // entries; old novel histories retain their existing flow.
+  function stageCanonResults(state,entries){
+    ensure(state);
+    if(state.phase!=='idle'||state.followUp||!Array.isArray(entries)||!entries.length)return false;
+    const visited=new Set();
+    state.phase='transition';
+    state.queue=entries.filter(e=>e&&typeof e.id==='string'&&
+      typeof e.narration==='string'&&!visited.has(e.id)&&visited.add(e.id))
+      .map((e,i)=>b(e.id,state.lastLocation||e.background||'corridor',
+        e.narration,[],{location:PLACE[state.lastLocation]||'호그와트'}));
+    state.cursor=0;state.followUp=null;state.sceneNonce++;
+    if(!state.queue.length){state.phase='idle';return false;}
+    return true;
+  }
   function outcomeBeat(result,world){
     if(!result || typeof result.id!=='string')return null;
     const choice=world?.finished?.[result.id]?.choice || 'observe';
@@ -290,5 +306,5 @@
     return '호그와트 장면 단계: '+s.phase+', 현재 '+s.cursor+'/'+s.queue.length+
       ', 입학식 진행 완료: '+s.arrivalCompleted+'. 장소 이동은 실제 도착 비트가 완결되어야 확정된다.';
   }
-  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,outcomeBeat,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
+  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,stageCanonResults,outcomeBeat,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
 });
