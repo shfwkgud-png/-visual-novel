@@ -249,10 +249,46 @@
   }
   function hasPending(s){return valid(s)&&
     (s.cursor<s.queue.length||!!s.followUp);}
+  function outcomeBeat(result,world){
+    if(!result || typeof result.id!=='string')return null;
+    const choice=world?.finished?.[result.id]?.choice || 'observe';
+    const actors={
+      first_invitations:{
+        malfoy:['말포이의 모임은 끝났지만 그녀는 자리를 떠나기 전에 당신에게 한번 더 시선을 보낸다. 다른 약속을 놓친 일은 되돌릴 수 없다.',
+          {speaker:'드레이코 말포이',char_id:'malfoy',text:'오늘 있었던 일은 기억해 둘게. 다음엔 좀 더 재미있는 이야기를 가져와.'}],
+        hermione:['헤르미온느와의 과제가 마무리되고 도서관이 조용해진다. 말포이의 모임은 다른 학생들과 따로 끝났다.',
+          {speaker:'헤르미온느',char_id:'hermione',text:'도와줘서 고마워. 다음엔 우리도 서로 모르는 걸 찾아보자.'}],
+        alone:['기숙사 학생들의 모임과 도서관 과제는 당신 없이도 계속됐다. 혼자 둘러본 성의 흔적만이 당신의 기록에 남았다.',null]
+      },
+      halloween_troll:{
+        rescue:['피난 명령이 내려진 동안에도 서로 다른 학생들이 각자의 자리에서 움직였다. 구출을 시도했다는 사실과 실제 구출의 성공 여부는 구분되어야 한다.',null],
+        teachers:['교수진에게 전달한 정보가 대응에 활용됐다. 트롤이 왜 들어왔는지는 여전히 학교 전체가 알 수 없는 문제다.',null],
+        safe:['학생들을 안전한 곳으로 인솔하는 동안 트롤 사건은 다른 구역에서도 진행됐다. 현장에서 보지 못한 일까지 직접 경험한 것으로 기록되지는 않는다.',null]
+      },
+      stone_finale:{
+        preempt:['누적해서 수집한 단서가 교수진의 조사를 앞당겼다. 사건이 원래와 다른 방식으로 흘렀으므로 뒤따르는 진실과 관계도 다시 검토해야 한다.',null],
+        follow:['해리 일행의 행동은 그들의 판단에 달려 있었다. 협력을 제안했다는 사실이 곧바로 동행 허락을 의미하지는 않는다.',null]
+      },
+      prince_secret:{
+        reach:['말포이는 잠시 대화를 멈췄지만 자신의 비밀을 쉽게 내놓지 않았다. 여러 해 전부터 쌓아 온 관계가 다음 대화의 분위기를 결정할 것이다.',null],
+        investigate:['말포이는 자신을 의심하는 시선을 알아챘다. 찾아낸 단서와 검증되지 않은 소문은 앞으로 분리해서 다뤄야 한다.',null]
+      },
+      hallows_school:{
+        resist:['교내 저항 세력은 조심스럽게 새로운 동료를 맞는다. 협력자는 보상을 약속하지 않으며 서로의 행동을 관찰한다.',null],
+        comply:['학교 안에서 명령에 순응한 결정은 누군가에게 안전을 주지만, 다른 학생들의 신뢰를 잃게 할 수도 있다.',null]
+      }
+    };
+    const variant=actors[result.id]?.[choice];
+    let narration=variant?.[0] || '사건은 한 장면에서 끝나지 않았다. 그날 만난 사람들은 자신의 일정으로 돌아갔고, 서로 다른 기억을 갖게 됐다.';
+    if(result.actions?.length)narration+=' 당신은 그 사이 직접 '+result.actions.length+'번의 행동을 시도했다. 행동의 성공이나 실패는 실제 대화에서 확인된 사실을 따른다.';
+    const offscreen=String(result.offscreen||'');
+    if(offscreen && !narration.includes(offscreen))narration+='\n\n한편, '+offscreen;
+    return {narration,dialogue:variant?.[1]?[variant[1]]:[],background:null,resetSprites:false};
+  }
   function describe(s){
     if(!valid(s))return '';
     return '호그와트 장면 단계: '+s.phase+', 현재 '+s.cursor+'/'+s.queue.length+
       ', 입학식 진행 완료: '+s.arrivalCompleted+'. 장소 이동은 실제 도착 비트가 완결되어야 확정된다.';
   }
-  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
+  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,outcomeBeat,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
 });
