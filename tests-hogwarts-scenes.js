@@ -74,6 +74,16 @@ for(const branch of ['malfoy','hermione','alone']){
   if(branch!=='alone')assert(beat.dialogue.length===1);
   tests++;
 }
+const factQueue=D.createState();
+assert(D.stageCanonResults(factQueue,[
+  {id:'canon_b01c10s01',narration:'교내에 트롤이 나타나 혼란이 일어났다.'},
+  {id:'canon_b01c10s02',narration:'학생들은 각각 위험에 대응했다.'}
+]));
+assert.equal(D.take(factQueue).beat.id,'canon_b01c10s01');
+assert.equal(D.take(factQueue).beat.id,'canon_b01c10s02');
+assert.equal(factQueue.phase,'idle');
+assert(!D.hasPending(factQueue));
+tests+=5;
 // A live public incident occurs without an explicit "make this happen" choice.
 let st=W.createState();
 const troll=W.EVENTS.find(x=>x.id==='halloween_troll');
@@ -143,7 +153,7 @@ assert.equal(clock.slot,3);
 tests+=3;
 // All patches are guarded under STORY.id === hogwarts.
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=5'));
+assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=6'));
 assert(html.includes('PandoraHogwartsScenes.startArrival('));
 assert(html.includes('runHogwartsAutomaticScene()'));
 assert(html.includes('PandoraHogwartsScenes.startRoomReturn('));
