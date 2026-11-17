@@ -263,7 +263,14 @@
   }
   function isNext(v) { return SCENE_NEXT.test(String(v||'').trim()); }
   function isFinish(v) { return SCENE_FINISH.test(String(v||'').trim()); }
-  function nextEvent(st, date) {
+  function fitSceneSlot(event,date,currentSlot){
+    if(!event)return null;
+    if(event.date===date && Number.isInteger(currentSlot) &&
+       currentSlot>=0 && currentSlot<=3 && event.slot<currentSlot)
+      return {...event,slot:currentSlot};
+    return event;
+  }
+  function nextEvent(st, date, currentSlot) {
     ensure(st);
     // A manually skipped overdue event becomes a genuine off-screen event,
     // never an encounter the player retroactively attended.
@@ -275,10 +282,10 @@
       upcoming=ev;break;
     }
     const oneChapter=CHAPTER_CATALOG && CHAPTER_HELPER && CHAPTER_HELPER.nextPlayable(CHAPTER_CATALOG,st,date,upcoming);
-    if(oneChapter)return oneChapter;
+    if(oneChapter)return fitSceneSlot(oneChapter,date,currentSlot);
     if (!upcoming) return null;
     if (dayGap(date,upcoming.date)>65) return routine(dayISO(date,45),st);
-    return upcoming;
+    return fitSceneSlot(upcoming,date,currentSlot);
   }
   function offer(st, event) {
     ensure(st);
