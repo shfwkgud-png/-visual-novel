@@ -136,7 +136,7 @@ const blockedWorld=world.createState();
 blockedWorld.finished.b07c01={choice:'observe',date:'1997-09-01'};
 assert.deepEqual(chapters.outcomeSequence(catalog,'b07c01',blockedWorld,halloweenCanon),[]);
 const pending=canon.createState();pending.statuses[local.beats[0].id]='pending';
-assert.match(chapters.unsafeBeat(local,local.beats[0].id,pending,true).narration,/원래 결말은 확정되지 않았다/);
+assert.match(chapters.unsafeBeat(local,local.beats[0].id,pending,true).narration,/결말을 확정하지 못했다/);
 
 // The existing earned alternate ending still changes the actual 433-beat history.
 const altered=bridge.sync(bundle,null,'1992-06-26',[{id:'stone_finale',choice:'preempt'}]);
@@ -144,8 +144,8 @@ assert.equal(altered.state.statuses.b01c17s01,'altered');
 assert.equal(altered.state.statuses.b01c17s02,'altered');
 assert(!chapters.ending(catalog,'b06c27',restored,altered.state));
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/chapter-director.js?v=4'));
-assert(html.includes('storypacks/hogwarts-au/world.js?v=11'));
+assert(html.includes('storypacks/hogwarts-au/chapter-director.js?v=5'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=12'));
 assert(html.includes('PandoraHogwartsWorld.installChapterCatalog'));
 assert(html.includes('PandoraHogwartsChapters.currentContext'));
 assert(html.includes('PandoraHogwartsChapters.ending('));
