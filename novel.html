@@ -2167,7 +2167,8 @@
 <script src="storypacks/hogwarts-au/story.js?v=9"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=7"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=4"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5"></script>
 <script src="storypacks/hogwarts-au/chapter-director.js?v=7"></script>
 <script src="storypacks/hogwarts-au/world.js?v=13"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -11525,7 +11526,8 @@ function handleHogwartsMagicCommand(text){
     if(year>=2 && st.electives.length<3)
       options.push(...api.SUBJECTS.filter(x=>x.group==='선택'&&!st.electives.includes(x.id))
         .slice(0,3).map(x=>'▶ 선택과목 ['+x.id+'] — '+x.name));
-    if(year>=5&&!st.darkAccess)options.push('▶ 금서 열람 — 위험한 지식에 접근한다');
+    if(!st.darkAccess&&/도서관|금서|제한 구역|비밀 서고/.test(ctx.location))
+      options.push('▶ 금서 열람 — 위험한 지식에 접근한다');
     if(year>=6 && !st.licences?.apparition) options.push('▶ 마법 자격시험 [apparition] — 순간이동 면허');
     if(year>=7 && !st.licences?.animagus) options.push('▶ 마법 자격시험 [animagus] — 애니마구스 등록');
     if(st.exams.OWL_1996)title+='\n\n5학년 O.W.L. 성적: '+Object.entries(st.exams.OWL_1996).map(([id,g])=>(api.SUBJECTS.find(x=>x.id===id)?.name||id)+': '+g).join(', ');
@@ -11560,7 +11562,7 @@ function handleHogwartsMagicCommand(text){
         +(result.violation?'\n사용한 마법에 관한 징계·조사 기록이 남았다.':'')
       :'시전할 수 없다.\n\n'+result.reason;
     st.lastCast=result.ok?result:null;
-    if(result.ok&&result.violation){gameState.flags=gameState.flags||{};gameState.flags['마법법위반기록']=true;}
+    if(result.ok&&result.violation&&result.exposed){gameState.flags=gameState.flags||{};gameState.flags['마법법위반목격']=true;}
     syncHogwartsMagicSkills();
     options=['▶ 마법 수업 — 주문 연습','▶ 마법 도감 — 교과서로'];
   } else if(cmd.kind==='elective'){
@@ -11591,6 +11593,41 @@ function handleHogwartsMagicCommand(text){
   autoSave();
   return true;
 }
+// Directly requesting restricted texts is possible regardless of year, but
+// requires physically reaching a source. The attempt is not instant spell mastery.
+function handleHogwartsDarkResearch(text){
+  if(STORY.id!=='hogwarts'||window._startPhase!=='playing'||!window.PandoraHogwartsMagic)return false;
+  if(!/(금서|금지\s*도서|제한\s*구역|어둠의\s*마법).{0,36}(열람|읽|찾|조사|연구|훔쳐|꺼내|접근)/.test(text))return false;
+  const api=PandoraHogwartsMagic,hp=gameState?.hogwarts;
+  if(!hp||!api.valid(hp.magic))return false;
+  const result=api.seekDarkAccess(hp.magic,hogwartsMagicContext());
+  renderFixedStep((result.ok?'금서 연구의 첫걸음':'아직 금서에 접근하지 못했다')+'\n\n'+result.reason,
+    ['▶ 마법 도감 — 연구 상태 확인',...hogwartsMagicBack()],{resetSprites:false});
+  if(result.ok){if(hp.world?.agency)hp.world.agency.darkResearch='unlicensed';}
+  autoSave();return true;
+}
+// A free-form research action can train a spell without selecting a classroom.
+// The current physical location and verified magical evidence are authoritative.
+function handleHogwartsFreeStudy(text){
+  if(STORY.id!=='hogwarts'||window._startPhase!=='playing'||
+     !window.PandoraHogwartsProfile||!window.PandoraHogwartsMagic)return false;
+  const api=PandoraHogwartsMagic,hp=gameState?.hogwarts;
+  if(!hp||!api.valid(hp.magic))return false;
+  const cmd=PandoraHogwartsProfile.parseFreeStudy(text,api.findIncantation);
+  if(!cmd)return false;
+  const spell=api.SPELL_BY_ID[cmd.id],ctx=hogwartsMagicContext();
+  const result=api.lesson(hp.magic,cmd.id,{...ctx,selfStudy:true,
+    studyMethod:cmd.studyMethod,
+    darkStudy:!!(hp.magic.darkAccess&&['dark','unforgivable'].includes(spell.law))});
+  syncHogwartsMagicSkills();
+  renderFixedStep(result.ok
+    ?'개인 연구: '+spell.name+'\n\n'+(result.firstLearned?'주문을 시전 가능한 단계까지 이해했다.':'연구를 통해 숙련도가 향상됐다.')+
+      '\n경험 +'+result.gain+' · '+result.rank+' ('+result.xp+' XP)'+(result.danger?'\n위험한 연구가 자동으로 발각되지는 않는다.':'')
+    :'연구를 이어갈 수 없다.\n\n'+result.reason,
+    ['▶ 마법 도감 — 습득 상태 확인',...hogwartsMagicBack()],{resetSprites:false});
+  if(result.ok&&result.danger&&hp.world?.agency)hp.world.agency.darkResearch='unlicensed';
+  autoSave();return true;
+}
 function handleHogwartsFreeCast(text){
   if(STORY.id!=='hogwarts'||window._startPhase!=='playing'||!window.PandoraHogwartsMagic)
     return false;
@@ -11599,8 +11636,11 @@ function handleHogwartsFreeCast(text){
   const cmd=api.parseFreeCast(text);if(!cmd)return false;
   const ctx=hogwartsMagicContext();
   const riskPerson=/에게|를 공격|상대|적에게|교수에게|학생에게|말포이에게|해리에게/.test(text);
+  const witnesses=Array.isArray(window._lastPresentIds)
+    ?window._lastPresentIds.filter(id=>typeof id==='string'&&CHARACTERS?.[id]):[];
+  const concealed=/몰래|남몰래|은밀|들키지|눈치채지 못|보이지 않게/.test(text);
   const result=api.cast(hp.magic,cmd.id,{...ctx,target:String(text).slice(0,120),
-    againstPerson:riskPerson});
+    againstPerson:riskPerson,witnesses,concealAttempt:concealed});
   if(!result.ok){
     renderFixedStep('주문이 뜻대로 이루어지지 않았다.\n\n'+result.reason,
       ['▶ 마법 수업 — 관련 주문을 연습한다',
@@ -11608,10 +11648,10 @@ function handleHogwartsFreeCast(text){
     autoSave();return true;
   }
   hp.magic.lastCast=result;
-  if(result.violation){
+  if(result.violation&&result.exposed){
     gameState.flags=gameState.flags||{};
-    gameState.flags['마법법위반기록']=true;
-    if(hp.world?.agency)hp.world.agency.magicLawViolation=result.violation;
+    gameState.flags['마법법위반목격']=true;
+    if(hp.world?.agency)hp.world.agency.magicLawExposure=result.violation;
   }
   syncHogwartsMagicSkills();
   autoSave();return false; // normal NPC dialogue follows the app's authoritative result
@@ -11752,6 +11792,14 @@ function restoreAndReplayInner(save, checkTimeflow) {
       gameState.hogwarts.chapters=PandoraHogwartsChapters.createState();
     if (window.PandoraHogwartsMagic && !PandoraHogwartsMagic.valid(gameState.hogwarts.magic))
       gameState.hogwarts.magic=PandoraHogwartsMagic.createState(gameState.hogwarts.date);
+    // Legacy save migration: keep spells, exams, branches and world clock intact.
+    if (window.PandoraHogwartsProfile && window.PandoraHogwartsMagic &&
+        PandoraHogwartsMagic.valid(gameState.hogwarts.magic)) {
+      const pp=PandoraHogwartsProfile.ensure(gameState.hogwarts.magic);
+      if(!pp.configured && String(save.playerDesc||'').trim())
+        PandoraHogwartsProfile.configure(gameState.hogwarts.magic,save.playerDesc,
+          {spells:PandoraHogwartsMagic.SPELLS,worldMode:gameState.freeMode?'free':'canon_centered'});
+    }
     if (window.PandoraHogwartsScenes && !PandoraHogwartsScenes.valid(gameState.hogwarts.scene)) {
       gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
       if (gameState.hogwarts.house) gameState.hogwarts.scene.arrivalCompleted=true; // existing save migration
@@ -15153,7 +15201,13 @@ function showChoices(choices) {
     const inj = idolPlanChoice();
     if (inj && !choices.some(c => c === inj)) choices = choices.concat([inj]);
   }
-  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsWorld &&
+  // A spellbook/classroom submenu is a self-contained action space. Appending
+  // world/scene buttons inside it created overlapping actions on small screens
+  // (a tap for a class sometimes reopened the grimoire or finished the scene).
+  const hogwartsMagicSubmenu=STORY.id==='hogwarts'&&
+    choices.some(x=>/^▶\s*마법 메뉴 닫기/.test(x));
+  if (STORY.id === 'hogwarts' && !hogwartsMagicSubmenu &&
+      window._startPhase === 'playing' && window.PandoraHogwartsWorld &&
       gameState.hogwarts && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) {
     const hw = gameState.hogwarts.world;
     if (window.PandoraHogwartsMagic && PandoraHogwartsMagic.valid(gameState.hogwarts.magic) &&
@@ -15316,6 +15370,8 @@ async function handlePlayerInput(text) {
   if (STORY.id==='hogwarts' && gameState?.hogwarts && window.PandoraHogwartsChapters &&
       !PandoraHogwartsChapters.getLoaded()) await syncHogwartsCanon();
   if (typeof handleHogwartsMagicCommand==='function' && handleHogwartsMagicCommand(text))return;
+  if (typeof handleHogwartsDarkResearch==='function' && handleHogwartsDarkResearch(text))return;
+  if (typeof handleHogwartsFreeStudy==='function' && handleHogwartsFreeStudy(text))return;
   if (typeof handleHogwartsFreeCast==='function' && handleHogwartsFreeCast(text))return;
   // Hogwarts scenes: time, NPC schedules, and consequences have one deterministic owner.
   // This is a separate routing path; every other PANDORA story still uses its old flow.
@@ -15551,19 +15607,29 @@ async function handlePlayerInput(text) {
     window._modeChosen = true;
     window._startPhase = 'setup';
     window._pendingPlayerLine = text; window._genText = text;
-    renderFixedStep('당신은 이 이야기에서 누구입니까? 캐릭터를 설정해 주세요.\n형식: 이름/나이/성별/특징 (예: 무진/24살/남/떠돌이 검객) — 성별은 생략해도 됩니다.', null);
+    renderFixedStep(STORY.id==='hogwarts'
+      ?'호그와트에서 어떤 인물로 살아가고 싶나요?\n이름/나이/성별/특징 형식 또는 자유로운 문장으로 설정하세요. 천재성, 입학 전 배운 주문, 능력 은폐, 어둠의 마법 적성도 적을 수 있습니다. 이름을 생략하면 기존 이름을 사용합니다.'
+      :'당신은 이 이야기에서 누구입니까? 캐릭터를 설정해 주세요.\n형식: 이름/나이/성별/특징 (예: 무진/24살/남/떠돌이 검객) — 성별은 생략해도 됩니다.', null);
     autoSave();
     return;
   }
   if (window._startPhase === 'setup') {
+    const hpSetup=STORY.id==='hogwarts'&&window.PandoraHogwartsProfile
+      ?PandoraHogwartsProfile.parseSetup(text,playerName):null;
     const p = String(text).trim().match(/^([^/\n]{1,12})\s*\/\s*(\d{1,3})\s*살?\s*(?:\/\s*(남|여)(?:자|성)?)?\s*\/\s*(.{1,60})$/);
     dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
     gameHistory.push({ role: 'user', content: text });
     window._pendingPlayerLine = text; window._genText = text;
-    if (!p) { renderFixedStep('형식이 맞지 않습니다. "이름/나이/특징" 으로 입력해 주세요. (예: 무진/24살/떠돌이 검객)', null); return; }
-    playerName = p[1].trim();
-    const gp = p[3] ? `${p[3]}성, ` : '';
-    playerDesc = `${p[2]}살 ${gp}${p[4].trim()}`;
+    if (!p&&!hpSetup) { renderFixedStep('형식이 맞지 않습니다. 이름/나이/특징 또는 자유로운 자연어로 작성해 주세요.', null); return; }
+    playerName = hpSetup ? hpSetup.name : p[1].trim();
+    const gp = p?.[3] ? `${p[3]}성, ` : '';
+    playerDesc = hpSetup ? hpSetup.description : `${p[2]}살 ${gp}${p[4].trim()}`;
+    if(STORY.id==='hogwarts'&&window.PandoraHogwartsProfile&&window.PandoraHogwartsMagic&&
+       PandoraHogwartsMagic.valid(gameState?.hogwarts?.magic)) {
+      PandoraHogwartsProfile.configure(gameState.hogwarts.magic,playerDesc,
+        {spells:PandoraHogwartsMagic.SPELLS,worldMode:window._freeMode?'free':'canon_centered'});
+      syncHogwartsMagicSkills();
+    }
     if (gameState) gameState.name = playerName;
     // ★STORY.protagonist는 건드리지 않는다(팩 기본값 유지) — 여기 name을 덮으면
     //   callGemini의 defName이 플레이어이름이 돼 로어의 원작이름 치환이 무효화됨(하윤 잔존 버그).
@@ -15795,29 +15861,41 @@ function bgUrlFor(key) {
 // Crossfade to a new background: paint the B layer, fade it in over the old
 // image, then commit it to the base layer (no hard cuts).
 let _bgFading = false;
+let _bgTransitionRevision = 0;
 function crossfadeBg(url) {
+  // Previous async loads and 750ms fades must NEVER paint over a newer scene.
+  // This caused state="great_hall" while the visible canvas showed "corridor".
+  const revision=++_bgTransitionRevision;
   const b = document.getElementById('bgLayerB');
   if (!b || _bgFading) {   // fallback / re-entrancy: hard set
+    _bgFading=false;
     bgLayer.style.backgroundImage = `url('${url}')`;
     if (b) { b.style.transition = 'none'; b.style.opacity = 0; void b.offsetWidth; b.style.transition = ''; }
     return;
   }
-  _bgFading = true;
-  const img = new Image();
-  img.onload = () => {
-    b.style.backgroundImage = `url('${url}')`;
-    b.style.opacity = 1;
-    setTimeout(() => {
-      bgLayer.style.backgroundImage = `url('${url}')`;
-      b.style.transition = 'none';
-      b.style.opacity = 0;
+  _bgFading=true;
+  const img=new Image();
+  img.onload=()=>{
+    if(revision!==_bgTransitionRevision)return;
+    b.style.backgroundImage=`url('${url}')`;
+    b.style.opacity=1;
+    setTimeout(()=>{
+      if(revision!==_bgTransitionRevision)return;
+      bgLayer.style.backgroundImage=`url('${url}')`;
+      b.style.transition='none';
+      b.style.opacity=0;
       void b.offsetWidth;
-      b.style.transition = '';
-      _bgFading = false;
-    }, 750);
+      b.style.transition='';
+      _bgFading=false;
+    },750);
   };
-  img.onerror = () => { bgLayer.style.backgroundImage = `url('${url}')`; _bgFading = false; };
-  img.src = url;
+  img.onerror=()=>{
+    if(revision!==_bgTransitionRevision)return;
+    bgLayer.style.backgroundImage=`url('${url}')`;
+    b.style.opacity=0;
+    _bgFading=false;
+  };
+  img.src=url;
 }
 // ===== EVENT CG (full-screen NSFW / event illustration) =====
 let currentCG = null;
@@ -17481,6 +17559,10 @@ function saveProfile() {
   playerName = newName;
   playerDesc = (descEl.value || '').trim();
   gameState.name = playerName;
+  if(STORY.id==='hogwarts'&&window.PandoraHogwartsProfile&&window.PandoraHogwartsMagic&&
+     PandoraHogwartsMagic.valid(gameState?.hogwarts?.magic))
+    PandoraHogwartsProfile.configure(gameState.hogwarts.magic,playerDesc,
+      {spells:PandoraHogwartsMagic.SPELLS,worldMode:window._freeMode?'free':'canon_centered'});
   autoSave();
   const btn = document.getElementById('profileSaveBtn');
   btn.textContent = '저장됨 ✓';

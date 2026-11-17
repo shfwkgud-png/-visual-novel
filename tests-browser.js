@@ -342,7 +342,12 @@ async function waitForStoryChoice(page, sought) {
   for(let attempt=0; attempt<115; attempt++) {
     const button=page.locator('#choiceBox .choice-btn').filter({hasText:sought});
     if(await button.count() && await button.first().isVisible()) return;
-    if(await page.locator('#dialoguePanel').isVisible()) {
+    // Hogwarts magic submenus are overlaid near the dialogue on narrow mobile
+    // viewports. For that one menu, advance narration through the app nav
+    // handler; retain real taps for ordinary cinematic story progression.
+    if(/마법 연습/.test(sought)){
+      await page.evaluate(()=>{if(isShowing||waitingForTap)navNext();});
+    } else if(await page.locator('#dialoguePanel').isVisible()) {
       const box=await page.locator('#dialoguePanel').boundingBox();
       if(box) {
         const x=box.x+box.width*0.8,y=box.y+Math.min(box.height-2,14);
@@ -861,6 +866,14 @@ async function hogwartsArtCheck(ctx) {
     await page.waitForFunction(() => window._startPhase === 'setup');
     await enterText(page, FIRST_INPUT);
     await page.waitForFunction(() => window._startPhase === 'hogwarts_sort');
+    const profileAfterSetup=await page.evaluate(()=>({
+      source:gameState.hogwarts.magic.profile?.description,
+      aptitude:gameState.hogwarts.magic.profile?.aptitude?.general,
+      name:gameState.name
+    }));
+    assert.match(profileAfterSetup.source,/차분한 도서관 방문객/);
+    assert.equal(profileAfterSetup.aptitude,50,'ordinary setup stays ordinary');
+    assert.equal(profileAfterSetup.name,'검증자');
     await drainDialogue(page);
     await page.locator('#choiceBox .choice-btn').filter({ hasText: '슬리데린' }).click();
     await page.waitForFunction(() => gameState.hogwarts.house === '슬리데린' && !sendBtn.disabled);
@@ -883,8 +896,23 @@ async function hogwartsArtCheck(ctx) {
     await waitForStoryChoice(page,'헤르미온느와 도서관');
     await page.locator('#choiceBox .choice-btn').filter({hasText:'헤르미온느와 도서관'}).click();
     await drainDialogue(page);
-    await page.waitForFunction(() => ['harry', 'ron'].every(id => document.getElementById('sprite_' + id)?.naturalWidth === 1024)
-      && bgLayer.style.backgroundImage.includes('great_hall_portrait.webp'));
+    try {
+      await page.waitForFunction(() => ['harry', 'ron'].every(id => document.getElementById('sprite_' + id)?.naturalWidth === 1024)
+        && bgLayer.style.backgroundImage.includes('great_hall_portrait.webp'),null,{timeout:22000});
+    } catch(error) {
+      const state=await page.evaluate(()=>({
+        date:gameState?.hogwarts?.date,
+        scene:gameState?.hogwarts?.scene,
+        worldActive:gameState?.hogwarts?.world?.active,
+        currentBgFile,background:bgLayer.style.backgroundImage,
+        sprites:['harry','ron'].map(id=>({id,src:document.getElementById('sprite_'+id)?.src,
+          width:document.getElementById('sprite_'+id)?.naturalWidth})),
+        choices:[...document.querySelectorAll('#choiceBox .choice-btn')].map(x=>x.textContent),
+        inputMode,isShowing,waitingForTap,queued:dialogueQueue.length,
+        recent:gameHistory.slice(-2).map(x=>String(x.content||'').slice(0,80))
+      }));
+      throw new Error('Hogwarts art/story transition never resolved: '+JSON.stringify(state)+'; '+error.message);
+    }
     await page.waitForFunction(() => [...document.querySelectorAll('#charLayer img')]
       .every(img => getComputedStyle(img).opacity === '1'));
     const scene = await page.evaluate(() => ({
@@ -1016,6 +1044,45 @@ async function hogwartsArtCheck(ctx) {
     assert(firstNight.xp>0,'spell lesson after school begins must record practice');
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 메뉴 닫기'}).first().click();
     await drainDialogue(page);
+  });
+  await check(ctx, 'Hogwarts prodigy profile loaded in both desktop and mobile engine', async () => {
+    const result=await page.evaluate(()=>{
+      const M=window.PandoraHogwartsMagic,P=window.PandoraHogwartsProfile;
+      const state=M.createState('1991-09-01');
+      const desc='나는 호그와트 역사상 가장 뛰어난 마법적 재능을 가진 천재다. 어둠의 마법에 천부적인 소질이 있다. 하지만 능력을 숨긴다.';
+      const profile=P.configure(state,desc,{spells:M.SPELLS,worldMode:'canon_centered'});
+      const blocked=M.cast(state,'crucio',{date:'1991-09-03'});
+      const learned=M.lesson(state,'accio',{date:'1991-09-03',location:'호그와트 도서관',
+        selfStudy:true,studyMethod:'book'});
+      const known=state.profile.knownBy;
+      const parsed=P.parseSetup(desc,'신입생');
+      const serialized=JSON.parse(JSON.stringify(state));
+      return {exists:!!P, aptitude:profile.aptitude.general,dark:profile.aptitude.dark,
+        conceal:profile.concealAbilities,world:profile.worldMode,
+        blocked:blocked.ok,learned:learned.ok,known:Object.keys(known).length,
+        parsed:parsed.description,restore:P.ensure(serialized).aptitude.general};
+    });
+    assert.equal(result.exists,true);
+    assert.equal(result.aptitude,100);
+    assert.equal(result.dark,100);
+    assert.equal(result.conceal,true);
+    assert.equal(result.world,'canon_centered');
+    assert.equal(result.blocked,false);
+    assert.equal(result.learned,true);
+    assert.equal(result.known,0);
+    assert.match(result.parsed,/호그와트 역사상/);
+    assert.equal(result.restore,100);
+  });
+  await check(ctx, 'Hogwarts rapid background updates reject stale crossfade callbacks', async()=>{
+    await page.evaluate(()=>{setBg('corridor');setBg('great_hall');});
+    await page.waitForTimeout(1200);
+    const bg=await page.evaluate(()=>({
+      key:currentBgFile,actual:bgLayer.style.backgroundImage,
+      fading:_bgFading,revision:_bgTransitionRevision
+    }));
+    assert.equal(bg.key,'great_hall','scene state must retain final destination');
+    assert.match(bg.actual,/great_hall_portrait\.webp/,
+      'stale image preload/fade must never overwrite the latest background');
   });
 }
 
