@@ -99,7 +99,7 @@ assert.equal(M.cast(licence,'apparition',{date:'1996-09-07',inHogwarts:true}).ok
 assert.equal(M.cast(licence,'apparition',{date:'1996-09-07',inHogwarts:false}).ok,true);
 assert(M.certify(licence,'apparition',{date:'1996-09-07',location:'마법약 교실'}).ok===false);
 const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/magic.js?v=3'));
+assert(html.includes('storypacks/hogwarts-au/magic.js?v=4'));
 assert(html.includes('PandoraHogwartsMagic.createState'));
 assert(html.includes('PandoraHogwartsMagic.passiveSchool('));
 assert(html.includes('handleHogwartsMagicCommand(text)'));
