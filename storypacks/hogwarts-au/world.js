@@ -9,7 +9,13 @@
   if (root) root.PandoraHogwartsWorld = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  const KIND = { plot:'정사 사건', person:'개인 사건', life:'학교 생활', aftermath:'선택의 후폭풍' };
+  const KIND = { plot:'정사 사건', person:'개인 사건', life:'학교 생활', aftermath:'선택의 후폭풍', chapter:'원작 장별 생활 사건' };
+  let CHAPTER_CATALOG=null,CHAPTER_HELPER=null;
+  function installChapterCatalog(catalog,helper) {
+    if (!catalog||!catalog.byId||!helper||typeof helper.nextPlayable!=='function')throw Error('Hogwarts chapter catalog is not ready');
+    CHAPTER_CATALOG=catalog;CHAPTER_HELPER=helper;
+    return catalog.summary;
+  }
   const EVENT_CHOICE = /^▶\s*선택\s*\[([a-z0-9_-]+)\]\s*([a-z0-9_-]+)\b/i;
   // JavaScript \b only recognizes ASCII word characters: after Korean text it
   // does NOT match a space. These controls were falling through into AI chat.
@@ -184,6 +190,8 @@
   }
   function getEvent(id, st) {
     if (EVENT_BY_ID[id]) return EVENT_BY_ID[id];
+    if (CHAPTER_CATALOG?.byId[id] && CHAPTER_CATALOG.byId[id].interactive)
+      return CHAPTER_HELPER.eventFor(CHAPTER_CATALOG.byId[id],st);
     const m=/^routine_(\d{4})_(\d{2})_(\d{2})$/.exec(String(id||''));
     return m?routine(m[1]+'-'+m[2]+'-'+m[3],st):null;
   }
@@ -214,6 +222,8 @@
     }
     if(ev.id==='hallows_school' && st.agency.phoenix==='resist')
       intro+='\n\n엄브리지 시절 위험을 감수했던 학생들이 당신의 태도를 기억한다. 같은 사람들이 다시 도움을 청할 수도 있다.';
+    if (CHAPTER_CATALOG && CHAPTER_HELPER && CHAPTER_CATALOG.byMajor[ev.id])
+      intro+='\n\n이 사건은 이미 기록된 원작 장별 역사와 연결되며, 이 장면에서 보여 주는 내용은 플레이어가 실제로 겪을 수 있는 것에 한정된다.';
     return intro;
   }
   function optionsFor(ev,st) {
@@ -229,7 +239,7 @@
         delta:{mcgonagall:3,hermione:2},flags:{stone_finale:'preempt'},
         offscreen:'교수들이 검증된 단서에 따라 학교의 의심스러운 교수를 미리 조사한다. 원작의 함정문 대면은 그대로 반복되지 않는다.'};
     if(id==='preempt')return null;
-    if(id==='observe' && ev.kind==='plot')
+    if(id==='observe' && (ev.kind==='plot'||ev.autoStart))
       return {id:'observe',label:'현장에서 사건이 진행되는 모습을 본다',
         intent:'공개된 상황과 지금 나타난 인물의 행동으로 사건을 시작한다. 플레이어의 행동·대사·태도를 대신 결정하지 않는다.',
         delta:{},flags:{},offscreen:'다른 장소에서도 관련 인물의 행동이 독립적으로 이어진다.'};
@@ -264,6 +274,8 @@
       if (ev.date < date) continue;
       upcoming=ev;break;
     }
+    const oneChapter=CHAPTER_CATALOG && CHAPTER_HELPER && CHAPTER_HELPER.nextPlayable(CHAPTER_CATALOG,st,date,upcoming);
+    if(oneChapter)return oneChapter;
     if (!upcoming) return null;
     if (dayGap(date,upcoming.date)>65) return routine(dayISO(date,45),st);
     return upcoming;
@@ -289,6 +301,8 @@
       actors:ev.actors.slice(),kind:KIND[ev.kind],title:ev.title,
       instruction:'[호그와트 확정 장면: '+ev.title+']\n'
         +'사건 시점: '+ev.date+'. 플레이어가 선택한 행동: '+opt.label+'.\n'
+        +'진입 상황: '+introFor(ev,st)+'\n'
+        +(ev.kind==='chapter'?'이 장은 198개 원작 장 가운데 한 개다. 433개 세부 사건 장부와 연결되지만 아직 일어나지 않은 결과나 비밀은 먼저 밝히지 마라.\n':'')
         +'장면의 실제 목표: '+opt.intent+'\n'
         +'플레이어가 없는 곳에서 진행되는 일: '+opt.offscreen+'\n'
         +'이번 응답은 이 장면의 첫 대사/행동을 실제로 보여 줘야 한다. '
@@ -302,8 +316,13 @@
     ensure(st);
     if(!st.pending||st.active)return null;
     const ev=getEvent(st.pending.id,st);
-    if(!ev||ev.kind!=='plot')return null;
+    if(!ev||(ev.kind!=='plot'&&!ev.autoStart))return null;
     return start(st,{eventId:ev.id,optionId:'observe'});
+  }
+  function shouldStartAmbient(st){
+    ensure(st);
+    const ev=st.pending&&getEvent(st.pending.id,st);
+    return !!(ev&&(ev.kind==='plot'||ev.autoStart));
   }
   function activeChoices(st){
     ensure(st);
@@ -403,6 +422,6 @@
     return {title,narration:note};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,startAmbient,activeChoices,interrupt,noteAction,finish,resume,context,ending,
+  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,finish,resume,context,ending,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });
