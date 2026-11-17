@@ -26,6 +26,19 @@
     chapters.forEach((c,i)=>{result[c]=day(from,n<=1?0:Math.floor(i*span/(n-1)));});
     return result;
   }
+  // Gameplay pacing markers, not independently verified novel dates.
+  // Consecutive parts of ONE climax happen in the SAME evening; keeping the
+  // original equally-spaced chapter dates made players intervene after deaths.
+  const SCENE_DATE_OVERRIDES = Object.freeze({
+    1:{17:'1992-06-07'},
+    2:{8:'1992-10-31',16:'1993-06-15',17:'1993-06-15'},
+    3:{17:'1994-06-15',18:'1994-06-15',19:'1994-06-15',20:'1994-06-15',21:'1994-06-15'},
+    4:{16:'1994-10-31',31:'1995-06-24',32:'1995-06-24',33:'1995-06-24',34:'1995-06-24',
+      35:'1995-06-25',36:'1995-06-26',37:'1995-06-30'},
+    5:{34:'1996-06-17',35:'1996-06-17',36:'1996-06-17'},
+    6:{26:'1997-06-12',27:'1997-06-12',28:'1997-06-12',
+      29:'1997-06-13',30:'1997-06-30'}
+  });
   function schedule(ledger){
     const dates={};
     for(let b=1;b<=7;b++){
@@ -54,6 +67,7 @@
         Object.assign(cDate,spreadChapters([...chapters],win[0],win[1]));
       }
       if(b===1)Object.assign(cDate,FIRST_YEAR_CHAPTERS);
+      Object.assign(cDate,SCENE_DATE_OVERRIDES[b]||{});
       for(const e of ledger.events)if(e.book===b)dates[e.id]=cDate[e.chapter];
     }
     // The chronicle was authored in causal order; pacing dates must not run backwards.
