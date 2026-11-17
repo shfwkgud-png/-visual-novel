@@ -173,7 +173,7 @@
   function passiveSchool(s,from,to){
     need(s);if(!/^\d{4}-\d{2}-\d{2}$/.test(to))return [];
     const previous=String(from||s.lastDate);
-    if(to<=previous){s.lastDate=to;return [];}
+    if(to<=previous)return []; // never rewind training or daily counters on stale save
     const start=Date.parse(previous+'T00:00:00Z'),end=Date.parse(to+'T00:00:00Z');
     if(!Number.isFinite(start)||!Number.isFinite(end))return [];
     const earned=[],months=Math.floor((end-start)/86400000/18);
@@ -276,11 +276,17 @@
       id:x.id,name:x.name,subject:SUBJECT_BY_ID[x.subject].name,
       rank:rank(s.spells[x.id]?.xp||0),law:x.law}))};
   }
-  function practiceChoices(s,year,ctx){
+  function availableTraining(s,year,ctx){
     need(s);
     return SPELLS.filter(x=>x.year<=year&&x.law!=='dark'&&x.law!=='unforgivable'&&
-      !courseAllowed(s,x,ctx||{date:s.lastDate})).slice(0,14)
-      .map(x=>'▶ 마법 연습 ['+x.id+'] — '+x.name);
+      !courseAllowed(s,x,ctx||{date:s.lastDate}));
+  }
+  function practiceChoices(s,year,ctx,part){
+    const list=availableTraining(s,year,ctx);
+    const page=Math.max(0,Math.floor(Number(part)||0));
+    const pages=Math.max(1,Math.ceil(list.length/8));
+    return {page:Math.min(page,pages-1),pages,choices:list.slice(Math.min(page,pages-1)*8,(Math.min(page,pages-1)+1)*8)
+      .map(x=>'▶ 마법 연습 ['+x.id+'] — '+x.name)};
   }
   function findIncantation(input){
     const value=String(input||'').toLowerCase().replace(/\s+/g,' ').trim();
@@ -293,7 +299,7 @@
   function parseCommand(text){
     const input=String(text||'').trim();
     if(/^▶\s*마법 도감/.test(input))return {kind:'book',page:Number(input.match(/\[(\d+)\]/)?.[1]||0)};
-    if(/^▶\s*마법 수업/.test(input))return {kind:'lessons'};
+    if(/^▶\s*마법 수업/.test(input))return {kind:'lessons',page:Number(input.match(/\[(\d+)\]/)?.[1]||0)};
     if(/^▶\s*마법 연습/.test(input)){const m=/\[([a-z0-9_]+)\]/.exec(input);return {kind:'study',id:m?.[1]};}
     if(/^▶\s*마법 시전/.test(input)){const m=/\[([a-z0-9_]+)\]/.exec(input);return {kind:'cast',id:m?.[1]};}
     if(/^▶\s*선택과목/.test(input)){const m=/\[([a-z0-9_]+)\]/.exec(input);return {kind:'elective',id:m?.[1]};}
@@ -323,6 +329,6 @@
       +'- 비마법 스킬은 일반 RPG 엔진에서 취급할 수 있으나 주문 목록과 숙련도는 AI가 state_update.player.skills/abilities로 독단적으로 고쳐 쓰지 못한다.\n';
   }
   return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,createState,valid,schoolYear,rank,courseAllowed,
-    lesson,passiveSchool,examGrade,elective,seekDarkAccess,cast,page,practiceChoices,
+    lesson,passiveSchool,examGrade,elective,seekDarkAccess,cast,page,availableTraining,practiceChoices,
     findIncantation,parseCommand,parseFreeCast,context,LESSON_THRESHOLD});
 });
