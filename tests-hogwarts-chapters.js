@@ -146,7 +146,7 @@ assert.equal(altered.state.statuses.b01c17s02,'altered');
 assert(!chapters.ending(catalog,'b06c27',restored,altered.state));
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
 assert(html.includes('storypacks/hogwarts-au/chapter-director.js?v=7'));
-assert(html.includes('storypacks/hogwarts-au/world.js?v=13'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=14'));
 assert(html.includes('PandoraHogwartsWorld.installChapterCatalog'));
 assert(html.includes('PandoraHogwartsChapters.currentContext'));
 assert(html.includes('PandoraHogwartsChapters.ending('));

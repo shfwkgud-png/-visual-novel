@@ -191,6 +191,19 @@ test('a complete replay rebuilds each saved dialogue once and leaves canonical h
   assert.deepEqual(h.calls.saves.at(-1).dialogueLog.map(x => x.text), h.sb.dialogueLog.map(x => x.text));
 });
 
+test('consecutive saved scenes keep prior dialogue and reveal pending lines after replay', async () => {
+  const h = harness(), saved = savePayload(), next = scene('다음');
+  saved.gameHistory.push({ role: 'assistant', content: JSON.stringify(next) });
+  saved.dialogueLog.push({ speaker: '나레이터', text: next.narration, isPlayer: false },
+    ...next.dialogue.map(line => ({ ...line, isPlayer: false, pending: true })));
+  const lines = saved.dialogueLog.map(line => line.text);
+  h.sb.restoreAndReplay(saved, false);
+  assert.equal(h.sb.dialogueLog.filter(line => line.pending).length, 2);
+  await h.advance(12000);
+  assert.deepEqual(h.sb.dialogueLog.map(line => line.text), lines);
+  assert.equal(h.sb.dialogueLog.some(line => line.pending), false);
+});
+
 test('home then continue cannot inherit the previous input mode or replay queue', async () => {
   const h = harness();
   h.sb.restoreAndReplay(savePayload('첫 슬롯'), false); await h.advance(12000);

@@ -81,7 +81,14 @@
       &&s.visited&&typeof s.visited==='object');
   }
   function ensure(s){if(!valid(s))throw Error('Hogwarts scene continuity state invalid');return s;}
-  const d=(speaker,char_id,text)=>({speaker,char_id,text});
+  function normalizeDialogue(line){
+    if(!line.isPlayer && Object.values(HOUSES).some(h=>
+      line.text===h.arrival.answer && line.speaker===h.arrival.reply)){
+      line.speaker='나레이터';line.char_id=null;
+    }
+    return line;
+  }
+  const d=(speaker,char_id,text)=>normalizeDialogue({speaker,char_id,text});
   function b(id,background,narration,dialogue=[],opts={}){
     return {id,background,narration,dialogue,slot:opts.slot??null,location:opts.location||PLACE[background]||'호그와트',
       event:opts.event||null};
@@ -306,5 +313,5 @@
     return '호그와트 장면 단계: '+s.phase+', 현재 '+s.cursor+'/'+s.queue.length+
       ', 입학식 진행 완료: '+s.arrivalCompleted+'. 장소 이동은 실제 도착 비트가 완결되어야 확정된다.';
   }
-  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,stageCanonResults,outcomeBeat,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
+  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,stageCanonResults,outcomeBeat,take,hasPending,describe,arrival,onEnter,daysBetween,normalizeDialogue,HOUSES});
 });

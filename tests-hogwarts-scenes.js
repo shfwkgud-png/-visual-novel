@@ -15,6 +15,9 @@ const byHouse={
   후플푸프:{speaker:'후플푸프 반장',key:'hufflepuff_common_room'}
 };
 let tests=0;
+const savedAction={speaker:'퍼시 위즐리',char_id:'percy',text:D.HOUSES['그리핀도르'].arrival.answer};
+assert.equal(D.normalizeDialogue({...savedAction}).speaker,'나레이터');
+assert.equal(D.normalizeDialogue({...savedAction,isPlayer:true}).speaker,'퍼시 위즐리');
 for(const house of HOUSE){
   const state=D.createState();
   assert.equal(D.startArrival(state,house,'윤서'),true);
@@ -34,6 +37,8 @@ for(const house of HOUSE){
   assert.match(beats[1].dialogue[0].text,/환영/);
   assert.equal(beats[3].slot,3);
   assert(beats[4].dialogue.some(x=>x.speaker===byHouse[house].speaker));
+  assert.equal(beats[4].dialogue.at(-1).speaker,'나레이터','entrance actions are narration');
+  assert.equal(beats[4].dialogue.at(-1).char_id,null);
   assert.equal(beats[5].background,byHouse[house].key);
   assert.equal(state.arrivalCompleted,true);
   assert.equal(D.hasPending(state),false);
@@ -105,10 +110,10 @@ tests+=8;
 st=W.createState();
 const invite=W.EVENTS.find(x=>x.id==='first_invitations');
 const personal=W.offer(st,invite);
-assert.equal(W.startAmbient(st),null);
-assert.equal(st.active,null);
-assert.equal(st.pending.id,'first_invitations');
-assert(W.start(st,personal.choices.find(x=>x.includes('hermione'))));
+assert.equal(W.startAmbient(st).id,'first_invitations');
+assert.equal(st.active.choice,'observe');
+assert.equal(st.agency.first_circle,undefined);
+assert(W.interrupt(st,personal.choices.find(x=>x.includes('hermione'))));
 assert(W.finish(st));
 assert.equal(st.ties.hermione,3);
 tests+=5;
@@ -153,7 +158,7 @@ assert.equal(clock.slot,3);
 tests+=3;
 // All patches are guarded under STORY.id === hogwarts.
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=7'));
+assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=8'));
 assert(html.includes('PandoraHogwartsScenes.startArrival('));
 assert(html.includes('runHogwartsAutomaticScene()'));
 assert(html.includes('PandoraHogwartsScenes.startRoomReturn('));

@@ -308,7 +308,7 @@
         delta:{malfoy:1},flags:{tower:'guarded_wand'},confirmedBySystem:true,
         offscreen:'덤블도어의 지팡이가 원작처럼 말포이에게 넘어가지 않았다. 훗날 말포이를 제압하더라도 딱총나무 지팡이의 충성권이 해리에게 자동 승계되지 않는다.'};
     if(['preempt','capture','seal_cabinet','guard_wand'].includes(id))return null;
-    if(id==='observe' && (ev.kind==='plot'||ev.autoStart))
+    if(id==='observe')
       return {id:'observe',label:'현장에서 사건이 진행되는 모습을 본다',
         intent:'공개된 상황과 지금 나타난 인물의 행동으로 사건을 시작한다. 플레이어의 행동·대사·태도를 대신 결정하지 않는다.',
         delta:{},flags:{},offscreen:'다른 장소에서도 관련 인물의 행동이 독립적으로 이어진다.'};
@@ -388,7 +388,7 @@
         +'플레이어가 없는 곳에서 진행되는 일: '+opt.offscreen+'\n'
         +'이번 응답은 이 장면의 첫 대사/행동을 실제로 보여 줘야 한다. '
         +'한 번에 모든 결말까지 요약하지 말고 플레이어가 추가로 말하고 행동할 기회를 남겨라. '
-        +'이 장면 동안 AI는 공식 날짜와 학년을 바꾸지 않는다. '
+        +'대화·이동·수면 등 실제로 실행된 행동에 맞는 시간만 흘려라. '
         +'이미 플레이어가 해결한 일과 앞으로 벌어질 일을 혼동하지 마라.'};
   }
   // Public historical incidents unfold even without the player clicking
@@ -397,13 +397,13 @@
     ensure(st);
     if(!st.pending||st.active)return null;
     const ev=getEvent(st.pending.id,st);
-    if(!ev||(ev.kind!=='plot'&&!ev.autoStart))return null;
+    if(!ev)return null;
     return start(st,{eventId:ev.id,optionId:'observe'});
   }
   function shouldStartAmbient(st){
     ensure(st);
     const ev=st.pending&&getEvent(st.pending.id,st);
-    return !!(ev&&(ev.kind==='plot'||ev.autoStart));
+    return !!ev;
   }
   function activeChoices(st){
     ensure(st);
@@ -484,7 +484,7 @@
       +'- 유저 행동으로 쌓인 인상: '+(ties||'아직 초면')+'\n'
       +'- 관계/분기 확정: '+JSON.stringify(st.agency)+'\n'
       +'- 최근 사건과 독립적인 NPC 행동:\n'+(last||'- 아직 없음')+'\n'
-      +(active?'- 진행 중인 장면: '+active.title+' / 날짜 고정, 대화가 끝날 때까지 바꾸지 마라.\n':'')
+      +(active?'- 진행 중인 장면: '+active.title+' / 플레이어의 현재 대화와 행동에서 이어간다.\n':'')
       +(st.active && st.active.actions?.length?'- 플레이어가 현재 장면에서 직접 시도한 행동(성공 확정 아님): '+st.active.actions.slice(-5).join(' / ')+'\n':'')
       +'- NPC는 플레이어가 함께하지 않은 모임·연구·행동도 스스로 진행했다. '
       +'나중에 소문으로 알 수 있지만 주인공이 직접 본 것처럼 회상시키지 마라.\n'

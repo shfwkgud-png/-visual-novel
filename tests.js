@@ -107,7 +107,7 @@ T('순서: loadSnaps 동작 — 복원 후 보존/잔재 정리', () => {
 
 // ═══ 3. 대사 파이프라인: 수신기록·중복·에코·보류분 (v305~v311, P0-2) ═══
 function pipelineSandbox(extra) {
-  const code = grabFn('resolveSpeakerName') + grabFn('resetTurnLineKeys') + grabFn('enqueueLine')
+  const code = grabFn('resolveSpeakerName') + grabFn('fixSpeakerIds') + grabFn('resetTurnLineKeys') + grabFn('enqueueLine')
     + grabFn('_echoNorm') + grabFn('_sameText') + grabFn('_isNarrationEcho') + grabFn('dropLogEntry') + grabFn('scrubMetaNumbers');
   return runSandbox(code + (extra || ''), {
     CHARACTERS: { a403: { name: '릴리아' }, a412: { name: '모니카' } },
