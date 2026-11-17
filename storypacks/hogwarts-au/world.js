@@ -173,7 +173,10 @@
        delta:[{harry:1,neville:1},{},{}],intent:['실패와 진전이 모두 있을 수 있는 훈련','꾸준히 연습하되 한 번에 고급 주문을 숙달하지 못한다','다른 학생들은 수업과 연습에 참여한다']}
     ];
     const x=themes[i];
-    return {id,year:Number(date.slice(0,4))-1990,date,slot:1,kind:'life',title:x.title,
+    const year=Number(date.slice(0,4));
+    const month=Number(date.slice(5,7));
+    const schoolYear=Math.max(1,Math.min(7,month>=9?year-1990:year-1991));
+    return {id,year:schoolYear,date,slot:1,kind:'life',title:x.title,
       background:x.bg,actors:x.actors,intro:x.intro,
       options:x.labels.map((label,j)=>({id:'path'+j,label,intent:x.intent[j],
         delta:x.delta[j],flags:{[id]:'path'+j},
