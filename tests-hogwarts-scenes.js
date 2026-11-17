@@ -37,6 +37,7 @@ for(const house of HOUSE){
   assert.equal(beats[5].background,byHouse[house].key);
   assert.equal(state.arrivalCompleted,true);
   assert.equal(D.hasPending(state),false);
+  assert.equal(state.phase,'idle');
   assert.equal(D.startArrival(state,house,'윤서'),false);
   assert.equal(D.resolveBackground('common_room',house),byHouse[house].key);
   assert.equal(D.resolveBackground('dormitory',house),byHouse[house].key.replace('_common_room','_dormitory'));
@@ -133,7 +134,7 @@ assert.equal(clock.slot,3);
 tests+=3;
 // All patches are guarded under STORY.id === hogwarts.
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=3'));
+assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=4'));
 assert(html.includes('PandoraHogwartsScenes.startArrival('));
 assert(html.includes('runHogwartsAutomaticScene()'));
 assert(html.includes('PandoraHogwartsScenes.startRoomReturn('));
