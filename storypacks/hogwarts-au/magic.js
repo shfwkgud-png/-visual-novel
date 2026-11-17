@@ -110,7 +110,7 @@
   function createState(date){
     return {schemaVersion:1,spells:{},subjectXP:{},electives:[],infractions:[],
       darkAccess:false,practice:{date:date||'1991-09-01',sessions:0,castCount:0,fatigue:0},
-      lastDate:date||'1991-09-01',exams:{},research:[],castHistory:[]};
+      lastDate:date||'1991-09-01',exams:{},research:[],licences:{},castHistory:[],lastCast:null};
   }
   function need(s){if(!valid(s))throw Error('Hogwarts magic state invalid');}
   function schoolYear(date){const y=Number(String(date).slice(0,4)),m=Number(String(date).slice(5,7));
@@ -133,10 +133,7 @@
       return '선행 주문 '+SPELL_BY_ID[spell.prerequisite].name+'을(를) 먼저 익혀야 한다.';
     if(spell.prerequisite==='lupin_mentor'&&ctx.flags?.dementor!=='study')
       return '루핀의 직접 지도나 동등한 특별 훈련이 필요하다.';
-    if(spell.prerequisite==='apparition_licence'&&!ctx.licences?.apparition)
-      return '순간이동 면허 시험을 통과해야 한다.';
-    if(spell.prerequisite==='animagus_registration'&&!ctx.licences?.animagus)
-      return '애니마구스 등록 절차를 충족해야 한다.';
+    // Licensing gates actual public use, not supervised preparation for its test.
     if(year>=6&&s.exams.OWL_1996&&s.exams.OWL_1996[spell.subject] &&
        !['O','E'].includes(s.exams.OWL_1996[spell.subject]))
       return '이 과목의 O.W.L. 성적이 N.E.W.T. 과정 기준에 미치지 못한다.';
@@ -232,12 +229,34 @@
     need(s);const year=schoolYear(ctx?.date||s.lastDate);
     if(year<5)return {ok:false,reason:'아직 본격적으로 금서에 접근할 수 없다.'};
     if(s.darkAccess)return {ok:true,reason:'금서 연구 경로가 이미 열려 있다.'};
-    if(ctx?.location&&/마법부|교수실/.test(ctx.location)&&!ctx.supervised)
-      return {ok:false,reason:'감시받는 장소에서 금서 접근을 실행할 수 없다.'};
+    if(!/도서관|금서|비밀|금지 구역|어둠의 마법/.test(String(ctx?.location||'')))
+      return {ok:false,reason:'비밀 자료를 연구하려면 도서관의 제한 구역이나 허가된 연구 장소에 있어야 한다.'};
     s.darkAccess=true;s.infractions.push({date:ctx?.date||s.lastDate,
       id:'restricted_library',kind:'restricted_access',severity:'medium',
       note:'허가되지 않은 자료에 접근한 기록'});
     return {ok:true,reason:'위험한 금서 자료에 접근했다. 이것은 저주를 배웠거나 시전에 성공했다는 뜻이 아니며, 학교에 알려지면 처벌받을 수 있다.'};
+  }
+  function certify(s,which,ctx){
+    need(s);ctx=ctx||{};
+    const date=ctx.date||s.lastDate,year=schoolYear(date);
+    const out=which==='apparition'?'순간이동 면허':'애니마구스 등록';
+    if(!['apparition','animagus'].includes(which))
+      return {ok:false,reason:'알 수 없는 자격 시험이다.'};
+    if(which==='apparition'&&year<6)return {ok:false,reason:'순간이동 교육은 상급 학년에 진행한다.'};
+    if(which==='animagus'&&year<7)return {ok:false,reason:'애니마구스 변신은 장기 수련과 등록이 필요하다.'};
+    if((s.spells[which]?.xp||0)<80)
+      return {ok:false,reason:out+'에 응시하기에는 연습 경험이 충분하지 않다. 관련 실습을 먼저 반복해야 한다.'};
+    if(which==='apparition'&&!/호그스미드|마법부|시험장|학교 밖/.test(String(ctx.location||'')))
+      return {ok:false,reason:'호그와트 경내의 일반적인 순간이동 방지 마법 때문에 면허 시험은 별도 지정 장소에서 치러야 한다.'};
+    if(s.licences[which])return {ok:true,reason:out+'이(가) 이미 승인되어 있다.'};
+    const count=(s.practice.castCount||0)+1;
+    const roll=1+hash(date+which+'exam'+count)%100;
+    const threshold=Math.min(92,55+Math.floor((s.spells[which]?.xp||0)/7));
+    s.practice.castCount=count;
+    const passed=roll<=threshold;
+    if(passed)s.licences[which]=true;
+    return {ok:passed,reason:out+' 시험 '+(passed?'합격':'불합격')+
+      ' (판정 '+roll+' / 성공 기준 '+threshold+'). '+(passed?'등록 기록이 남았다.':'추가 연습 후 재응시할 수 있다.')};
   }
   function cast(s,id,ctx){
     need(s);ctx=ctx||{};const spell=SPELL_BY_ID[id];const date=ctx.date||s.lastDate;
@@ -315,6 +334,7 @@
     if(/^▶\s*마법 시전/.test(input)){const m=/\[([a-z0-9_]+)\]/.exec(input);return {kind:'cast',id:m?.[1]};}
     if(/^▶\s*선택과목/.test(input)){const m=/\[([a-z0-9_]+)\]/.exec(input);return {kind:'elective',id:m?.[1]};}
     if(/^▶\s*금서 열람/.test(input))return {kind:'dark'};
+    if(/^▶\s*마법 자격시험/.test(input)){const m=/\[([a-z0-9_]+)\]/.exec(input);return {kind:'certify',id:m?.[1]};}
     if(/^▶\s*마법 메뉴 닫기/.test(input))return {kind:'close'};
     return null;
   }
@@ -333,6 +353,7 @@
       +'- 학년 '+year+'. 실제로 배운 주문/실습: '+(list||'아직 없음')+'.\n'
       +'- 선택과목: '+(selected||'미정')+'. 실습 피로도 '+s.practice.fatigue+'/100.\n'
       +'- 금서 접근: '+(s.darkAccess?'접근 기록 있음(저주 사용 허가 아님)':'없음')+'. 징계·조사 기록 '+s.infractions.length+'건.\n'
+      +'- 최근 앱 확정 시전: '+(s.lastCast ? s.lastCast.name+' / '+(s.lastCast.success?'발동':'실패')+' / '+(s.lastCast.violation||'규정 위반 없음') : '없음')+'. 타인에 대한 실제 결과는 장면과 방어·증거 판정을 따른다.\n'
       +'- 기초 수업 외 고급 주문·특수 마법은 원작 시기에 맞춰 교사·선행 주문·반복 훈련·면허를 요구한다. 모르는 주문은 대사만으로 습득하거나 성공하지 않는다.\n'
       +'- [주문 시전 결과]는 앱의 확정 판정을 따른다. 플레이어가 스스로 성공을 선언해도 불법 주문·알지 못하는 주문·학교 경내 순간이동 등 불변 조건을 넘길 수 없다.\n'
       +'- 용서받지 못할 저주 세 가지: Imperio, Crucio, Avada Kedavra. 일반 마법법에서 불법이며 사용은 아즈카반 종신형 위험. 정권 장악기에는 집행이 왜곡될 수 있으나 학교 내부 대인 공격은 타인과의 관계·법적 후과를 남긴다.\n'
@@ -340,6 +361,6 @@
       +'- 비마법 스킬은 일반 RPG 엔진에서 취급할 수 있으나 주문 목록과 숙련도는 AI가 state_update.player.skills/abilities로 독단적으로 고쳐 쓰지 못한다.\n';
   }
   return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,createState,valid,schoolYear,rank,courseAllowed,
-    lesson,passiveSchool,examGrade,elective,seekDarkAccess,cast,page,availableTraining,practiceChoices,
+    lesson,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
     findIncantation,parseCommand,parseFreeCast,context,LESSON_THRESHOLD});
 });
