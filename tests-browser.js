@@ -342,18 +342,12 @@ async function waitForStoryChoice(page, sought) {
   for(let attempt=0; attempt<115; attempt++) {
     const button=page.locator('#choiceBox .choice-btn').filter({hasText:sought});
     if(await button.count() && await button.first().isVisible()) return;
-    // Do not tap an already idle dialogue panel. On mobile that overlaps choice
-    // hitboxes and can inadvertently select an unrelated menu action while
-    // waiting for an asynchronous Hogwarts scene choice.
-    const needsAdvance=await page.evaluate(()=>isShowing||waitingForTap||dialogueQueue.length>0);
-    if(needsAdvance && await page.locator('#dialoguePanel').isVisible()) {
-      const box=await page.locator('#dialoguePanel').boundingBox();
-      if(box) {
-        const x=box.x+box.width*0.8,y=box.y+Math.min(box.height-2,14);
-        if(await page.evaluate(()=>navigator.maxTouchPoints>0))await page.touchscreen.tap(x,y);
-        else await page.mouse.click(x,y);
-      }
-    }
+    // Choice buttons can overlap the dialogue on narrow mobile viewports.
+    // Advancing narration through the same app nav handler avoids accidentally
+    // selecting a second magic-menu option while a choice becomes visible.
+    await page.evaluate(()=>{
+      if(isShowing||waitingForTap)navNext();
+    });
     await page.waitForTimeout(70);
   }
   const debug=await page.evaluate(()=>({
