@@ -377,7 +377,8 @@
     const opt=ev&&selectedOption(ev,choice.optionId,st);
     if(!opt) return null;
     st.pending=null;
-    st.active={id:ev.id,choice:opt.id,at:ev.date};
+    st.active={id:ev.id,choice:opt.id,at:ev.date,
+      needsResult:!['observe','skip'].includes(opt.id) && !opt.confirmedBySystem};
     return {id:ev.id,year:ev.year,date:ev.date,background:ev.background,location:ev.title,
       actors:ev.actors.slice(),kind:KIND[ev.kind],title:ev.title,
       instruction:'[호그와트 확정 장면: '+ev.title+']\n'
@@ -419,6 +420,7 @@
     const ev=getEvent(st.active.id,st),opt=selectedOption(ev,choice.optionId,st);
     if(!opt)return null;
     st.active.choice=opt.id;
+    st.active.needsResult=!opt.confirmedBySystem;
     return {id:ev.id,choice:opt.id,title:ev.title,
       instruction:'[호그와트 사건 진행 중 플레이어의 실제 개입] '+ev.title+'\n'
         +'사용자가 직접 선택한 행동: '+opt.label+'\n'
@@ -435,29 +437,91 @@
     if(!st.active)return false;
     const text=String(raw||'').trim().replace(/\s+/g,' ').slice(0,220);
     if(!text || /^▶/.test(text))return false;
+    st.active.needsResult=true;
     const notes=st.active.actions||(st.active.actions=[]);
     if(notes.at(-1)===text)return false;
     notes.push(text);
     if(notes.length>14)notes.shift();
     return true;
   }
+  // Only the displayed scene can confirm an outcome; player intent is not proof.
+  function recordOutcome(st,result,scene,{date,turn,actors=[]}={}) {
+    ensure(st);
+    if(!result || typeof result!=='object' || Array.isArray(result) ||
+       typeof result.summary!=='string' || !result.summary.trim() ||
+       typeof result.evidence!=='string' || result.evidence.trim().length<8 ||
+       typeof scene!=='string' || !scene.includes(result.evidence) ||
+       typeof result.complete!=='boolean' || !Number.isInteger(turn) ||
+       (result.canon!=null&&!Array.isArray(result.canon)) ||
+       !/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))return false;
+    const active=st.active,expected=active?.id||null;
+    if((result.event_id||null)!==expected)return false;
+    if(st.lastResultTurn===turn)return true;
+    const ev=active&&getEvent(active.id,st);
+    const choice=result.choice==null?null:String(result.choice);
+    const opt=choice && choice!=='freeform' && ev && selectedOption(ev,choice,st);
+    if(choice && choice!=='freeform' && !opt)return false;
+    const ties={};
+    if(result.ties!=null && (typeof result.ties!=='object'||Array.isArray(result.ties)))return false;
+    for(const [id,delta] of Object.entries(result.ties||{})){
+      if(!actors.includes(id) || !Number.isInteger(delta) || Math.abs(delta)>5)return false;
+      ties[id]=delta;
+    }
+    const prior=active?.outcome;
+    const canon=new Map((prior?.canon||[]).map(x=>[x.id,x]));
+    for(const change of result.canon||[])canon.set(change.id,change);
+    const outcome={choice:choice||prior?.choice||'freeform',flags:choice?{...(opt?.flags||{})}:{...(prior?.flags||{})},
+      summary:result.summary.trim().slice(0,600),
+      evidence:result.evidence.slice(0,600),canon:[...canon.values()],complete:result.complete};
+    for(const [id,delta] of Object.entries(ties))
+      st.ties[id]=Math.max(-10,Math.min(10,(st.ties[id]||0)+delta));
+    st.lastResultTurn=turn;
+    if(active){active.outcome=outcome;active.needsResult=false;}
+    else{
+      applyOutcomeFlags(st,outcome);
+      const record={id:'rp_'+turn,date,choice:'freeform',actions:[],outcome};
+      st.decisions.push(record);
+      st.publicConsequences.push({id:record.id,date,title:'자유 행동',choice:outcome.summary,
+        actions:[],offscreen:'',visible:outcome.summary});
+      st.publicConsequences=st.publicConsequences.slice(-32);
+    }
+    return true;
+  }
+  function applyOutcomeFlags(st,outcome){
+    const facts=Object.assign({},...(outcome.canon||[]).map(x=>x.effects||{}));
+    for(const [fact,key,value] of [
+      ['pettigrew_captured','pettigrew','captured'],
+      ['cabinet_entry_blocked','tower','sealed_cabinet'],
+      ['draco_disarm_prevented','tower','guarded_wand'],
+      ['stone_under_staff_guard','stone_finale','preempt']
+    ]){
+      if(facts[fact]===true)st.agency[key]=value;
+      else if(facts[fact]===false && st.agency[key]===value)delete st.agency[key];
+    }
+  }
   function finish(st) {
     ensure(st);
-    if(!st.active) return null;
+    if(!st.active || st.active.needsResult) return null;
     const ev=getEvent(st.active.id,st);
-    const opt=selectedOption(ev,st.active.choice,st);
-    // Decide scene consequences exactly once, at the scene boundary.
-    const effects=opt.delta||{};
+    const outcome=st.active.outcome;
+    const requested=selectedOption(ev,st.active.choice,st);
+    const actual=outcome?.choice || (requested?.confirmedBySystem||requested?.id==='skip'
+      ? requested.id : 'observe');
+    const opt=selectedOption(ev,actual,st);
+    // Ordinary option effects require a confirmed scene, never a menu click alone.
+    const effects=!outcome && requested?.confirmedBySystem ? requested.delta||{} : {};
     for(const [id,delta] of Object.entries(effects)) {
       const prev=st.ties[id]||0;st.ties[id]=Math.max(-10,Math.min(10,prev+delta));
     }
-    Object.assign(st.agency,opt.flags||{});
+    Object.assign(st.agency,outcome?.flags||opt?.flags||{});
+    if(outcome)applyOutcomeFlags(st,outcome);
     const actions=(st.active.actions||[]).slice();
-    const actualChoice=opt.id==='observe' && actions.length ? 'freeform' : opt.id;
-    const consequence={id:ev.id,date:ev.date,title:ev.title,choice:opt.label,
-      actions,offscreen:opt.offscreen,visible:'당신의 선택과 실제 시도한 행동이 기록된다.'};
-    st.finished[ev.id]={choice:actualChoice,date:ev.date,actions};
-    st.decisions.push({id:ev.id,choice:actualChoice,date:ev.date,actions});
+    const actualChoice=actual==='observe' && actions.length ? 'freeform' : actual;
+    const consequence={id:ev.id,date:ev.date,title:ev.title,choice:outcome?.summary||opt?.label||'자유 행동',
+      actions,offscreen:outcome ? '' : opt?.offscreen||'',visible:outcome?.summary||'현장을 떠났다.'};
+    const record={choice:actualChoice,date:ev.date,actions,...(outcome?{outcome}:{} )};
+    st.finished[ev.id]=record;
+    st.decisions.push({id:ev.id,...record});
     st.publicConsequences.push(consequence);
     st.publicConsequences=st.publicConsequences.slice(-32);
     st.active=null;
@@ -485,11 +549,35 @@
       +'- 관계/분기 확정: '+JSON.stringify(st.agency)+'\n'
       +'- 최근 사건과 독립적인 NPC 행동:\n'+(last||'- 아직 없음')+'\n'
       +(active?'- 진행 중인 장면: '+active.title+' / 플레이어의 현재 대화와 행동에서 이어간다.\n':'')
+      +(st.active?.outcome?'- 이 장면에서 이미 확인된 실제 결과: '+st.active.outcome.summary+'\n':'')
       +(st.active && st.active.actions?.length?'- 플레이어가 현재 장면에서 직접 시도한 행동(성공 확정 아님): '+st.active.actions.slice(-5).join(' / ')+'\n':'')
       +'- NPC는 플레이어가 함께하지 않은 모임·연구·행동도 스스로 진행했다. '
       +'나중에 소문으로 알 수 있지만 주인공이 직접 본 것처럼 회상시키지 마라.\n'
       +'- 인물 관계는 점수로 연애를 결정하지 않는다. 신뢰/경계는 말투, 초대, 도움, 비밀 공개에만 반영한다. '
       +'전지적 선지식·자동 복종·갑작스런 고백 금지.\n';
+  }
+  function outcomeContract(st){
+    ensure(st);
+    const ev=st.active&&getEvent(st.active.id,st);
+    return '\n## 호그와트 실제 결과 기록 계약\n'
+      +'state_update.hogwarts를 {event_id,summary,evidence,complete,choice,ties,canon,time} 객체로 기록한다. '
+      +'event_id는 '+JSON.stringify(ev?.id||null)+'이다. summary는 이번 장면에서 실제 확인된 결과, '
+      +'evidence는 이번 장면 본문에서 그대로 복사한 8자 이상의 근거다. '
+      +'플레이어 입력·의도·가정·계획·NPC의 주장만으로 성공을 확정하지 않는다. 변화가 없다면 실제 나눈 대화만 기록한다. '
+      +'complete는 이 장면이 실제 끝났을 때만 true이며 대화 중이면 false다. '
+      +'choice는 실제 성립한 아래 행동 ID 또는 freeform이며, 아직 결과가 정해지지 않았다면 null이다. '
+      +'처음 누른 선택지는 의도일 뿐이다. 취소·실패·다른 행동으로 바뀌면 그 실제 결과를 기록한다. '
+      +'ties는 실제 교류한 인물 ID별 신뢰 변화량(-5~5 정수)이다. 변화가 없으면 {}이다. '
+      +'처음 선택지의 호감 보상을 자동 복제하지 않는다. '
+      +'canon은 원작 인과가 실제 바뀐 경우만 [{id,outcome:"altered 또는 prevented",summary,evidence,effects:{세계 상태 키:새 값}}]이다. '
+      +'사건이 불발되면 prevented, 다른 결과로 일어나면 altered이며 미래의 예고·계획·실패한 시도에는 []이다. '
+      +'원작과 다른 결과를 산문에만 쓰고 canon을 빠뜨리지 않는다. 성공한 자연어 개입은 버튼과 같은 세계 결과를 남겨야 한다. '
+      +'한 사건을 바꿨다고 무관한 사건까지 미리 확정하지 않는다. '
+      +'호그와트 시간은 N일차가 아닌 실제 연월일이다. 실제 시간이 흘렀다면 time:{value:"YYYY-MM-DD 아침|오후|저녁|밤",days:실제_지난_날수,evidence:"이번 본문에서 복사한 시간 경과 근거"}를 추가한다. '
+      +'days는 기존 날짜와 새 날짜의 차이며 당일은 0, 하룻밤은 1이다. 내일의 계획·회상·대사 속 날짜는 현재 시간 변경이 아니다. '
+      +'2일 이상 건너뛸 때는 플레이어가 직접 요청한 기간 경과 문구를 request에 그대로 복사한다. 플레이어가 요청하지 않은 여러 날·학년 도약은 하지 않는다. 시간이 흐르지 않았으면 time을 생략한다. '
+      +(ev?'\n[현재 장면의 참조 행동 — 이 목록 밖의 실제 행동도 freeform으로 기록]\n'
+        +optionsFor(ev,st).filter(x=>!x.includes('] skip')).join('\n'):'')+'\n';
   }
   function ending(st,canonState) {
     ensure(st);
@@ -512,6 +600,6 @@
     return {title,narration:note,canonStatus:known||'unverified'};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,finish,resume,context,ending,
+  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });

@@ -47,6 +47,7 @@ jobs:
           node tests-hogwarts-scenes.js
           node tests-hogwarts-chapters.js
           node tests-hogwarts-branches.js
+          node tests-hogwarts-outcomes.js
           node tests-hogwarts-magic.js
   browser:
     runs-on: ubuntu-latest

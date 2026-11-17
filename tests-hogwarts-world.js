@@ -49,6 +49,9 @@ let scene=world.start(s,p.choices.find(x=>x.includes('hermione')));
 assert.ok(['crabbe','goyle'].every(id=>scene.actors.includes(id)));
 assert.equal(scene.id,'first_invitations');
 assert.equal(world.resume(JSON.parse(JSON.stringify(s))).mode,'active');
+const study='헤르미온느와 함께 과제를 마치고 도서관을 나왔다. 말포이는 모임에 오지 않은 당신에게 불만을 표시했다.';
+assert(world.recordOutcome(s,{event_id:'first_invitations',summary:study,evidence:study,complete:true,
+  choice:'hermione',ties:{hermione:3,malfoy:-1}},study,{date:c.date,turn:1,actors:['hermione','malfoy']}));
 assert(!world.finish(s).offscreen.includes('헤르미온느는 혼자'));
 assert.equal(s.ties.hermione,3);
 assert.equal(s.ties.malfoy,-1);
@@ -67,6 +70,10 @@ world.offer(freeTalk,world.EVENTS.find(x=>x.id==='halloween_troll'));
 world.startAmbient(freeTalk);
 assert.equal(world.noteAction(freeTalk,'교수에게 트롤의 위치를 알린다'),true);
 assert.match(world.context(freeTalk),/성공 확정 아님/);
+assert.equal(world.finish(freeTalk),null,'intent alone must wait for a scene result');
+const reported='교수는 트롤이 있는 복도의 위치를 전달받고 다른 교직원에게 대응을 요청했다.';
+assert(world.recordOutcome(freeTalk,{event_id:'halloween_troll',summary:reported,evidence:reported,
+  complete:true,choice:'freeform',ties:{}},reported,{date:'1991-10-31',turn:1}));
 world.finish(freeTalk);
 assert.equal(freeTalk.decisions[0].choice,'freeform');
 assert.deepEqual(freeTalk.decisions[0].actions,['교수에게 트롤의 위치를 알린다']);
@@ -90,6 +97,15 @@ while (eventCount++<30) {
   });
   assert(selected,'Missing eligible choice: '+ev.id);
   assert(world.start(alt,selected),'Could not select '+ev.id);
+  if(!selected.includes('] skip')){
+    const confirmed={
+      first_quidditch:'빗자루에 걸린 방해 마법을 조사해 이상 징후를 기록으로 남겼다.',
+      mirror_rumor:'도서관 기록에서 돌을 노리는 자의 접근 경로를 찾아 증거를 확보했다.',
+      stone_finale:'교수들은 두 자료를 대조한 뒤 퀴렐을 조사하고 마법사의 돌을 경비했다.'
+    }[ev.id];
+    assert(world.recordOutcome(alt,{event_id:ev.id,summary:confirmed,evidence:confirmed,complete:true,
+      choice:world.parseChoice(selected).optionId,ties:{}},confirmed,{date:ev.date,turn:eventCount}));
+  }
   assert(world.finish(alt),'Could not finish '+ev.id);
 }
 assert(alt.decisions.some(x=>x.id==='stone_finale'&&x.choice==='preempt'));
@@ -175,8 +191,8 @@ assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,70);
 
 const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/world.js?v=14'));
-assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=5'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=15'));
+assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=6'));
 assert(html.includes('moveToScene(clock,upcoming.date,upcoming.slot)'));
 assert(html.includes('gameState.hogwarts.world = PandoraHogwartsWorld.createState()'));
 assert(html.includes('await syncHogwartsCanon()'));
