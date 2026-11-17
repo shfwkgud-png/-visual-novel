@@ -2165,9 +2165,9 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
 <script src="storypacks/hogwarts-au/story.js?v=8"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=5"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=6"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=1"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=2"></script>
 <script src="storypacks/hogwarts-au/world.js?v=10"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
 <script src="storypacks/hogwarts-au/canon-bridge.js?v=3"></script>
@@ -15198,6 +15198,15 @@ async function handlePlayerInput(text) {
         gameState.combat = false; gameState._combatStart = null;
         await syncHogwartsCanon(); // commit canon only AFTER participant outcome is known
         updateStatusUI();
+        if (window.PandoraHogwartsChapters && window.PandoraHogwartsScenes &&
+            PandoraHogwartsChapters.getLoaded() && gameState.hogwarts.canon &&
+            PandoraHogwartsScenes.valid(gameState.hogwarts.scene)) {
+          const revealed=PandoraHogwartsChapters.outcomeSequence(
+            PandoraHogwartsChapters.getLoaded(),result.id,world,gameState.hogwarts.canon);
+          if (PandoraHogwartsScenes.stageCanonResults(gameState.hogwarts.scene,revealed)) {
+            if(runHogwartsAutomaticScene()){autoSave();return;}
+          }
+        }
         const after=(window.PandoraHogwartsChapters && PandoraHogwartsChapters.getLoaded() &&
             gameState.hogwarts.canon && /^b\d{2}c\d{2}$/.test(result.id))
           ? PandoraHogwartsChapters.ending(PandoraHogwartsChapters.getLoaded(),result.id,
