@@ -73,7 +73,7 @@
     }));
     const prior=chapter.continuity.previous && st.finished[chapter.continuity.previous];
     const history=prior?
-      ' 이 장과 연결된 이전 사건에서 당신은 '+(prior.choice==='skip'?'현장에 없었다.':'행동을 시도했으며 결과가 이후 인물의 기억에 남았다.'):'';
+      (prior.choice==='skip'?' 지난번 소동을 당신이 지켜보지 않았다는 사실을 아는 사람도 있다.':' 앞선 일에서 당신이 보였던 태도를 기억하는 학생이 있다.') : '';
     return {id:chapter.id,year:chapter.book,date:chapter.date,slot:chapter.slot,
       title:chapter.title,background:chapter.background,actors:chapter.actors,
       kind:'chapter',autoStart:true,chapterId:chapter.id,
