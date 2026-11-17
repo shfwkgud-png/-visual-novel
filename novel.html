@@ -2165,7 +2165,7 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
 <script src="storypacks/hogwarts-au/story.js?v=8"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=2"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=3"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
 <script src="storypacks/hogwarts-au/world.js?v=6"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -11376,6 +11376,13 @@ async function syncHogwartsCanon() {
     const result=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,hp.canon,through,
       hp.world&&hp.world.decisions||[]);
     hp.canon=result.state;
+    if (window.PandoraHogwartsScenes && PandoraHogwartsScenes.valid(hp.scene) &&
+        hp.scene.phase==='transition' && hp.scene.cursor===0 && result.advanced.length) {
+      const publicEvents=result.advanced.filter(x=>x.outcome==='canonical')
+        .map(x=>HOGWARTS_CANON_BUNDLE.ledger.byId[x.id])
+        .filter(x=>x && x.access==='public');
+      PandoraHogwartsScenes.injectNews(hp.scene,publicEvents);
+    }
     hp.canonProgress=result.progress.committed;
     delete hp.canonSyncError;
     return true;
