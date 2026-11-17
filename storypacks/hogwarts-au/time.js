@@ -78,7 +78,7 @@
     // Multi-day montage requires an actual player request, not a model's date jump.
     if(days>1 && (typeof passage.request!=='string' || passage.request.trim().length<4 ||
       !String(passage.userText||'').includes(passage.request) ||
-      !/(?:(?:\d+|한|두|세|네|몇|여러)\s*(?:일|주|달|개월|년|학기)|다음\s*(?:주|달|학기|학년)|방학|시간.{0,8}(?:넘|건너|보내))/.test(passage.request)))return false;
+      !/(?:(?:\d+|한|두|세|네|몇|여러)\s*(?:일|주|달|개월|년|학기)|며칠|이틀|사흘|나흘|일주일|수일|수주|수개월|수년|다음\s*(?:주|달|학기|학년)|방학|시간.{0,8}(?:넘|건너|보내))/.test(passage.request)))return false;
     const period = /(새벽|아침|오전|정오|점심|오후|저녁|밤)/.exec(value.slice(date[0].length));
     const slots = {새벽:0,아침:0,오전:0,정오:1,점심:1,오후:1,저녁:2,밤:3};
     const slot = period ? slots[period[1]] : state.slot;

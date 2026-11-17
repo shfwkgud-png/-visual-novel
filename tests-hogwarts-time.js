@@ -74,6 +74,11 @@ const year='남은 학기의 수업과 시험, 여름 방학을 보내고 다음
 assert.equal(t.readSceneTime(within,'1992-09-01 아침',passage(363,year,
   {request:'다음 학년까지 수업을 들으며 지낸다',userText:'다음 학년까지 수업을 들으며 지낸다'})),true);
 assert.equal(t.studyYear(within.date),2);
+for(const request of ['이틀간 쉬면서 지낸다','며칠 동안 수업을 들으며 지낸다']){
+  const ordinary=t.createState();t.chooseHouse(ordinary,'그리핀도르');
+  const elapsed='이틀 동안 충분히 쉬고 수업을 들은 뒤 셋째 날 아침을 맞았다.';
+  assert(t.readSceneTime(ordinary,'1991-09-03 아침',passage(2,elapsed,{request,userText:request})),request);
+}
 
 const html = fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
 assert(html.includes('storypacks/hogwarts-au/time.js?v=4'));
