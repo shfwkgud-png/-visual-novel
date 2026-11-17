@@ -11526,7 +11526,8 @@ function handleHogwartsMagicCommand(text){
     if(year>=2 && st.electives.length<3)
       options.push(...api.SUBJECTS.filter(x=>x.group==='선택'&&!st.electives.includes(x.id))
         .slice(0,3).map(x=>'▶ 선택과목 ['+x.id+'] — '+x.name));
-    if(year>=5&&!st.darkAccess)options.push('▶ 금서 열람 — 위험한 지식에 접근한다');
+    if(!st.darkAccess&&/도서관|금서|제한 구역|비밀 서고/.test(ctx.location))
+      options.push('▶ 금서 열람 — 위험한 지식에 접근한다');
     if(year>=6 && !st.licences?.apparition) options.push('▶ 마법 자격시험 [apparition] — 순간이동 면허');
     if(year>=7 && !st.licences?.animagus) options.push('▶ 마법 자격시험 [animagus] — 애니마구스 등록');
     if(st.exams.OWL_1996)title+='\n\n5학년 O.W.L. 성적: '+Object.entries(st.exams.OWL_1996).map(([id,g])=>(api.SUBJECTS.find(x=>x.id===id)?.name||id)+': '+g).join(', ');
@@ -11591,6 +11592,19 @@ function handleHogwartsMagicCommand(text){
   renderFixedStep(title, [...new Set(options)], {resetSprites:false});
   autoSave();
   return true;
+}
+// Directly requesting restricted texts is possible regardless of year, but
+// requires physically reaching a source. The attempt is not instant spell mastery.
+function handleHogwartsDarkResearch(text){
+  if(STORY.id!=='hogwarts'||window._startPhase!=='playing'||!window.PandoraHogwartsMagic)return false;
+  if(!/(금서|금지\s*도서|제한\s*구역|어둠의\s*마법).{0,36}(열람|읽|찾|조사|연구|훔쳐|꺼내|접근)/.test(text))return false;
+  const api=PandoraHogwartsMagic,hp=gameState?.hogwarts;
+  if(!hp||!api.valid(hp.magic))return false;
+  const result=api.seekDarkAccess(hp.magic,hogwartsMagicContext());
+  renderFixedStep((result.ok?'금서 연구의 첫걸음':'아직 금서에 접근하지 못했다')+'\n\n'+result.reason,
+    ['▶ 마법 도감 — 연구 상태 확인',...hogwartsMagicBack()],{resetSprites:false});
+  if(result.ok){if(hp.world?.agency)hp.world.agency.darkResearch='unlicensed';}
+  autoSave();return true;
 }
 // A free-form research action can train a spell without selecting a classroom.
 // The current physical location and verified magical evidence are authoritative.
@@ -15350,6 +15364,7 @@ async function handlePlayerInput(text) {
   if (STORY.id==='hogwarts' && gameState?.hogwarts && window.PandoraHogwartsChapters &&
       !PandoraHogwartsChapters.getLoaded()) await syncHogwartsCanon();
   if (typeof handleHogwartsMagicCommand==='function' && handleHogwartsMagicCommand(text))return;
+  if (typeof handleHogwartsDarkResearch==='function' && handleHogwartsDarkResearch(text))return;
   if (typeof handleHogwartsFreeStudy==='function' && handleHogwartsFreeStudy(text))return;
   if (typeof handleHogwartsFreeCast==='function' && handleHogwartsFreeCast(text))return;
   // Hogwarts scenes: time, NPC schedules, and consequences have one deterministic owner.
