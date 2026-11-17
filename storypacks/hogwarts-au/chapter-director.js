@@ -82,7 +82,13 @@
       chapterFacts:chapter.beats.filter(b=>['public','local'].includes(b.access)).map(b=>({id:b.id,access:b.access})),
       endingPrompt:'당사자가 무엇을 실제로 확인했는지와 시도만 한 행동을 구분한다.'};
   }
-  function nextPlayable(catalog,st,date,major){
+  function blockedByHistory(chapter,canonState) {
+    if(!chapter || !canonState?.statuses)return false;
+    const deps=chapter.continuity?.dependencies||[];
+    return deps.some(id=>canonState.statuses[id] &&
+      canonState.statuses[id]!=='canonical');
+  }
+  function nextPlayable(catalog,st,date,major,canonState){
     if(!catalog||!st||!st.finished)return null;
     const ceiling=major?.date||null;
     const paired=catalog.byMajor?.[major?.id]||[];
@@ -99,6 +105,7 @@
           c.book*100+c.chapter>=firstMajorChapter.book*100+firstMajorChapter.chapter)break;
       }
       if(st.finished[c.id]||st.pending?.id===c.id||st.active?.id===c.id)continue;
+      if(blockedByHistory(c,canonState))continue; // broken prerequisite: never replay original scene
       return eventFor(c,st);
     }
     return null;
@@ -214,6 +221,6 @@
       +'- 최근 공개 사실(확인된 것만):\n'+(recent||'- 아직 없음')+'\n'
       +'- 인과관계가 끊긴 사건은 원작 결말을 강제로 복구하지 마라. 원인을 공개적으로 알 수 없는 경우 새 전개를 사실처럼 선포하지 말고 조사와 후속 행동으로 해결하라.\n';
   }
-  return Object.freeze({compile,load,getLoaded,eventFor,nextPlayable,linkedMajor,decorateMajor,
+  return Object.freeze({compile,load,getLoaded,eventFor,nextPlayable,blockedByHistory,linkedMajor,decorateMajor,
     createState,valid,sync,unsafeBeat,ending,outcomeSequence,currentContext});
 });
