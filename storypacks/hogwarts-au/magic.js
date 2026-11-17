@@ -143,6 +143,7 @@
     need(s);ctx=ctx||{};const spell=SPELL_BY_ID[id];
     if(!spell)return {ok:false,reason:'등록되지 않은 주문이나 실습이다.'};
     const date=String(ctx.date||s.lastDate);resetDay(s,date);
+    if(date==='1991-09-01')return {ok:false,id,reason:'기숙사 배정 첫날 밤이다. 정규 수업은 다음 일정부터 시작된다.'};
     const why=courseAllowed(s,spell,{...ctx,date});
     if(why)return {ok:false,id,reason:why};
     if(s.practice.sessions>=3)return {ok:false,id,reason:'오늘의 집중 실습은 이미 세 차례 마쳤다. 다음 날에 다시 연습할 수 있다.'};
