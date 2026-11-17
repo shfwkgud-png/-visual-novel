@@ -1081,7 +1081,7 @@ async function hogwartsArtCheck(ctx) {
       fading:_bgFading,revision:_bgTransitionRevision
     }));
     assert.equal(bg.key,'great_hall','scene state must retain final destination');
-    assert.match(bg.actual,/great_hall_portrait\\.webp/,
+    assert.match(bg.actual,/great_hall_portrait\.webp/,
       'stale image preload/fade must never overwrite the latest background');
   });
 }
