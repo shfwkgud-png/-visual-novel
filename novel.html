@@ -2165,6 +2165,7 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
 <script src="storypacks/hogwarts-au/story.js?v=8"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=1"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
 <script src="storypacks/hogwarts-au/world.js?v=6"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -4611,6 +4612,11 @@ function buildStatePrompt() {
   if (STORY.id === 'idol' && gameState.idol) s += IDOL_SIM.stateLine(gameState.idol);
   if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime && PandoraHogwartsTime.valid(gameState.hogwarts)) {
     s += PandoraHogwartsTime.context(gameState.hogwarts);
+    if (window.PandoraHogwartsScenes && PandoraHogwartsScenes.valid(gameState.hogwarts.scene)) {
+      s += '\n'+PandoraHogwartsScenes.describe(gameState.hogwarts.scene)+'\n';
+      s += '- 교장 훈화·만찬·기숙사 인솔·초상화 출입은 이미 정해진 자동 절차다. 사용자에게 실행 허락을 받는 선택지를 주지 않는다.\n';
+      s += '- 장소에 들어갈 때 당연히 일어날 인물의 반응은 별도 장면으로 재생하며 다른 곳으로 순간이동시키지 않는다.\n';
+    }
     if (window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) s += PandoraHogwartsWorld.context(gameState.hogwarts.world);
     if (HOGWARTS_CANON_BUNDLE && gameState.hogwarts.canon && window.PandoraHogwartsBridge)
       s += PandoraHogwartsBridge.context(HOGWARTS_CANON_BUNDLE,gameState.hogwarts.canon);
@@ -11381,6 +11387,58 @@ async function syncHogwartsCanon() {
   }
 }
 
+// Hogwarts-only scene auto-play (narration taps, never consent/choice prompts).
+// Every beat is committed to the ordinary save-state before it is displayed.
+function runHogwartsAutomaticScene() {
+  if (STORY.id !== 'hogwarts' || window._startPhase !== 'playing' ||
+      !window.PandoraHogwartsScenes || !gameState?.hogwarts || replaying ||
+      window._isRestoring || window._stream?.active) return false;
+  const hp=gameState.hogwarts, director=PandoraHogwartsScenes;
+  if (!director.valid(hp.scene)||!director.hasPending(hp.scene)) return false;
+  const step=director.take(hp.scene);
+  if (!step) return false;
+  if (step.mode==='beat') {
+    const beat=step.beat;
+    if (beat.slot!==null && beat.slot!==undefined && beat.slot>hp.slot) {
+      PandoraHogwartsTime.moveToScene(hp,hp.date,beat.slot);
+      gameState.time=PandoraHogwartsTime.display(hp);
+    }
+    if (beat.location) gameState.location=beat.location;
+    if (beat.event) gameState.event=beat.event;
+    updateStatusUI();
+    renderFixedStep(beat.narration,null,{
+      dialogue:beat.dialogue,background:beat.background,
+      resetSprites:beat.background!==currentBgFile
+    });
+    autoSave();return true;
+  }
+  if (step.mode==='event' && window.PandoraHogwartsWorld) {
+    const hw=PandoraHogwartsWorld, world=hp.world;
+    if (!hw.valid(world)||!world.pending||world.pending.id!==step.eventId) return false;
+    const event=hw.EVENTS.find(e=>e.id===step.eventId);
+    if (event && event.kind==='plot') {
+      const opened=hw.startAmbient(world);
+      if (opened) {
+        gameState.event=opened.title;updateStatusUI();
+        gameHistory.push({role:'user',content:opened.instruction});
+        autoSave();
+        callGemini(opened.actors).catch(e=>{
+          console.error('[Hogwarts auto incident]',e);
+          enterInputMode();
+        });
+        return true;
+      }
+    }
+    const offer=hw.resume(world);
+    if (offer && offer.mode==='offer') {
+      renderFixedStep(offer.intro,offer.choices,
+        {background:offer.background,resetSprites:false});
+      autoSave();return true;
+    }
+  }
+  return false;
+}
+
 // ===== START =====
 function startGame(isContinue) {
   if (PROVIDER === 'gemini') {
@@ -11416,6 +11474,7 @@ function startGame(isContinue) {
     if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
       gameState.hogwarts = PandoraHogwartsTime.createState();
       if (window.PandoraHogwartsWorld) gameState.hogwarts.world = PandoraHogwartsWorld.createState();
+      if (window.PandoraHogwartsScenes) gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
       gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
     }
   try { document.body.dataset.story = STORY.id || ''; } catch {}
@@ -11509,6 +11568,10 @@ function restoreAndReplayInner(save, checkTimeflow) {
   if (STORY.id === 'hogwarts' && window.PandoraHogwartsTime) {
     if (!PandoraHogwartsTime.valid(gameState.hogwarts)) gameState.hogwarts = PandoraHogwartsTime.createState();
     if (window.PandoraHogwartsWorld && !PandoraHogwartsWorld.valid(gameState.hogwarts.world)) gameState.hogwarts.world = PandoraHogwartsWorld.createState();
+    if (window.PandoraHogwartsScenes && !PandoraHogwartsScenes.valid(gameState.hogwarts.scene)) {
+      gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
+      if (gameState.hogwarts.house) gameState.hogwarts.scene.arrivalCompleted=true; // existing save migration
+    }
     gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
     window._startPhase = ['mode','setup','hogwarts_sort'].includes(save.startPhase) ? save.startPhase : 'playing';
     if (gameState.hogwarts.house) gameState.flags = { ...(gameState.flags || {}), 기숙사: gameState.hogwarts.house };
@@ -14341,6 +14404,7 @@ function showNextDialogue() {
     // ★분리 모드: 후행 추출이 아직 도는 중이면 폴백 선택지를 만들지 않고 입력창만 연다 —
     //   후행이 도착하면 fireStateExtract가 진짜 선택지를 표시한다(이중 생성·경합 방지).
     if ((window._splitExtractPending || pendingStateExtractEntry()) && window._pendingChoices == null) { enterInputMode(); return; }
+    if (runHogwartsAutomaticScene()) return;
     showChoices(window._pendingChoices);
     return;
   }
@@ -14913,6 +14977,9 @@ function showChoices(choices) {
       const label = hw.active ? '▶ 장면 마치기 — 결과를 확정하고 이어가기' : '▶ 다음 장면 — 다음 사건·일상으로 진행';
       if (!choices.includes(label)) choices.push(label);
     }
+    for (const action of PandoraHogwartsWorld.activeChoices(hw)) {
+      if (!choices.includes(action)) choices.push(action);
+    }
   }
   // ★★AI가 choices를 안 주는 턴이 간간이 있다(2026-08-04 유저: "간간이 선택지 안 나와").
   //   전엔 아이돌만 보장 선택지가 있었고 나머지 스토리는 입력창만 떴다. 어느 스토리든
@@ -15105,6 +15172,7 @@ async function handlePlayerInput(text) {
             fin ? ['▶ 7년의 여정을 돌아보고 결말을 이야기한다'] : null);
           autoSave(); return;
         }
+        const oldClock={date:clock.date,slot:clock.slot};
         const travel=PandoraHogwartsTime.moveToScene(clock,upcoming.date,upcoming.slot);
         if (travel.reason==='invalid-event-time'||travel.reason==='clock-rewind') {
           try { showStatToast('⚠ 시간·일정 불일치 — 진행을 중단했습니다.',true); } catch {}
@@ -15122,14 +15190,28 @@ async function handlePlayerInput(text) {
         gameState.combat=false;gameState._combatStart=null;
         const offer=hw.offer(world,upcoming);
         if (!offer) { enterInputMode();return; }
-        await syncHogwartsCanon(); // pending scene defers same-date canon outcome until choice ends
+        if (window.PandoraHogwartsScenes) {
+          if (!PandoraHogwartsScenes.valid(clock.scene)) clock.scene=PandoraHogwartsScenes.createState();
+          PandoraHogwartsScenes.stageEvent(clock.scene,oldClock,upcoming,clock.house,world);
+        }
+        await syncHogwartsCanon(); // stop before the unchosen event's consequences
         updateStatusUI();
+        if(runHogwartsAutomaticScene()){autoSave();return;}
         renderFixedStep('['+gameState.time+']\n\n'+offer.intro,offer.choices,
           {background:offer.background,resetSprites:true});
         autoSave();return;
       }
       const chosen=hw.parseChoice(text);
       if (chosen) {
+        if(world.active && world.active.choice==='observe'){
+          const action=hw.interrupt(world,chosen);
+          if(!action){enterInputMode();return;}
+          dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
+          gameHistory.push({role:'user',content:action.instruction});
+          autoSave();
+          const incident=hw.EVENTS.find(e=>e.id===action.id);
+          await callGemini(incident?incident.actors:[]);return;
+        }
         const scene=hw.start(world,chosen);
         if (!scene) {
           const recovery=hw.resume(world);
@@ -15139,7 +15221,7 @@ async function handlePlayerInput(text) {
           return;
         }
         gameState.event=scene.title;
-        gameState.location=scene.location;
+        if (!gameState.location) gameState.location='호그와트'; // event title is not a place
         updateStatusUI();
         if (chosen.optionId==='skip') {
           const skipped=hw.finish(world);
@@ -15211,6 +15293,12 @@ async function handlePlayerInput(text) {
     dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
     updateStatusUI();
     await syncHogwartsCanon(); // confirm train and sorting chapters without spoilers
+    if (window.PandoraHogwartsScenes) {
+      if(!PandoraHogwartsScenes.valid(gameState.hogwarts.scene))gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
+      PandoraHogwartsScenes.startArrival(gameState.hogwarts.scene,pick.house,playerName);
+      autoSave();
+      if(runHogwartsAutomaticScene())return;
+    }
     autoSave();
     await callGemini(['mcgonagall']); return;
   }
