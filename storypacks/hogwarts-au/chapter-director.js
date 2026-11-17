@@ -105,8 +105,8 @@
   }
   function linkedMajor(catalog,majorId){return catalog?.byMajor[majorId]?.map(id=>catalog.byId[id])||[];}
   function decorateMajor(catalog,majorId){
-    const chapters=linkedMajor(catalog,majorId);
-    if(!chapters.length)return '';
+    const chapters=linkedMajor(catalog,majorId).filter(c=>['public','local'].includes(c.access));
+    if(!chapters.length)return ''; // secret/GM chapter titles are not valid pre-scene context
     // Public/local only, not offstage GM knowledge. Act opening remains the
     // beginning; it must not prematurely narrate the canonical outcome.
     return '\n[사건과 연결된 원작 장] '+
