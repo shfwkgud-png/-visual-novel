@@ -224,6 +224,10 @@
         delta:{mcgonagall:3,hermione:2},flags:{stone_finale:'preempt'},
         offscreen:'교수들이 검증된 단서에 따라 학교의 의심스러운 교수를 미리 조사한다. 원작의 함정문 대면은 그대로 반복되지 않는다.'};
     if(id==='preempt')return null;
+    if(id==='observe' && ev.kind==='plot')
+      return {id:'observe',label:'현장에서 사건이 진행되는 모습을 본다',
+        intent:'공개된 상황과 지금 나타난 인물의 행동으로 사건을 시작한다. 플레이어의 행동·대사·태도를 대신 결정하지 않는다.',
+        delta:{},flags:{},offscreen:'다른 장소에서도 관련 인물의 행동이 독립적으로 이어진다.'};
     if(id==='skip')return {id:'skip',label:'사건에 참여하지 않는다',intent:'사건 현장에 가지 않으며 직접 목격한 것으로 주장하지 않는다.',
       delta:{},flags:{},offscreen:'당신의 미참여와 무관하게 관련 인물들은 자신의 목적을 위해 행동했고 그 사건은 흘러갔다.'};
     return ev.options.find(x=>x.id===id);
@@ -287,6 +291,36 @@
         +'이 장면 동안 AI는 공식 날짜와 학년을 바꾸지 않는다. '
         +'이미 플레이어가 해결한 일과 앞으로 벌어질 일을 혼동하지 마라.'};
   }
+  // Public historical incidents unfold even without the player clicking
+  // 'participate'. Players may interrupt them through a genuine decision.
+  function startAmbient(st){
+    ensure(st);
+    if(!st.pending||st.active)return null;
+    const ev=getEvent(st.pending.id,st);
+    if(!ev||ev.kind!=='plot')return null;
+    return start(st,{eventId:ev.id,optionId:'observe'});
+  }
+  function activeChoices(st){
+    ensure(st);
+    if(!st.active||st.active.choice!=='observe')return [];
+    const ev=getEvent(st.active.id,st);
+    return ev?optionsFor(ev,st).filter(v=>!v.includes('] skip')):[];
+  }
+  function interrupt(st,input){
+    ensure(st);
+    if(!st.active||st.active.choice!=='observe')return null;
+    const choice=typeof input==='string'?parseChoice(input):input;
+    if(!choice||choice.eventId!==st.active.id||choice.optionId==='skip'||choice.optionId==='observe')return null;
+    const ev=getEvent(st.active.id,st),opt=selectedOption(ev,choice.optionId,st);
+    if(!opt)return null;
+    st.active.choice=opt.id;
+    return {id:ev.id,choice:opt.id,title:ev.title,
+      instruction:'[호그와트 사건 진행 중 플레이어의 실제 개입] '+ev.title+'\n'
+        +'사용자가 직접 선택한 행동: '+opt.label+'\n'
+        +'의도: '+opt.intent+'\n'
+        +'행동의 성공을 자동 확정하지 말고 실제 장면의 결과와 NPC 반응을 이어서 보여라. '
+        +'사건의 날짜와 장소, 다른 사람의 독립 행동은 보존하라.'};
+  }
   function finish(st) {
     ensure(st);
     if(!st.active) return null;
@@ -346,6 +380,6 @@
     return {title,narration:note};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,finish,resume,context,ending,
+  return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,startAmbient,activeChoices,interrupt,finish,resume,context,ending,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });
