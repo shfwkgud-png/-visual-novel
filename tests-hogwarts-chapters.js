@@ -54,7 +54,8 @@ assert(!catalog.upcoming.some(c=>c.id==='b01c06'));
 // A paired chapter is still source-linked, not a second duplicate encounter.
 assert(catalog.byMajor.halloween_troll.includes('b01c10'));
 assert(catalog.byMajor.battle_of_hogwarts.includes('b07c31'));
-assert(chapters.decorateMajor(catalog,'prince_tower').includes('벼락 맞은 탑'));
+assert.equal(chapters.decorateMajor(catalog,'prince_tower'),'','private tower facts must not enter pre-scene prompt');
+assert(chapters.decorateMajor(catalog,'battle_of_hogwarts').includes('호그와트 전투'));
 const hidden=catalog.byId.b07c01; // enemy meeting, inaccessible GM content
 assert.equal(hidden.access,'gm');
 assert.equal(hidden.interactive,false);
@@ -144,7 +145,7 @@ assert.equal(altered.state.statuses.b01c17s01,'altered');
 assert.equal(altered.state.statuses.b01c17s02,'altered');
 assert(!chapters.ending(catalog,'b06c27',restored,altered.state));
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/chapter-director.js?v=5'));
+assert(html.includes('storypacks/hogwarts-au/chapter-director.js?v=6'));
 assert(html.includes('storypacks/hogwarts-au/world.js?v=12'));
 assert(html.includes('PandoraHogwartsWorld.installChapterCatalog'));
 assert(html.includes('PandoraHogwartsChapters.currentContext'));
