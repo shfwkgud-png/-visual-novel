@@ -323,6 +323,19 @@
         +'행동의 성공을 자동 확정하지 말고 실제 장면의 결과와 NPC 반응을 이어서 보여라. '
         +'사건의 날짜와 장소, 다른 사람의 독립 행동은 보존하라.'};
   }
+  // Ordinary free-text roleplay must not vanish when a scripted event ends.
+  // This records attempted player actions (not an invented success/failure result).
+  function noteAction(st,raw) {
+    ensure(st);
+    if(!st.active)return false;
+    const text=String(raw||'').trim().replace(/\s+/g,' ').slice(0,220);
+    if(!text || /^▶/.test(text))return false;
+    const notes=st.active.actions||(st.active.actions=[]);
+    if(notes.at(-1)===text)return false;
+    notes.push(text);
+    if(notes.length>14)notes.shift();
+    return true;
+  }
   function finish(st) {
     ensure(st);
     if(!st.active) return null;
@@ -334,10 +347,12 @@
       const prev=st.ties[id]||0;st.ties[id]=Math.max(-10,Math.min(10,prev+delta));
     }
     Object.assign(st.agency,opt.flags||{});
+    const actions=(st.active.actions||[]).slice();
+    const actualChoice=opt.id==='observe' && actions.length ? 'freeform' : opt.id;
     const consequence={id:ev.id,date:ev.date,title:ev.title,choice:opt.label,
-      offscreen:opt.offscreen,visible:'당신의 선택은 관련 인물에게 기억된다.'};
-    st.finished[ev.id]={choice:opt.id,date:ev.date};
-    st.decisions.push({id:ev.id,choice:opt.id,date:ev.date});
+      actions,offscreen:opt.offscreen,visible:'당신의 선택과 실제 시도한 행동이 기록된다.'};
+    st.finished[ev.id]={choice:actualChoice,date:ev.date,actions};
+    st.decisions.push({id:ev.id,choice:actualChoice,date:ev.date,actions});
     st.publicConsequences.push(consequence);
     st.publicConsequences=st.publicConsequences.slice(-32);
     st.active=null;
@@ -356,13 +371,16 @@
     ensure(st);
     const recent=st.publicConsequences.slice(-10);
     const ties=Object.entries(st.ties).map(([id,n])=>id+': '+(n>0?'신뢰+':'경계')+n).join(', ');
-    const last=recent.map(r=>'- '+r.title+' / 플레이어: '+r.choice+' / 현장 밖: '+r.offscreen).join('\n');
+    const last=recent.map(r=>'- '+r.title+' / 플레이어: '+r.choice+
+      ((r.actions||[]).length?' / 직접 시도한 행동: '+r.actions.slice(-3).join('; '):'')+
+      ' / 현장 밖: '+r.offscreen).join('\n');
     const active=st.active&&getEvent(st.active.id,st);
     return '\n\n## 호그와트 개인 세계선(실제 확정된 플레이 기록; 대사에 메타 상태 표기 금지)\n'
       +'- 유저 행동으로 쌓인 인상: '+(ties||'아직 초면')+'\n'
       +'- 관계/분기 확정: '+JSON.stringify(st.agency)+'\n'
       +'- 최근 사건과 독립적인 NPC 행동:\n'+(last||'- 아직 없음')+'\n'
       +(active?'- 진행 중인 장면: '+active.title+' / 날짜 고정, 대화가 끝날 때까지 바꾸지 마라.\n':'')
+      +(st.active && st.active.actions?.length?'- 플레이어가 현재 장면에서 직접 시도한 행동(성공 확정 아님): '+st.active.actions.slice(-5).join(' / ')+'\n':'')
       +'- NPC는 플레이어가 함께하지 않은 모임·연구·행동도 스스로 진행했다. '
       +'나중에 소문으로 알 수 있지만 주인공이 직접 본 것처럼 회상시키지 마라.\n'
       +'- 인물 관계는 점수로 연애를 결정하지 않는다. 신뢰/경계는 말투, 초대, 도움, 비밀 공개에만 반영한다. '
@@ -382,6 +400,6 @@
     return {title,narration:note};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,startAmbient,activeChoices,interrupt,finish,resume,context,ending,
+  return Object.freeze({createState,valid,nextEvent,offer,parseChoice,start,startAmbient,activeChoices,interrupt,noteAction,finish,resume,context,ending,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });
