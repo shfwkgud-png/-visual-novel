@@ -122,11 +122,71 @@
       effects:{quirrell_exposed_early:true,stone_under_staff_guard:true}
     });
   }
+  function hasChoice(decisions,id,choice){
+    return Array.isArray(decisions) && decisions.some(x=>x.id===id&&x.choice===choice);
+  }
+  function stageEarnedHistory(bundle,state,decisions){
+    const routes=[
+      {id:'pettigrew_crossroads',choice:'capture',target:'b03c20s01',
+       outcome:'prevented',
+       reason:'루핀과 증거를 준비한 플레이어가 페티그루의 원작 탈출을 막고 구금한 확정 분기',
+       evidence:'hogwarts_verified_capture_with_prior_chapter_clues'},
+      {id:'prince_tower',choice:'seal_cabinet',target:'b06c27s01',
+       outcome:'prevented',
+       reason:'수개월의 독극물·저주 물품 조사를 통해 장롱 침입 경로를 사전에 봉쇄한 확정 분기',
+       evidence:'hogwarts_verified_cabinet_closure_from_investigation'},
+      {id:'prince_tower',choice:'guard_wand',target:'b06c27s02',
+       outcome:'prevented',
+       reason:'말포이의 신뢰를 얻어 덤블도어의 무장해제를 실제로 저지한 확정 분기',
+       evidence:'hogwarts_verified_wand_guard_with_prior_trust'}
+    ];
+    for(const r of routes){
+      if(!hasChoice(decisions,r.id,r.choice))continue;
+      const e=bundle.ledger.byId[r.target];
+      if(!e || e.index<state.cursor || state.futureInterventions[r.target])continue;
+      bundle.engine.intervene(bundle.ledger,state,r.target,{
+        outcome:r.outcome,reason:r.reason,evidence:r.evidence
+      });
+    }
+  }
+  function resolveEarnedAftermath(bundle,state,decisions){
+    const resolve=(id,outcome,reason,effects,evidence)=>{
+      if(state.statuses[id]!=='pending')return false;
+      bundle.engine.resolvePending(bundle.ledger,state,id,{
+        outcome,reason,evidence,effects:effects||{}
+      });return true;
+    };
+    if(hasChoice(decisions,'pettigrew_crossroads','capture')&&
+       state.statuses.b03c20s01==='prevented'){
+      state.world.pettigrew_captured=true;
+      resolve('b04c32s02','altered',
+        '페티그루가 구금되어 원래 형태의 묘지 부활 의식은 수행되지 못했다',
+        {graveyard_ritual_failed:true,voldemort_stage:'disembodied'},
+        'verified_captured_pettigrew_disrupts_resurrection');
+    }
+    if(hasChoice(decisions,'prince_tower','seal_cabinet')&&
+       state.statuses.b06c27s01==='prevented'){
+      state.world.cabinet_entry_blocked=true;
+      if(resolve('b06c27s03','prevented',
+          '장롱 경로가 차단되어 원래의 천문탑 살해 사건은 발생하지 못했다',
+          null,'verified_no_deatheater_entry')){
+        state.world.albus_survived_tower=true;
+      }
+    }
+    if(hasChoice(decisions,'prince_tower','guard_wand')&&
+       state.statuses.b06c27s02==='prevented'){
+      state.world.draco_disarm_prevented=true;
+      resolve('b07c23s04','prevented',
+        '말포이가 지팡이 충성권을 얻지 못해 해리의 원작 방식 충성권 승계가 성립하지 않았다',
+        null,'verified_wand_allegiance_never_transferred_to_draco');
+    }
+  }
   function sync(bundle,record,date,decisions){
     if(!bundle||!bundle.ledger)throw Error('Hogwarts canon bundle required');
     if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))throw Error('Hogwarts date invalid');
     const state=restoredOrFresh(bundle,record);
     applyVerifiedBranch(bundle,state,decisions);
+    stageEarnedHistory(bundle,state,decisions);
     let target=null;
     for(const e of bundle.ledger.events) {
       if(bundle.dates[e.id]<=date)target=e;
@@ -148,6 +208,7 @@
         });
       }
     }
+    resolveEarnedAftermath(bundle,state,decisions);
     return {state,advanced:advanced.map(x=>({id:x.id,outcome:x.outcome})),
       progress:bundle.engine.progress(bundle.ledger,state)};
   }
