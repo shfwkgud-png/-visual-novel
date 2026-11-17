@@ -2165,7 +2165,7 @@
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
 <script src="storypacks/hogwarts-au/story.js?v=8"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=1"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=2"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
 <script src="storypacks/hogwarts-au/world.js?v=6"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
@@ -11432,7 +11432,7 @@ function runHogwartsAutomaticScene() {
     const offer=hw.resume(world);
     if (offer && offer.mode==='offer') {
       renderFixedStep(offer.intro,offer.choices,
-        {background:offer.background,resetSprites:false});
+        {background:window.PandoraHogwartsScenes ? PandoraHogwartsScenes.resolveBackground(offer.background,hp.house) : offer.background,resetSprites:false});
       autoSave();return true;
     }
   }
@@ -14967,6 +14967,15 @@ function showChoices(choices) {
   if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsWorld &&
       gameState.hogwarts && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) {
     const hw = gameState.hogwarts.world;
+    // Players may return to their own house, but portrait/password gates
+    // are mandatory environmental reactions (not an extra narrative choice).
+    const sc = gameState.hogwarts.scene;
+    if (!hw.active && !hw.pending && window.PandoraHogwartsScenes &&
+        PandoraHogwartsScenes.valid(sc) && !PandoraHogwartsScenes.hasPending(sc)) {
+      const home=PandoraHogwartsScenes.resolveBackground('common_room',gameState.hogwarts.house);
+      if (sc.lastLocation!==home && !choices.includes('▶ 기숙사로 돌아간다 — 출입 절차를 거쳐 공용실로'))
+        choices.push('▶ 기숙사로 돌아간다 — 출입 절차를 거쳐 공용실로');
+    }
     // Ending cards are a deliberate end-of-story state, not another day.
     if (hw.epilogue) {
       if (!choices.includes('▶ 결말을 기록하고 엔딩 보기')) choices.push('▶ 결말을 기록하고 엔딩 보기');
@@ -15118,6 +15127,14 @@ async function handlePlayerInput(text) {
       gameState.hogwarts && PandoraHogwartsTime.valid(gameState.hogwarts)) {
     const clock = gameState.hogwarts, world = clock.world, hw = PandoraHogwartsWorld;
     if (hw.valid(world)) {
+      if (!world.active && !world.pending && window.PandoraHogwartsScenes &&
+          PandoraHogwartsScenes.valid(clock.scene) &&
+          (/^▶\s*기숙사로 돌아간다/.test(text) ||
+            PandoraHogwartsScenes.parseManualTravel(text,clock.house))) {
+        if (PandoraHogwartsScenes.startRoomReturn(clock.scene,clock.house)) {
+          if (runHogwartsAutomaticScene()){autoSave();return;}
+        }
+      }
       if (/^▶\s*7년의 여정을 돌아보고 결말을 이야기한다/.test(text)) {
         const conclusion=hw.ending(world);
         if (!conclusion) {
@@ -15617,6 +15634,16 @@ function hideEventCG() {
 }
 
 function setBg(name) {
+  if (STORY.id==='hogwarts' && gameState?.hogwarts?.house && window.PandoraHogwartsScenes) {
+    const hp=gameState.hogwarts, sc=hp.scene;
+    name=PandoraHogwartsScenes.resolveBackground(name,hp.house);
+    const ownHome=PandoraHogwartsScenes.resolveBackground('common_room',hp.house);
+    const ownBed=PandoraHogwartsScenes.resolveBackground('dormitory',hp.house);
+    if (PandoraHogwartsScenes.valid(sc) &&
+        (name===ownHome||name===ownBed) &&
+        sc.lastLocation!==ownHome && sc.lastLocation!==ownBed)
+      return; // block AI-invented teleport; director marks entry after password
+  }
   const sb = STORY_BG_FILES[STORY.id];
   let key;
   if ((STORY.customBgs && STORY.customBgs[name]) || (sb && sb.includes(name))) key = name;
