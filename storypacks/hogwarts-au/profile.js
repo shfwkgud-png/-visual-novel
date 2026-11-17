@@ -14,7 +14,7 @@
     const historic=/(호그와트.{0,12}역사상|역사상.{0,24}(최고|가장|천재|뛰어난)|세상에서\s*가장\s*강|최강의\s*마법사|압도적.{0,12}먼치킨|전설급\s*천재)/i.test(text);
     const genius=historic||/(천재|먼치킨|비범한\s*재능|천부적\s*재능|압도적인\s*재능|빠르게\s*익히|한번\s*보고\s*익히)/i.test(text);
     const dark=/(어둠의\s*마법|흑마법|금기\s*마법|저주).{0,24}(천부|특화|소질|재능|능숙)|(?:천부|특화|소질|재능).{0,24}(어둠의\s*마법|흑마법|금기\s*마법|저주)/i.test(text);
-    const conceal=/(숨기|감추|은폐|평범한\s*(학생|사람)처럼|정체를\s*드러내지|실력을\s*드러내지)/i.test(text);
+    const conceal=/(숨기|숨긴|숨김|숨겼|감추|감춘|감춤|은폐|평범한\s*(학생|사람)처럼|정체를\s*드러내지|실력을\s*드러내지)/i.test(text);
     const allMastered=/(이미|처음부터|입학\s*전부터).{0,32}(모든|대부분|전체).{0,12}(주문|마법).{0,22}(숙달|통달|익혔|배웠|사용할\s*수)|(?:모든|전체).{0,12}(주문|마법).{0,24}(이미|입학\s*전부터).{0,12}(숙달|통달|익혔|배웠)/i.test(text);
     const base=historic?100:genius?92:50;
     return {schemaVersion:1,description:text,configured:!!text,worldMode:'canon_centered',
