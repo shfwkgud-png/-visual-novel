@@ -11,6 +11,8 @@
   if(root)root.PandoraHogwartsMagic=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
+  const PROFILE=(typeof globalThis!=='undefined'&&globalThis.PandoraHogwartsProfile)||
+    (typeof require==='function'?require('./profile.js'):null);
   const SUBJECTS=[
     ['charms','마법 주문학',1,'플리트윅','필수'],
     ['transfiguration','변신술',1,'맥고나걸','필수'],
@@ -110,9 +112,11 @@
   function createState(date){
     return {schemaVersion:1,spells:{},subjectXP:{},electives:[],infractions:[],
       darkAccess:false,practice:{date:date||'1991-09-01',sessions:0,castCount:0,fatigue:0},
-      lastDate:date||'1991-09-01',exams:{},research:[],licences:{},castHistory:[],lastCast:null};
+      lastDate:date||'1991-09-01',exams:{},research:[],licences:{},castHistory:[],lastCast:null,
+       profile:PROFILE?PROFILE.infer(''):null};
   }
-  function need(s){if(!valid(s))throw Error('Hogwarts magic state invalid');}
+  function need(s){if(!valid(s))throw Error('Hogwarts magic state invalid');
+    if(PROFILE)PROFILE.ensure(s);}
   function schoolYear(date){const y=Number(String(date).slice(0,4)),m=Number(String(date).slice(5,7));
     return Math.max(1,Math.min(7,(m>=9?y-1990:y-1991)||1));}
   function isTerm(date){let m=Number(String(date).slice(5,7));return m>=9||m<=6;}
@@ -143,8 +147,10 @@
     need(s);ctx=ctx||{};const spell=SPELL_BY_ID[id];
     if(!spell)return {ok:false,reason:'등록되지 않은 주문이나 실습이다.'};
     const date=String(ctx.date||s.lastDate);resetDay(s,date);
-    if(date==='1991-09-01')return {ok:false,id,reason:'기숙사 배정 첫날 밤이다. 정규 수업은 다음 일정부터 시작된다.'};
-    const why=courseAllowed(s,spell,{...ctx,date});
+    if(date==='1991-09-01'&&!ctx.selfStudy)return {ok:false,id,reason:'기숙사 배정 첫날 밤이다. 정규 수업은 다음 일정부터 시작된다.'};
+    const why=ctx.selfStudy&&PROFILE
+      ?PROFILE.researchGate(s,spell,{...ctx,date,spellById:SPELL_BY_ID,lessonThreshold:LESSON_THRESHOLD},schoolYear)
+      :courseAllowed(s,spell,{...ctx,date});
     if(why)return {ok:false,id,reason:why};
     if(s.practice.sessions>=3)return {ok:false,id,reason:'오늘의 집중 실습은 이미 세 차례 마쳤다. 다음 날에 다시 연습할 수 있다.'};
     if(spell.form==='potion'&&!/(마법약|potions|교실|실습실|연구실|지하)/i.test(String(ctx.location||''))&&!ctx.supervised)
@@ -154,6 +160,7 @@
     const p=record(s,id),attempt=p.attempts+1;
     let gain=Math.max(6,24-spell.difficulty*3)+hash(date+id+'practice'+attempt)%13;
     gain=Math.max(4,gain-Math.floor(s.practice.fatigue/20));
+    if(PROFILE)gain=Math.max(4,Math.round(gain*PROFILE.studyMultiplier(s,spell)));
     const first=p.xp<LESSON_THRESHOLD;
     p.xp=Math.min(360,p.xp+gain);
     p.attempts++;
@@ -163,7 +170,7 @@
     s.practice.sessions++;s.practice.fatigue=Math.min(100,s.practice.fatigue+7+spell.difficulty);
     const danger=spell.law==='unforgivable'||spell.law==='dark';
     if(danger)s.infractions.push({date,id,kind:'forbidden_research',severity:'high',
-      note:'금지된 분야의 연구는 학교 징계와 마법부 조사 위험'});
+      note:'금지된 분야의 연구는 발각 시 징계와 마법부 조사 위험',discovered:false,witnesses:[]});
     return {ok:true,id,name:spell.name,gain,xp:p.xp,rank:rank(p.xp),
       learned:p.xp>=LESSON_THRESHOLD,firstLearned:first&&p.xp>=LESSON_THRESHOLD,
       fatigue:s.practice.fatigue,danger};
@@ -231,13 +238,13 @@
   }
   function seekDarkAccess(s,ctx){
     need(s);const year=schoolYear(ctx?.date||s.lastDate);
-    if(year<5)return {ok:false,reason:'아직 본격적으로 금서에 접근할 수 없다.'};
+    // Physical access can be attempted at any age; talent is not knowledge.
     if(s.darkAccess)return {ok:true,reason:'금서 연구 경로가 이미 열려 있다.'};
     if(!/도서관|금서|비밀|금지 구역|어둠의 마법/.test(String(ctx?.location||'')))
       return {ok:false,reason:'비밀 자료를 연구하려면 도서관의 제한 구역이나 허가된 연구 장소에 있어야 한다.'};
     s.darkAccess=true;s.infractions.push({date:ctx?.date||s.lastDate,
       id:'restricted_library',kind:'restricted_access',severity:'medium',
-      note:'허가되지 않은 자료에 접근한 기록'});
+      note:'허가되지 않은 자료에 접근한 비밀 행동',discovered:false,witnesses:[]});
     return {ok:true,reason:'위험한 금서 자료에 접근했다. 이것은 저주를 배웠거나 시전에 성공했다는 뜻이 아니며, 학교에 알려지면 처벌받을 수 있다.'};
   }
   function certify(s,which,ctx){
@@ -271,23 +278,25 @@
     if(spell.form==='potion')return {ok:false,id,
       reason:spell.name+'은(는) 주문이 아니라 마법약이다. 재료와 실습실에서 제조해야 한다.'};
     const year=schoolYear(date);
-    if(spell.year>year)return {ok:false,id,reason:'현재 학년의 실력으로 안정적으로 다룰 수 없는 기술이다.'};
+    if(spell.year>year&&(!PROFILE||PROFILE.ensure(s).aptitude.learning<90))
+      return {ok:false,id,reason:'현재 학년의 지식과 숙련도로 안정적으로 다룰 수 없는 기술이다.'};
     if(spell.id==='apparition'){
-      if(!s.licences?.apparition)return {ok:false,id,reason:'순간이동 면허가 필요하다.'};
       if(ctx.inHogwarts!==false)return {ok:false,id,reason:'호그와트 경내에서는 일반적으로 순간이동이 불가능하다.'};
     }
-    if(spell.id==='animagus'&&!s.licences?.animagus)
-      return {ok:false,id,reason:'애니마구스 등록과 장기 훈련을 먼저 마쳐야 한다.'};
+    // Licence and Animagus registration determine legality, not innate ability.
     const counter=++s.practice.castCount;
     const roll=1+hash(date+'cast'+id+counter+String(ctx.target||''))%100;
     const mastery=Math.min(35,Math.floor(p.xp/8));
-    const threshold=Math.max(7,Math.min(94,43+mastery+(ctx.supervised?10:0)-
+    const talent=PROFILE?PROFILE.talentBonus(s,spell):0;
+    const threshold=Math.max(7,Math.min(talent?99:94,43+mastery+talent+(ctx.supervised?10:0)-
       (spell.difficulty*7)-Math.floor(s.practice.fatigue/8)-
       (ctx.duelDifficulty||0)));
     const success=roll<=threshold;
     s.practice.fatigue=Math.min(100,s.practice.fatigue+Math.ceil(spell.difficulty*1.8));
     const violation=spell.law==='unforgivable'?'unforgivable':
       spell.law==='dark'?'dark_curse':
+      spell.id==='apparition'&&!s.licences?.apparition?'unlicensed_apparition':
+      spell.id==='animagus'&&!s.licences?.animagus?'unregistered_animagus':
       spell.law==='restricted'&&!ctx.permission?'restricted_use':
       spell.law==='caution'&&ctx.againstPerson&&!ctx.duelAuthorized?'unsafe_cast':null;
     if(violation)s.infractions.push({date,id,kind:violation,
