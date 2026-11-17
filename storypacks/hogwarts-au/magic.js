@@ -299,14 +299,18 @@
       spell.id==='animagus'&&!s.licences?.animagus?'unregistered_animagus':
       spell.law==='restricted'&&!ctx.permission?'restricted_use':
       spell.law==='caution'&&ctx.againstPerson&&!ctx.duelAuthorized?'unsafe_cast':null;
+    // Casting can be illegal without being observed. A private offence is not a
+    // reported crime; each present NPC learns only what they actually witness.
+    const observers=PROFILE?PROFILE.registerWitnesses(s,spell,{...ctx,date,castIndex:counter},
+      {success,violation}):[];
     if(violation)s.infractions.push({date,id,kind:violation,
       severity:spell.law==='unforgivable'?'critical':spell.law==='dark'?'high':'medium',
-      target:ctx.target||null,note:spell.effect});
+      target:ctx.target||null,note:spell.effect,discovered:observers.length>0,witnesses:observers});
     const result={ok:true,id,name:spell.name,roll,threshold,success,
-      violation,spellEffect:spell.effect,rank:rank(p.xp),
+      violation,exposed:observers.length>0,witnesses:observers,spellEffect:spell.effect,rank:rank(p.xp),
       consequence:success?'주문은 발동했다. 실제 대상에 대한 결과는 현장·보호막·거리·상대 저항을 별도로 판정한다.':
         '발동에 실패하거나 불완전한 효과만 나타났다. 자동으로 피해가 발생하지 않는다.'};
-    s.castHistory.push({date,id,success,violation,roll});
+    s.castHistory.push({date,id,success,violation,roll,witnesses:observers});
     s.castHistory=s.castHistory.slice(-50);
     return result;
   }
@@ -365,13 +369,14 @@
     return '\n\n## ★호그와트 전용 마법학(이 상태만이 주문 습득·시전의 확정 근거)\n'
       +'- 학년 '+year+'. 실제로 배운 주문/실습: '+(list||'아직 없음')+'.\n'
       +'- 선택과목: '+(selected||'미정')+'. 실습 피로도 '+s.practice.fatigue+'/100.\n'
-      +'- 금서 접근: '+(s.darkAccess?'접근 기록 있음(저주 사용 허가 아님)':'없음')+'. 징계·조사 기록 '+s.infractions.length+'건.\n'
+      +'- 금서 접근: '+(s.darkAccess?'접근 기록 있음(저주 사용 허가 아님)':'없음')+'. 내부 위험행위 '+s.infractions.length+'건, 실제 목격된 위반 '+s.infractions.filter(x=>x.discovered).length+'건. 목격되지 않은 위반은 자동 신고되지 않는다.\n'
       +'- 최근 앱 확정 시전: '+(s.lastCast ? s.lastCast.name+' / '+(s.lastCast.success?'발동':'실패')+' / '+(s.lastCast.violation||'규정 위반 없음') : '없음')+'. 타인에 대한 실제 결과는 장면과 방어·증거 판정을 따른다.\n'
-      +'- 기초 수업 외 고급 주문·특수 마법은 원작 시기에 맞춰 교사·선행 주문·반복 훈련·면허를 요구한다. 모르는 주문은 대사만으로 습득하거나 성공하지 않는다.\n'
+      +'- 수업은 기본 학습 경로이지 필수가 아니다. 독학·목격된 시전·스승·입학 전 지식으로도 배운다. 천재는 학년보다 빨리 익혀도 모르는 주문을 대사만으로 얻지 못한다.\n'
       +'- [주문 시전 결과]는 앱의 확정 판정을 따른다. 플레이어가 스스로 성공을 선언해도 불법 주문·알지 못하는 주문·학교 경내 순간이동 등 불변 조건을 넘길 수 없다.\n'
       +'- 용서받지 못할 저주 세 가지: Imperio, Crucio, Avada Kedavra. 일반 마법법에서 불법이며 사용은 아즈카반 종신형 위험. 정권 장악기에는 집행이 왜곡될 수 있으나 학교 내부 대인 공격은 타인과의 관계·법적 후과를 남긴다.\n'
       +'- 변신술, 주문학, 마법약, 방어술, 약초학, 천문학, 마법 역사 일곱 필수 과목과 1학년 비행, 3학년 선택과목, 5학년 O.W.L., 7학년 N.E.W.T.를 따른다.\n'
-      +'- 비마법 스킬은 일반 RPG 엔진에서 취급할 수 있으나 주문 목록과 숙련도는 AI가 state_update.player.skills/abilities로 독단적으로 고쳐 쓰지 못한다.\n';
+      +'- 비마법 스킬은 일반 RPG 엔진에서 취급할 수 있으나 주문 목록과 숙련도는 AI가 state_update.player.skills/abilities로 독단적으로 고쳐 쓰지 못한다.\n'
+      +(PROFILE?PROFILE.context(s):'');
   }
   return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,createState,valid,schoolYear,rank,courseAllowed,
     lesson,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
