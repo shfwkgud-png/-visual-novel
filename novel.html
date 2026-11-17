@@ -15201,7 +15201,13 @@ function showChoices(choices) {
     const inj = idolPlanChoice();
     if (inj && !choices.some(c => c === inj)) choices = choices.concat([inj]);
   }
-  if (STORY.id === 'hogwarts' && window._startPhase === 'playing' && window.PandoraHogwartsWorld &&
+  // A spellbook/classroom submenu is a self-contained action space. Appending
+  // world/scene buttons inside it created overlapping actions on small screens
+  // (a tap for a class sometimes reopened the grimoire or finished the scene).
+  const hogwartsMagicSubmenu=STORY.id==='hogwarts'&&
+    choices.some(x=>/^▶\s*마법 메뉴 닫기/.test(x));
+  if (STORY.id === 'hogwarts' && !hogwartsMagicSubmenu &&
+      window._startPhase === 'playing' && window.PandoraHogwartsWorld &&
       gameState.hogwarts && PandoraHogwartsWorld.valid(gameState.hogwarts.world)) {
     const hw = gameState.hogwarts.world;
     if (window.PandoraHogwartsMagic && PandoraHogwartsMagic.valid(gameState.hogwarts.magic) &&
