@@ -9,7 +9,7 @@
   if(root)root.PandoraHogwartsChapters=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const BASE='storypacks/hogwarts-au/chapter-playbook.json?v=3';
+  const BASE='storypacks/hogwarts-au/chapter-playbook.json?v=4';
   const SCHOOL=['hogwarts','great_hall','quidditch_pitch','hagrids_hut','forbidden_forest',
     'hogwarts_grounds','hogsmeade','chamber_of_secrets','shrieking_shack',
     'astronomy_tower','room_requirement','hogwarts_express'];
