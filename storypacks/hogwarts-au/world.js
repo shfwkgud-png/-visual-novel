@@ -245,8 +245,6 @@
     }
     if(ev.id==='hallows_school' && st.agency.phoenix==='resist')
       intro+='\n\n엄브리지 시절 위험을 감수했던 학생들이 당신의 태도를 기억한다. 같은 사람들이 다시 도움을 청할 수도 있다.';
-    if (CHAPTER_CATALOG && CHAPTER_HELPER && CHAPTER_CATALOG.byMajor[ev.id])
-      intro+='\n\n이 사건은 이미 기록된 원작 장별 역사와 연결되며, 이 장면에서 보여 주는 내용은 플레이어가 실제로 겪을 수 있는 것에 한정된다.';
     return intro;
   }
   function optionsFor(ev,st) {
