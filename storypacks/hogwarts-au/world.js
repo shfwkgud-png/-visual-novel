@@ -467,7 +467,7 @@
     const route=st.agency.finale, known=canonState?.statuses?.b07c36s04;
     const changedHistory=st.agency.pettigrew==='captured'||
       st.agency.tower==='sealed_cabinet'||st.agency.tower==='guarded_wand';
-    const unsettled=known&&known!=='canonical';
+    const unsettled=changedHistory||(known&&known!=='canonical');
     const title=unsettled?'바뀐 세계의 다음 장':route==='defend'?'호그와트의 수호자'
       :route==='save'?'한 사람을 지킨 마법사'
       :route==='evacuate'?'살아남은 이들의 증언':'호그와트 이후의 삶';
