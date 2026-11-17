@@ -15661,6 +15661,10 @@ function setBg(name) {
   //   몇 턴 전 배경에 멈춰 있다가 이어하기·되돌리기 첫 화면에 옛 배경이 잠깐 보일 수 있었다.
   lastBg = key;
   crossfadeBg(bgUrlFor(key));
+  if (STORY.id==='hogwarts' && window.PandoraHogwartsScenes &&
+      PandoraHogwartsScenes.valid(gameState?.hogwarts?.scene) &&
+      gameState.hogwarts.scene.phase==='idle')
+    gameState.hogwarts.scene.lastLocation=key;
 }
 // Restore an exact background file (for history scrubbing)
 function setBgFile(file) {
