@@ -2164,13 +2164,13 @@
 
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
-<script src="storypacks/hogwarts-au/story.js?v=8"></script>
+<script src="storypacks/hogwarts-au/story.js?v=9"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=6"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=3"></script>
-<script src="storypacks/hogwarts-au/world.js?v=10"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=4"></script>
+<script src="storypacks/hogwarts-au/world.js?v=11"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=3"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=4"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -15168,7 +15168,7 @@ async function handlePlayerInput(text) {
         }
       }
       if (/^▶\s*7년의 여정을 돌아보고 결말을 이야기한다/.test(text)) {
-        const conclusion=hw.ending(world);
+        const conclusion=hw.ending(world,gameState.hogwarts.canon);
         if (!conclusion) {
           renderFixedStep('아직 마지막 사건을 겪지 않았습니다. 지금의 장면을 먼저 이어가세요.',
             ['▶ 다음 장면 — 다음 사건·일상으로 진행']);return;
@@ -15230,7 +15230,7 @@ async function handlePlayerInput(text) {
         }
         const upcoming=hw.nextEvent(world,clock.date,clock.slot);
         if (!upcoming) {
-          const fin=hw.ending(world);
+          const fin=hw.ending(world,gameState.hogwarts.canon);
           renderFixedStep(fin ? '호그와트에서 보낸 7년의 마지막 페이지다. 이제 직접 걸어온 길의 결말을 확인할 수 있다.' : '더는 등록된 주요 사건이 없습니다. 일상 대화를 이어가거나 마지막 장면을 돌아볼 수 있습니다.',
             fin ? ['▶ 7년의 여정을 돌아보고 결말을 이야기한다'] : null);
           autoSave(); return;
