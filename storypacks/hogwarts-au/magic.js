@@ -378,7 +378,7 @@
       +'- 비마법 스킬은 일반 RPG 엔진에서 취급할 수 있으나 주문 목록과 숙련도는 AI가 state_update.player.skills/abilities로 독단적으로 고쳐 쓰지 못한다.\n'
       +(PROFILE?PROFILE.context(s):'');
   }
-  return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,createState,valid,schoolYear,rank,courseAllowed,
+  return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,ALIASES,createState,valid,schoolYear,rank,courseAllowed,
     lesson,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
     findIncantation,parseCommand,parseFreeCast,context,LESSON_THRESHOLD});
 });
