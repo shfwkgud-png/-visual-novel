@@ -877,6 +877,31 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(arrival.bg,'slytherin_common_room');
     assert(arrival.speakers.some(x=>x==='덤블도어'));
     assert(arrival.speakers.some(x=>x==='슬리데린 반장'));
+    // New Hogwarts-only spellbook: real curriculum, no unearned spells during
+    // first-night sorting. This exercises actual browser controls on mobile too.
+    const magicLoaded=await page.evaluate(() => ({
+      exists:!!window.PandoraHogwartsMagic,subjectCount:PandoraHogwartsMagic.SUBJECTS.length,
+      spellCount:PandoraHogwartsMagic.SPELLS.length,study:gameState.hogwarts.magic
+    }));
+    assert.equal(magicLoaded.exists,true);
+    assert.equal(magicLoaded.subjectCount,14);
+    assert.equal(magicLoaded.spellCount,51);
+    assert.equal(magicLoaded.study.schemaVersion,1);
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 도감'}).first().click();
+    await drainDialogue(page);
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 수업'}).first().click();
+    await drainDialogue(page);
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 연습 [lumos]'}).first().click();
+    await drainDialogue(page);
+    const firstNight=await page.evaluate(() => ({
+      xp:gameState.hogwarts.magic.spells.lumos?.xp||0,
+      date:gameState.hogwarts.date,
+      last:dialogueText.textContent
+    }));
+    assert.equal(firstNight.date,'1991-09-01');
+    assert.equal(firstNight.xp,0,'learning before the first class must be blocked');
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 메뉴 닫기'}).first().click();
+    await drainDialogue(page);
     await page.locator('#choiceBox .choice-btn').filter({hasText:'다음 장면'}).click();
     await waitForStoryChoice(page,'헤르미온느와 도서관');
     await page.locator('#choiceBox .choice-btn').filter({hasText:'헤르미온느와 도서관'}).click();
