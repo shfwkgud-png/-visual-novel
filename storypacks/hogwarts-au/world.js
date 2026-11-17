@@ -308,7 +308,7 @@
         delta:{malfoy:1},flags:{tower:'guarded_wand'},confirmedBySystem:true,
         offscreen:'덤블도어의 지팡이가 원작처럼 말포이에게 넘어가지 않았다. 훗날 말포이를 제압하더라도 딱총나무 지팡이의 충성권이 해리에게 자동 승계되지 않는다.'};
     if(['preempt','capture','seal_cabinet','guard_wand'].includes(id))return null;
-    if(id==='observe' && (ev.kind==='plot'||ev.autoStart))
+    if(id==='observe')
       return {id:'observe',label:'현장에서 사건이 진행되는 모습을 본다',
         intent:'공개된 상황과 지금 나타난 인물의 행동으로 사건을 시작한다. 플레이어의 행동·대사·태도를 대신 결정하지 않는다.',
         delta:{},flags:{},offscreen:'다른 장소에서도 관련 인물의 행동이 독립적으로 이어진다.'};
@@ -397,13 +397,13 @@
     ensure(st);
     if(!st.pending||st.active)return null;
     const ev=getEvent(st.pending.id,st);
-    if(!ev||(ev.kind!=='plot'&&!ev.autoStart))return null;
+    if(!ev)return null;
     return start(st,{eventId:ev.id,optionId:'observe'});
   }
   function shouldStartAmbient(st){
     ensure(st);
     const ev=st.pending&&getEvent(st.pending.id,st);
-    return !!(ev&&(ev.kind==='plot'||ev.autoStart));
+    return !!ev;
   }
   function activeChoices(st){
     ensure(st);

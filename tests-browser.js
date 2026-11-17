@@ -372,6 +372,12 @@ async function waitForStoryChoice(page, sought) {
   throw Error('Hogwarts choice not presented: '+sought+' | '+JSON.stringify(debug));
 }
 
+async function chooseHogwartsMenu(page, label) {
+  await drainDialogue(page);
+  await page.locator('#moreBtn').click();
+  await page.locator('#hogwartsMenu button').filter({ hasText: label }).click();
+}
+
 async function enterText(page, text) {
   await drainDialogue(page);
   await page.locator('#userInput').fill(text);
@@ -892,8 +898,16 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(arrival.bg,'slytherin_common_room');
     assert(arrival.speakers.some(x=>x==='덤블도어'));
     assert(arrival.speakers.some(x=>x==='슬리데린 반장'));
-    await page.locator('#choiceBox .choice-btn').filter({hasText:'다음 장면'}).click();
+    const controls = await page.locator('#choiceBox .choice-btn').allTextContents();
+    assert.ok(controls.every(text => !/다음 장면|장면 마치기|마법 도감/.test(text)));
+    await chooseHogwartsMenu(page,'다음 장면');
     await waitForStoryChoice(page,'헤르미온느와 도서관');
+    assert.equal(await page.evaluate(() => gameState.hogwarts.world.active?.choice), 'observe');
+    assert.ok((await page.locator('#choiceBox').innerText()).indexOf('[first_invitations]') === -1);
+    await enterText(page,'말포이, 먼저 무슨 모임인지 듣고 결정할게.');
+    await drainDialogue(page);
+    assert.ok(await page.evaluate(() => gameState.hogwarts.world.active.actions
+      .includes('말포이, 먼저 무슨 모임인지 듣고 결정할게.')));
     await page.locator('#choiceBox .choice-btn').filter({hasText:'헤르미온느와 도서관'}).click();
     await drainDialogue(page);
     try {
@@ -967,6 +981,12 @@ async function hogwartsArtCheck(ctx) {
     });
     assert.deepEqual(restored.ids, ['malfoy', 'harry']);
     assert.equal(restored.speaker, 'sprite_harry');
+    const missingSpeaker = await page.evaluate(() => {
+      rebuildSprites(['crabbe'], 'malfoy', 'normal', 'upper');
+      return { ids: [...shownSprites], speaker: document.querySelector('.char-sprite.speaking')?.id };
+    });
+    assert.deepEqual(missingSpeaker.ids, ['crabbe', 'malfoy']);
+    assert.equal(missingSpeaker.speaker, 'sprite_malfoy');
     const rolled = await page.evaluate(() => {
       ensureSprite('ron'); highlightSpeaker('ron', 'normal', 'upper');
       ensureSprite('harry'); highlightSpeaker('harry', 'normal', 'upper');
@@ -1015,6 +1035,32 @@ async function hogwartsArtCheck(ctx) {
       if (ctx.mobile) await page.screenshot({ path: path.join(ARTIFACTS, id + '-' + emotion + '-mobile.png') });
     }
   });
+  await check(ctx, 'saved speaker names restore their own portraits and entrance actions stay narration', async () => {
+    const restored = await page.evaluate(() => {
+      const start = dialogueLog.length;
+      const lines = [
+        {speaker:'드레이코 말포이',char_id:null,sprites:['crabbe'],text:'진짜로 올 줄은 몰랐는데.'},
+        {speaker:'빈센트 크래브',char_id:'malfoy',sprites:['hermione'],text:'말포이, 굳이 부를 필요가 있었어?'},
+        {speaker:'퍼시 위즐리',char_id:'percy',sprites:['percy'],
+          text:PandoraHogwartsScenes.HOUSES['그리핀도르'].arrival.answer},
+      ];
+      dialogueLog.push(...lines);
+      const result = lines.map((line, i) => {
+        historyPos = start + i;
+        renderHistoryEntry();
+        return {speaker:line.speaker,id:line.char_id,
+          sprite:document.querySelector('.char-sprite.speaking')?.id || null,
+          narrator:document.getElementById('nameplate').classList.contains('narrator')};
+      });
+      dialogueLog.splice(start);
+      return result;
+    });
+    assert.deepEqual(restored, [
+      {speaker:'드레이코 말포이',id:'malfoy',sprite:'sprite_malfoy',narrator:false},
+      {speaker:'빈센트 크래브',id:'crabbe',sprite:'sprite_crabbe',narrator:false},
+      {speaker:'나레이터',id:null,sprite:null,narrator:true},
+    ]);
+  });
   await check(ctx, 'Hogwarts spellbook, first lesson and magic-only state save', async () => {
     await drainDialogue(page);
     // Spellbook is now tested independently after the cinematic art fixture.
@@ -1027,12 +1073,12 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(magicLoaded.subjectCount,14);
     assert.equal(magicLoaded.spellCount,51);
     assert.equal(magicLoaded.study.schemaVersion,1);
-    await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 도감'}).first().click();
+    await chooseHogwartsMenu(page,'마법 도감');
     await drainDialogue(page);
     await page.waitForFunction(() => !window._inputRequest && !sendBtn.disabled);
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 수업'}).first().click();
-    await waitForStoryChoice(page,'마법 연습 [lumos]');
-    await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 연습 [lumos]'}).first().click();
+    await waitForStoryChoice(page,'마법 연습 — 지팡이 빛');
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 연습 — 지팡이 빛'}).first().click();
     await page.waitForFunction(() => (gameState?.hogwarts?.magic?.spells?.lumos?.xp||0)>0);
     await drainDialogue(page);
     const firstNight=await page.evaluate(() => ({
