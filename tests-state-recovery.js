@@ -73,8 +73,8 @@ function sandbox(options = {}) {
   sb.autoSave = () => calls.saves.push(clone({
     gameState: sb.gameState, gameHistory: sb.gameHistory, turnCount: sb.turnCount,
   }));
-  sb.processResponse = (data, activeIds, stream, stateOnly) => {
-    calls.apply.push({ data: clone(data), activeIds: clone(activeIds), stateOnly });
+  sb.processResponse = (data, activeIds, stream, stateOnly, source) => {
+    calls.apply.push({ data: clone(data), activeIds: clone(activeIds), stateOnly, source:source?clone(source):null });
     if (options.apply) return options.apply(sb, data, activeIds, stream, stateOnly);
     const s = data.state_update || {};
     if (typeof s.gold === 'number') sb.gameState.gold += s.gold;
@@ -110,6 +110,8 @@ T('same response requested twice: one API call, one state commit', async () => {
   assert.equal(c.sb.gameState.gold, 14);
   assert.equal(c.calls.apply.length, 1);
   assert.equal(c.calls.apply[0].stateOnly, true);
+  assert.equal(c.calls.apply[0].data.dialogue,undefined,'recording must not replay speaker metadata');
+  assert.equal(c.calls.apply[0].source.scene.narration,c.scene.narration);
   assert.ok(!('combat' in c.calls.apply[0].data.state_update));
   assert.equal(c.entry._stateExtract.status, 'applied');
   assert.equal(c.sb._splitExtractPending, null);

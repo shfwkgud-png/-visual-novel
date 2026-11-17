@@ -299,6 +299,16 @@ test('relationship milestones align with 41/71 and keep the existing relationshi
     else assert.equal(sb.gameState.pendingBeat, undefined);
   }
 });
+test('scene evidence stays separate from recorder rendering and met-character state', () => {
+  const sb=stateApplyFixture();
+  sb.CHARACTERS.other={name:'다른 인물'};
+  const source={scene:{narration:'실제로 표시된 장면',dialogue:[{char_id:'other',text:'저장된 잘못된 화자'}]},userText:'질문한다'};
+  let received;
+  sb.applyHogwartsSceneState=(_,__,proof)=>{received=proof;};
+  sb.processResponse({state_update:{}},[],null,true,source);
+  assert.equal(received,source);
+  assert.equal(sb.gameState.metChars.other,undefined,'a recorder receipt must not invent another NPC meeting');
+});
 test('fixture request gets smaller without changing its actual scene text or state history', () => {
   const history = [];
   for (let i = 0; i < 12; i++) {
