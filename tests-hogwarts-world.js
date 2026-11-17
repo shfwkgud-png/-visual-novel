@@ -52,6 +52,9 @@ assert.equal(world.finish(s),null);
 const winter=world.EVENTS.find(x=>x.id==='winter_choice');
 assert(world.offer(s,winter).intro.includes('학기 초 모임에 오지'));
 assert.equal(world.ending(s),null);
+assert.equal(world.isNext('▶ 다음 장면 — 다음 사건·일상으로 진행'),true);
+assert.equal(world.isFinish('▶ 장면 마치기 — 결과를 확정하고 이어가기'),true);
+assert.equal(world.isNext('▶ 다음 장면을 자세히 설명한다'),false);
 
 // Earned, non-automatic alternate finale: clues from two distinct earlier events.
 let alt=world.createState(),ac=clock.createState();
@@ -156,7 +159,7 @@ assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,70);
 
 const html=fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/world.js?v=6'));
+assert(html.includes('storypacks/hogwarts-au/world.js?v=7'));
 assert(html.includes('storypacks/hogwarts-au/canon-bridge.js?v=3'));
 assert(html.includes('moveToScene(clock,upcoming.date,upcoming.slot)'));
 assert(html.includes('gameState.hogwarts.world = PandoraHogwartsWorld.createState()'));
