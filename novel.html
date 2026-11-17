@@ -2167,7 +2167,7 @@
 <script src="storypacks/hogwarts-au/story.js?v=8"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=4"></script>
 <script src="storypacks/hogwarts-au/time.js?v=2"></script>
-<script src="storypacks/hogwarts-au/world.js?v=7"></script>
+<script src="storypacks/hogwarts-au/world.js?v=8"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=1"></script>
 <script src="storypacks/hogwarts-au/canon-bridge.js?v=3"></script>
 <script>
@@ -15271,6 +15271,12 @@ async function handlePlayerInput(text) {
       }
     }
   }
+  // Unscripted play inside an incident is still a real attempt in the world log.
+  // A freeform action is evidence of intent, not automatic proof of success.
+  if (STORY.id==='hogwarts' && window._startPhase==='playing' &&
+      window.PandoraHogwartsWorld && gameState?.hogwarts?.world?.active &&
+      PandoraHogwartsWorld.valid(gameState.hogwarts.world))
+    PandoraHogwartsWorld.noteAction(gameState.hogwarts.world,text);
   // ★막간 컷(대표 부재)에서 「▶ 계속」을 누르면 시점을 대표에게 돌린다
   if (/^▶\s*계속/.test(String(text || '')) && gameState && gameState.idol) {
     gameState.idol._absent = false;
