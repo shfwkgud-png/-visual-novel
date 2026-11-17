@@ -177,6 +177,17 @@
     const start=Date.parse(previous+'T00:00:00Z'),end=Date.parse(to+'T00:00:00Z');
     if(!Number.isFinite(start)||!Number.isFinite(end))return [];
     const earned=[],months=Math.floor((end-start)/86400000/18);
+    if(months>0&&isTerm(to)){
+      // Lessons continue between major story scenes; ordinary attendance
+      // improves a subject without instantly mastering any advanced spell.
+      for(const subj of SUBJECTS){
+        const eligible=subj.year<=schoolYear(to) &&
+          (subj.group==='필수'||subj.group==='1학년 필수'&&schoolYear(to)===1||
+           subj.group==='선택'&&s.electives.includes(subj.id));
+        if(eligible)s.subjectXP[subj.id]=Math.min(500,
+          (s.subjectXP[subj.id]||0)+Math.min(60,months*9));
+      }
+    }
     // An ordinary school term teaches foundational magic off-screen,
     // without making the player master advanced spells by clicking "next".
     for(const spell of SPELLS.filter(x=>x.year<=schoolYear(to)&&x.year<=4&&
@@ -278,7 +289,7 @@
   }
   function availableTraining(s,year,ctx){
     need(s);
-    return SPELLS.filter(x=>x.year<=year&&x.law!=='dark'&&x.law!=='unforgivable'&&
+    return SPELLS.filter(x=>x.year<=year&&((x.law!=='dark'&&x.law!=='unforgivable')||s.darkAccess)&&
       !courseAllowed(s,x,ctx||{date:s.lastDate}));
   }
   function practiceChoices(s,year,ctx,part){
