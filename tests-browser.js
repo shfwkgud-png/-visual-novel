@@ -1073,6 +1073,17 @@ async function hogwartsArtCheck(ctx) {
     assert.match(result.parsed,/호그와트 역사상/);
     assert.equal(result.restore,100);
   });
+  await check(ctx, 'Hogwarts rapid background updates reject stale crossfade callbacks', async()=>{
+    await page.evaluate(()=>{setBg('corridor');setBg('great_hall');});
+    await page.waitForTimeout(1200);
+    const bg=await page.evaluate(()=>({
+      key:currentBgFile,actual:bgLayer.style.backgroundImage,
+      fading:_bgFading,revision:_bgTransitionRevision
+    }));
+    assert.equal(bg.key,'great_hall','scene state must retain final destination');
+    assert.match(bg.actual,/great_hall_portrait\\.webp/,
+      'stale image preload/fade must never overwrite the latest background');
+  });
 }
 
 (async () => {
