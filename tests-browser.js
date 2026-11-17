@@ -360,6 +360,8 @@ async function waitForStoryChoice(page, sought) {
     active:gameState?.hogwarts?.world?.active,
     choiceTexts:[...document.querySelectorAll('#choiceBox .choice-btn')].map(x=>x.textContent),
     queue:dialogueQueue.length,inputMode,isShowing,waitingForTap,
+    inFlight:!!window._inputRequest,busy:sendBtn.disabled,
+    tail:gameHistory.slice(-2).map(x=>String(x.content||'').slice(0,160)),
     currentBgFile,windowPending:window._pendingChoices
   }));
   throw Error('Hogwarts choice not presented: '+sought+' | '+JSON.stringify(debug));
@@ -999,6 +1001,7 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(magicLoaded.study.schemaVersion,1);
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 도감'}).first().click();
     await drainDialogue(page);
+    await page.waitForFunction(() => !window._inputRequest && !sendBtn.disabled);
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 수업'}).first().click();
     await waitForStoryChoice(page,'마법 연습 [lumos]');
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 연습 [lumos]'}).first().click();
