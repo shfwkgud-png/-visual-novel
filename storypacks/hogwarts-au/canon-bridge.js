@@ -92,7 +92,7 @@
       'books/02-chamber.json','books/03-azkaban.json','books/04-goblet.json',
       'books/05-phoenix.json','books/06-prince.json','books/07-hallows.json'];
     loading=Promise.all(files.map(async file=>{
-      const response=await fetchImpl(BASE+file);
+      const response=await fetchImpl(BASE+file+'?v=5');
       if(!response.ok)throw Error('Hogwarts canon asset '+file+': HTTP '+response.status);
       return response.json();
     })).then(data=>{
