@@ -189,6 +189,21 @@
     s.sceneNonce++;
     return true;
   }
+  // Convert only public, already-committed canon beats into short school news.
+  // The same user should never learn private or GM facts simply by time-skipping.
+  function injectNews(s,records){
+    ensure(s);
+    if(s.phase!=='transition'||s.cursor!==0||!Array.isArray(records)||!records.length)return 0;
+    const safe=records.filter(r=>r&&r.access==='public'&&typeof r.fact==='string'&&
+      r.fact.length>0&&typeof r.id==='string').slice(-2);
+    if(!safe.length)return 0;
+    const note=b('public_news_'+s.sceneNonce,'corridor',
+      '그 사이 학교생활은 멈추지 않았다. 학생과 교수 사이에 공개된 소식이 전해졌다. '+
+      safe.map(r=>r.fact).join(' ')+' 모두가 같은 사건을 직접 목격한 것은 아니다.',[],
+      {location:'호그와트 복도'});
+    s.queue.unshift(note);
+    return safe.length;
+  }
   function startRoomReturn(s,house) {
     ensure(s);
     const h=HOUSES[house];
@@ -236,5 +251,5 @@
     return '호그와트 장면 단계: '+s.phase+', 현재 '+s.cursor+'/'+s.queue.length+
       ', 입학식 진행 완료: '+s.arrivalCompleted+'. 장소 이동은 실제 도착 비트가 완결되어야 확정된다.';
   }
-  return Object.freeze({createState,valid,startArrival,stageEvent,startRoomReturn,parseManualTravel,resolveBackground,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
+  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,take,hasPending,describe,arrival,onEnter,daysBetween,HOUSES});
 });
