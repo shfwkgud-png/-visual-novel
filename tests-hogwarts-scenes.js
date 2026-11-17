@@ -65,6 +65,15 @@ for(const house of HOUSE){
   assert(D.take(news).beat.narration.includes('공개된 발표'));
   tests+=20;
 }
+// Branch aftermath is a contextual continuation, not the same boilerplate
+// regardless of who the user chose to spend the evening with.
+for(const branch of ['malfoy','hermione','alone']){
+  const beat=D.outcomeBeat({id:'first_invitations',offscreen:'다른 모임이 진행됐다.'},
+    {finished:{first_invitations:{choice:branch}}});
+  assert(beat && beat.narration && beat.narration.length>25);
+  if(branch!=='alone')assert(beat.dialogue.length===1);
+  tests++;
+}
 // A live public incident occurs without an explicit "make this happen" choice.
 let st=W.createState();
 const troll=W.EVENTS.find(x=>x.id==='halloween_troll');
@@ -134,7 +143,7 @@ assert.equal(clock.slot,3);
 tests+=3;
 // All patches are guarded under STORY.id === hogwarts.
 const html=fs.readFileSync(path.join(root,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=4'));
+assert(html.includes('storypacks/hogwarts-au/scene-director.js?v=5'));
 assert(html.includes('PandoraHogwartsScenes.startArrival('));
 assert(html.includes('runHogwartsAutomaticScene()'));
 assert(html.includes('PandoraHogwartsScenes.startRoomReturn('));
