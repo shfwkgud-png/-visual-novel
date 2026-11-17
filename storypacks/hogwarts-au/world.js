@@ -461,18 +461,25 @@
       +'- 인물 관계는 점수로 연애를 결정하지 않는다. 신뢰/경계는 말투, 초대, 도움, 비밀 공개에만 반영한다. '
       +'전지적 선지식·자동 복종·갑작스런 고백 금지.\n';
   }
-  function ending(st) {
+  function ending(st,canonState) {
     ensure(st);
     if(!st.finished.battle_of_hogwarts) return null;
-    const route=st.agency.finale;
-    const title=route==='defend'?'호그와트의 수호자'
+    const route=st.agency.finale, known=canonState?.statuses?.b07c36s04;
+    const changedHistory=st.agency.pettigrew==='captured'||
+      st.agency.tower==='sealed_cabinet'||st.agency.tower==='guarded_wand';
+    const unsettled=known&&known!=='canonical';
+    const title=unsettled?'바뀐 세계의 다음 장':route==='defend'?'호그와트의 수호자'
       :route==='save'?'한 사람을 지킨 마법사'
       :route==='evacuate'?'살아남은 이들의 증언':'호그와트 이후의 삶';
     const closest=Object.entries(st.ties).sort((a,b)=>b[1]-a[1])[0];
-    let note='1998년 5월. 호그와트를 뒤흔든 전쟁이 끝났다. 당신은 예언의 주인공이 아니었지만, 당신이 떠난 자리에 선택의 흔적이 남았다.';
+    let note=unsettled
+      ? '1998년 5월. 지난 7년 동안 당신이 바꾼 선택으로 전쟁의 흐름이 원래 이야기와 갈라졌다. 마지막 대결의 일부 전제가 성립하지 않아 승리와 죽음은 아직 확정되지 않았다. 그 결과를 거짓으로 마무리하는 대신, 살아남은 이들은 새로운 현실에서 각자의 삶과 전투를 이어간다.'
+      : changedHistory && !canonState
+      ? '1998년 5월. 당신의 개입으로 원래 역사가 달라졌지만 최종 인과 기록을 확인할 수 없다. 누구의 죽음이나 완전한 승리도 자동으로 확정하지 않은 채 당신의 여정을 기록한다.'
+      : '1998년 5월. 호그와트를 뒤흔든 전쟁이 끝났다. 당신은 예언의 주인공이 아니었지만, 당신이 떠난 자리에 선택의 흔적이 남았다.';
     if(closest && closest[1]>0)note+='\n\n오래 쌓아 온 신뢰 중 가장 크게 남은 인연은 '+({malfoy:'말포이',hermione:'헤르미온느',neville:'네빌',harry:'해리'}[closest[0]]||'한 친구')+'와의 관계였다.';
     note+='\n\n그동안의 사건을 기억하는 이들은 각자의 삶으로 돌아간다. 호그와트의 7년은 이대로 당신만의 기록이 된다.';
-    return {title,narration:note};
+    return {title,narration:note,canonStatus:known||'unverified'};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
   return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,finish,resume,context,ending,
