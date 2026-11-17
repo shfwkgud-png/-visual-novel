@@ -1000,8 +1000,9 @@ async function hogwartsArtCheck(ctx) {
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 도감'}).first().click();
     await drainDialogue(page);
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 수업'}).first().click();
-    await drainDialogue(page);
+    await waitForStoryChoice(page,'마법 연습 [lumos]');
     await page.locator('#choiceBox .choice-btn').filter({hasText:'마법 연습 [lumos]'}).first().click();
+    await page.waitForFunction(() => (gameState?.hogwarts?.magic?.spells?.lumos?.xp||0)>0);
     await drainDialogue(page);
     const firstNight=await page.evaluate(() => ({
       xp:gameState.hogwarts.magic.spells.lumos?.xp||0,
