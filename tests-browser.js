@@ -342,7 +342,11 @@ async function waitForStoryChoice(page, sought) {
   for(let attempt=0; attempt<115; attempt++) {
     const button=page.locator('#choiceBox .choice-btn').filter({hasText:sought});
     if(await button.count() && await button.first().isVisible()) return;
-    if(await page.locator('#dialoguePanel').isVisible()) {
+    // Do not tap an already idle dialogue panel. On mobile that overlaps choice
+    // hitboxes and can inadvertently select an unrelated menu action while
+    // waiting for an asynchronous Hogwarts scene choice.
+    const needsAdvance=await page.evaluate(()=>isShowing||waitingForTap||dialogueQueue.length>0);
+    if(needsAdvance && await page.locator('#dialoguePanel').isVisible()) {
       const box=await page.locator('#dialoguePanel').boundingBox();
       if(box) {
         const x=box.x+box.width*0.8,y=box.y+Math.min(box.height-2,14);
