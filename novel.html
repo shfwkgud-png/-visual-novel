@@ -2167,7 +2167,7 @@
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
 <script src="storypacks/hogwarts-au/story.js?v=9"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=8"></script>
-<script src="storypacks/hogwarts-au/time.js?v=2"></script>
+<script src="storypacks/hogwarts-au/time.js?v=3"></script>
 <script src="storypacks/hogwarts-au/profile.js?v=1"></script>
 <script src="storypacks/hogwarts-au/magic.js?v=5"></script>
 <script src="storypacks/hogwarts-au/chapter-director.js?v=7"></script>
@@ -14019,6 +14019,27 @@ function fixSpeakerIds(data) {
 //   (tickTimeSlot·resetTimeSlot·timeFlowNudge·advanceTimeSlotIfStale·TIME_SLOT_* 전부 제거.
 //    세이브의 _slotTurns 잔재는 무해 — 아무도 안 읽는다.)
 
+function applyHogwartsSceneState(data) {
+  if (STORY.id !== 'hogwarts' || replaying || !window.PandoraHogwartsTime ||
+      !PandoraHogwartsTime.valid(gameState.hogwarts)) return;
+  const hp = gameState.hogwarts, before = hp.date, state = data.state_update || {};
+  PandoraHogwartsTime.readSceneTime(hp, data.time || state.time);
+  if (hp.world?.active && window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(hp.world) &&
+      (hp.date > hp.world.active.at || (Object.prototype.hasOwnProperty.call(state,'event') && state.event === null))) {
+    PandoraHogwartsWorld.finish(hp.world);
+    gameState.event = null;
+  }
+  gameState.time = PandoraHogwartsTime.display(hp);
+  if (hp.house) {
+    gameState.flags = {...(gameState.flags || {}), 학년도:PandoraHogwartsTime.studyYear(hp.date)};
+    if (!gameState.status || /^호그와트 [1-7]학년/.test(gameState.status))
+      gameState.status = '호그와트 '+gameState.flags.학년도+'학년 · '+hp.house;
+  }
+  if (hp.date !== before && window.PandoraHogwartsMagic && PandoraHogwartsMagic.valid(hp.magic)) {
+    PandoraHogwartsMagic.passiveSchool(hp.magic, before, hp.date);
+    syncHogwartsMagicSkills();
+  }
+}
 function processResponse(data, activeCharIds, streamed, stateOnly) {
   // ★stateOnly(2026-08-24 분리 파이프라인): 후행 상태 추출 결과만 적용하는 모드.
   //   화면(배경·CG·무드·대사 큐)은 본편이 이미 처리했으므로 건드리지 않고,
@@ -14061,6 +14082,7 @@ function processResponse(data, activeCharIds, streamed, stateOnly) {
     }
   } catch {}
   }   // ← !stateOnly (화면·연출 처리 끝. 이하 상태 적용부는 stateOnly와 공유)
+  if (typeof applyHogwartsSceneState === 'function') applyHogwartsSceneState(data);
   // ★분리 모드 본편의 시간(2026-09-16 실세이브: 60턴 기록 중 time 1건 — 한 장면만 보는 추출기는 날짜를 거의 안 민다).
   //   전체 맥락을 가진 본편 모델이 최상위 time을 쓴다 — 추출기와 같은 단조 가드를 거치므로 되돌아가지는 않는다.
   if (STORY.id !== 'hogwarts' && typeof data.time === 'string' && data.time.trim() && !(STORY.id === 'idol' && gameState.idol)) {
@@ -15372,8 +15394,7 @@ async function handlePlayerInput(text) {
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
   if (idolRunInjected(text)) return;
   captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
-  if (STORY.id==='hogwarts' && gameState?.hogwarts && window.PandoraHogwartsChapters &&
-      !PandoraHogwartsChapters.getLoaded()) await syncHogwartsCanon();
+  if (STORY.id==='hogwarts' && gameState?.hogwarts) await syncHogwartsCanon();
   if (typeof handleHogwartsMagicCommand==='function' && handleHogwartsMagicCommand(text))return;
   if (typeof handleHogwartsDarkResearch==='function' && handleHogwartsDarkResearch(text))return;
   if (typeof handleHogwartsFreeStudy==='function' && handleHogwartsFreeStudy(text))return;

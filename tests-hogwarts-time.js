@@ -1,6 +1,6 @@
 'use strict';
 /* node tests-hogwarts-time.js
- * Regression: 7-year school clock belongs to the app, not wall clock or LLM.
+ * Regression: saved dates follow roleplay and explicit travel with no clock rewind.
  * No model API, network request, or asset dependency. */
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -46,16 +46,28 @@ const restored = JSON.parse(saved);
 assert(t.valid(restored));
 assert.equal(t.display(restored),t.display(state));
 assert.equal(t.advance(restored,'▶ 다음 학년').advanced,false);
-assert.match(t.context(restored),/AI 변경 불가/);
+assert.match(t.context(restored),/장면에서 흐른 만큼만/);
 const within=t.createState();
 t.chooseHouse(within,'🦁 그리핀도르');
 assert.equal(t.moveToScene(within,'1991-09-03',2).advanced,true);
 assert.equal(within.date,'1991-09-03');
 assert.equal(t.moveToScene(within,'1991-09-02',2).advanced,false);
 assert.equal(t.moveToScene(within,'1991-09-03',1).advanced,false);
+assert.equal(t.readSceneTime(within,'1991년 9월 4일 아침'),true);
+assert.equal(within.date,'1991-09-04');
+assert.equal(within.slot,0);
+for (const invalid of ['내일 아침','1991년 9월 3일 밤','1992년 2월 30일 밤','1999-09-01 아침']) {
+  assert.equal(t.readSceneTime(within,invalid),false,invalid);
+}
+assert.equal(within.date,'1991-09-04');
+assert.equal(t.readSceneTime(within,'1991-09-04 저녁'),true);
+assert.equal(t.readSceneTime(within,'1991-09-04 오후'),false);
+assert.equal(within.slot,2);
+assert.equal(t.readSceneTime(within,'1992-09-01 아침'),true);
+assert.equal(t.studyYear(within.date),2);
 
 const html = fs.readFileSync(path.join(__dirname,'novel.html'),'utf8');
-assert(html.includes('storypacks/hogwarts-au/time.js?v=2'));
+assert(html.includes('storypacks/hogwarts-au/time.js?v=3'));
 assert(html.includes("window._startPhase = 'hogwarts_sort'"));
 assert(html.includes("s.time && !_isIdol && STORY.id !== 'hogwarts'"));
 assert(html.includes("STORY.id !== 'hogwarts' && typeof data.time"));

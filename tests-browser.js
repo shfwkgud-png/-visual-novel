@@ -275,7 +275,7 @@ async function createFixturePage(origin, mobile, options = {}) {
         held.reached.release();
         await held.resume.promise;
       }
-      const reply = options.reply ? options.reply(kind) : options.longSession ? longSessionReply(kind, net.mainTurn) : fixtureReply(kind, user);
+      const reply = options.reply ? options.reply(kind, user) : options.longSession ? longSessionReply(kind, net.mainTurn) : fixtureReply(kind, user);
       if (options.integrated && kind === 'main') Object.assign(reply, fixtureReply('state', user));
       await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse(reply) });
       return;
@@ -834,9 +834,10 @@ async function longSessionChecks(ctx) {
 }
 
 
-function hogwartsArtReply(kind) {
+function hogwartsArtReply(kind, user = '') {
   if (kind !== 'main') return { state_update: {}, choices: ['친구들에게 인사한다'], chronicle: [] };
   return {
+    ...(/침실에서 잠을 잔다/.test(user) ? {time:'1991년 9월 4일 아침'} : {}),
     narration: '대연회장에서 분류가 끝나고 학생들이 이야기를 나눈다.',
     dialogue: [
       { char_id: 'mcgonagall', speaker: '맥고나걸 교수', emotion: 'normal', text: '슬리데린에 오신 것을 환영합니다.' },
@@ -1129,6 +1130,20 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(bg.key,'great_hall','scene state must retain final destination');
     assert.match(bg.actual,/great_hall_portrait\.webp/,
       'stale image preload/fade must never overwrite the latest background');
+  });
+  await check(ctx, 'Hogwarts roleplay sleep advances the saved date without a scene control', async () => {
+    const before = await page.evaluate(() => gameState.hogwarts.date);
+    await enterText(page,'내일은 무슨 수업이야?');
+    await drainDialogue(page);
+    assert.equal(await page.evaluate(() => gameState.hogwarts.date),before,'a future plan keeps the current date');
+    await enterText(page,'(침실에서 잠을 잔다.)');
+    await drainDialogue(page);
+    assert.deepEqual(await page.evaluate(() => ({date:gameState.hogwarts.date,
+      slot:gameState.hogwarts.slot,active:gameState.hogwarts.world.active})),
+      {date:'1991-09-04',slot:0,active:null});
+    await flushLocalSave(page);
+    assert.equal(await page.evaluate(() => JSON.parse(bulkGet(saveKeyFor(STORY.id))).gameState.hogwarts.date),
+      '1991-09-04');
   });
 }
 

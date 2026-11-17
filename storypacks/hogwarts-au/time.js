@@ -1,5 +1,4 @@
-/* Hogwarts-only, deterministic school calendar. No wall clock and no LLM-owned dates.
-   Explicit user actions are the sole way to move time. Keeps existing PANDORA stories unchanged. */
+/* Hogwarts calendar mirrors dates established by roleplay and explicit scene travel. */
 (function(root, factory) {
   'use strict';
   const api = factory();
@@ -65,6 +64,21 @@
     return t.getUTCFullYear()+'년 '+(t.getUTCMonth()+1)+'월 '+t.getUTCDate()+
       '일 '+SLOTS[state.slot]+' · '+studyYear(state.date)+'학년'+
       (state.house ? ' · '+state.house : ' · 기숙사 미배정');
+  }
+  function readSceneTime(state, value) {
+    if (!valid(state) || !state.house || typeof value !== 'string') return false;
+    const date = /^(\d{4})(?:년\s*|-)(\d{1,2})(?:월\s*|-)(\d{1,2})(?:일|\b)/.exec(value.trim());
+    if (!date) return false;
+    const target = date[1]+'-'+date[2].padStart(2,'0')+'-'+date[3].padStart(2,'0');
+    if (!parseISO(target) || target < state.date || target > END) return false;
+    const period = /(새벽|아침|오전|정오|점심|오후|저녁|밤)/.exec(value.slice(date[0].length));
+    const slots = {새벽:0,아침:0,오전:0,정오:1,점심:1,오후:1,저녁:2,밤:3};
+    const slot = period ? slots[period[1]] : state.slot;
+    if (target === state.date && slot <= state.slot) return false;
+    state.date = target;
+    state.slot = slot;
+    state.transitions = (state.transitions || 0) + 1;
+    return true;
   }
   function goToNextTerm(date) {
     const t = parseISO(date), y=t.getUTCFullYear(), m=t.getUTCMonth()+1;
@@ -164,14 +178,14 @@
     const yr=studyYear(state.date),period=phase(state.date);
     const t=parseISO(state.date);
     const weekday=['일','월','화','수','목','금','토'][t.getUTCDay()];
-    return '\n\n## ★호그와트 공식 시간·학년(앱 확정값, AI 변경 불가)\n'
+    return '\n\n## 호그와트 현재 날짜·학년\n'
       +'- 현재: '+display(state)+' ('+weekday+'요일), '+phases[period]+'\n'
       +'- 적용할 원작 시기: 제'+yr+'권 '+books[yr-1]+' (이 학년도 바깥의 사건을 현재 진행형으로 만들지 마라).\n'
-      +'- 시간은 게임이 전용 시계로만 변경한다. state_update.time 및 최상위 time을 출력하지 마라. 날짜·학년·기숙사 소속을 AI가 추정·갱신하지 마라.\n'
-      +'- 대화 중에는 시간이 고정된다. 플레이어가 장면을 마친 뒤 ▶ 다음 장면을 선택했을 때만 게임이 다음 장면의 공식 날짜로 이동시킨다. 하루에 여러 대화를 나눌 수 있고, 사건이 없으면 평범한 시간을 몽타주로 건너뛴다.\n'
+      +'- 시간은 실제 대화·이동·수업·수면 등 장면에서 흐른 만큼만 자연스럽게 진행한다. 날짜가 바뀌면 time에 "1991년 9월 2일 아침"처럼 연월일과 시간대를 기록한다.\n'
+      +'- 짧은 대화만으로 하루나 학기를 넘기지 마라. 플레이어가 수면·기다림·여행을 실행했다면 그 경과를 반영하고, 미래 약속이나 희망을 이미 일어난 일로 기록하지 마라.\n'
       +'- 시간 건너뛰기가 선택되면 그 사이의 원작 사건을 무조건 주인공이 직접 목격한 것으로 만들지 마라. 공개 소식과 개인 지식은 구분한다.\n'
       +'- 시계가 현재 학년을 결정한다. 원작의 과거와 미래 비밀은 현재 날짜에 맞춰 숨겨라.\n';
   }
-  return Object.freeze({createState,valid,display,studyYear,phase,advance,moveToScene,chooseHouse,
+  return Object.freeze({createState,valid,display,readSceneTime,studyYear,phase,advance,moveToScene,chooseHouse,
     actionCode,possibleActions,context,HOUSE_OPTIONS:HOUSE_OPTIONS.slice(),END});
 });
