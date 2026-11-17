@@ -11,8 +11,10 @@
   'use strict';
   const KIND = { plot:'정사 사건', person:'개인 사건', life:'학교 생활', aftermath:'선택의 후폭풍' };
   const EVENT_CHOICE = /^▶\s*선택\s*\[([a-z0-9_-]+)\]\s*([a-z0-9_-]+)\b/i;
-  const SCENE_NEXT = /^▶\s*다음 장면\b/;
-  const SCENE_FINISH = /^▶\s*장면 마치기\b/;
+  // JavaScript \b only recognizes ASCII word characters: after Korean text it
+  // does NOT match a space. These controls were falling through into AI chat.
+  const SCENE_NEXT = /^▶\s*다음 장면(?=\s|$)/;
+  const SCENE_FINISH = /^▶\s*장면 마치기(?=\s|$)/;
   // Fixed design anchors are intentionally broad except for unambiguous canon dates
   // (e.g. Halloween). Other dates are scenario pacing, NOT asserted novel canon.
   const EVENTS = [
