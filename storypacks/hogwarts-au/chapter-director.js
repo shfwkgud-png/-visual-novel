@@ -125,7 +125,7 @@
     const marked=[];
     for(const c of catalog.chapters){
       if(c.date>date)continue;
-      if(state.chapterStatus[c.id])continue;
+      const prior=state.chapterStatus[c.id];
       const outcomes=c.beats.map(x=>canonState.statuses[x.id]||'unresolved');
       if(outcomes.some(x=>x==='unresolved'))continue;
       const interaction=worldState?.finished?.[c.id]||
@@ -135,7 +135,9 @@
         interaction?'participated':c.access==='gm'||c.access==='private'?'private_offscreen':'offscreen';
       const entry={date:c.date,status,exposure:c.exposure,
         choice:interaction?.choice||null,beats:c.beats.map(x=>x.id)};
+      if(prior&&prior.status===entry.status&&prior.choice===entry.choice)continue;
       state.chapterStatus[c.id]=entry;marked.push(c.id);
+      if(prior)state.recent=state.recent.filter(x=>x.id!==c.id);
       if(['public','local'].includes(c.access)){
         state.recent.push({id:c.id,title:c.title,status,
           publicBeatIds:c.visibleBeats.slice(),choice:entry.choice});
@@ -148,12 +150,14 @@
   function unsafeBeat(chapter,beatId,canonState,directPresence){
     const b=chapter.beats.find(x=>x.id===beatId);
     if(!b||!canonState)return null;
+    // Even altered/pending events stay private if the player did not have
+    // legitimate access. No meta hint about a secret GM event may leak.
+    if(b.access==='gm'||b.access==='private')return null;
+    if(b.access==='local'&&!directPresence)return null;
     const status=canonState.statuses[beatId];
     if(status==='pending')return {id:beatId,narration:'앞선 선택으로 기존 인과가 깨졌다. 해당 사건의 원래 결말은 확정되지 않았다.',status};
     if(status==='altered'||status==='prevented')return {id:beatId,narration:'이 사건의 원래 전개는 이미 변했다. 새로운 결과는 세계선의 검증된 기록을 따라야 한다.',status};
     if(status!=='canonical')return null;
-    if(b.access==='gm'||b.access==='private')return null;
-    if(b.access==='local'&&!directPresence)return null;
     return {id:beatId,narration:b.fact,status};
   }
   function ending(catalog,id,worldState,canonState){
