@@ -3,6 +3,37 @@
   "portraitOnly": true,
   "assets": [
     {
+      "key": "alicia/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/alicia/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "d4051d869fd0db6f7051b136f40a405420ef33a52474ae120605957cef1872d6",
+      "review": {
+        "key": "alicia/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "dark brown",
+        "hairShape": "long loose curls partly pinned back",
+        "fringe": "centre part with face strands",
+        "eyes": "brown-hazel",
+        "skinTone": "fair neutral freckled",
+        "build": "slim adult female",
+        "neckline": "modest burgundy scoop, thin gold vine trim",
+        "shoulders": "sheer burgundy sleeves",
+        "arms": "one accurate hand holds the single player glove near lower edge, other hand extends behind mid-turn",
+        "waist": "slim gold vine waistband",
+        "lower": "long burgundy chiffon skirt turns in broad folds beyond crop",
+        "other": "same gold hoops and small gold hairpin; playful turned shoulders, burgundy/gold thin vine trim",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Individual full-size review against gown reference: same brown-hazel eyes, dark loose curls, fair freckles and adult athletic build; gown construction retained. Distinct backward glance and teasing expression.",
+        "fullSizeRead": true,
+        "expression": "crooked teasing closed-lip grin, eyes looking sideways back over shoulder",
+        "referenceReview": "alicia/yule/1_neutral_v1"
+      },
+      "active": true
+    },
+    {
       "key": "alicia/flying/1_scene_v1",
       "target": "sd_samples/cg/hogwarts/alicia/flying_v1.webp",
       "width": 948,
@@ -27,7 +58,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "alicia/quidditch/1_neutral_v1",
@@ -58,7 +90,8 @@
         "other": "one proper team emblem; no school book or everyday props",
         "verdict": "일치",
         "notes": "Source identity, team colors, clothing and hands reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "alicia/together/1_scene_v1",
@@ -85,7 +118,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size review. Added matching house scarf is a weather accessory; same default uniform and person retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "alicia/yule/1_neutral_v1",
@@ -116,7 +150,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "andromeda/together/1_scene_v1",
@@ -143,7 +178,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "angelina/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/angelina/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "aafa383f553d31419b24825e869b1423ae85a152cca95088f8a8543b38df4c17",
+      "review": {
+        "key": "angelina/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "black",
+        "hairShape": "long rope braids partly pinned back",
+        "fringe": "braided forehead clear",
+        "eyes": "dark brown",
+        "skinTone": "deep warm brown",
+        "build": "athletic adult female",
+        "neckline": "modest shallow gold V neckline",
+        "shoulders": "draped gold shoulder panels, embroidered long sleeves",
+        "arms": "one accurate hand meets single player glove, other natural hand raised in dance posture",
+        "waist": "structured gold embroidered bodice waistband",
+        "lower": "full golden brocade skirt sweeping around legs",
+        "other": "same black braids, gold cuff and hoops; active upbeat turn in matching gold embroidered gown",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Individual full-size source/scene review. Deep warm-brown skin and adult athletic body retained. Laugh, energetic posture and golden dress distinguish her from calm closed-mouth dancers.",
+        "fullSizeRead": true,
+        "expression": "broad open-mouthed toothy laugh with crinkled eyes",
+        "referenceReview": "angelina/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "angelina/flying/1_scene_v1",
@@ -170,7 +237,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "angelina/quidditch/1_neutral_v1",
@@ -201,7 +269,8 @@
         "other": "one proper team emblem; no school book or everyday props",
         "verdict": "일치",
         "notes": "Source identity, team colors, clothing and hands reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "angelina/together/1_scene_v1",
@@ -228,7 +297,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "angelina/yule/1_neutral_v1",
@@ -259,7 +329,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "augusta/base/1_neutral_v1",
@@ -290,7 +361,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "augusta/base/2_joy_v1",
@@ -321,7 +393,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "augusta/together/1_scene_v1",
@@ -348,7 +421,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "bathilda/base/1_neutral_v1",
@@ -379,7 +453,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "bathilda/base/2_joy_v1",
@@ -410,7 +485,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "bathilda/together/1_scene_v1",
@@ -437,7 +513,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "bellatrix/together/1_scene_v1",
@@ -464,7 +541,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "cedric/flying/1_scene_v1",
@@ -491,7 +569,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "cedric/quidditch/1_neutral_v1",
@@ -522,7 +601,8 @@
         "other": "one proper team emblem; no school book or everyday props",
         "verdict": "일치",
         "notes": "Full-size source/target read after OUTLIER; dark school robe to yellow team kit is intentional."
-      }
+      },
+      "active": true
     },
     {
       "key": "cedric/yule/1_neutral_v1",
@@ -553,7 +633,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "charity/base/1_neutral_v1",
@@ -584,7 +665,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "charity/base/2_joy_v1",
@@ -615,7 +697,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "charity/together/1_scene_v1",
@@ -642,7 +725,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "cho/dance/1_scene_v1",
@@ -669,7 +753,39 @@
         "other": "same small blue drop earrings; candlelit winter Great Hall, distant blurred dancers, no player face",
         "verdict": "일치",
         "notes": "Full-size same-person, same-gown player waltz review; source formal portrait retained."
-      }
+      },
+      "active": false
+    },
+    {
+      "key": "cho/dance/1_scene_v2",
+      "target": "sd_samples/cg/hogwarts/cho/dance_v2.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "ae315455aab93a63b01f437657a18c7a1b82c5cc45c22191eed1e43cae4553c6",
+      "review": {
+        "key": "cho/dance/1_scene_v2",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "black",
+        "hairShape": "long loose waves with some hair drawn back",
+        "fringe": "off-centre part, long face-framing strands",
+        "eyes": "dark brown",
+        "maturity": "same adult East Asian face and cheek mole",
+        "build": "slim adult source proportions",
+        "skinTone": "fair cool-neutral East Asian skin",
+        "neckline": "closed silver satin standing qipao collar and floral embroidery",
+        "shoulders": "short matching satin sleeves",
+        "arms": "one accurate hand joins single plain-cuffed player hand near lower left; other arm extends upward in waltz hold beyond right crop",
+        "waist": "fitted continuous silver satin bodice",
+        "lower": "long flowing silver satin skirt covers legs beyond crop",
+        "shoes": "outside crop",
+        "other": "same blue/silver earrings, closed qipao collar, frog closures, floral embroidery and long dark half-up waves",
+        "verdict": "일치",
+        "notes": "Individual full-size reference/scene comparison. Same adult East Asian identity, fair skin and slim build. Slow three-quarter turn and soft expression; old v1 preserved.",
+        "fullSizeRead": true,
+        "expression": "gentle contemplative faint closed-lip smile, soft brown eyes and relaxed three-quarter gaze",
+        "referenceReview": "cho/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "cho/flying/1_scene_v1",
@@ -696,7 +812,8 @@
         "other": "single broom with bristles, stadium and goal hoops far below; no other identifiable character",
         "verdict": "일치",
         "notes": "Actual mounted flight, same sports outfit and face as standing kit, no romance pose."
-      }
+      },
+      "active": true
     },
     {
       "key": "cho/quidditch/1_neutral_v1",
@@ -727,7 +844,8 @@
         "other": "no school tie, book or everyday props; no broom in standing sprite",
         "verdict": "일치",
         "notes": "Costume intentionally differs from default; actual flight will use this kit as reference."
-      }
+      },
+      "active": true
     },
     {
       "key": "cho/together/1_scene_v1",
@@ -754,7 +872,8 @@
         "other": "blue earrings, same star textbook, lakeside bench sunset",
         "verdict": "일치",
         "notes": "Same default clothing and face; fully clothed conversation with unseen viewer, not an NPC partner."
-      }
+      },
+      "active": true
     },
     {
       "key": "cho/yule/1_neutral_v1",
@@ -785,7 +904,39 @@
         "other": "same small blue-and-silver earrings; no textbook or tie",
         "verdict": "일치",
         "notes": "Source and target re-read full size after OUTLIER; dark uniform to silver torso is intentional."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/crabbe/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "f7626c3cd64552c8d3f6c4b44ee70f10010780dbe0d158f6bb977bff41269664",
+      "review": {
+        "key": "crabbe/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "dark brown",
+        "hairShape": "short straight chin bob",
+        "fringe": "soft wispy fringe",
+        "eyes": "grey-hazel",
+        "skinTone": "fair cool-neutral",
+        "build": "same slim adult AU female",
+        "neckline": "closed short standing velvet collar, small round silver throat button and pendant below",
+        "shoulders": "opaque forest-green velvet with fitted long sleeves, narrow silver piping",
+        "waist": "wide dark belt and rectangular silver clasp",
+        "lower": "long forest-green box-pleated velvet skirt covers legs",
+        "other": "new closed silver-piped collar, green pendant and button front, same hairpin; careful measured steps",
+        "maturity": "same adult face as reference",
+        "arms": "one accurate hand rests on single player glove, other gathers small velvet skirt fold",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size comparison to reviewed v2 gown. Same adult face/body, bob and skin retained. Structured opaque velvet and downcast careful expression are distinct from Malfoy.",
+        "fullSizeRead": true,
+        "expression": "embarrassed relieved small closed-mouth smile, faint blush, eyes lowered to steps",
+        "referenceReview": "crabbe/yule/1_neutral_v2"
+      },
+      "active": true
     },
     {
       "key": "crabbe/together/1_scene_v1",
@@ -812,7 +963,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "crabbe/yule/1_neutral_v1",
@@ -843,7 +995,74 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size identity and outfit review."
-      }
+      },
+      "active": false
+    },
+    {
+      "key": "crabbe/yule/1_neutral_v2",
+      "target": "sd_samples/characters/hogwarts/crabbe/outfits/yule/1_neutral_v2.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "42f8b09eb6379a71ae347dd3252fc30f2d74519d82720c4df1f859a529f75491",
+      "machinePair": {
+        "pair": "crabbe/yule/1_neutral_v2",
+        "verdict": "PASS"
+      },
+      "review": {
+        "key": "crabbe/yule/1_neutral_v2",
+        "framing": "1024x1536 portrait; whole face and important hands visible",
+        "hairColor": "dark brown",
+        "hairShape": "short straight chin bob",
+        "fringe": "soft wispy fringe",
+        "eyes": "grey-hazel",
+        "skinTone": "fair cool-neutral",
+        "build": "same slim adult AU female",
+        "neckline": "closed short standing velvet collar, small round silver throat button and pendant below",
+        "shoulders": "opaque forest-green velvet with fitted long sleeves, narrow silver piping",
+        "waist": "wide dark belt and rectangular silver clasp",
+        "lower": "long full forest-green box-pleated skirt covers legs",
+        "other": "same silver hairpin and green pendant; unembroidered structured velvet is distinct from Malfoy silver-vine chiffon",
+        "maturity": "same adult face as reference",
+        "arms": "matching opaque sleeves; two natural hands gently clasped at waist",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Old source and new version each read full-size. Exact original face, grey-green eyes, light freckled skin, chin bob and adult body retained. Only gown construction changed. Machine pair PASS.",
+        "fullSizeRead": true,
+        "expression": "calm restrained closed-mouth smile",
+        "referenceReview": "crabbe/yule/1_neutral_v1"
+      },
+      "active": true
+    },
+    {
+      "key": "daphne/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/daphne/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "1f545b933945b4f6bb7046954282d38cd0474b5c8aa74cb41b594b42aa02f347",
+      "review": {
+        "key": "daphne/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "ash blonde",
+        "hairShape": "pinned low braided updo",
+        "fringe": "centre part with loose front locks",
+        "eyes": "grey-green",
+        "skinTone": "fair neutral",
+        "build": "slim adult female",
+        "neckline": "modest silver-blue boat neckline",
+        "shoulders": "sheer silver-blue long sleeves",
+        "waist": "forest-green sash",
+        "lower": "long silver-blue skirt with forest-green drape covers legs beyond crop",
+        "other": "same pearl-drop earrings, green sash/cuffs, silver-blue leaf embroidery; restrained upright dance posture",
+        "maturity": "same adult face as reference",
+        "arms": "one accurate hand offered to one player glove; other naturally gathers a small skirt fold",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Individual full-size review: same adult face, grey-green eyes, fair natural skin and light-brown/blonde pinned curls. Same gown and composed character expression.",
+        "fullSizeRead": true,
+        "expression": "reserved faint closed-mouth smile, level chin and composed assessing gaze",
+        "referenceReview": "daphne/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "daphne/together/1_scene_v1",
@@ -870,7 +1089,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "daphne/yule/1_neutral_v1",
@@ -901,7 +1121,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Both source and target re-read full-size after OUTLIER; black wool to lighter evening fabric is intentional."
-      }
+      },
+      "active": true
     },
     {
       "key": "figg/base/1_neutral_v1",
@@ -932,7 +1153,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "figg/base/2_joy_v1",
@@ -963,7 +1185,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "figg/together/1_scene_v1",
@@ -990,7 +1213,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "fleur/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/fleur/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "225c2fe966c6982b1638a55645e99e8d73460d2822fdcf5918ebb4331d1023cd",
+      "review": {
+        "key": "fleur/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "pale ash blonde",
+        "hairShape": "elegant pinned low braided updo",
+        "fringe": "swept loose front locks",
+        "eyes": "blue",
+        "skinTone": "fair pink-neutral",
+        "build": "slim adult female",
+        "neckline": "modest draped silvery-blue satin",
+        "shoulders": "crystal floral shoulder pieces, sheer flowing sleeves",
+        "arms": "one natural hand rests on single player glove; other raised arm extends out of upper-right frame during turn",
+        "waist": "fitted wrapped silvery-blue satin",
+        "lower": "long draped silver-blue satin skirt covers legs beyond crop",
+        "other": "same crystal floral hairpiece, blue drop earrings and crystal shoulder pieces, flowing sheer sleeves",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size comparison: same adult fair freckled face and body, pinned blonde curls and satin gown. Graceful raised-arm turn and poised expression retained.",
+        "fullSizeRead": true,
+        "expression": "poised knowing half-smile and calm direct blue-eyed gaze, chin lifted slightly",
+        "referenceReview": "fleur/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "fleur/together/1_scene_v1",
@@ -1017,7 +1272,8 @@
         "other": "same blue feathered hat and fleur-de-lis clasp, drop earrings, quiet garden courtyard",
         "verdict": "일치",
         "notes": "Default Beauxbatons outfit retained; complete non-explicit scene."
-      }
+      },
+      "active": true
     },
     {
       "key": "fleur/yule/1_neutral_v1",
@@ -1048,7 +1304,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "fred/flying/1_scene_v1",
@@ -1075,7 +1332,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "fred/quidditch/1_neutral_v1",
@@ -1106,7 +1364,39 @@
         "other": "one proper team emblem; no school book or everyday props",
         "verdict": "일치",
         "notes": "Source identity, team colors, clothing and hands reviewed full-size."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "ginny/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/ginny/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "88bc4415034150824bc021ea645491c858f7cf29916bcf9d640446ea6de95752",
+      "review": {
+        "key": "ginny/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "copper red",
+        "hairShape": "long waves half drawn back with leaf pins",
+        "fringe": "off-centre soft sweep",
+        "eyes": "brown-hazel",
+        "skinTone": "fair freckled",
+        "build": "slim adult female",
+        "neckline": "modest sage scoop with gold trim",
+        "shoulders": "sheer long sage sleeves",
+        "arms": "one accurate hand holds single player glove; other hand lifts small matching skirt fold",
+        "waist": "gold leaf waistband",
+        "lower": "long sage chiffon skirt sweeping around covered legs",
+        "other": "same gold leaf hairpins, freckles, flowing red half-up waves and sage/gold dress; lively turning posture",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size reference/scene review. Same adult face, brown-hazel eyes, fair freckled skin and athletic build. Her broad teasing smile differs from reserved Malfoy/Daphne expressions.",
+        "fullSizeRead": true,
+        "expression": "mischievous open-mouthed toothy smile with lifted brows and teasing head tilt",
+        "referenceReview": "ginny/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "ginny/flying/1_scene_v1",
@@ -1133,7 +1423,8 @@
         "other": "single broom with bristles, stadium and goal hoops far below; no other identifiable character",
         "verdict": "일치",
         "notes": "Actual mounted flight, same sports outfit and face as standing kit, no romance pose."
-      }
+      },
+      "active": true
     },
     {
       "key": "ginny/quidditch/1_neutral_v1",
@@ -1164,7 +1455,8 @@
         "other": "no school tie, book or everyday props; no broom in standing sprite",
         "verdict": "일치",
         "notes": "Costume intentionally differs from default; actual flight will use this kit as reference."
-      }
+      },
+      "active": true
     },
     {
       "key": "ginny/together/1_scene_v1",
@@ -1191,7 +1483,8 @@
         "other": "spring courtyard blossoms; warm laughing expression",
         "verdict": "일치",
         "notes": "Same default clothing and face; fully clothed conversation with unseen viewer, not an NPC partner."
-      }
+      },
+      "active": true
     },
     {
       "key": "ginny/yule/1_neutral_v1",
@@ -1222,7 +1515,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source and actual target read full-size after machine flag; garment color/silhouette change is the requested new costume. See raw gate."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/goyle/dance_v1.webp",
+      "width": 948,
+      "height": 1660,
+      "sha256": "960628300403b5c95a1cca4a289e7aa16467faf39cf66f8ab47769a9a7f00beb",
+      "review": {
+        "key": "goyle/dance/1_scene_v1",
+        "framing": "948x1660 portrait; whole face and important hands visible",
+        "hairColor": "dark brown",
+        "hairShape": "low ponytail",
+        "fringe": "off-centre part, loose wisps",
+        "eyes": "green-hazel",
+        "skinTone": "fair neutral",
+        "build": "same slim adult AU female",
+        "neckline": "modest plum boat neckline, silver vine detail",
+        "shoulders": "sheer plum long sleeves",
+        "waist": "plain plum waistband",
+        "lower": "long full plum skirt covers legs beyond crop",
+        "other": "same cheek mole, small studs, pinned dark hair, plum boat neck and silver-vine sheer sleeves",
+        "maturity": "same adult face as reference",
+        "arms": "one accurate bare hand reaches toward the single player glove; other natural hand rests at plum waist",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size reference/scene review. Same AU adult female identity, fair freckled skin and original build. Shy reaching pause rather than the same held-hand turning pose.",
+        "fullSizeRead": true,
+        "expression": "reserved but warm slightly open-lipped smile, eyebrows relaxed, eyes lifted toward viewer",
+        "referenceReview": "goyle/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "goyle/together/1_scene_v1",
@@ -1249,7 +1574,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "goyle/yule/1_neutral_v1",
@@ -1280,7 +1606,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size identity and outfit review."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "hannah/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/hannah/dance_v1.webp",
+      "width": 948,
+      "height": 1660,
+      "sha256": "6372a8bb874cda9339bca6bb707a6697429641075c29b5545915cc653cb2d31d",
+      "review": {
+        "key": "hannah/dance/1_scene_v1",
+        "framing": "948x1660 portrait; whole face and important hands visible",
+        "hairColor": "warm blonde",
+        "hairShape": "two long braids",
+        "fringe": "centre part with face locks",
+        "eyes": "green-hazel",
+        "skinTone": "fair rosy freckled",
+        "build": "natural adult female",
+        "neckline": "modest round butter-yellow collar",
+        "shoulders": "long translucent yellow sleeves with tiny flowers",
+        "arms": "one accurate hand at single player glove, other naturally gathers yellow skirt",
+        "waist": "wrapped yellow waistband",
+        "lower": "long butter-yellow embroidered floral skirt covers legs",
+        "other": "same twin blonde braids and flower earrings; modest near-front waltz posture",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Individual full-size source/scene review. Original fair freckled adult identity, green-hazel eyes, two braids, body and yellow floral gown retained; shy laughter rather than a poised smirk.",
+        "fullSizeRead": true,
+        "expression": "bashful toothy smile, head dipped, rosy cheeks and eyes glancing down at steps",
+        "referenceReview": "hannah/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "hannah/together/1_scene_v1",
@@ -1307,7 +1665,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "hannah/yule/1_neutral_v1",
@@ -1338,7 +1697,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source and actual target read full-size after machine flag; garment color/silhouette change is the requested new costume. See raw gate."
-      }
+      },
+      "active": true
     },
     {
       "key": "hermione/dance/1_scene_v1",
@@ -1365,7 +1725,8 @@
         "other": "small pearl-drop earrings; winter Great Hall, candles, distant adult dancers; no player face",
         "verdict": "일치",
         "notes": "Completed non-explicit first-person dance; no second identifiable partner."
-      }
+      },
+      "active": true
     },
     {
       "key": "hermione/yule/1_neutral_v1",
@@ -1429,7 +1790,8 @@
           "review": "Torso color is intentionally changed by the outfit task. Both actual supplied paths were read full-size after the flag. qc_verify.py's MANDATORY_READ line incorrectly combines the source directory with the target basename; the actual target path below was inspected. This is a reviewed OUTLIER, not a machine PASS.",
           "target": "packed/sd_samples/characters/hogwarts/hermione/outfits/yule/1_neutral_v1.webp"
         }
-      }
+      },
+      "active": true
     },
     {
       "key": "hestia/base/1_neutral_v1",
@@ -1460,7 +1822,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "hestia/base/2_joy_v1",
@@ -1491,7 +1854,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "hestia/together/1_scene_v1",
@@ -1518,7 +1882,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "hooch/together/1_scene_v1",
@@ -1545,7 +1910,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "katie/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/katie/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "356e37c1ffc5a1dddb709942d3c5f77cb77dffc991e73db7e0ca24c6be2afaec",
+      "review": {
+        "key": "katie/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "light brown",
+        "hairShape": "long half-up waves",
+        "fringe": "side-swept loose locks",
+        "eyes": "green-hazel",
+        "skinTone": "fair rosy freckled",
+        "build": "athletic natural adult female",
+        "neckline": "modest burgundy scoop embroidered gold leaves",
+        "shoulders": "bronze translucent long sleeves",
+        "arms": "one natural hand holds single player hand; other arm and natural hand raised over head for turn",
+        "waist": "burgundy waist band",
+        "lower": "long bronze/rust skirt flares around covered legs",
+        "other": "same oval silver hoops, half-up light-brown waves, burgundy bodice and sheer bronze sleeves; active spin",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Individual full-size review. Same adult face, fair rosy freckles, green-hazel eyes and athletic build. No identity or kit substitution; expressive moving dance posture.",
+        "fullSizeRead": true,
+        "expression": "carefree open-mouthed laugh, bright eyes and energetic lifted brows",
+        "referenceReview": "katie/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "katie/flying/1_scene_v1",
@@ -1572,7 +1969,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "katie/quidditch/1_neutral_v1",
@@ -1603,7 +2001,8 @@
         "other": "one proper team emblem; no school book or everyday props",
         "verdict": "일치",
         "notes": "Source identity, team colors, clothing and hands reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "katie/together/1_scene_v1",
@@ -1630,7 +2029,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "katie/yule/1_neutral_v1",
@@ -1661,7 +2061,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "krum/flying/1_scene_v1",
@@ -1688,7 +2089,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "krum/quidditch/1_neutral_v1",
@@ -1719,7 +2121,8 @@
         "other": "no school tie, book or everyday props; no broom in standing sprite",
         "verdict": "일치",
         "notes": "Costume intentionally differs from default; actual flight will use this kit as reference."
-      }
+      },
+      "active": true
     },
     {
       "key": "krum/yule/1_neutral_v1",
@@ -1750,7 +2153,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source and actual target read full-size after machine flag; garment color/silhouette change is the requested new costume. See raw gate."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "lavender/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/lavender/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "3ba21e71d66849d0a37b57f36bf950ba61864ba143fedb883dba7dc63711b20d",
+      "review": {
+        "key": "lavender/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "chestnut brown",
+        "hairShape": "long half-up waves and burgundy bow",
+        "fringe": "off-centre wisps",
+        "eyes": "brown",
+        "skinTone": "fair rosy freckled",
+        "build": "slim adult female",
+        "neckline": "modest round dusty-rose neckline with narrow dark-rose trim",
+        "shoulders": "short opaque rounded taffeta puff sleeves",
+        "waist": "smooth fitted bodice, wide rose waistband and large side bow",
+        "lower": "one long dusty-rose taffeta skirt flares in crisp folds, no chiffon tiers",
+        "other": "new puff sleeves and large waist bow, original burgundy hair bow and ruby earrings; joyful active spin",
+        "maturity": "same adult face as reference",
+        "arms": "one accurate hand at single player glove, other full arm raised for twirl with natural fingers",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size comparison to reviewed v2 gown. Same adult chestnut-haired face, freckles, body and accessories. New taffeta silhouette and wide laughter differ from Hermione pink chiffon/calm smile.",
+        "fullSizeRead": true,
+        "expression": "exuberant broad toothy laugh, crinkled eyes, lively head tilt and blush",
+        "referenceReview": "lavender/yule/1_neutral_v2"
+      },
+      "active": true
     },
     {
       "key": "lavender/together/1_scene_v1",
@@ -1777,7 +2212,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "lavender/yule/1_neutral_v1",
@@ -1808,7 +2244,74 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Both source and target re-read full-size after OUTLIER; black wool to lighter evening fabric is intentional."
-      }
+      },
+      "active": false
+    },
+    {
+      "key": "lavender/yule/1_neutral_v2",
+      "target": "sd_samples/characters/hogwarts/lavender/outfits/yule/1_neutral_v2.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "3c03d426231a3514d61bb4722a3d1ed9ab43f8e992d7ae9e2a387e673d056bab",
+      "machinePair": {
+        "pair": "lavender/yule/1_neutral_v2",
+        "verdict": "PASS"
+      },
+      "review": {
+        "key": "lavender/yule/1_neutral_v2",
+        "framing": "1024x1536 portrait; whole face and important hands visible",
+        "hairColor": "chestnut brown",
+        "hairShape": "long half-up waves and burgundy bow",
+        "fringe": "off-centre wisps",
+        "eyes": "brown",
+        "skinTone": "fair rosy freckled",
+        "build": "slim adult female",
+        "neckline": "modest round dusty-rose neckline with narrow dark-rose trim",
+        "shoulders": "short opaque rounded taffeta puff sleeves",
+        "waist": "smooth fitted bodice, wide rose waistband and large side bow",
+        "lower": "one full long dusty-rose taffeta skirt, broad clean folds; no chiffon tiers",
+        "other": "same burgundy hair bow and ruby-drop earrings; crisp puff-sleeve silhouette distinct from Hermione ruffled chiffon",
+        "maturity": "same adult face as reference",
+        "arms": "same two natural bare forearms and clasped hands",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Old source and new version read full-size. Same adult face, brown eyes, warm freckled fair skin, long half-up chestnut waves and slim adult build. Only dress design changed. Machine pair PASS.",
+        "fullSizeRead": true,
+        "expression": "calm gentle closed-lip smile",
+        "referenceReview": "lavender/yule/1_neutral_v1"
+      },
+      "active": true
+    },
+    {
+      "key": "luna/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/luna/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "cb283146f5d20fe6a689589dfc65ff71cb44e71e3fa8f09596da0bd7f6a9554c",
+      "review": {
+        "key": "luna/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "pale blonde",
+        "hairShape": "long loose half-up waves",
+        "fringe": "centre part, wispy long front locks",
+        "eyes": "pale grey-blue",
+        "skinTone": "fair cool-neutral",
+        "build": "slim adult female",
+        "neckline": "modest navy scoop",
+        "shoulders": "long translucent navy sleeves",
+        "arms": "one accurate hand at single player glove, other delicate relaxed hand floats at shoulder with natural fingers",
+        "waist": "thin embroidered silver waistband",
+        "lower": "long navy skirt with silver/gold star motifs flows over covered legs",
+        "other": "same crescent/dragonfly earrings and small ring; unconventional airy waltz gesture",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size reference/scene review. Same adult face, grey-blue eyes, fair cool skin, pale-blonde waves and slim build. Dreamy upward gaze is character-specific rather than another direct grin.",
+        "fullSizeRead": true,
+        "expression": "wide wondering eyes looking upward, tiny faraway closed-lip smile and thoughtful head tilt",
+        "referenceReview": "luna/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "luna/together/1_scene_v1",
@@ -1835,7 +2338,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "luna/yule/1_neutral_v1",
@@ -1866,7 +2370,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "malfoy/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/malfoy/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "0834d30379ab1c3c88208523f4f8c6d6c8ec737aabd514ecb0ca34e69e6ac975",
+      "review": {
+        "key": "malfoy/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "ash blonde",
+        "hairShape": "long side hair partly pinned back",
+        "fringe": "off-centre front sweep",
+        "eyes": "green",
+        "skinTone": "fair cool-neutral",
+        "build": "same slim adult AU female",
+        "neckline": "modest shallow-V forest green bodice, silver leaves",
+        "shoulders": "long sheer green sleeves",
+        "waist": "thin silver leaf waistband",
+        "lower": "long flowing forest-green skirt and silver vines covers legs; hem beyond crop",
+        "other": "winter ballroom, silver oblong hoop earrings, matching silver leaf neckline and waistband; confident turning posture",
+        "maturity": "same adult face as reference",
+        "arms": "one natural hand meets one player glove at lower left; other accurate hand elegantly raised at shoulder",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size reference and scene comparison. Same adult female AU face, green eyes, ash-blonde half-up hair, fair freckled skin and build. Same gown, different dance pose and character-specific amused expression.",
+        "fullSizeRead": true,
+        "expression": "asymmetric knowing smirk, raised eyebrow, proud slight head tilt and sideways playful gaze",
+        "referenceReview": "malfoy/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "malfoy/flying/1_scene_v1",
@@ -1893,7 +2429,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "malfoy/quidditch/1_neutral_v1",
@@ -1924,7 +2461,8 @@
         "other": "one proper team emblem; no school book or everyday props",
         "verdict": "일치",
         "notes": "Source identity, team colors, clothing and hands reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "malfoy/together/1_scene_v1",
@@ -1951,7 +2489,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "malfoy/yule/1_neutral_v1",
@@ -1982,7 +2521,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size identity and outfit review."
-      }
+      },
+      "active": true
     },
     {
       "key": "marge/base/1_neutral_v1",
@@ -2013,7 +2553,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "marge/base/2_joy_v1",
@@ -2044,7 +2585,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "marge/together/1_scene_v1",
@@ -2071,7 +2613,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "marietta/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/marietta/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "b0cfed5e811052315cc40ab143ca1faf54b8215ccb2f7a40fa9c422c56021daf",
+      "review": {
+        "key": "marietta/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "copper auburn",
+        "hairShape": "long curls partly held back with blue bow",
+        "fringe": "centre part, short curls over forehead",
+        "eyes": "green",
+        "skinTone": "fair freckled",
+        "build": "slim adult female",
+        "neckline": "modest teal scoop with silver vines",
+        "shoulders": "long sheer teal sleeves",
+        "waist": "wrapped teal waist",
+        "lower": "long teal leaf-patterned skirt covers legs beyond crop",
+        "other": "same blue hair bow and drop earrings, copper curls and silver-vine neckline; shy turned posture",
+        "maturity": "same adult face as reference",
+        "arms": "one accurate hand at single player glove; other natural hand rests at teal waist",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Individual full-size source/scene comparison. Same adult fair freckled face, green eyes, copper hair and body; preserves teal wrapped bodice and sleeves.",
+        "fullSizeRead": true,
+        "expression": "restrained flattered closed-lip smile, faint blush and sideways glance over shoulder",
+        "referenceReview": "marietta/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "marietta/together/1_scene_v1",
@@ -2098,7 +2672,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "marietta/yule/1_neutral_v1",
@@ -2129,7 +2704,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size identity and outfit review."
-      }
+      },
+      "active": true
     },
     {
       "key": "mary_cattermole/base/1_neutral_v1",
@@ -2160,7 +2736,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "mary_cattermole/base/2_joy_v1",
@@ -2191,7 +2768,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "mary_cattermole/together/1_scene_v1",
@@ -2218,7 +2796,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "maxime/together/1_scene_v1",
@@ -2245,7 +2824,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "mcgonagall/together/1_scene_v1",
@@ -2272,7 +2852,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "millicent/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/millicent/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "2005bac1ed26c7813bc038213990f87c592fc2fcedb09c8457234f82208a1885",
+      "review": {
+        "key": "millicent/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "dark brown",
+        "hairShape": "low braided ponytail",
+        "fringe": "centre part, loose front strands",
+        "eyes": "green-hazel",
+        "skinTone": "fair ruddy freckled",
+        "build": "broad athletic adult female",
+        "neckline": "modest shallow burgundy sweetheart neckline",
+        "shoulders": "layered bronze shoulder panels, full burgundy long sleeves",
+        "waist": "structured embroidered bronze/burgundy waistband",
+        "lower": "long burgundy/bronze brocade skirt covers legs beyond crop",
+        "other": "same oval hoops, broad shoulders/build, embroidered bronze shoulder panels and burgundy sleeves",
+        "maturity": "same adult face as reference",
+        "arms": "one accurate hand firmly meets single player glove; other arm raised beyond right crop",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size comparison. Adult broad athletic body, original face and fair freckled skin retained rather than slimmed; grounded stance and open laugh distinguish her.",
+        "fullSizeRead": true,
+        "expression": "surprised warm open-mouthed broad laugh, lifted brows and relaxed eyes",
+        "referenceReview": "millicent/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "millicent/together/1_scene_v1",
@@ -2299,7 +2911,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "millicent/yule/1_neutral_v1",
@@ -2330,7 +2943,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size identity and outfit review."
-      }
+      },
+      "active": true
     },
     {
       "key": "molly/together/1_scene_v1",
@@ -2357,7 +2971,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "narcissa/together/1_scene_v1",
@@ -2384,7 +2999,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "neville/yule/1_neutral_v1",
@@ -2415,7 +3031,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "padma/dance/1_scene_v1",
@@ -2442,7 +3059,39 @@
         "other": "jhumka earrings; candlelit winter Great Hall, distant blurred dancers, no player face",
         "verdict": "일치",
         "notes": "Full-size same-person, same-gown player waltz review; source formal portrait retained."
-      }
+      },
+      "active": false
+    },
+    {
+      "key": "padma/dance/1_scene_v2",
+      "target": "sd_samples/cg/hogwarts/padma/dance_v2.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "1158d50ab147c4e88792dfb882fa397014794148274da6631fad566d9cadea5d",
+      "review": {
+        "key": "padma/dance/1_scene_v2",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "black",
+        "hairShape": "long straight side ponytail",
+        "fringe": "centre part with small face-framing wisps",
+        "eyes": "dark brown",
+        "maturity": "same adult twin identity as source",
+        "build": "natural slim adult proportions",
+        "skinTone": "warm medium-brown South Asian skin",
+        "neckline": "modest rounded teal neckline; silver-gold embroidered bodice",
+        "shoulders": "matching teal long sleeves and dupatta",
+        "arms": "one accurate hand offered at waist height into one player glove; other natural hand rests lightly on teal dupatta",
+        "waist": "teal embroidered waistband",
+        "lower": "long peacock-teal embroidered lehenga covers legs beyond crop",
+        "shoes": "outside crop",
+        "other": "same pinned dark hair/low side tail, jhumka earrings and silver-gold peacock embroidery; quiet waltz pause",
+        "verdict": "일치",
+        "notes": "Full-size comparison to same adult source. Same warm brown skin, brown eyes and body. Reserved blush and lower hand gesture distinguish her from Parvati exuberant spin; old v1 preserved.",
+        "fullSizeRead": true,
+        "expression": "bashful restrained closed-mouth smile, warm cheek blush, eyes lowered sideways toward hands",
+        "referenceReview": "padma/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "padma/together/1_scene_v1",
@@ -2469,7 +3118,8 @@
         "other": "jhumkas, Ravenclaw study alcove, puzzle and hot drinks",
         "verdict": "일치",
         "notes": "Same default clothing and face; fully clothed conversation with unseen viewer, not an NPC partner."
-      }
+      },
+      "active": true
     },
     {
       "key": "padma/yule/1_neutral_v1",
@@ -2500,7 +3150,39 @@
         "other": "jhumka earrings and silver-gold dupatta; no school props",
         "verdict": "일치",
         "notes": "Machine pair PASS; distinct from Parvati in hair and facial expression."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "pansy/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/pansy/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "7353522dfcb169cc2682088a4d7ada5b1caee6258d32a36da020bac68976e20f",
+      "review": {
+        "key": "pansy/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "dark brown",
+        "hairShape": "chin-length side bob",
+        "fringe": "side sweep",
+        "eyes": "grey-green",
+        "skinTone": "fair cool-neutral",
+        "build": "slim adult female",
+        "neckline": "modest plum boat neckline, silver leaf edge",
+        "shoulders": "matching long fitted plum velvet sleeves with flowing outer panels",
+        "waist": "draped plum waist and silver star brooch",
+        "lower": "long deep-plum velvet drape over covered legs",
+        "other": "same short dark bob, silver hoops, silver neckline/cuff vines and star waist brooch; precise turning posture",
+        "maturity": "same adult face as reference",
+        "arms": "one accurate hand at single player glove; other natural hand rests at hip",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size source/scene review. Same adult grey-green eyes, fair cool skin, face and build. Nose/eyebrow acting gives a different playful expression from Malfoy.",
+        "fullSizeRead": true,
+        "expression": "sly closed-lip smile, one eyebrow arched and nose briefly wrinkled in amusement",
+        "referenceReview": "pansy/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "pansy/together/1_scene_v1",
@@ -2527,7 +3209,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "pansy/yule/1_neutral_v1",
@@ -2558,7 +3241,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size identity and outfit review."
-      }
+      },
+      "active": true
     },
     {
       "key": "parvati/dance/1_scene_v1",
@@ -2585,7 +3269,39 @@
         "other": "silver jhumka earrings and braid tie; candlelit winter Great Hall, distant blurred dancers, no player face",
         "verdict": "일치",
         "notes": "Full-size same-person, same-gown player waltz review; source formal portrait retained."
-      }
+      },
+      "active": false
+    },
+    {
+      "key": "parvati/dance/1_scene_v2",
+      "target": "sd_samples/cg/hogwarts/parvati/dance_v2.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "72fc79ea72e10724fd08a767fb09dfeb69d5ba8a9bd022894d27e1cfb25229e7",
+      "review": {
+        "key": "parvati/dance/1_scene_v2",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "black",
+        "hairShape": "long thick side braid",
+        "fringe": "centre part with loose wisps",
+        "eyes": "dark brown",
+        "maturity": "same adult face as uniform",
+        "build": "natural slim adult proportions",
+        "skinTone": "warm medium-brown South Asian skin",
+        "neckline": "modest rounded magenta neckline; gold-embroidered long-sleeved bodice",
+        "shoulders": "matching sleeves and gold-edged peach dupatta",
+        "arms": "one accurate hand raised overhead holding one plain-cuffed player hand; other arm extends low during turn",
+        "waist": "gold embroidered waistband",
+        "lower": "full magenta/gold lehenga and peach dupatta sweep around covered legs",
+        "shoes": "outside crop",
+        "other": "same braid, jhumka earrings and magenta/gold clothing; lively raised-arm spin",
+        "verdict": "일치",
+        "notes": "Individual full-size source/scene comparison. Same adult South Asian face, warm brown skin and body. Different joyful laugh/turn replaces old calm same-pose dance; old v1 preserved.",
+        "fullSizeRead": true,
+        "expression": "exuberant joyful open-mouthed toothy laugh, eyes crinkled in delight",
+        "referenceReview": "parvati/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "parvati/together/1_scene_v1",
@@ -2612,7 +3328,8 @@
         "other": "silver jhumkas, tea shop window, floral tea set",
         "verdict": "일치",
         "notes": "Same default clothing and face; fully clothed conversation with unseen viewer, not an NPC partner."
-      }
+      },
+      "active": true
     },
     {
       "key": "parvati/yule/1_neutral_v1",
@@ -2643,7 +3360,39 @@
         "other": "silver jhumka earrings, dupatta, braid tie; school tie and book removed",
         "verdict": "일치",
         "notes": "Source and actual target re-read full size after OUTLIER. Wider silhouette is intended flowing skirt/dupatta; new magenta torso color is intended costume change."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "penelope/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/penelope/dance_v1.webp",
+      "width": 948,
+      "height": 1659,
+      "sha256": "ab5969af032a5b3c60164d943be8ec021048fd5109ee15c030e58959fb416461",
+      "review": {
+        "key": "penelope/dance/1_scene_v1",
+        "framing": "948x1659 portrait; whole face and important hands visible",
+        "hairColor": "brown",
+        "hairShape": "pinned curly updo",
+        "fringe": "side part with loose curls",
+        "eyes": "blue-grey",
+        "skinTone": "fair freckled",
+        "build": "slim adult female",
+        "neckline": "modest shallow-V navy bodice, gold leaf trim",
+        "shoulders": "long sheer navy sleeves",
+        "waist": "gold geometric waistband",
+        "lower": "long navy skirt with gold border covering legs",
+        "other": "same curly pinned brown updo, blue earrings, navy/gold bodice and geometric waistband; measured upright posture",
+        "maturity": "same adult face as reference",
+        "arms": "one natural hand in raised hold with single player glove; other accurate hand gathers navy skirt",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Full-size comparison. Same adult face, blue-grey eyes, fair freckled skin and slim build. Thoughtful measured gaze and formal steps, no broad generic grin.",
+        "fullSizeRead": true,
+        "expression": "focused small closed-mouth smile with eyes lowered to footwork, brows gently concentrating",
+        "referenceReview": "penelope/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "penelope/together/1_scene_v1",
@@ -2670,7 +3419,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "penelope/yule/1_neutral_v1",
@@ -2701,7 +3451,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size identity and outfit review."
-      }
+      },
+      "active": true
     },
     {
       "key": "petunia/base/1_neutral_v1",
@@ -2732,7 +3483,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "petunia/base/2_joy_v1",
@@ -2763,7 +3515,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "petunia/together/1_scene_v1",
@@ -2790,7 +3543,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "pomfrey/together/1_scene_v1",
@@ -2817,7 +3571,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "rita/together/1_scene_v1",
@@ -2844,7 +3599,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "ron/flying/1_scene_v1",
@@ -2871,7 +3627,8 @@
         "other": "single broom with bristles, stadium and goal hoops far below; no other identifiable character",
         "verdict": "일치",
         "notes": "Actual mounted flight, same sports outfit and face as standing kit, no romance pose."
-      }
+      },
+      "active": true
     },
     {
       "key": "ron/quidditch/1_neutral_v1",
@@ -2902,7 +3659,8 @@
         "other": "no school tie, book or everyday props; no broom in standing sprite",
         "verdict": "일치",
         "notes": "Costume intentionally differs from default; actual flight will use this kit as reference."
-      }
+      },
+      "active": true
     },
     {
       "key": "ron/yule/1_neutral_v1",
@@ -2933,7 +3691,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source identity and requested formal costume reviewed full-size."
-      }
+      },
+      "active": true
     },
     {
       "key": "rosmerta/together/1_scene_v1",
@@ -2960,7 +3719,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "sinistra/base/1_neutral_v1",
@@ -2991,7 +3751,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "sinistra/base/2_joy_v1",
@@ -3022,7 +3783,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "sinistra/together/1_scene_v1",
@@ -3049,7 +3811,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "sprout/together/1_scene_v1",
@@ -3076,7 +3839,39 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
+    },
+    {
+      "key": "susan/dance/1_scene_v1",
+      "target": "sd_samples/cg/hogwarts/susan/dance_v1.webp",
+      "width": 948,
+      "height": 1660,
+      "sha256": "745e237624af5e021a360b92628f311a0aaa096b5efe871abea713966be57a47",
+      "review": {
+        "key": "susan/dance/1_scene_v1",
+        "framing": "948x1660 portrait; whole face and important hands visible",
+        "hairColor": "auburn",
+        "hairShape": "long loose side braid",
+        "fringe": "off-centre wispy sweep",
+        "eyes": "brown-hazel",
+        "skinTone": "fair freckled",
+        "build": "natural adult female",
+        "neckline": "modest champagne scoop embroidered leaves",
+        "shoulders": "long sheer champagne sleeves",
+        "arms": "one accurate palm offered toward single player glove; other hand gathers champagne skirt",
+        "waist": "wrapped champagne waistband",
+        "lower": "long full champagne skirt with gold leaves covers legs",
+        "other": "same auburn side braid, gold hoops, champagne scoop neck and sheer sleeves; slow graceful step",
+        "maturity": "same visibly adult source identity",
+        "shoes": "outside crop",
+        "verdict": "일치",
+        "notes": "Individual full-size source/scene comparison. Same adult fair freckled identity and natural build. Gentle welcoming palm and warm gaze retained.",
+        "fullSizeRead": true,
+        "expression": "warm reassuring gentle toothy smile and soft relaxed brown-hazel gaze",
+        "referenceReview": "susan/yule/1_neutral_v1"
+      },
+      "active": true
     },
     {
       "key": "susan/together/1_scene_v1",
@@ -3103,7 +3898,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Full-size same-person/default-costume review. Fully clothed, non-explicit player-view conversation; no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "susan/yule/1_neutral_v1",
@@ -3134,7 +3930,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Source and actual target read full-size after machine flag; garment color/silhouette change is the requested new costume. See raw gate."
-      }
+      },
+      "active": true
     },
     {
       "key": "tonks/together/1_scene_v1",
@@ -3161,7 +3958,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "trelawney/together/1_scene_v1",
@@ -3188,7 +3986,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "umbridge/together/1_scene_v1",
@@ -3215,7 +4014,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size against established source. Age, body, skin and everyday costume retained; fully clothed player-view moment with no fixed player face."
-      }
+      },
+      "active": true
     },
     {
       "key": "vector/base/1_neutral_v1",
@@ -3246,7 +4046,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "New baseline portrait, role and age checked against character card; Malfoy image was style-only."
-      }
+      },
+      "active": true
     },
     {
       "key": "vector/base/2_joy_v1",
@@ -3277,7 +4078,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Expression-only change; same-person/same-outfit pair machine PASS, full-size smile and original reference inspected. Visible mature/elderly age retained."
-      }
+      },
+      "active": true
     },
     {
       "key": "vector/together/1_scene_v1",
@@ -3304,7 +4106,8 @@
         "shoes": "outside crop",
         "verdict": "일치",
         "notes": "Individually viewed full-size; same established face, age, skin and everyday clothing. Fully clothed player-view conversation; player identity remains open."
-      }
+      },
+      "active": true
     },
     {
       "key": "wood/flying/1_scene_v1",
@@ -3331,7 +4134,8 @@
         "other": "one mounted wooden broom above Quidditch pitch, matching house/team cape and emblem, no everyday school props",
         "verdict": "일치",
         "notes": "Individually viewed full-size. Same face and team kit as reviewed Quidditch source. Airborne hair/cape movement and crouched riding pose intentional; natural two hands, one broom and complete covered sports outfit."
-      }
+      },
+      "active": true
     },
     {
       "key": "wood/quidditch/1_neutral_v1",
@@ -3362,7 +4166,8 @@
         "other": "one proper team emblem; no school book or everyday props",
         "verdict": "일치",
         "notes": "Source identity, team colors, clothing and hands reviewed full-size."
-      }
+      },
+      "active": true
     }
   ]
 }
