@@ -1,0 +1,213 @@
+{
+  "date": "2026-11-18",
+  "character": "hermione",
+  "tool": "built-in image_gen.imagegen",
+  "userDirection": "Emma Watson-like adult face; prettier, slightly cute/lively; new hair; match existing Malfoy semi-realistic rendering; avoid broad square jaw",
+  "modelAndSeed": "not exposed by built-in tool",
+  "base": {
+    "prompt": "Create a completely new replacement Hermione Granger portrait for a visual-novel game. Her face must clearly evoke adult Emma Watson at age 23: recognizable softly arched expressive eyebrows, lively brown-hazel eyes, characteristic nose and natural lips, a fresh intelligent warm smile, delicate soft oval/heart-shaped face, gentle cheek volume and a small softly rounded chin. The user rejected the previous invented face and broad square jaws. Give her Emma Watson's natural appealing face rather than a generic fashion model face. She is an adult in an adult-entry Hogwarts AU.\n\nUse the attached Malfoy portrait ONLY as a rendering-style reference: match its restrained cool desaturated semi-realistic photographic finish, natural eye proportions, fine believable skin texture, softly shaped light, matte wool fabric, detailed restrained dark robes. This exact same art production should have rendered both characters. Do not copy Malfoy's face, hairstyle, jewelry, green house colors, pose, or severe expression.\n\nHermione's NEW hair: medium chestnut-brown, neatly natural shoulder-length to upper-chest loose soft waves, simple slightly off-centre part, some hair casually tucked behind one ear, a few fine flyaways. Attractive natural texture, moderate volume, no huge bushy curls, no dense curled bangs, no salon ringlets.\n\nA slightly lively and clever bookish expression, approachable bright eyes and a small genuine confident smile. Head mostly upright with a gentle three-quarter orientation, looking at viewer. Adult slim natural proportions. Fully clothed in white collared shirt, neat burgundy-and-gold tie, charcoal knitted V-neck sweater, simple black Gryffindor robe with subdued burgundy lining, dark pleated skirt. Holding a closed worn brown textbook naturally with both hands at the torso. No jewelry or wand required. Character composition from full head to just above knees, all hair, elbows and book inside the frame, modest breathing room above hair. Vertical 2:3, high-resolution game asset.\n\nCRITICAL background: a genuinely clean fully transparent background outside the character. No room, no backdrop, no smoky halo, no gray haze, no vignette, no shadow floating behind her, no rectangular transparent-looking background. Clean natural hair and robe edges. Render only this one character and her book.",
+    "reference": "sd_samples/characters/hogwarts/malfoy/2d/1_neutral.webp",
+    "transparent_background": true,
+    "source": "exec-273158f2-7802-40db-ab7b-678ed4775222.png"
+  },
+  "expressionEdits": [
+    {
+      "slot": "smile",
+      "prompt": "Edit the attached portrait into ONE expression variant for the same adult woman, age 23, in a visual-novel game. Change ONLY facial expression. Keep the exact same recognizable adult face identity, delicate jaw and chin, eye color, face proportions, skin texture and natural freckles, chestnut hair color, hair part and loose-wave hairstyle, hair length, head angle, camera, framing, pose, hands, closed brown book, robe, Gryffindor crest, burgundy/gold tie, shirt, charcoal sweater, dark skirt, body proportions, lighting and the cool restrained semi-realistic photographic rendering style. Do not redesign the face, make the jaw square, add accessories or make it painterly. Preserve the same fully transparent background and clean alpha, no added backdrop, glow, halo, vignette, text, panels or border. The entire character silhouette stays aligned with the reference on the same 1024x1536 canvas. A bright genuine happy smile with a little upper teeth showing, cheeks naturally lifted, lively warm eyes; clearly happier and more animated than the source.",
+      "reference": "exec-273158f2-7802-40db-ab7b-678ed4775222.png",
+      "transparent_background": true
+    },
+    {
+      "slot": "angry",
+      "prompt": "Edit the attached portrait into ONE expression variant for the same adult woman, age 23, in a visual-novel game. Change ONLY facial expression. Keep the exact same recognizable adult face identity, delicate jaw and chin, eye color, face proportions, skin texture and natural freckles, chestnut hair color, hair part and loose-wave hairstyle, hair length, head angle, camera, framing, pose, hands, closed brown book, robe, Gryffindor crest, burgundy/gold tie, shirt, charcoal sweater, dark skirt, body proportions, lighting and the cool restrained semi-realistic photographic rendering style. Do not redesign the face, make the jaw square, add accessories or make it painterly. Preserve the same fully transparent background and clean alpha, no added backdrop, glow, halo, vignette, text, panels or border. The entire character silhouette stays aligned with the reference on the same 1024x1536 canvas. Firm annoyed determination: brows modestly lowered and drawn together, focused eyes, mouth closed and slightly pressed. She is briskly correcting a mistake. No sneer, no exaggerated grimace.",
+      "reference": "exec-273158f2-7802-40db-ab7b-678ed4775222.png",
+      "transparent_background": true
+    },
+    {
+      "slot": "sad",
+      "prompt": "Edit the attached portrait into ONE expression variant for the same adult woman, age 23, in a visual-novel game. Change ONLY facial expression. Keep the exact same recognizable adult face identity, delicate jaw and chin, eye color, face proportions, skin texture and natural freckles, chestnut hair color, hair part and loose-wave hairstyle, hair length, head angle, camera, framing, pose, hands, closed brown book, robe, Gryffindor crest, burgundy/gold tie, shirt, charcoal sweater, dark skirt, body proportions, lighting and the cool restrained semi-realistic photographic rendering style. Do not redesign the face, make the jaw square, add accessories or make it painterly. Preserve the same fully transparent background and clean alpha, no added backdrop, glow, halo, vignette, text, panels or border. The entire character silhouette stays aligned with the reference on the same 1024x1536 canvas. Quiet visible sadness: inner brows subtly raised, slightly damp brown-hazel eyes, gently downturned closed lips. Keep head upright and eyes visible; no sobbing pose or flowing tears.",
+      "reference": "exec-273158f2-7802-40db-ab7b-678ed4775222.png",
+      "transparent_background": true
+    },
+    {
+      "slot": "pleasure",
+      "prompt": "Edit the attached portrait into ONE expression variant for the same adult woman, age 23, in a visual-novel game. Change ONLY facial expression. Keep the exact same recognizable adult face identity, delicate jaw and chin, eye color, face proportions, skin texture and natural freckles, chestnut hair color, hair part and loose-wave hairstyle, hair length, head angle, camera, framing, pose, hands, closed brown book, robe, Gryffindor crest, burgundy/gold tie, shirt, charcoal sweater, dark skirt, body proportions, lighting and the cool restrained semi-realistic photographic rendering style. Do not redesign the face, make the jaw square, add accessories or make it painterly. Preserve the same fully transparent background and clean alpha, no added backdrop, glow, halo, vignette, text, panels or border. The entire character silhouette stays aligned with the reference on the same 1024x1536 canvas. A quietly satisfied and proud expression after solving a difficult problem: a small warm closed-lip smile, softened eyes and subtly lifted cheeks. Clearly content, natural and alert.",
+      "reference": "exec-273158f2-7802-40db-ab7b-678ed4775222.png",
+      "transparent_background": true
+    },
+    {
+      "slot": "pain",
+      "prompt": "Edit the attached portrait into ONE expression variant for the same adult woman, age 23, in a visual-novel game. Change ONLY facial expression. Keep the exact same recognizable adult face identity, delicate jaw and chin, eye color, face proportions, skin texture and natural freckles, chestnut hair color, hair part and loose-wave hairstyle, hair length, head angle, camera, framing, pose, hands, closed brown book, robe, Gryffindor crest, burgundy/gold tie, shirt, charcoal sweater, dark skirt, body proportions, lighting and the cool restrained semi-realistic photographic rendering style. Do not redesign the face, make the jaw square, add accessories or make it painterly. Preserve the same fully transparent background and clean alpha, no added backdrop, glow, halo, vignette, text, panels or border. The entire character silhouette stays aligned with the reference on the same 1024x1536 canvas. A restrained wince of brief physical discomfort: brows tightened, eyelids a little narrowed but eyes still open, lips lightly pressed. Head stays in the exact source angle and position; a natural mild wince.",
+      "reference": "exec-273158f2-7802-40db-ab7b-678ed4775222.png",
+      "transparent_background": true
+    }
+  ],
+  "outputs": [
+    {
+      "slot": "normal",
+      "file": "sd_samples/characters/hogwarts/hermione/2d/1_neutral_v2.webp",
+      "source": "exec-273158f2-7802-40db-ab7b-678ed4775222.png"
+    },
+    {
+      "slot": "smile",
+      "file": "sd_samples/characters/hogwarts/hermione/2d/2_joy_v2.webp",
+      "source": "exec-484b272f-80a8-4fe3-9103-470dc6b98e3d.png"
+    },
+    {
+      "slot": "angry",
+      "file": "sd_samples/characters/hogwarts/hermione/2d/3_anger_v2.webp",
+      "source": "exec-463b7013-a354-46e6-aa5b-38721a870be9.png"
+    },
+    {
+      "slot": "sad",
+      "file": "sd_samples/characters/hogwarts/hermione/2d/4_sadness_v2.webp",
+      "source": "exec-9b8753f3-2a2f-4194-978f-88685a4be03a.png"
+    },
+    {
+      "slot": "pleasure",
+      "file": "sd_samples/characters/hogwarts/hermione/2d/5_pleasure_v2.webp",
+      "source": "exec-7b214be3-1533-49b3-ab06-857d6fc53c8f.png"
+    },
+    {
+      "slot": "pain",
+      "file": "sd_samples/characters/hogwarts/hermione/2d/6_pain_v2.webp",
+      "source": "exec-63afb823-23a3-4a8c-aa91-f93e3cf91014.png"
+    }
+  ],
+  "packaging": {
+    "format": "lossless WebP",
+    "quality": 100,
+    "method": 6,
+    "exact": true,
+    "verification": "decoded RGBA bytes equal source PNG; no pixel edits"
+  },
+  "qc": {
+    "machineVerdict": "PASS",
+    "tool": "PANDORA_gen/qc_verify.py sprites (all six source images)",
+    "output": "cell                         hairRGB          chestRGB         torsoRGB          areaf   topw  aspct\r\nexec-273158f2-7802-40db-ab7b (69, 57, 50)     (87, 70, 59)     (38, 34, 35)      0.729  0.412   1.97\r\nexec-484b272f-80a8-4fe3-9103 (82, 63, 53)     (104, 77, 63)    (44, 39, 40)      0.728  0.396   1.96\r\nexec-463b7013-a354-46e6-aa5b (80, 62, 53)     (101, 77, 62)    (42, 38, 39)      0.725  0.414   1.95\r\nexec-9b8753f3-2a2f-4194-978f (74, 57, 49)     (94, 69, 57)     (42, 38, 39)      0.726  0.395   1.96\r\nexec-7b214be3-1533-49b3-ab06 (82, 62, 53)     (103, 76, 63)    (41, 37, 38)      0.726  0.414   1.97\r\nexec-63afb823-23a3-4a8c-aa91 (82, 66, 57)     (99, 76, 64)     (44, 39, 40)      0.728  0.422   1.94\r\nVERDICT: PASS\r\n",
+    "cuts": [
+      {
+        "cut": "1_neutral_v2",
+        "fullSizeRead": true,
+        "framing": "1024×1536; full head to cropped thighs",
+        "hairColor": "chestnut brown",
+        "hairShape": "loose shoulder/upper-chest waves; one ear exposed",
+        "fringe": "off-centre side sweep; no heavy bangs",
+        "eyeColor": "brown-hazel",
+        "maturity": "adult 23",
+        "build": "slim natural adult proportions",
+        "necklineChest": "white collared shirt; burgundy/gold tie; charcoal V-neck knit",
+        "shoulders": "covered by black robe with burgundy lining",
+        "arms": "two bent arms; both hands hold closed book at torso",
+        "waist": "covered by knit and robe",
+        "legsLower": "dark pleated skirt; lower legs outside crop",
+        "footwear": "not visible outside thigh crop",
+        "cloakOther": "black Gryffindor robe; crest; worn brown textbook",
+        "verdict": "same adult identity and outfit; expression readable",
+        "expression": "slight natural closed-mouth smile; relaxed brow"
+      },
+      {
+        "cut": "2_joy_v2",
+        "fullSizeRead": true,
+        "framing": "1024×1536; full head to cropped thighs",
+        "hairColor": "chestnut brown",
+        "hairShape": "loose shoulder/upper-chest waves; one ear exposed",
+        "fringe": "off-centre side sweep; no heavy bangs",
+        "eyeColor": "brown-hazel",
+        "maturity": "adult 23",
+        "build": "slim natural adult proportions",
+        "necklineChest": "white collared shirt; burgundy/gold tie; charcoal V-neck knit",
+        "shoulders": "covered by black robe with burgundy lining",
+        "arms": "two bent arms; both hands hold closed book at torso",
+        "waist": "covered by knit and robe",
+        "legsLower": "dark pleated skirt; lower legs outside crop",
+        "footwear": "not visible outside thigh crop",
+        "cloakOther": "black Gryffindor robe; crest; worn brown textbook",
+        "verdict": "same adult identity and outfit; expression readable",
+        "expression": "clear bright upper-teeth smile and lifted cheeks"
+      },
+      {
+        "cut": "3_anger_v2",
+        "fullSizeRead": true,
+        "framing": "1024×1536; full head to cropped thighs",
+        "hairColor": "chestnut brown",
+        "hairShape": "loose shoulder/upper-chest waves; one ear exposed",
+        "fringe": "off-centre side sweep; no heavy bangs",
+        "eyeColor": "brown-hazel",
+        "maturity": "adult 23",
+        "build": "slim natural adult proportions",
+        "necklineChest": "white collared shirt; burgundy/gold tie; charcoal V-neck knit",
+        "shoulders": "covered by black robe with burgundy lining",
+        "arms": "two bent arms; both hands hold closed book at torso",
+        "waist": "covered by knit and robe",
+        "legsLower": "dark pleated skirt; lower legs outside crop",
+        "footwear": "not visible outside thigh crop",
+        "cloakOther": "black Gryffindor robe; crest; worn brown textbook",
+        "verdict": "same adult identity and outfit; expression readable",
+        "expression": "firm lowered/drawn brow; focused eyes; pressed lips"
+      },
+      {
+        "cut": "4_sadness_v2",
+        "fullSizeRead": true,
+        "framing": "1024×1536; full head to cropped thighs",
+        "hairColor": "chestnut brown",
+        "hairShape": "loose shoulder/upper-chest waves; one ear exposed",
+        "fringe": "off-centre side sweep; no heavy bangs",
+        "eyeColor": "brown-hazel",
+        "maturity": "adult 23",
+        "build": "slim natural adult proportions",
+        "necklineChest": "white collared shirt; burgundy/gold tie; charcoal V-neck knit",
+        "shoulders": "covered by black robe with burgundy lining",
+        "arms": "two bent arms; both hands hold closed book at torso",
+        "waist": "covered by knit and robe",
+        "legsLower": "dark pleated skirt; lower legs outside crop",
+        "footwear": "not visible outside thigh crop",
+        "cloakOther": "black Gryffindor robe; crest; worn brown textbook",
+        "verdict": "same adult identity and outfit; expression readable",
+        "expression": "raised inner brows; downturned lips; damp eyes"
+      },
+      {
+        "cut": "5_pleasure_v2",
+        "fullSizeRead": true,
+        "framing": "1024×1536; full head to cropped thighs",
+        "hairColor": "chestnut brown",
+        "hairShape": "loose shoulder/upper-chest waves; one ear exposed",
+        "fringe": "off-centre side sweep; no heavy bangs",
+        "eyeColor": "brown-hazel",
+        "maturity": "adult 23",
+        "build": "slim natural adult proportions",
+        "necklineChest": "white collared shirt; burgundy/gold tie; charcoal V-neck knit",
+        "shoulders": "covered by black robe with burgundy lining",
+        "arms": "two bent arms; both hands hold closed book at torso",
+        "waist": "covered by knit and robe",
+        "legsLower": "dark pleated skirt; lower legs outside crop",
+        "footwear": "not visible outside thigh crop",
+        "cloakOther": "black Gryffindor robe; crest; worn brown textbook",
+        "verdict": "same adult identity and outfit; expression readable",
+        "expression": "soft content closed-mouth smile; relaxed bright eyes"
+      },
+      {
+        "cut": "6_pain_v2",
+        "fullSizeRead": true,
+        "framing": "1024×1536; full head to cropped thighs",
+        "hairColor": "chestnut brown",
+        "hairShape": "loose shoulder/upper-chest waves; one ear exposed",
+        "fringe": "off-centre side sweep; no heavy bangs",
+        "eyeColor": "brown-hazel",
+        "maturity": "adult 23",
+        "build": "slim natural adult proportions",
+        "necklineChest": "white collared shirt; burgundy/gold tie; charcoal V-neck knit",
+        "shoulders": "covered by black robe with burgundy lining",
+        "arms": "two bent arms; both hands hold closed book at torso",
+        "waist": "covered by knit and robe",
+        "legsLower": "dark pleated skirt; lower legs outside crop",
+        "footwear": "not visible outside thigh crop",
+        "cloakOther": "black Gryffindor robe; crest; worn brown textbook",
+        "verdict": "same adult identity and outfit; expression readable",
+        "expression": "narrowed open eyes and tightened brow; restrained wince"
+      }
+    ],
+    "minorDeltas": "Small brightness, fabric-weave and crest-line differences between expression edits. These do not change the recognizable person or outfit. Final subjective appearance remains the user's judgment."
+  },
+  "preservation": "Existing six original WebP assets retained. No saves or user-authored character cards are rewritten."
+}

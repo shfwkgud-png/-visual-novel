@@ -181,7 +181,7 @@ assert.equal(portraits.size,234);
 for (const [key, entry] of Object.entries(pack.customBgs)) {
   assert.equal(entry.portraitUrl, entry.url.replace(/\.webp$/, '_portrait.webp'), key);
 }
-for (const id of ['harry','ron','crabbe','goyle']) assert.equal(Object.keys(pack.characters[id].emoImgs).length,6);
+for (const id of ['harry','ron','hermione','crabbe','goyle']) assert.equal(Object.keys(pack.characters[id].emoImgs).length,6);
 for (const url of [...backgrounds,...portraitBackgrounds,...portraits]) {
   assert.match(url,/^sd_samples\/(backgrounds|characters)\/hogwarts\/[a-z0-9_/]+\.webp$/);
   const bytes=fs.readFileSync(path.join(__dirname,url));
