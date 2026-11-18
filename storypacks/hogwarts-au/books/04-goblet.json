@@ -659,13 +659,22 @@
         "hagrid",
         "maxime",
         "karkaroff",
-        "snape"
+        "snape",
+        "cho",
+        "parvati",
+        "padma",
+        "ginny",
+        "neville",
+        "fred",
+        "angelina",
+        "malfoy",
+        "pansy"
       ],
       "access": "public",
       "beats": [
         {
           "step": 1,
-          "fact": "무도회에서 헤르미온느와 크룸의 동행이 주목받는다.",
+          "fact": "헤르미온느와 크룸, 초 챙과 세드릭이 함께 무도회에 온다. 파르바티는 해리, 파드마는 론, 지니는 네빌과 동행한다.",
           "access": "public"
         },
         {

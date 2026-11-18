@@ -415,7 +415,7 @@ function installPlayerInput(c) {
     callGemini: async () => generations.push({ gold: c.sb.gameState.gold }),
     resetDialogueLift: () => {},
   });
-  vm.runInContext(grabFn('handlePlayerInput'), c.sb);
+  vm.runInContext(grabFn('sceneVisualSnapshot')+'\n'+grabFn('handlePlayerInput'), c.sb);
   return { snapshots, generations };
 }
 

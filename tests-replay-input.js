@@ -93,7 +93,7 @@ function harness() {
     'pendingStateExtractEntry', 'stateExtractIsCurrent', 'ensureStateExtractReady', 'fireStateExtract',
     'restoreAndReplay', 'restoreAndReplayInner', 'resetTurnLineKeys', 'enqueueLine', 'dropLogEntry',
     '_echoNorm', '_sameText', '_isNarrationEcho', 'splitNarration', 'processResponse', 'resetSprites',
-    'showNextDialogue', 'typeText', 'scheduleAuto', 'navNext', 'enterInputMode',
+    'showNextDialogue', 'sceneVisualSnapshot', 'typeText', 'scheduleAuto', 'navNext', 'enterInputMode',
     'liftDialogueForInput', 'resetDialogueLift', 'sendMessage', 'handlePlayerInput', 'exitToMain'];
   vm.runInContext(names.map(grab).join('\n'), sb);
   async function advance(ms) {

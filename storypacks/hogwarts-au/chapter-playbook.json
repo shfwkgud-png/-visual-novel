@@ -6708,9 +6708,9 @@
       "title": "크리스마스 무도회",
       "bookTitle": "불의 잔",
       "phase": "winter",
-      "date": "1995-01-05",
+      "date": "1994-12-25",
       "setting": "great_hall",
-      "background": "great_hall",
+      "background": "ballroom",
       "actors": [
         "harry",
         "ron",
@@ -6721,7 +6721,16 @@
         "hagrid",
         "maxime",
         "karkaroff",
-        "snape"
+        "snape",
+        "cho",
+        "parvati",
+        "padma",
+        "ginny",
+        "neville",
+        "fred",
+        "angelina",
+        "malfoy",
+        "pansy"
       ],
       "access": "public",
       "exposure": "public_school",
@@ -6729,7 +6738,7 @@
       "pairedEvent": null,
       "category": "mystery",
       "slot": 2,
-      "arrival": "크리스마스 무도회장에 여러 학교 학생들이 모인다. 익숙한 얼굴들 사이에도 새로운 관계가 보인다.\n\n대연회장에서 「크리스마스 무도회」과 관련된 움직임이 시작된다. 론 위즐리을(를) 비롯한 인물들 각자의 목적에 따라 행동한다. 당신이 직접 확인한 행동과 아직 모르는 결과는 구분해야 한다.",
+      "arrival": "크리스마스 무도회를 위해 대연회장이 겨울 정원처럼 꾸며졌다. 예복 차림의 학생들 사이로 음악이 흐르고, 파트너들이 하나둘 무도회장으로 들어선다.\n\n론이 오래된 예복의 레이스 소맷단을 만지작거리며 주변을 살핀다.",
       "entryActor": "ron",
       "visibleBeats": [
         "b04c23s01",
@@ -6742,7 +6751,7 @@
           "id": "b04c23s01",
           "step": 1,
           "access": "public",
-          "fact": "무도회에서 헤르미온느와 크룸의 동행이 주목받는다.",
+          "fact": "헤르미온느와 크룸, 초 챙과 세드릭이 함께 무도회에 온다. 파르바티는 해리, 파드마는 론, 지니는 네빌과 동행한다.",
           "predecessors": [],
           "dependsOn": [],
           "sourceEffects": {}
@@ -6794,7 +6803,7 @@
         "future": [],
         "dependencies": []
       },
-      "sceneCue": "크리스마스 무도회장에 여러 학교 학생들이 모인다. 익숙한 얼굴들 사이에도 새로운 관계가 보인다."
+      "sceneCue": "크리스마스 무도회를 위해 대연회장이 겨울 정원처럼 꾸며졌다. 예복 차림의 학생들 사이로 음악이 흐르고, 파트너들이 하나둘 무도회장으로 들어선다."
     },
     {
       "id": "b04c24",

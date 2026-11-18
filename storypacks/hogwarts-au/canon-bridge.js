@@ -33,7 +33,7 @@
     1:{17:'1992-06-07'},
     2:{8:'1992-10-31',16:'1993-06-15',17:'1993-06-15'},
     3:{17:'1994-06-15',18:'1994-06-15',19:'1994-06-15',20:'1994-06-15',21:'1994-06-15'},
-    4:{16:'1994-10-31',31:'1995-06-24',32:'1995-06-24',33:'1995-06-24',34:'1995-06-24',
+    4:{16:'1994-10-31',23:'1994-12-25',31:'1995-06-24',32:'1995-06-24',33:'1995-06-24',34:'1995-06-24',
       35:'1995-06-25',36:'1995-06-26',37:'1995-06-30'},
     5:{34:'1996-06-17',35:'1996-06-17',36:'1996-06-17'},
     6:{26:'1997-06-12',27:'1997-06-12',28:'1997-06-12',
@@ -97,7 +97,7 @@
       'books/02-chamber.json','books/03-azkaban.json','books/04-goblet.json',
       'books/05-phoenix.json','books/06-prince.json','books/07-hallows.json'];
     loading=Promise.all(files.map(async file=>{
-      const response=await fetchImpl(BASE+file+'?v=5');
+      const response=await fetchImpl(BASE+file+'?v=6');
       if(!response.ok)throw Error('Hogwarts canon asset '+file+': HTTP '+response.status);
       return response.json();
     })).then(data=>{
