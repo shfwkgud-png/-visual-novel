@@ -8771,6 +8771,9 @@ function allStories() {
           if(!untouched && bc.speech && mc.speech===undefined && base?.[cid] &&
              base[cid].speech===undefined && mc.personality===base[cid].personality)
             merged[cid]={...mc,personality:bc.personality,speech:bc.speech};
+          else if(!untouched && bc.speech && base?.[cid] && typeof mc.personality==='string' &&
+                  mc.personality!==base[cid].personality && mc.speech===base[cid].speech)
+            merged[cid]={...mc,speech:mc.personality};
         }
         for (const cid in mine) if (!(cid in merged)) merged[cid] = mine[cid];   // 유저가 추가한 카드 보존
         out[id].characters = merged;
