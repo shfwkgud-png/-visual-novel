@@ -1058,8 +1058,15 @@ async function hogwartsArtCheck(ctx) {
     }));
     const firstTurn = ctx.net.prompts.find(call => call.kind === 'main');
     assert.ok(firstTurn, 'the opening scene reached the model prompt');
+    const voiceCues=await page.evaluate(()=>Object.fromEntries(['hermione','malfoy','crabbe','goyle']
+      .map(id=>[id,CHARACTERS[id].speech])));
+    for(const [id,cue] of Object.entries(voiceCues)){
+      assert(cue,id+' voice cue must exist');
+      assert(firstTurn.messages.some(message=>message.content.includes(cue)),id+' voice must reach the actual model request');
+    }
     const system = firstTurn.messages[0].content;
     assert.match(system, /여성 말포이는 해리를 명성과 기숙사 경쟁의 맞수로 대하고/);
+    assert.match(system,/현재 인물 카드.*과거에 잘못 생성된 어조보다 우선/);
     assert.match(system, /말포이는 경쟁 구도 속에서도 해리에게 사적인 호감/);
     assert.match(system, /서로 신뢰와 마음을 확인해 나가면 연애로 이어질 수 있다/);
     assert.ok(firstTurn.messages.some(message => message.content.includes('친구 무리로 굳어지기 전')),
