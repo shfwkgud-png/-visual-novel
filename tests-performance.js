@@ -37,7 +37,7 @@ function harness() {
 test('the page main script still parses after loading the independent validator', () => {
   const script = source.match(/<script>([\s\S]*?)<\/script>/);
   assert(script); new vm.Script(script[1]);
-  assert(source.includes('src="pandora-consistency.js?v=369"'));
+  assert.match(source,/src="pandora-consistency\.js\?v=369&build=[a-f0-9]{64}"/);
 });
 test('quota uses a single metadata GET, never chat completion or an API key URL', async () => {
   const h = harness(); await h.sb.checkFreeApiQuota();

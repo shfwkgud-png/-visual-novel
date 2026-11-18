@@ -1303,6 +1303,79 @@ async function hogwartsArtCheck(ctx) {
   });
 }
 
+async function appUpdateChecks(ctx){
+  const {page,context}=ctx;
+  const loaded=await page.evaluate(()=>APP_BUILD);
+  const fixture={loaded,latest:loaded,status:200,etag:'"same-content"'};
+  await context.route('**/app-build.json?*',route=>route.fulfill({status:fixture.status,
+    contentType:'application/json',headers:{ETag:fixture.etag},body:JSON.stringify({build:fixture.latest})}));
+  await context.route('**/novel.html*',async route=>{
+    const response=await route.fetch();
+    const body=(await response.text()).replace(/(<meta name="pandora-build" content=")[a-f0-9]{64}(">)/,
+      (_match,before,after)=>before+fixture.loaded+after);
+    await route.fulfill({response,body});
+  });
+  await check(ctx,'same loaded app ignores compressed ETags, resume and failed update checks',async()=>{
+    const before=page.url();
+    for(const etag of ['"same-content"','W/"same-content"','"new-deploy-identical-code"']){
+      fixture.etag=etag;
+      assert.equal(await page.evaluate(()=>checkAppUpdate()),false);
+      assert.equal(await page.locator('#appUpdateBanner').count(),0);
+    }
+    const checked=page.waitForResponse(r=>new URL(r.url()).pathname.endsWith('/app-build.json'));
+    await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+    await checked;
+    assert.equal(page.url(),before,'same-version bfcache resume must not replace the page');
+    fixture.status=503;
+    assert.equal(await page.evaluate(()=>checkAppUpdate()),false);
+    fixture.status=200;
+    assert.equal(await page.evaluate(()=>checkAppUpdate()),false);
+    assert.equal(await page.locator('#appUpdateBanner').count(),0);
+  });
+  await check(ctx,'new code on a cached first load shows one readable dismissible update banner',async()=>{
+    fixture.latest='b'.repeat(64);
+    assert.equal(await page.evaluate(()=>checkAppUpdate()),true);
+    await page.evaluate(()=>checkAppUpdate());
+    assert.equal(await page.locator('#appUpdateBanner').count(),1);
+    await page.getByRole('button',{name:'갱신 알림 닫기'}).click();
+    await page.evaluate(()=>checkAppUpdate());
+    assert.equal(await page.locator('#appUpdateBanner').count(),0);
+    fixture.latest='c'.repeat(64);
+    await page.evaluate(()=>checkAppUpdate());
+    const viewport=page.viewportSize();
+    await page.setViewportSize({width:320,height:viewport.height});
+    const banner=await page.locator('#appUpdateBanner').boundingBox();
+    const button=page.locator('#appUpdateBanner').getByRole('button',{name:'갱신',exact:true});
+    assert(banner.x>=8&&banner.x+banner.width<=312,'banner must fit a narrow phone');
+    assert.equal(await button.evaluate(e=>getComputedStyle(e).whiteSpace),'nowrap');
+    const bounds=await button.boundingBox();assert(bounds.width>bounds.height,'갱신 must remain one horizontal label');
+    await page.setViewportSize(viewport);
+    await page.screenshot({path:path.join(ARTIFACTS,'app-update-banner-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+  });
+  await check(ctx,'actual update navigation preserves the local career and does not repeat the banner',async()=>{
+    await page.evaluate(()=>autoSave());await flushLocalSave(page);
+    const snapshot=()=>page.evaluate(()=>({name:playerName,desc:playerDesc,date:gameState.hogwarts.date,
+      house:gameState.hogwarts.house,profile:gameState.hogwarts.magic.profile,turns:turnCount,
+      summary:storySummary,gold:gameState.gold,model:OPENROUTER_MODEL,free:FREE_TEST_MODE}));
+    const before=await snapshot(),mainCalls=ctx.net.calls.filter(c=>c.kind==='main').length,url=page.url();
+    fixture.loaded=fixture.latest;
+    await Promise.all([page.waitForURL(next=>next.href!==url),
+      page.locator('#appUpdateBanner').getByRole('button',{name:'갱신',exact:true}).click()]);
+    await page.waitForFunction(()=>document.getElementById('mainScreen')?.style.display==='flex');
+    assert.equal(await page.evaluate(()=>APP_BUILD),fixture.latest);
+    assert.equal(await page.evaluate(()=>checkAppUpdate()),false);
+    assert.equal(await page.locator('#appUpdateBanner').count(),0);
+    await page.locator('.enter-btn').click();
+    await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    await page.locator('#detailContinueBtn').click();await drainDialogue(page);
+    assert.deepEqual(await snapshot(),before,'refresh must keep character, progress, ability and connection preferences');
+    assert.equal(ctx.net.calls.filter(c=>c.kind==='main').length,mainCalls,'restoring an update must not request a new AI scene');
+    await page.evaluate(()=>checkAppUpdate());
+    assert.equal(await page.locator('#appUpdateBanner').count(),0);
+    await page.screenshot({path:path.join(ARTIFACTS,'app-update-restored-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+  });
+}
+
 async function hogwartsLooksCheck(ctx){
   const {page}=ctx;
   await check(ctx,'Hogwarts Yule costumes keep their look across emotions and recorded speakers',async()=>{
@@ -1477,7 +1550,7 @@ async function hogwartsLooksCheck(ctx){
       const hogwartsCtx = await createFixturePage(origin, mobile, {
         freeMode: true, integrated: true, reply: hogwartsArtReply, capturePrompts: true
       });
-      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); }
+      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); await appUpdateChecks(hogwartsCtx); }
       finally { await hogwartsCtx.context.close(); }
       const hogwartsRPCtx=await createFixturePage(origin,mobile,{freeMode:true,reply:hogwartsArtReply,capturePrompts:true});
       try{await hogwartsRPCheck(hogwartsRPCtx);}
