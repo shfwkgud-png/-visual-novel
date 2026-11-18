@@ -983,6 +983,8 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(gallery.length, 12);
     assert.match(gallery[0].name, /해리/);
     assert.match(gallery[0].image, /harry\/2d\/1_neutral_v2\.webp/);
+    assert.match(gallery[2].name, /헤르미온느/);
+    assert.match(gallery[2].image, /hermione\/2d\/1_neutral_v2\.webp/);
     assert.ok(gallery.every(card => card.image.includes('sd_samples/characters/hogwarts/')));
     await page.locator('#detailChars .d-char').first().click();
     await page.waitForFunction(() => document.querySelector('#imgViewerImg')?.naturalWidth > 0);
@@ -1146,6 +1148,12 @@ async function hogwartsArtCheck(ctx) {
       ['kingsley', 'smile', '2_joy_v2'],
       ['moody', 'smile', '2_joy_v2'],
       ['theodore', 'normal', '1_neutral_v2'],
+      ['hermione', 'normal', '1_neutral_v2'],
+      ['hermione', 'smile', '2_joy_v2'],
+      ['hermione', 'angry', '3_anger_v2'],
+      ['hermione', 'sad', '4_sadness_v2'],
+      ['hermione', 'pleasure', '5_pleasure_v2'],
+      ['hermione', 'pain', '6_pain_v2'],
     ]) {
       await page.evaluate(id => rebuildSprites(['malfoy', id], id, 'normal', 'upper'), id);
       await page.waitForFunction(id => {
@@ -1189,6 +1197,19 @@ async function hogwartsArtCheck(ctx) {
       {speaker:'빈센트 크래브',id:'crabbe',sprite:'sprite_crabbe',narrator:false},
       {speaker:'나레이터',id:null,sprite:null,narrator:true},
     ]);
+    // Replay a received line so the visual proof checks its name and portrait together.
+    await page.evaluate(() => {
+      historyPos=dialogueLog.findLastIndex(line=>line.char_id==='hermione' && line.text==='책은 도서관에 있을 거야.');
+      if(historyPos<0) throw new Error('Received Hermione dialogue missing from history');
+      renderHistoryEntry();
+    });
+    await page.waitForFunction(()=>document.querySelector('.char-sprite.speaking')?.id==='sprite_hermione' &&
+      document.getElementById('sprite_hermione')?.naturalWidth===1024 &&
+      document.getElementById('sprite_hermione')?.currentSrc.endsWith('/2_joy_v2.webp'));
+    assert.match(await page.locator('#nameplate').innerText(),/헤르미온느/);
+    assert.equal(await page.locator('#dialogueText').innerText(),'책은 도서관에 있을 거야.');
+    if(ctx.mobile) await page.screenshot({path:path.join(ARTIFACTS,'hermione-dialogue-mobile.png')});
+    await page.evaluate(()=>{historyPos=dialogueLog.length-1;renderHistoryEntry();});
   });
   await check(ctx, 'Hogwarts spellbook, first lesson and magic-only state save', async () => {
     await drainDialogue(page);

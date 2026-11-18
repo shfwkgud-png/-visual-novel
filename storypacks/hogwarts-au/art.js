@@ -142,7 +142,7 @@ window.PANDORA_HOGWARTS_ART = {
     "hagrid": {"normal":"1_neutral","smile":"2_joy","angry":"3_anger","sad":"4_sadness","pleasure":"5_pleasure","pain":"6_pain"},
     "hannah": {"normal":"1_neutral"},
     "harry": {"normal":"1_neutral_v2","smile":"2_joy_v2","angry":"3_anger_v4","sad":"4_sadness_v2","pleasure":"5_pleasure_v2","pain":"6_pain_v2"},
-    "hermione": {"normal":"1_neutral","smile":"2_joy","angry":"3_anger","sad":"4_sadness","pleasure":"5_pleasure","pain":"6_pain"},
+    "hermione": {"normal":"1_neutral_v2","smile":"2_joy_v2","angry":"3_anger_v2","sad":"4_sadness_v2","pleasure":"5_pleasure_v2","pain":"6_pain_v2"},
     "hooch": {"normal":"1_neutral"},
     "katie": {"normal":"1_neutral"},
     "kingsley": {"normal":"1_neutral","smile":"2_joy_v2","angry":"3_anger"},
