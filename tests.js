@@ -9,7 +9,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-const SRC = fs.readFileSync(path.join(__dirname, 'novel.html'), 'utf8');
+const SRC = fs.readFileSync(path.join(__dirname, 'novel.html'), 'utf8').replace(/\r\n/g,'\n');
 const results = [];
 const asyncJobs = [];   // async 테스트(fn이 Promise 반환)는 출력 전에 전부 대기
 function T(name, fn) {

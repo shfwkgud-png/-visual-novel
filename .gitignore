@@ -3,6 +3,10 @@
 sd_samples/*
 !sd_samples/characters/
 !sd_samples/backgrounds/
+!sd_samples/cg/
+sd_samples/cg/*
+!sd_samples/cg/hogwarts/
+sd_samples/cg/hogwarts/**/*.png
 sd_samples/characters/**/*.png
 sd_samples/backgrounds/**/*.png
 sd_samples/**/_prev*/

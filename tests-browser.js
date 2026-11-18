@@ -837,6 +837,13 @@ async function longSessionChecks(ctx) {
 
 const HOGWARTS_CAPTURE_SCENE='루핀은 결박된 페티그루의 지팡이를 회수했다. 도주를 막은 일행은 목격 증거와 함께 그를 마법부 경비대에 인계했다.';
 function hogwartsArtReply(kind, user = '', body = {}) {
+  if(user.includes('[의상 검증]')){
+    if(kind!=='main') return {state_update:{},choices:[],chronicle:[]};
+    const npc=user.slice(user.lastIndexOf('[의상 검증]')).includes('헤르미온느가 크룸과 춤춘다.');
+    return {background:'ballroom',cg:'hermione/dance',narration:'무도회 음악이 조용히 흐른다.',
+      dialogue:[{char_id:'hermione',speaker:'헤르미온느',emotion:'smile',text:npc?'난 크룸과 춤추러 갈게.':'좋아. 이번 곡은 너랑 출게.'}],
+      visuals:{cgPartner:npc?'krum':'player',cgConsent:'mutual'},mood:null};
+  }
   const input=/\[플레이어 입력\] ([\s\S]*?)\n\[본편 응답/.exec(user)?.[1]||user;
   const capture=/페티그루.{0,50}구금/.test(input);
   const switched=input.includes('약속을 취소')&&input.includes('말포이');
@@ -1296,6 +1303,168 @@ async function hogwartsArtCheck(ctx) {
   });
 }
 
+async function hogwartsLooksCheck(ctx){
+  const {page}=ctx;
+  await check(ctx,'Hogwarts Yule costumes keep their look across emotions and recorded speakers',async()=>{
+    await page.evaluate(()=>{
+      gameState.hogwarts.world=PandoraHogwartsWorld.createState();
+      gameState.hogwarts.date='1994-12-25';gameState.hogwarts.slot=2;
+      window._looksRespond=data=>{
+        document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
+        inputMode=false;inputBar.style.display='none';waitingForTap=false;
+        const reply={narration:'',choices:null,state_update:null,cg:null,...data};
+        gameHistory.push({role:'assistant',content:JSON.stringify(reply)});
+        processResponse(reply,(reply.dialogue||[]).map(d=>d.char_id));
+      };
+      window._looksRespond({background:'ballroom',dialogue:['hermione','parvati','padma','cho'].map(id=>({
+        char_id:id,speaker:CHARACTERS[id].name,emotion:'angry',text:CHARACTERS[id].name+'의 무도회 대사.'
+      }))});
+    });
+    await drainDialogue(page);
+    const recorded=await page.evaluate(()=>['hermione','parvati','padma','cho'].map(id=>{
+      const row=dialogueLog.findLast(d=>d.char_id===id&&d.text.endsWith('의 무도회 대사.'));
+      return {id,outfit:row?.looks?.[id],sprite:PandoraHogwartsLooks.sprite(CHARACTERS[id],'angry',row?.looks?.[id])};
+    }));
+    for(const row of recorded){assert.equal(row.outfit,'yule');assert.match(row.sprite,new RegExp('/'+row.id+'/outfits/yule/'));}
+    await page.evaluate(()=>{
+      historyBack();
+      while(historyPos>0&&dialogueLog[historyPos].char_id!=='hermione')historyBack();
+    });
+    await page.waitForFunction(()=>document.getElementById('sprite_hermione')?.complete&&
+      document.getElementById('sprite_hermione')?.naturalWidth>0);
+    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/hermione\/outfits\/yule\/1_neutral_v1\.webp$/);
+    await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-yule-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+    await page.evaluate(()=>exitHistory());
+  });
+  await check(ctx,'Hogwarts streaming never shows a player dance CG for an NPC partner',async()=>{
+    await page.evaluate(()=>{
+      window._looksCGCalls=[];window._looksOriginalCG=showEventCG;
+      showEventCG=name=>{window._looksCGCalls.push(name);return window._looksOriginalCG(name);};
+    });
+    await enterText(page,'[의상 검증] 헤르미온느가 크룸과 춤춘다.');
+    await drainDialogue(page);
+    assert.deepEqual(await page.evaluate(()=>window._looksCGCalls),[],
+      'even a transient streamed CG call must wait for partner validation');
+    assert.equal(await page.evaluate(()=>currentCG),null);
+    await enterText(page,'[의상 검증] 서로 동의하고 헤르미온느와 춤춘다.');
+    await drainDialogue(page);
+    await page.waitForFunction(()=>currentCG==='hermione/dance'&&document.getElementById('eventCG').naturalHeight>
+      document.getElementById('eventCG').naturalWidth&&document.getElementById('eventCG').naturalWidth>0);
+    assert.match(await page.locator('#eventCG').getAttribute('src'),/^sd_samples\/cg\/hogwarts\/hermione\/dance_v1\.webp$/);
+    assert.equal(await page.locator('#eventCG').evaluate(e=>getComputedStyle(e).objectFit),'contain');
+    const prompt=ctx.net.prompts.findLast(call=>call.kind==='main');
+    assert(prompt.messages.some(m=>m.content.includes('cgPartner="player"')));
+    await page.evaluate(()=>{showEventCG=window._looksOriginalCG;delete window._looksOriginalCG;});
+    await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-player-dance-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+  });
+  await check(ctx,'Hogwarts saves and reloads the gown and player CG without resetting the career',async()=>{
+    await flushLocalSave(page);
+    const before=await page.evaluate(()=>({name:playerName,date:gameState.hogwarts.date,house:gameState.hogwarts.house,
+      profile:gameState.hogwarts.magic.profile,visuals:gameState.hogwarts.visuals}));
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.getElementById('mainScreen')?.style.display==='flex');
+    await page.locator('.enter-btn').click();
+    await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    await page.locator('#detailContinueBtn').click();
+    await drainDialogue(page);
+    const after=await page.evaluate(()=>({name:playerName,date:gameState.hogwarts.date,house:gameState.hogwarts.house,
+      profile:gameState.hogwarts.magic.profile,visuals:gameState.hogwarts.visuals}));
+    assert.deepEqual(after,before);
+    assert.equal(await page.evaluate(()=>currentCG),'hermione/dance');
+    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/outfits\/yule\//);
+    await page.evaluate(()=>{
+      const reply={background:'library',cg:null,narration:'',choices:null,state_update:null,
+        dialogue:[{char_id:'hermione',speaker:'헤르미온느',text:'책은 여기 있어.',emotion:'normal'}]};
+      document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
+      inputMode=false;inputBar.style.display='none';waitingForTap=false;
+      gameHistory.push({role:'assistant',content:JSON.stringify(reply)});processResponse(reply,['hermione']);
+    });
+    await drainDialogue(page);
+    await page.evaluate(()=>{
+      historyBack();
+      while(historyPos>0&&dialogueLog[historyPos].cg!=='hermione/dance')historyBack();
+    });
+    assert.equal(await page.evaluate(()=>currentCG),'hermione/dance');
+    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/outfits\/yule\//);
+    await page.evaluate(()=>exitHistory());
+    assert.equal(await page.evaluate(()=>currentCG),null);
+    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/2d\/1_neutral_v2\.webp$/);
+  });
+  await check(ctx,'Hogwarts Quidditch participants and spectators keep distinct clothes and flight history',async()=>{
+    await page.evaluate(()=>{
+      const reply={background:'quidditch',cg:'ron/flying',narration:'',choices:null,state_update:null,
+        visuals:{outfits:{ron:'quidditch'},action:'flying'},dialogue:[
+          {char_id:'hermione',speaker:'헤르미온느',text:'난 관중석에서 볼게.'},
+          {char_id:'ron',speaker:'론 위즐리',text:'빗자루를 타고 올라갈게.',emotion:'angry'}]};
+      document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
+      inputMode=false;inputBar.style.display='none';waitingForTap=false;
+      gameHistory.push({role:'assistant',content:JSON.stringify(reply)});processResponse(reply,['hermione','ron']);
+    });
+    await drainDialogue(page);
+    await page.waitForFunction(()=>document.getElementById('eventCG').naturalWidth>0&&currentCG==='ron/flying');
+    assert.match(await page.locator('#sprite_ron').getAttribute('src'),/ron\/outfits\/quidditch\//);
+    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/hermione\/2d\//);
+    assert.equal(await page.evaluate(()=>dialogueLog.findLast(d=>d.char_id==='ron').cg),'ron/flying');
+    await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-flight-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+  });
+  await check(ctx,'Hogwarts Malfoy, Crabbe, Lavender and Luna use their individual dance CG and matching gown',async()=>{
+    for(const id of ['malfoy','crabbe','lavender','luna']){
+      await page.evaluate(id=>{
+        const text={malfoy:'발은 밟지 마. 이번 곡은 내가 고를 테니까.',crabbe:'천천히 시작하자. 박자는 맞출 수 있어.',
+          lavender:'이 음악 좋지? 한 바퀴 더 돌자!',luna:'발이 가는 대로 가 봐. 음악도 길을 찾을 거야.'}[id];
+        const reply={background:'ballroom',cg:id+'/dance',narration:'',state_update:null,
+          choices:['(음악에 맞춰 춤을 춘다)','(천천히 이야기를 나눈다)'],
+          visuals:{outfits:{[id]:'yule'},cgPartner:'player',cgConsent:'mutual'},
+          dialogue:[{char_id:id,speaker:CHARACTERS[id].name,text,emotion:'smile'}]};
+        document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
+        inputMode=false;inputBar.style.display='none';waitingForTap=false;
+        gameHistory.push({role:'assistant',content:JSON.stringify(reply)});processResponse(reply,[id]);
+      },id);
+      await drainDialogue(page);
+      await page.waitForFunction(id=>currentCG===id+'/dance'&&document.getElementById('eventCG').complete&&document.getElementById('eventCG').naturalWidth>0,id);
+      await page.waitForFunction(()=>getComputedStyle(document.getElementById('eventCG')).opacity==='1');
+      assert.equal(await page.locator('#choiceBox').count(),1);
+      assert.match(await page.locator('#eventCG').getAttribute('src'),new RegExp('/'+id+'/dance_v1\\.webp$'));
+      const gown=await page.evaluate(id=>CHARACTERS[id].outfits.yule.normal,id);
+      assert.equal(await page.locator('#sprite_'+id).getAttribute('src'),gown);
+      if(id==='crabbe'||id==='lavender')assert.match(gown,/1_neutral_v2\.webp$/);
+      assert.equal(await page.evaluate(()=>dialogueLog.findLast(d=>!d.isPlayer).cg),id+'/dance');
+      if(id==='malfoy'||id==='lavender')
+        await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-'+id+'-dance-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+    }
+  });
+  await check(ctx,'Hogwarts pending per-line wardrobe survives restore and legacy saves infer a ballroom look',async()=>{
+    const result=await page.evaluate(()=>{
+      const before={date:gameState.hogwarts.date,house:gameState.hogwarts.house};
+      const reply={background:'library',cg:null,narration:'',choices:null,state_update:null,dialogue:[
+        {char_id:'hermione',speaker:'헤르미온느',text:'먼저 책부터 돌려놓을게.',outfit:'default'},
+        {char_id:'hermione',speaker:'헤르미온느',text:'예복으로 갈아입었어.',outfit:'yule',emotion:'angry'}]};
+      document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
+      inputMode=false;inputBar.style.display='none';waitingForTap=false;
+      gameHistory.push({role:'assistant',content:JSON.stringify(reply)});processResponse(reply,['hermione']);
+      const pending=dialogueLog.findLast(d=>d.pending&&d.outfit==='yule');
+      autoSave();const save=JSON.parse(bulkGet(saveKeyFor(STORY.id)));restoreAndReplay(save,false);
+      return {before,pending:!!pending};
+    });
+    assert.equal(result.pending,true);
+    await drainDialogue(page);
+    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/outfits\/yule\//);
+    const legacy=await page.evaluate(()=>{
+      autoSave();const save=JSON.parse(bulkGet(saveKeyFor(STORY.id)));
+      delete save.gameState.hogwarts.visuals;
+      for(const d of save.dialogueLog){delete d.looks;delete d.cg;delete d.outfit;}
+      save.lastBg='ballroom';
+      const last=save.gameHistory.findLast(h=>h.role==='assistant');
+      last.content=JSON.stringify({background:'ballroom',dialogue:[{char_id:'hermione',speaker:'헤르미온느',text:'음악이 시작됐네.',emotion:'angry'}]});
+      restoreAndReplay(save,false);
+      return {date:gameState.hogwarts.date,house:gameState.hogwarts.house};
+    });
+    await drainDialogue(page);
+    assert.deepEqual(legacy,result.before);
+    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/outfits\/yule\//);
+  });
+}
+
 (async () => {
   try {
     const origin = await startServer();
@@ -1308,7 +1477,7 @@ async function hogwartsArtCheck(ctx) {
       const hogwartsCtx = await createFixturePage(origin, mobile, {
         freeMode: true, integrated: true, reply: hogwartsArtReply, capturePrompts: true
       });
-      try { await hogwartsArtCheck(hogwartsCtx); }
+      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); }
       finally { await hogwartsCtx.context.close(); }
       const hogwartsRPCtx=await createFixturePage(origin,mobile,{freeMode:true,reply:hogwartsArtReply,capturePrompts:true});
       try{await hogwartsRPCheck(hogwartsRPCtx);}

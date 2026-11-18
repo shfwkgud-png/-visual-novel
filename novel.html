@@ -2164,16 +2164,17 @@
 </div><!-- /#appFrame -->
 
 <script src="pandora-consistency.js?v=369"></script>
-<script src="storypacks/hogwarts-au/art.js?v=6"></script>
-<script src="storypacks/hogwarts-au/story.js?v=10"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=9"></script>
 <script src="storypacks/hogwarts-au/time.js?v=4"></script>
 <script src="storypacks/hogwarts-au/profile.js?v=1"></script>
 <script src="storypacks/hogwarts-au/magic.js?v=5"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=8"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9"></script>
 <script src="storypacks/hogwarts-au/world.js?v=15"></script>
 <script src="storypacks/hogwarts-au/canon-engine.js?v=2"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=6"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -8730,7 +8731,7 @@ function allStories() {
   for (const id in local) {
     out[id] = { ...local[id] };
     const b = BUILTIN_STORIES[id];
-    if (b) for (const k of ['maxSprites', 'emoRemap', 'modeChoices', 'freeStartHint', 'prologueSteps', 'prologueOutro', 'startChars'])
+    if (b) for (const k of ['maxSprites', 'emoRemap', 'modeChoices', 'freeStartHint', 'prologueSteps', 'prologueOutro', 'startChars', 'eventCGs'])
       if (out[id][k] === undefined && b[k] !== undefined) out[id][k] = b[k];
     // ★시작 연출도 원본 추적(2026-08-11 v269, 지도 프롤로그가 편집 스냅샷에 가려지던 버그):
     //   수정본의 시작 문구가 옛 원본 그대로거나 없으면(=유저가 손 안 댐) 최신 원본의 시작 연출을 따른다.
@@ -8774,6 +8775,10 @@ function allStories() {
           else if(!untouched && bc.speech && base?.[cid] && typeof mc.personality==='string' &&
                   mc.personality!==base[cid].personality && mc.speech===base[cid].speech)
             merged[cid]={...mc,speech:mc.personality};
+          if(id==='hogwarts'&&base?.[cid]&&mc.img===base[cid].img&&
+             JSON.stringify(mc.emoImgs)===JSON.stringify(base[cid].emoImgs)&&
+             JSON.stringify(mc.outfits)===JSON.stringify(base[cid].outfits))
+            merged[cid]={...merged[cid],img:bc.img,emoImgs:bc.emoImgs,outfits:bc.outfits};
         }
         for (const cid in mine) if (!(cid in merged)) merged[cid] = mine[cid];   // 유저가 추가한 카드 보존
         out[id].characters = merged;
@@ -8797,6 +8802,7 @@ function setActiveStory(id) {
   if (!s) return false;
   STORY = s;
   CHARACTERS = s.characters || {};
+  window._hogwartsDisplayedOutfits = null;
   // Built-in packs carry a full worldPrompt; user-created ones store lore only
   // ★worldBase(2026-08-06): 편집기에서 원문을 직접 고친 경우 — 3-way 병합(유저 우선)으로
   //   유저 수정(삭제 포함)과 이후 원본 개선이 함께 산다.
@@ -10981,7 +10987,8 @@ function enqueueLine(d) {
     //   내려가고, 기록넘김은 pending인 항목 앞까지만 오간다.
     const L = { speaker: d.speaker, text: d.text, isPlayer: false, char_id: d.char_id || null,
                 emotion: d.emotion || 'normal', pose: d.pose || 'upper',
-                bgFile: currentBgFile, sprites: [...shownSprites], pending: true };
+                bgFile: currentBgFile, sprites: [...shownSprites], pending: true,
+                ...(typeof STORY!=='undefined'&&STORY.id==='hogwarts'&&['default','yule','quidditch'].includes(d.outfit)?{outfit:d.outfit}:{}) };
     dialogueLog.push(L);
     try { Object.defineProperty(d, '_log', { value: L, enumerable: false, writable: true, configurable: true }); }
     catch { d._log = L; }
@@ -11783,6 +11790,7 @@ function restoreAndReplayInner(save, checkTimeflow) {
   window._replayFill = false; dialogueQueue = [];
   window._pendingDialogues = null; window._present = null; window._pendingPlayerLine = null;
   historyMode = false; document.body.classList.remove('history-mode');
+  window._hogwartsDisplayedOutfits = null;
   inputMode = false; inputBar.style.display = 'none';
   document.getElementById('redoBar').style.display = 'none';
   document.getElementById('continueHint').style.display = 'none';
@@ -13072,7 +13080,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   // AI가 아는 조합만 쓰게 한다 (이게 없어서 CG가 안 뜨던 근본 원인, 2026-07-16)
   const cgm = CG_MANIFEST[STORY.id];
   let cgBlock = '';
-  if (cgm && STORY.id === 'lovediary') {
+  if(STORY.id==='hogwarts'&&window.PandoraHogwartsLooks)
+    cgBlock=PandoraHogwartsLooks.prompt(CHARACTERS,STORY.eventCGs,gameState?.hogwarts?.visuals);
+  else if (cgm && STORY.id === 'lovediary') {
     // ★lovediary 전용: 성인 교사 2인만, R2에 실제 올린 씬키만(임의 씬키=404). 학생 cg 절대 금지.
     const ldScenes = ['s_lingerie', 's_kneel', 's_onside', 'fellatio_pov', 'titfuck_cum',
       'mating_press_pov', 'missionary_pov', 'cowgirl_front', 'doggy_side', 'creampie_drip', 'facial',
@@ -13163,7 +13173,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       stream.narrEmitted = 0;
       hideThinking();
       if (u.background) { stream.bgDone = true; try { setBg(u.background); } catch {} }   // 대사보다 배경이 먼저
-      if (u.cg) { stream.cgDone = true; try { showEventCG(u.cg); } catch {} }              // CG도 대사와 함께
+      if (STORY.id==='hogwarts') syncHogwartsLooks({},activeCharIds);
+      if (u.cg && STORY.id!=='hogwarts') { stream.cgDone = true; try { showEventCG(u.cg); } catch {} }
       if (u.mood) { stream.moodDone = true; try { Ambient.setMood(u.mood); } catch {} }
       dialogueQueue = [];
       resetTurnLineKeys();   // 새 턴 시작 — 이전 턴 투입 기록은 버린다
@@ -13181,7 +13192,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
     // 활성 중: 배경(늦게 도착할 수 있다) → narration 잔여분 → 신규 dialogue
     if (u.background && !stream.bgDone) { stream.bgDone = true; try { setBg(u.background); } catch {} }
-    if (u.cg && !stream.cgDone) { stream.cgDone = true; try { showEventCG(u.cg); } catch {} }
+    if (u.cg && !stream.cgDone && STORY.id!=='hogwarts') { stream.cgDone = true; try { showEventCG(u.cg); } catch {} }
     if (u.mood && !stream.moodDone) { stream.moodDone = true; try { Ambient.setMood(u.mood); } catch {} }
     if (!stream.narrDone) {
       if (u.narration !== null) { emitNarr(u.narration, true); stream.narrDone = true; }
@@ -14110,7 +14121,10 @@ function processResponse(data, activeCharIds, streamed, stateOnly, source) {
     lastBg = data.background;
     setBg(data.background);
   }
-  if (data.cg) showEventCG(data.cg); else hideEventCG();   // full-screen event CG (NSFW scene); absent → hide
+  if(STORY.id==='hogwarts'&&window.PandoraHogwartsLooks) syncHogwartsLooks(data,activeCharIds);
+  else {
+    if (data.cg) showEventCG(data.cg); else hideEventCG();
+  }
   if (data.mood) Ambient.setMood(data.mood);
   window._pendingEnding = (data.ending && typeof data.ending === 'string') ? data.ending : null;
 
@@ -14471,6 +14485,24 @@ function processResponse(data, activeCharIds, streamed, stateOnly, source) {
 }
 
 // ===== CHARACTER SPRITES =====
+function sceneVisualSnapshot(){
+  if(typeof STORY==='undefined'||STORY.id!=='hogwarts'||!window.PandoraHogwartsLooks) return {};
+  const cg=typeof currentCG==='string'?currentCG:null;
+  return {looks:PandoraHogwartsLooks.snapshot(window._hogwartsDisplayedOutfits??gameState?.hogwarts?.visuals?.outfits,CHARACTERS),
+    cg:PandoraHogwartsLooks.url(cg,STORY.eventCGs,CHARACTERS)?cg:null};
+}
+function syncHogwartsLooks(data,activeIds){
+  if(STORY.id!=='hogwarts'||!window.PandoraHogwartsLooks||!gameState?.hogwarts) return false;
+  const hp=gameState.hogwarts;
+  hp.visuals=PandoraHogwartsLooks.scene(hp.visuals,data,currentBgFile,CHARACTERS,STORY.eventCGs,activeIds||shownSprites);
+  if(!historyMode){
+    window._hogwartsDisplayedOutfits=PandoraHogwartsLooks.snapshot(hp.visuals.outfits,CHARACTERS);
+    for(const id of shownSprites) updateSpriteEmotion(id,document.getElementById('sprite_'+id)?.dataset.emotion||'normal','upper');
+    if(hp.visuals.cg) showEventCG(hp.visuals.cg); else hideEventCG();
+  }
+  return true;
+}
+
 let shownSprites = [];           // char_ids currently on screen
 let currentEmotion = 'normal';
 let currentPose = 'upper';
@@ -14582,7 +14614,9 @@ function highlightSpeaker(charId, emotion, pose) {
 }
 
 // Rebuild an exact sprite set (for history restore)
-function rebuildSprites(charIds, speakingId, emotion, pose) {
+function rebuildSprites(charIds, speakingId, emotion, pose, outfits) {
+  if(STORY.id==='hogwarts'&&window.PandoraHogwartsLooks)
+    window._hogwartsDisplayedOutfits=PandoraHogwartsLooks.snapshot(outfits===undefined?gameState?.hogwarts?.visuals?.outfits:outfits,CHARACTERS);
   charLayer.innerHTML = '';
   shownSprites = [];
   // 인원 캡(maxSprites) 적용 시 발화자가 퇴장당하지 않게 마지막에 생성(캡은 [0]부터 퇴장)
@@ -14608,12 +14642,15 @@ function rebuildSprites(charIds, speakingId, emotion, pose) {
 function updateSpriteEmotion(charId, emotion, pose) {
   const sprite = document.getElementById('sprite_' + charId);
   if (!sprite) return;
+  if(STORY.id==='hogwarts') sprite.dataset.emotion=emotion||'normal';
 
   // uploaded characters: swap between uploaded expression images (if any)
   if (CHARACTERS[charId] && CHARACTERS[charId].img) {
     const c = CHARACTERS[charId];
     sprite.classList.remove('fullbody');
-    const url = (c.emoImgs && c.emoImgs[normalizeEmotion(emotion)]) || c.img;
+    const url = STORY.id==='hogwarts'&&window.PandoraHogwartsLooks
+      ? PandoraHogwartsLooks.sprite(c,normalizeEmotion(emotion),window._hogwartsDisplayedOutfits?.[charId]||'default')
+      : (c.emoImgs && c.emoImgs[normalizeEmotion(emotion)]) || c.img;
     if (!sprite.src.endsWith(url)) sprite.src = url;
     return;
   }
@@ -14768,6 +14805,12 @@ function showNextDialogue() {
     if (_rid) d.char_id = _rid;
   }
 
+  if(STORY.id==='hogwarts'&&window.PandoraHogwartsLooks&&gameState?.hogwarts){
+    gameState.hogwarts.visuals=PandoraHogwartsLooks.line(gameState.hogwarts.visuals,d,CHARACTERS,STORY.eventCGs);
+    window._hogwartsDisplayedOutfits=PandoraHogwartsLooks.snapshot(gameState.hogwarts.visuals.outfits,CHARACTERS);
+    for(const id of shownSprites) updateSpriteEmotion(id,document.getElementById('sprite_'+id)?.dataset.emotion||'normal','upper');
+    if(gameState.hogwarts.visuals.cg) showEventCG(gameState.hogwarts.visuals.cg); else hideEventCG();
+  }
   setNameplate(d.speaker, d.char_id);
 
   // Reveal the speaker's sprite the moment they speak, then highlight
@@ -14784,6 +14827,7 @@ function showNextDialogue() {
     // 이미 수신 시점에 기록됨 — 실제 재생된 화면 상태(배경·스프라이트·표정)로 덮어쓴다
     d._log.emotion = emo; d._log.pose = pose;
     d._log.bgFile = currentBgFile; d._log.sprites = [...shownSprites];
+    Object.assign(d._log,sceneVisualSnapshot());
     // ★표시 직전에 교정된 화자·char_id도 기록에 반영한다(2026-08-18 재점검).
     //   여기서 speaker(id→이름)·char_id(이름↔id 엇갈림)를 고쳐놓고 기록엔 옛 값이 남아,
     //   기록넘김에서 화자 이름이나 스프라이트가 화면과 달랐다.
@@ -14794,7 +14838,7 @@ function showNextDialogue() {
     dialogueLog.push({
       speaker: d.speaker, text: d.text, isPlayer: false,
       char_id: d.char_id || null, emotion: emo, pose: pose,
-      bgFile: currentBgFile, sprites: [...shownSprites]
+      bgFile: currentBgFile, sprites: [...shownSprites], ...sceneVisualSnapshot()
     });
   }
 
@@ -15083,6 +15127,7 @@ function historyBack() {
       charId: currentSpeakerCharId,
       emotion: currentEmotion, pose: currentPose,
       bgFile: currentBgFile, sprites: [...shownSprites],
+      ...sceneVisualSnapshot(),
       inputVisible: inputBar.style.display !== 'none',
       choiceVisible: !!cb
     };
@@ -15120,7 +15165,10 @@ function renderHistoryEntry() {
   // 공란이면 공란, 웃으면 웃음). 기록 자체가 없는 항목(구세이브 플레이어 대사)만
   // 화면 유지(빈 배열 []은 "캐릭터 없음"이라는 유효한 기록이므로 그대로 비운다)
   if (entry.bgFile) setBgFile(entry.bgFile);
-  if (entry.sprites) rebuildSprites(entry.sprites, entry.char_id, entry.emotion, entry.pose);
+  if (entry.sprites) rebuildSprites(entry.sprites, entry.char_id, entry.emotion, entry.pose,
+    STORY.id==='hogwarts'&&window.PandoraHogwartsLooks
+      ? entry.looks??PandoraHogwartsLooks.scene(null,{},entry.bgFile,CHARACTERS,{},[]).outfits : undefined);
+  if(STORY.id==='hogwarts'){if(entry.cg)showEventCG(entry.cg);else hideEventCG();}
   setNameplate(entry.isPlayer ? (entry.speaker || playerName) : entry.speaker, entry.char_id);
   dialogueText.textContent = choiceDisplayText(entry.text);
   const hint = document.getElementById('continueHint');
@@ -15153,7 +15201,8 @@ function exitHistory() {
     if (p.charId == null) p.charId = _last.char_id || null;
   }
   if (p.bgFile) setBgFile(p.bgFile);
-  if (p.sprites) rebuildSprites(p.sprites, p.charId, p.emotion, p.pose);
+  if (p.sprites) rebuildSprites(p.sprites, p.charId, p.emotion, p.pose,p.looks);
+  if(STORY.id==='hogwarts'){if(p.cg)showEventCG(p.cg);else hideEventCG();}
   setNameplate(p.speaker || '', p.charId);
   dialogueText.textContent = p.text || '';
   const hint = document.getElementById('continueHint');
@@ -15585,7 +15634,7 @@ async function handlePlayerInput(text) {
         if(world.active && world.active.choice==='observe'){
           const action=hw.interrupt(world,chosen);
           if(!action){enterInputMode();return;}
-          dialogueLog.push({speaker:playerName,text:choiceDisplayText(text),isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
+          dialogueLog.push({...sceneVisualSnapshot(),speaker:playerName,text:choiceDisplayText(text),isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
           gameHistory.push({role:'user',content:action.instruction});
           autoSave();
           const incident=hw.EVENTS.find(e=>e.id===action.id);
@@ -15614,7 +15663,7 @@ async function handlePlayerInput(text) {
             {dialogue:after?.dialogue || [],resetSprites:false});
           autoSave();return;
         }
-        dialogueLog.push({speaker:playerName,text:choiceDisplayText(text),isPlayer:true,char_id:null,
+        dialogueLog.push({...sceneVisualSnapshot(),speaker:playerName,text:choiceDisplayText(text),isPlayer:true,char_id:null,
           bgFile:currentBgFile,sprites:[...shownSprites]});
         gameHistory.push({role:'user',content:scene.instruction});
         autoSave();
@@ -15625,7 +15674,7 @@ async function handlePlayerInput(text) {
         const scene=hw.startAmbient(world);
         if (!scene) { enterInputMode(); return; }
         hw.noteAction(world,text);
-        dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,
+        dialogueLog.push({...sceneVisualSnapshot(),speaker:playerName,text,isPlayer:true,char_id:null,
           bgFile:currentBgFile,sprites:[...shownSprites]});
         gameHistory.push({role:'user',content:text+'\n\n'+scene.instruction});
         autoSave();
@@ -15654,7 +15703,7 @@ async function handlePlayerInput(text) {
   // ★시작 플로우(prologue 정의 스토리): 프롤로그·모드선택·설정요청은 앱이 고정 처리(AI 호출 X).
   if (window._startPhase === 'pro') {
     // 다페이지 고정 프롤로그 넘김("▶ 계속") — 마지막 장 다음은 모드 선택으로 합류
-    dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
+    dialogueLog.push({ ...sceneVisualSnapshot(), speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
     gameHistory.push({ role: 'user', content: text });
     window._proIdx = (window._proIdx || 0) + 1;
     const steps = STORY.prologueSteps || [];
@@ -15683,7 +15732,7 @@ async function handlePlayerInput(text) {
     gameState.time = PandoraHogwartsTime.display(gameState.hogwarts);
     window._startPhase = 'playing';
     gameHistory.push({role:'user',content:text+'\n\n[시스템 확정: 분류모자가 '+pick.house+' 배정을 선언했다. 이 기숙사는 7년간 유지된다. 주인공은 해리 포터가 아니며, 원작 인물과 처음 만나는 상황이다. 분류가 막 끝난 대연회장에서 같은 기숙사 학생들과 첫 대화를 시작하라.]'});
-    dialogueLog.push({speaker:playerName,text,isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
+    dialogueLog.push({...sceneVisualSnapshot(),speaker:playerName,text,isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
     updateStatusUI();
     await syncHogwartsCanon(); // confirm train and sorting chapters without spoilers
     if (window.PandoraHogwartsScenes) {
@@ -15696,7 +15745,7 @@ async function handlePlayerInput(text) {
     await callGemini(['mcgonagall']); return;
   }
   if (window._startPhase === 'mode') {
-    dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
+    dialogueLog.push({ ...sceneVisualSnapshot(), speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
     gameHistory.push({ role: 'user', content: text });
     window._freeMode = /자유/.test(text);
     if (gameState) gameState.freeMode = window._freeMode;   // 세이브에 영속(복원 시 치환 판단)
@@ -15713,7 +15762,7 @@ async function handlePlayerInput(text) {
     const hpSetup=STORY.id==='hogwarts'&&window.PandoraHogwartsProfile
       ?PandoraHogwartsProfile.parseSetup(text,playerName):null;
     const p = String(text).trim().match(/^([^/\n]{1,12})\s*\/\s*(\d{1,3})\s*살?\s*(?:\/\s*(남|여)(?:자|성)?)?\s*\/\s*(.{1,60})$/);
-    dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
+    dialogueLog.push({ ...sceneVisualSnapshot(), speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
     gameHistory.push({ role: 'user', content: text });
     window._pendingPlayerLine = text; window._genText = text;
     if (!p&&!hpSetup) { renderFixedStep('형식이 맞지 않습니다. 이름/나이/특징 또는 자유로운 자연어로 작성해 주세요.', null); return; }
@@ -15799,7 +15848,7 @@ async function handlePlayerInput(text) {
   }
   // 플레이어 대사도 그 순간의 장면 상태(배경·스프라이트)를 기록 — 기록 넘김 시
   // 모든 페이지가 자기 상태를 정확히 복원(책장 원칙: 공란 페이지는 공란 그대로)
-  dialogueLog.push({ speaker: playerName, text, isPlayer: true, char_id: null,
+  dialogueLog.push({ ...sceneVisualSnapshot(), speaker: playerName, text, isPlayer: true, char_id: null,
                      bgFile: currentBgFile, sprites: [...shownSprites] });
   gameHistory.push({ role: 'user', content: text + aiExtra });   // 화면=text(깨끗), AI=+지시문
   window._fateRoll = null;           // 새 유저 턴 = 운명 주사위 재굴림
@@ -15996,6 +16045,7 @@ function crossfadeBg(url) {
 // ===== EVENT CG (full-screen NSFW / event illustration) =====
 let currentCG = null;
 function cgUrlFor(name) {
+  if(STORY.id==='hogwarts') return window.PandoraHogwartsLooks?.url(name,STORY.eventCGs,CHARACTERS)||null;
   // name = "charId/sceneId" or "sceneId" — NSFW는 repo에 없음(비공개), R2 워커에서 서빙(로그인 토큰 게이트)
   const flat = `nsfw_${STORY.id}_${String(name).replace(/\//g, '_')}`;
   return `https://pandora-sync.pasokong99.workers.dev/img?name=${encodeURIComponent(flat)}&t=${encodeURIComponent(authToken())}`;
@@ -16015,10 +16065,12 @@ function showEventCG(name) {
   if (name === currentCG) return;              // 같은 씬키 연속 = 유지(변형 재추첨 안 함)
   currentCG = name;
   const resolved = cgPickVariant(name);        // 변형군이면 이 표시에서 하나 랜덤 선택
+  const url=cgUrlFor(resolved);
+  if(!url){hideEventCG();return;}
   const e = document.getElementById('eventCG');
   e.onerror = () => { currentCG = null; e.style.display = 'none'; document.body.classList.remove('cg-active'); }; // missing asset → safe fallback (currentCG 비워야 다음 키 재시도 가능)
   e.onload = () => { e.classList.remove('cg-show'); void e.offsetWidth; e.classList.add('cg-show'); };
-  e.src = cgUrlFor(resolved);
+  e.src = url;
   e.style.display = 'block';
   document.body.classList.add('cg-active');
 }
@@ -16063,6 +16115,7 @@ function setBg(name) {
       PandoraHogwartsScenes.valid(gameState?.hogwarts?.scene) &&
       gameState.hogwarts.scene.phase==='idle')
     gameState.hogwarts.scene.lastLocation=key;
+  if(STORY.id==='hogwarts') syncHogwartsLooks({},shownSprites);
 }
 // Restore an exact background file (for history scrubbing)
 function setBgFile(file) {

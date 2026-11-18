@@ -664,7 +664,9 @@
     const files = art.sprites[id];
     const emoImgs = files && Object.fromEntries(Object.entries(files).map(([emotion, file]) =>
       [emotion, `sd_samples/characters/hogwarts/${id}/2d/${file}.webp`]));
+    const outfits = art.outfits?.[id];
     return [id, { name, role, ...(emoImgs ? { img: emoImgs.normal, emoImgs } : {}), age: kind === 'student' || kind === 'visiting_student' ? '성인' : '',
+      ...(outfits ? {outfits} : {}),
       gender: auGender === 'female' ? '여성' : (auGender || ''),
       ...(speech ? {speech} : {}),
       personality: [personalities[id], behavior, speech && '말투 기준: '+speech].filter(Boolean).join(' ') }];
@@ -747,6 +749,7 @@
   customBgs
 }, {
     characters,
+    eventCGs: art.eventCGs || {},
     worldLore: lore + '\n\n' + [
       '## 이름으로 지정된 NPC끼리의 관계',
       '- 해리, 론, 헤르미온느, 여성 드레이코 말포이 사이의 관계는 아래 기준을 따른다. 주인공과의 친분은 실제 만남과 플레이 기록에서 별도로 쌓인다.',
