@@ -2165,7 +2165,7 @@
 
 <script src="pandora-consistency.js?v=369"></script>
 <script src="storypacks/hogwarts-au/art.js?v=5"></script>
-<script src="storypacks/hogwarts-au/story.js?v=9"></script>
+<script src="storypacks/hogwarts-au/story.js?v=10"></script>
 <script src="storypacks/hogwarts-au/scene-director.js?v=9"></script>
 <script src="storypacks/hogwarts-au/time.js?v=4"></script>
 <script src="storypacks/hogwarts-au/profile.js?v=1"></script>
@@ -4426,7 +4426,10 @@ function getCharPrompt(charIds, onScreenIds) {
       prompt += `- ${id} | ${c.name}${meta ? ` (${meta})` : ''}${flag} | ${c.role} | ${c.personality}\n`;
     }
   });
-  const brief = ordered.slice(MAX_FULL).map(id => CHARACTERS[id] && `${CHARACTERS[id].name}(${id})`).filter(Boolean);
+  const brief = ordered.slice(MAX_FULL).map(id => {
+    const c=CHARACTERS[id];
+    return c && `${c.name}(${id})${c.speech ? ' — 말투: '+c.speech : ''}`;
+  }).filter(Boolean);
   if (brief.length) prompt += `- (같은 자리에 함께 있음 — 필요시 자기 성격대로 반응·등장. 성격 상세는 위 '등장인물 전원' 명단 참고): ${brief.join(', ')}\n`;
   return prompt;
 }
@@ -8765,6 +8768,9 @@ function allStories() {
               || (cid === 'danah' && [LEGACY_DANAH_P, LEGACY_DANAH_P2, LEGACY_DANAH_P3, LEGACY_DANAH_P4, LEGACY_DANAH_P5, LEGACY_DANAH_P6].includes(mc.personality))
               || (cid === 'rian' && mc.personality === LEGACY_RIAN_P1);
           merged[cid] = untouched ? bc : mc;
+          if(!untouched && bc.speech && mc.speech===undefined && base?.[cid] &&
+             base[cid].speech===undefined && mc.personality===base[cid].personality)
+            merged[cid]={...mc,personality:bc.personality,speech:bc.speech};
         }
         for (const cid in mine) if (!(cid in merged)) merged[cid] = mine[cid];   // 유저가 추가한 카드 보존
         out[id].characters = merged;
