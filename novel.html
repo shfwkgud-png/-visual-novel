@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="pandora-build" content="5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2163,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7"></script>
+<script src="pandora-consistency.js?v=369&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=5346aa79dba8e85dc0a2191f572938426fae246b7f176b5b6a2e19d9ac1092c3"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -11323,10 +11324,11 @@ function enterApp() {
 // Force-fetch the latest version (works even in fullscreen PWA with no address bar).
 // Game state is in localStorage, so 이어하기 restores after reload.
 function refreshApp() {
-  const base = location.href.split('?')[0];
   // ★replace로 이동(2026-08-24): location.href는 히스토리에 구버전을 쌓아, iOS 엣지 스와이프
   //   (뒤로가기)로 열흘 전 페이지가 부활하는 함정이 됐다(유저 스샷: v291이 v346 뒤에 숨어있음).
-  location.replace(base + '?v=' + Date.now());
+  const next = new URL(location.href);
+  next.searchParams.set('v', Date.now());
+  location.replace(next.href);
 }
 
 // ===== PROVIDER TOGGLE =====
@@ -12825,41 +12827,43 @@ function dlgToChunks(d) {
 // ★백그라운드 복귀 자동 재생성(2026-07-21): iOS는 앱 이탈 시 JS·네트워크를 얼려 스트리밍 응답을 끊는다.
 //   생성 중(sendBtn disabled) 백그라운드로 나갔다가(_bgDuringGen) 응답이 실패로 끝나면(_genFailed),
 //   앱 복귀 시 "흐트러졌다"로 방치하지 말고 조용히 다시 생성한다.
-// ★자동 버전 감지(2026-08-24 — 유저가 열흘간 v291로 플레이한 사고): iOS 홈화면 PWA는 다시 열 때
-//   리로드 없이 스냅샷을 복원하므로, 수동 갱신을 안 누르면 영영 구버전이다. 부팅 때 자기 ETag를
-//   기준으로 잡고, 복귀(visibilitychange)마다 서버 ETag와 비교 — 다르면 갱신 배너를 띄운다.
-async function checkAppUpdate() {
+// The meta identifies the loaded code; HTTP ETags vary with compression and redeployment.
+const APP_BUILD = document.querySelector('meta[name="pandora-build"]')?.content || '';
+let appUpdateRequest = null;
+async function checkAppUpdate(fromHistory = false) {
   try {
-    if (location.protocol === 'file:') return;
-    const r = await fetch(location.pathname + '?vchk=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
-    const et = r.headers.get('ETag');
-    if (!et) return;
-    if (!window._bootETag) { window._bootETag = et; return; }
-    if (et === window._bootETag || window._updBannerShown) return;
-    window._updBannerShown = true;
+    if (location.protocol === 'file:' || !/^[a-f0-9]{64}$/.test(APP_BUILD)) return false;
+    if (!appUpdateRequest) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const url = new URL('app-build.json', location.href);
+      url.searchParams.set('vchk', Date.now());
+      appUpdateRequest = fetch(url.href, {cache:'no-store', signal:controller.signal})
+        .then(r => r.ok ? r.json() : null)
+        .then(data => typeof data?.build === 'string' && /^[a-f0-9]{64}$/.test(data.build) ? data.build : null)
+        .finally(() => { clearTimeout(timeout); appUpdateRequest = null; });
+    }
+    const build = await appUpdateRequest;
+    if (!build) return false;
+    if (build === APP_BUILD) { document.getElementById('appUpdateBanner')?.remove(); return false; }
+    if (fromHistory && typeof sendBtn !== 'undefined' && !sendBtn.disabled) { refreshApp(); return true; }
+    if (window._dismissedAppBuild === build) return true;
+    const previous = document.getElementById('appUpdateBanner');
+    if (previous?.dataset.build === build) return true;
+    previous?.remove();
     const b = document.createElement('div');
-    b.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);left:50%;transform:translateX(-50%);z-index:9999;background:#1c1c22;color:#fff;border:1px solid #e11d48;border-radius:10px;padding:10px 14px;font-size:14px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,0.5)';
-    b.innerHTML = '<span>🆕 새 버전이 나왔습니다</span><button style="background:#e11d48;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:13px" onclick="refreshApp()">갱신</button><button style="background:none;border:none;color:#888;font-size:16px" onclick="this.parentNode.remove()">✕</button>';
+    b.id = 'appUpdateBanner'; b.dataset.build = build;
+    b.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);left:50%;transform:translateX(-50%);width:min(360px,calc(100vw - 24px));box-sizing:border-box;z-index:9999;background:#1c1c22;color:#fff;border:1px solid #e11d48;border-radius:10px;padding:10px 14px;font-size:14px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,0.5)';
+    b.innerHTML = '<span style="flex:1;min-width:0;line-height:1.5">🆕 새 버전이 나왔습니다</span><button style="flex-shrink:0;white-space:nowrap;background:#e11d48;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:13px" onclick="refreshApp()">갱신</button><button aria-label="갱신 알림 닫기" style="flex-shrink:0;background:none;border:none;color:#888;font-size:16px" onclick="window._dismissedAppBuild=this.parentNode.dataset.build;this.parentNode.remove()">✕</button>';
     document.body.appendChild(b);
-  } catch {}
+    return true;
+  } catch { return false; }
 }
-setTimeout(checkAppUpdate, 4000);   // 부팅 기준 ETag 확보
+setTimeout(checkAppUpdate, 4000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(checkAppUpdate, 1200); });
-// ★bfcache 부활 방어(2026-08-24 유저 스샷: 엣지 스와이프로 v291이 v346 뒤에서 부활): 뒤로가기
-//   스택에서 살아난 페이지(e.persisted)는 구버전 사본일 수 있다 — 서버 ETag와 다르고 생성 중이
-//   아니면 그 자리에서 최신으로 교체한다(replace라 스택도 더 안 쌓임). 진행 상태는 매 턴 저장이라 안전.
 window.addEventListener('pageshow', e => {
   if (!e.persisted) return;
-  setTimeout(async () => {
-    try {
-      const r = await fetch(location.pathname + '?vchk=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
-      const et = r.headers.get('ETag');
-      if (et && window._bootETag && et !== window._bootETag &&
-          !(typeof sendBtn !== 'undefined' && sendBtn && sendBtn.disabled)) {
-        location.replace(location.pathname + '?v=' + Date.now());
-      }
-    } catch {}
-  }, 300);
+  setTimeout(() => checkAppUpdate(true), 300);
 });
 
 // Background pickup owns only its own input lock and the failed turn it observed.

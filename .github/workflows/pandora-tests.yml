@@ -26,7 +26,9 @@ jobs:
           node-version: '22'
       - name: Run Pandora regression tests
         run: |
+          node scripts/app-build.js --check
           node tests.js
+          node tests-app-update.js
           node tests-state-recovery.js
           node tests-summary.js
           node tests-background.js
