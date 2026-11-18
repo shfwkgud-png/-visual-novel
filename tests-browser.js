@@ -1422,7 +1422,7 @@ async function hogwartsLooksCheck(ctx){
       },id);
       await drainDialogue(page);
       await page.waitForFunction(id=>currentCG===id+'/dance'&&document.getElementById('eventCG').complete&&document.getElementById('eventCG').naturalWidth>0,id);
-      await page.locator('#eventCG').evaluate(e=>Promise.all(e.getAnimations().map(a=>a.finished.catch(()=>{}))));
+      await page.waitForFunction(()=>getComputedStyle(document.getElementById('eventCG')).opacity==='1');
       assert.equal(await page.locator('#choiceBox').count(),1);
       assert.match(await page.locator('#eventCG').getAttribute('src'),new RegExp('/'+id+'/dance_v1\\.webp$'));
       const gown=await page.evaluate(id=>CHARACTERS[id].outfits.yule.normal,id);
