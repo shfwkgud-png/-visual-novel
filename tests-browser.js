@@ -1148,7 +1148,7 @@ async function hogwartsArtCheck(ctx) {
     await page.waitForFunction(() =>
       document.getElementById('sprite_crabbe')?.naturalWidth === 1024 &&
       document.getElementById('sprite_goyle')?.naturalWidth === 1024);
-    assert.match(await page.locator('#sprite_goyle').getAttribute('src'), /goyle\/2d\/4_sadness_v2\.webp$/);
+    assert.match(await page.locator('#sprite_goyle').getAttribute('src'), /goyle\/2d\/4_sadness_v3\.webp$/);
     for (const [id, emotion, file] of [
       ['harry', 'angry', '3_anger_v5'],
       ['percy', 'angry', '3_anger_v5'],
@@ -1516,11 +1516,12 @@ async function hogwartsLooksCheck(ctx){
       await page.waitForFunction(id=>currentCG===id+'/dance'&&document.getElementById('eventCG').complete&&document.getElementById('eventCG').naturalWidth>0,id);
       await page.waitForFunction(()=>getComputedStyle(document.getElementById('eventCG')).opacity==='1');
       assert.equal(await page.locator('#choiceBox').count(),1);
-      assert.match(await page.locator('#eventCG').getAttribute('src'),new RegExp('/'+id+'/dance_'+(id==='crabbe'||id==='goyle'?'v2':'v1')+'\\.webp$'));
+      assert.match(await page.locator('#eventCG').getAttribute('src'),new RegExp('/'+id+'/dance_'+(id==='crabbe'||id==='goyle'?'v3':'v1')+'\\.webp$'));
       const gown=await page.evaluate(id=>CHARACTERS[id].outfits.yule.normal,id);
       assert.equal(await page.locator('#sprite_'+id).getAttribute('src'),gown);
-      if(id==='crabbe')assert.match(gown,/1_neutral_v3\.webp$/);
-      if(id==='goyle'||id==='lavender')assert.match(gown,/1_neutral_v2\.webp$/);
+      if(id==='crabbe')assert.match(gown,/1_neutral_v4\.webp$/);
+      if(id==='goyle')assert.match(gown,/1_neutral_v3\.webp$/);
+      if(id==='lavender')assert.match(gown,/1_neutral_v2\.webp$/);
       assert.equal(await page.evaluate(()=>dialogueLog.findLast(d=>!d.isPlayer).cg),id+'/dance');
       if(['malfoy','crabbe','goyle','lavender','romilda'].includes(id))
         await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-'+id+'-dance-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});

@@ -219,11 +219,11 @@ for (const url of [...backgrounds,...portraitBackgrounds,...portraits,...outfits
 assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,82);
 const generated=JSON.parse(fs.readFileSync(path.join(__dirname,'docs/hogwarts-occasions-assets.json'),'utf8'));
-assert.equal(generated.assets.length,194);
-assert.equal(new Set(generated.assets.map(a=>a.target)).size,194);
+assert.equal(generated.assets.length,212);
+assert.equal(new Set(generated.assets.map(a=>a.target)).size,212);
 const activeGenerated=new Set(generated.assets.filter(a=>a.active).map(a=>a.target));
 assert.equal(activeGenerated.size,180);
-for(const [id,version,count] of [['harry','v5',6],['percy','v2',3],['snape','v3',6],['crabbe','v2',6],['goyle','v2',6]]){
+for(const [id,version,count] of [['harry','v5',6],['percy','v2',3],['snape','v3',6],['crabbe','v3',6],['goyle','v3',6]]){
   const card=pack.characters[id];
   assert.equal(card.img,`sd_samples/characters/hogwarts/${id}/2d/1_neutral_${version}.webp`);
   assert.equal(new Set(Object.values(card.emoImgs)).size,count,id);

@@ -5441,7 +5441,7 @@
         "expression": "sidelong smirk",
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set."
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/2d/2_joy_v2",
@@ -5458,7 +5458,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "crabbe/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/2d/3_anger_v2",
@@ -5475,7 +5475,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "crabbe/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/2d/4_sadness_v2",
@@ -5492,7 +5492,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "crabbe/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/2d/5_pleasure_v2",
@@ -5509,7 +5509,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "crabbe/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/2d/6_pain_v2",
@@ -5526,7 +5526,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "crabbe/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/yule/1_neutral_v3",
@@ -5542,7 +5542,7 @@
         "notes": "Bottle-green velvet, stand collar, silver buttons, structured shoulders and box pleats.",
         "referenceReview": "crabbe/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/dance/1_scene_v2",
@@ -5558,7 +5558,7 @@
         "notes": "Laughs during a turn under the player's joined hand. Same velvet gown, collar, buttons and short wavy bob.",
         "referenceReview": "crabbe/yule/1_neutral_v3"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "crabbe/together/1_scene_v2",
@@ -5574,7 +5574,7 @@
         "notes": "Slides a treacle tart toward the player across the Great Hall table in her school uniform.",
         "referenceReview": "crabbe/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/2d/1_neutral_v2",
@@ -5590,7 +5590,7 @@
         "expression": "steady composed gaze",
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set."
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/2d/2_joy_v2",
@@ -5607,7 +5607,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "goyle/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/2d/3_anger_v2",
@@ -5624,7 +5624,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "goyle/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/2d/4_sadness_v2",
@@ -5641,7 +5641,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "goyle/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/2d/5_pleasure_v2",
@@ -5658,7 +5658,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "goyle/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/2d/6_pain_v2",
@@ -5675,7 +5675,7 @@
         "notes": "Matched uniform, hair silhouette and sprite registration across the expression set.",
         "referenceReview": "goyle/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/yule/1_neutral_v2",
@@ -5691,7 +5691,7 @@
         "notes": "Pewter-blue satin, long sleeves, vertical drape and a small silver shoulder clasp.",
         "referenceReview": "goyle/2d/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/dance/1_scene_v2",
@@ -5707,7 +5707,7 @@
         "notes": "Takes a waltz step in the player's hold with a small smile, same silver-blue dress and very long loose hair.",
         "referenceReview": "goyle/yule/1_neutral_v2"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/together/1_scene_v2",
@@ -5722,6 +5722,304 @@
         "verdict": "일치",
         "notes": "Sits beside the player on a courtyard bench, in her school uniform, with a book in her lap.",
         "referenceReview": "goyle/2d/1_neutral_v2"
+      },
+      "active": false
+    },
+    {
+      "key": "crabbe/2d/1_neutral_v3",
+      "target": "sd_samples/characters/hogwarts/crabbe/2d/1_neutral_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "e7c15137d28e20cf4905f5301025e84be20ee964078133c8c2699eeeae2301f7",
+      "review": {
+        "key": "crabbe/2d/1_neutral_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "expression": "sidelong smirk",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference."
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/2d/2_joy_v3",
+      "target": "sd_samples/characters/hogwarts/crabbe/2d/2_joy_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "115efff2335a70d98541110ce92cef0224caa7bb2fa01023f16135ac03a8b8d8",
+      "review": {
+        "key": "crabbe/2d/2_joy_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "expression": "lopsided laugh",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/2d/3_anger_v3",
+      "target": "sd_samples/characters/hogwarts/crabbe/2d/3_anger_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "2735c316a3a0224cb4e9f56ee40a42ea337acb5bf610e1b17a434879195cf685",
+      "review": {
+        "key": "crabbe/2d/3_anger_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "expression": "sharp frown",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/2d/4_sadness_v3",
+      "target": "sd_samples/characters/hogwarts/crabbe/2d/4_sadness_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "ffaa289c979d48f60be6066c5d1c32c1c855ba91e005b9a189dbe9be022abad1",
+      "review": {
+        "key": "crabbe/2d/4_sadness_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "expression": "downcast and disappointed",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/2d/5_pleasure_v3",
+      "target": "sd_samples/characters/hogwarts/crabbe/2d/5_pleasure_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "d2991d38763dd4ac161360cab684060b213015b33bd28569208a90e5a0a73c4a",
+      "review": {
+        "key": "crabbe/2d/5_pleasure_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "expression": "satisfied crooked smile",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/2d/6_pain_v3",
+      "target": "sd_samples/characters/hogwarts/crabbe/2d/6_pain_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "81d3d3eeebdcb3edb6495f6ee3a654ab59a4d52c8329a069a7940a45c173fa39",
+      "review": {
+        "key": "crabbe/2d/6_pain_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "expression": "brief wince",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/yule/1_neutral_v4",
+      "target": "sd_samples/characters/hogwarts/crabbe/outfits/yule/1_neutral_v4.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "82126b4eb942fcc15a870e39072e18a8c8baffd5334f60609c3826a8e41bbd8c",
+      "review": {
+        "key": "crabbe/yule/1_neutral_v4",
+        "framing": "1024×1536 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "notes": "Bottle-green velvet, stand collar, silver buttons, structured shoulders and box pleats. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/dance/1_scene_v3",
+      "target": "sd_samples/cg/hogwarts/crabbe/dance_v3.webp",
+      "width": 981,
+      "height": 1602,
+      "sha256": "c33992ba63433e4d78f209db923a3615d89369971939882924f98d82da571428",
+      "review": {
+        "key": "crabbe/dance/1_scene_v3",
+        "framing": "981×1602 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "notes": "Laughs during a turn under the player's joined hand. Same velvet gown, collar, buttons and short wavy bob. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/yule/1_neutral_v4"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/together/1_scene_v3",
+      "target": "sd_samples/cg/hogwarts/crabbe/together_v3.webp",
+      "width": 981,
+      "height": 1602,
+      "sha256": "74911a465d91fea4b5d680203f0c0b3515b845c95792487decdc113c55f003e1",
+      "review": {
+        "key": "crabbe/together/1_scene_v3",
+        "framing": "981×1602 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "notes": "Slides a treacle tart toward the player across the Great Hall table in her school uniform. Face revised to match the supplied identity reference.",
+        "referenceReview": "crabbe/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/2d/1_neutral_v3",
+      "target": "sd_samples/characters/hogwarts/goyle/2d/1_neutral_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "8cdbb30378117249514c7b857f7b861ed2fd06afa3cae1afc879df3b892eb8b3",
+      "review": {
+        "key": "goyle/2d/1_neutral_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "expression": "steady composed gaze",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference."
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/2d/2_joy_v3",
+      "target": "sd_samples/characters/hogwarts/goyle/2d/2_joy_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "7c560f31d04404c5526fc21235bf4bc78a1cf6cd89a84d8568d299057f041b44",
+      "review": {
+        "key": "goyle/2d/2_joy_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "expression": "small closed-mouth smile",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/2d/3_anger_v3",
+      "target": "sd_samples/characters/hogwarts/goyle/2d/3_anger_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "dfe6ea88102d52374502e9cb5a21c7559ebea8ae19498fe8524b2e49ace51d1a",
+      "review": {
+        "key": "goyle/2d/3_anger_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "expression": "controlled glare",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/2d/4_sadness_v3",
+      "target": "sd_samples/characters/hogwarts/goyle/2d/4_sadness_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "b25b6a1d0cea2441ea5abc2ab66af82322af1e7f38b0351d4254681d2bb27b70",
+      "review": {
+        "key": "goyle/2d/4_sadness_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "expression": "downcast eyes",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/2d/5_pleasure_v3",
+      "target": "sd_samples/characters/hogwarts/goyle/2d/5_pleasure_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "c0c11aa2c243686dac9b24c748ebd8c10ff5f4f3309e986bb845e45536ca0437",
+      "review": {
+        "key": "goyle/2d/5_pleasure_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "expression": "relieved half-smile",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/2d/6_pain_v3",
+      "target": "sd_samples/characters/hogwarts/goyle/2d/6_pain_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "7f648336600bd7cef994ec0c07da48cbe7daf6e1a74865f3dd85b0ec949000f0",
+      "review": {
+        "key": "goyle/2d/6_pain_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "expression": "brief wince",
+        "notes": "Matched uniform, hair silhouette and sprite registration across the expression set. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/yule/1_neutral_v3",
+      "target": "sd_samples/characters/hogwarts/goyle/outfits/yule/1_neutral_v3.webp",
+      "width": 1024,
+      "height": 1536,
+      "sha256": "385a3efba0a67dea704d82cb5c55cc62a8b0d1262126d09bc1a1d817bde17cfe",
+      "review": {
+        "key": "goyle/yule/1_neutral_v3",
+        "framing": "1024×1536 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "notes": "Pewter-blue satin, long sleeves, vertical drape and a small silver shoulder clasp. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/2d/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/dance/1_scene_v3",
+      "target": "sd_samples/cg/hogwarts/goyle/dance_v3.webp",
+      "width": 941,
+      "height": 1672,
+      "sha256": "12903978f15744e8d42ee7205ee1875a39a63d734a5f60abffaaf0f3063b05a3",
+      "review": {
+        "key": "goyle/dance/1_scene_v3",
+        "framing": "941×1672 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "notes": "Takes a waltz step in the player's hold with a small smile, same silver-blue dress and very long loose hair. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/yule/1_neutral_v3"
+      },
+      "active": true
+    },
+    {
+      "key": "goyle/together/1_scene_v3",
+      "target": "sd_samples/cg/hogwarts/goyle/together_v3.webp",
+      "width": 981,
+      "height": 1602,
+      "sha256": "40cb53a5c7137efdfcb2c6334ceca427121133c055d6a2bec6774c9be86db0ba",
+      "review": {
+        "key": "goyle/together/1_scene_v3",
+        "framing": "981×1602 portrait",
+        "hairShape": "very long loose center-parted black hair",
+        "verdict": "일치",
+        "notes": "Sits beside the player on a courtyard bench, in her school uniform, with a book in her lap. Face revised to match the supplied identity reference.",
+        "referenceReview": "goyle/2d/1_neutral_v3"
       },
       "active": true
     }
