@@ -177,19 +177,30 @@ const portraitBackgrounds=new Set(Object.values(pack.customBgs).map(entry=>entry
 const portraits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.emoImgs||{})));
 assert.equal(backgrounds.size,92);
 assert.equal(portraitBackgrounds.size,92);
-assert.equal(portraits.size,254);
+assert.equal(portraits.size,258);
 const outfits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.outfits||{}).flatMap(Object.values)));
 const eventCGs=new Set(Object.values(pack.eventCGs).map(entry=>entry.url));
-assert.equal(outfits.size,36);
-assert.equal(eventCGs.size,76);
+assert.equal(outfits.size,37);
+assert.equal(eventCGs.size,79);
 for(const entry of Object.values(pack.eventCGs)) assert.equal(typeof entry.setting,'string');
-const danceStudents='alicia angelina cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta millicent padma pansy parvati penelope susan'.split(' ');
-assert.equal(Object.keys(pack.eventCGs).filter(key=>key.endsWith('/dance')).length,21);
+const danceStudents='alicia angelina cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta millicent padma pansy parvati penelope romilda susan'.split(' ');
+assert.equal(Object.keys(pack.eventCGs).filter(key=>key.endsWith('/dance')).length,danceStudents.length);
 for(const id of danceStudents){
   assert.equal(pack.eventCGs[id+'/dance'].outfit,'yule',id);
   assert.equal(pack.eventCGs[id+'/dance'].portrait,pack.characters[id].img,id);
 }
 assert(pack.eventCGs['hermione/dance']&&pack.eventCGs['ron/flying']);
+const ron=pack.characters.ron;
+assert(Object.values(ron.emoImgs).every(url=>url.endsWith('_v6.webp')));
+assert.equal(pack.eventCGs['ron/flying'].portrait,ron.img);
+assert.equal(pack.eventCGs['ron/flying'].url,'sd_samples/cg/hogwarts/ron/flying_v2.webp');
+for(const id of ['romilda','alecto']){
+  const card=pack.characters[id];
+  assert.equal(card.img,card.emoImgs.normal);
+  assert.notEqual(card.emoImgs.smile,card.img,id);
+  assert.equal(pack.eventCGs[id+'/together'].portrait,card.img,id);
+  assert.equal(pack.eventCGs[id+'/together'].outfit,'default',id);
+}
 for (const [key, entry] of Object.entries(pack.customBgs)) {
   assert.equal(entry.portraitUrl, entry.url.replace(/\.webp$/, '_portrait.webp'), key);
 }
@@ -200,11 +211,11 @@ for (const url of [...backgrounds,...portraitBackgrounds,...portraits,...outfits
   assert.equal(bytes.toString('ascii',8,12),'WEBP',url);
 }
 assert(!pack.characters.fred.emoImgs.angry);
-assert.equal(Object.values(pack.characters).filter(card=>card.img).length,80);
+assert.equal(Object.values(pack.characters).filter(card=>card.img).length,82);
 const generated=JSON.parse(fs.readFileSync(path.join(__dirname,'docs/hogwarts-occasions-assets.json'),'utf8'));
-assert.equal(generated.assets.length,137);
-assert.equal(new Set(generated.assets.map(a=>a.target)).size,137);
-assert.equal(generated.assets.filter(a=>a.active).length,132);
+assert.equal(generated.assets.length,154);
+assert.equal(new Set(generated.assets.map(a=>a.target)).size,154);
+assert.equal(generated.assets.filter(a=>a.active).length,146);
 for(const asset of generated.assets){
   const bytes=fs.readFileSync(path.join(__dirname,asset.target));
   assert.equal(require('node:crypto').createHash('sha256').update(bytes).digest('hex'),asset.sha256,asset.key);

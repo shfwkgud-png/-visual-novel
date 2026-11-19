@@ -1087,7 +1087,7 @@ async function hogwartsArtCheck(ctx) {
     assert.deepEqual(scene.filters, ['blur(6px) brightness(0.78)', 'blur(6px) brightness(0.78)']);
     assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v4.webp')));
-    assert.ok(scene.art.some(([id,src]) => id === 'sprite_ron' && src.endsWith('/4_sadness_v2.webp')));
+    assert.ok(scene.art.some(([id,src]) => id === 'sprite_ron' && src.endsWith('/4_sadness_v6.webp')));
     await page.screenshot({ path: path.join(ARTIFACTS, 'hogwarts-opening-' + (ctx.mobile ? 'mobile' : 'desktop') + '.png') });
     const houseScenes = await page.evaluate(async () => {
       const previous = gameState.hogwarts.house;
@@ -1389,16 +1389,17 @@ async function hogwartsLooksCheck(ctx){
         gameHistory.push({role:'assistant',content:JSON.stringify(reply)});
         processResponse(reply,(reply.dialogue||[]).map(d=>d.char_id));
       };
-      window._looksRespond({background:'ballroom',dialogue:['hermione','parvati','padma','cho'].map(id=>({
+      window._looksRespond({background:'ballroom',dialogue:['hermione','parvati','padma','cho','ron'].map(id=>({
         char_id:id,speaker:CHARACTERS[id].name,emotion:'angry',text:CHARACTERS[id].name+'의 무도회 대사.'
       }))});
     });
     await drainDialogue(page);
-    const recorded=await page.evaluate(()=>['hermione','parvati','padma','cho'].map(id=>{
+    const recorded=await page.evaluate(()=>['hermione','parvati','padma','cho','ron'].map(id=>{
       const row=dialogueLog.findLast(d=>d.char_id===id&&d.text.endsWith('의 무도회 대사.'));
       return {id,outfit:row?.looks?.[id],sprite:PandoraHogwartsLooks.sprite(CHARACTERS[id],'angry',row?.looks?.[id])};
     }));
     for(const row of recorded){assert.equal(row.outfit,'yule');assert.match(row.sprite,new RegExp('/'+row.id+'/outfits/yule/'));}
+    assert.match(recorded.find(row=>row.id==='ron').sprite,/ron\/outfits\/yule\/1_neutral_v2\.webp$/);
     await page.evaluate(()=>{
       historyBack();
       while(historyPos>0&&dialogueLog[historyPos].char_id!=='hermione')historyBack();
@@ -1475,16 +1476,19 @@ async function hogwartsLooksCheck(ctx){
     });
     await drainDialogue(page);
     await page.waitForFunction(()=>document.getElementById('eventCG').naturalWidth>0&&currentCG==='ron/flying');
-    assert.match(await page.locator('#sprite_ron').getAttribute('src'),/ron\/outfits\/quidditch\//);
+    assert.match(await page.locator('#sprite_ron').getAttribute('src'),/ron\/outfits\/quidditch\/1_neutral_v2\.webp$/);
     assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/hermione\/2d\//);
     assert.equal(await page.evaluate(()=>dialogueLog.findLast(d=>d.char_id==='ron').cg),'ron/flying');
+    assert.match(await page.locator('#eventCG').getAttribute('src'),/ron\/flying_v2\.webp$/);
+    await page.waitForFunction(()=>getComputedStyle(document.getElementById('eventCG')).opacity==='1');
     await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-flight-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
   });
-  await check(ctx,'Hogwarts Malfoy, Crabbe, Lavender and Luna use their individual dance CG and matching gown',async()=>{
-    for(const id of ['malfoy','crabbe','lavender','luna']){
+  await check(ctx,'Hogwarts Malfoy, Crabbe, Lavender, Luna and Romilda use their individual dance CG and matching gown',async()=>{
+    for(const id of ['malfoy','crabbe','lavender','luna','romilda']){
       await page.evaluate(id=>{
         const text={malfoy:'발은 밟지 마. 이번 곡은 내가 고를 테니까.',crabbe:'천천히 시작하자. 박자는 맞출 수 있어.',
-          lavender:'이 음악 좋지? 한 바퀴 더 돌자!',luna:'발이 가는 대로 가 봐. 음악도 길을 찾을 거야.'}[id];
+          lavender:'이 음악 좋지? 한 바퀴 더 돌자!',luna:'발이 가는 대로 가 봐. 음악도 길을 찾을 거야.',
+          romilda:'자, 이번엔 내가 돌게. 손 들어 봐!'}[id];
         const reply={background:'ballroom',cg:id+'/dance',narration:'',state_update:null,
           choices:['(음악에 맞춰 춤을 춘다)','(천천히 이야기를 나눈다)'],
           visuals:{outfits:{[id]:'yule'},cgPartner:'player',cgConsent:'mutual'},
@@ -1502,7 +1506,7 @@ async function hogwartsLooksCheck(ctx){
       assert.equal(await page.locator('#sprite_'+id).getAttribute('src'),gown);
       if(id==='crabbe'||id==='lavender')assert.match(gown,/1_neutral_v2\.webp$/);
       assert.equal(await page.evaluate(()=>dialogueLog.findLast(d=>!d.isPlayer).cg),id+'/dance');
-      if(id==='malfoy'||id==='lavender')
+      if(id==='malfoy'||id==='lavender'||id==='romilda')
         await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-'+id+'-dance-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
     }
   });
