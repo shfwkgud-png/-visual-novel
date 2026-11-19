@@ -193,6 +193,7 @@ window.PANDORA_HOGWARTS_ART = {
 
 // Portrait occasion assets (reviewed outputs only).
 Object.assign(window.PANDORA_HOGWARTS_ART.sprites, {
+  "alecto": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
   "augusta": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
   "bathilda": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
   "charity": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
@@ -201,6 +202,8 @@ Object.assign(window.PANDORA_HOGWARTS_ART.sprites, {
   "marge": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
   "mary_cattermole": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
   "petunia": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
+  "romilda": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
+  "ron": {"normal":"1_neutral_v6","smile":"2_joy_v6","angry":"3_anger_v6","sad":"4_sadness_v6","pleasure":"5_pleasure_v6","pain":"6_pain_v6"},
   "sinistra": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
   "vector": {"normal":"1_neutral_v1","smile":"2_joy_v1"},
 });
@@ -212,7 +215,8 @@ window.PANDORA_HOGWARTS_ART.outfits = {
   "crabbe": {"yule":{"normal":"sd_samples/characters/hogwarts/crabbe/outfits/yule/1_neutral_v2.webp"}},
   "daphne": {"yule":{"normal":"sd_samples/characters/hogwarts/daphne/outfits/yule/1_neutral_v1.webp"}},
   "fleur": {"yule":{"normal":"sd_samples/characters/hogwarts/fleur/outfits/yule/1_neutral_v1.webp"}},
-  "fred": {"quidditch":{"normal":"sd_samples/characters/hogwarts/fred/outfits/quidditch/1_neutral_v1.webp"}},
+  "fred": {"quidditch":{"normal":"sd_samples/characters/hogwarts/fred/outfits/quidditch/1_neutral_v1.webp"},"yule":{"normal":"sd_samples/characters/hogwarts/fred/outfits/yule/1_neutral_v1.webp"}},
+  "george": {"quidditch":{"normal":"sd_samples/characters/hogwarts/george/outfits/quidditch/1_neutral_v1.webp"}},
   "ginny": {"quidditch":{"normal":"sd_samples/characters/hogwarts/ginny/outfits/quidditch/1_neutral_v1.webp"},"yule":{"normal":"sd_samples/characters/hogwarts/ginny/outfits/yule/1_neutral_v1.webp"}},
   "goyle": {"yule":{"normal":"sd_samples/characters/hogwarts/goyle/outfits/yule/1_neutral_v1.webp"}},
   "hannah": {"yule":{"normal":"sd_samples/characters/hogwarts/hannah/outfits/yule/1_neutral_v1.webp"}},
@@ -229,11 +233,13 @@ window.PANDORA_HOGWARTS_ART.outfits = {
   "pansy": {"yule":{"normal":"sd_samples/characters/hogwarts/pansy/outfits/yule/1_neutral_v1.webp"}},
   "parvati": {"yule":{"normal":"sd_samples/characters/hogwarts/parvati/outfits/yule/1_neutral_v1.webp"}},
   "penelope": {"yule":{"normal":"sd_samples/characters/hogwarts/penelope/outfits/yule/1_neutral_v1.webp"}},
-  "ron": {"quidditch":{"normal":"sd_samples/characters/hogwarts/ron/outfits/quidditch/1_neutral_v1.webp"},"yule":{"normal":"sd_samples/characters/hogwarts/ron/outfits/yule/1_neutral_v1.webp"}},
+  "romilda": {"yule":{"normal":"sd_samples/characters/hogwarts/romilda/outfits/yule/1_neutral_v1.webp"}},
+  "ron": {"quidditch":{"normal":"sd_samples/characters/hogwarts/ron/outfits/quidditch/1_neutral_v2.webp"},"yule":{"normal":"sd_samples/characters/hogwarts/ron/outfits/yule/1_neutral_v2.webp"}},
   "susan": {"yule":{"normal":"sd_samples/characters/hogwarts/susan/outfits/yule/1_neutral_v1.webp"}},
   "wood": {"quidditch":{"normal":"sd_samples/characters/hogwarts/wood/outfits/quidditch/1_neutral_v1.webp"}},
 };
 window.PANDORA_HOGWARTS_ART.eventCGs = {
+  "alecto/together": {"actor":"alecto","portrait":"sd_samples/characters/hogwarts/alecto/2d/1_neutral_v1.webp","outfit":"default","kind":"romance","setting":"a quiet stone sitting room over tea","url":"sd_samples/cg/hogwarts/alecto/together_v1.webp"},
   "alicia/dance": {"actor":"alicia","portrait":"sd_samples/characters/hogwarts/alicia/2d/1_neutral.webp","outfit":"yule","kind":"romance","setting":"winter ballroom","url":"sd_samples/cg/hogwarts/alicia/dance_v1.webp"},
   "alicia/flying": {"actor":"alicia","portrait":"sd_samples/characters/hogwarts/alicia/2d/1_neutral.webp","outfit":"quidditch","kind":"flying","setting":"Quidditch pitch in flight","url":"sd_samples/cg/hogwarts/alicia/flying_v1.webp"},
   "alicia/together": {"actor":"alicia","portrait":"sd_samples/characters/hogwarts/alicia/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a quiet wooden stand beside the Quidditch pitch at sunset after watching practice","url":"sd_samples/cg/hogwarts/alicia/together_v1.webp"},
@@ -257,6 +263,7 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
   "fleur/dance": {"actor":"fleur","portrait":"sd_samples/characters/hogwarts/fleur/2d/1_neutral.webp","outfit":"yule","kind":"romance","setting":"winter ballroom","url":"sd_samples/cg/hogwarts/fleur/dance_v1.webp"},
   "fleur/together": {"actor":"fleur","portrait":"sd_samples/characters/hogwarts/fleur/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a sheltered Hogwarts courtyard with soft evening lanterns","url":"sd_samples/cg/hogwarts/fleur/together_v1.webp"},
   "fred/flying": {"actor":"fred","portrait":"sd_samples/characters/hogwarts/fred/2d/1_neutral.webp","outfit":"quidditch","kind":"flying","setting":"Quidditch pitch in flight","url":"sd_samples/cg/hogwarts/fred/flying_v1.webp"},
+  "george/flying": {"actor":"george","portrait":"sd_samples/characters/hogwarts/george/2d/1_neutral.webp","outfit":"quidditch","kind":"flying","setting":"Quidditch pitch in flight","url":"sd_samples/cg/hogwarts/george/flying_v1.webp"},
   "ginny/dance": {"actor":"ginny","portrait":"sd_samples/characters/hogwarts/ginny/2d/1_neutral.webp","outfit":"yule","kind":"romance","setting":"winter ballroom","url":"sd_samples/cg/hogwarts/ginny/dance_v1.webp"},
   "ginny/flying": {"actor":"ginny","portrait":"sd_samples/characters/hogwarts/ginny/2d/1_neutral.webp","outfit":"quidditch","kind":"flying","setting":"Quidditch pitch in flight","url":"sd_samples/cg/hogwarts/ginny/flying_v1.webp"},
   "ginny/together": {"actor":"ginny","portrait":"sd_samples/characters/hogwarts/ginny/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a breezy Hogwarts courtyard after a pleasant walk","url":"sd_samples/cg/hogwarts/ginny/together_v1.webp"},
@@ -265,6 +272,7 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
   "hannah/dance": {"actor":"hannah","portrait":"sd_samples/characters/hogwarts/hannah/2d/1_neutral.webp","outfit":"yule","kind":"romance","setting":"winter ballroom","url":"sd_samples/cg/hogwarts/hannah/dance_v1.webp"},
   "hannah/together": {"actor":"hannah","portrait":"sd_samples/characters/hogwarts/hannah/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a sunny greenhouse doorway beside harmless potted flowers","url":"sd_samples/cg/hogwarts/hannah/together_v1.webp"},
   "hermione/dance": {"actor":"hermione","portrait":"sd_samples/characters/hogwarts/hermione/2d/1_neutral_v2.webp","outfit":"yule","kind":"romance","setting":"winter ballroom","url":"sd_samples/cg/hogwarts/hermione/dance_v1.webp"},
+  "hermione/together": {"actor":"hermione","portrait":"sd_samples/characters/hogwarts/hermione/2d/1_neutral_v2.webp","outfit":"default","kind":"romance","setting":"a window table in the library with an open notebook","url":"sd_samples/cg/hogwarts/hermione/together_v1.webp"},
   "hestia/together": {"actor":"hestia","portrait":"sd_samples/characters/hogwarts/hestia/2d/1_neutral_v1.webp","outfit":"default","kind":"romance","setting":"a sheltered evening garden doorway","url":"sd_samples/cg/hogwarts/hestia/together_v1.webp"},
   "hooch/together": {"actor":"hooch","portrait":"sd_samples/characters/hogwarts/hooch/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a quiet pitch-side bench after flying practice","url":"sd_samples/cg/hogwarts/hooch/together_v1.webp"},
   "katie/dance": {"actor":"katie","portrait":"sd_samples/characters/hogwarts/katie/2d/1_neutral.webp","outfit":"yule","kind":"romance","setting":"winter ballroom","url":"sd_samples/cg/hogwarts/katie/dance_v1.webp"},
@@ -299,7 +307,9 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
   "petunia/together": {"actor":"petunia","portrait":"sd_samples/characters/hogwarts/petunia/2d/1_neutral_v1.webp","outfit":"default","kind":"romance","setting":"a neat sunny rose garden beside a modest house","url":"sd_samples/cg/hogwarts/petunia/together_v1.webp"},
   "pomfrey/together": {"actor":"pomfrey","portrait":"sd_samples/characters/hogwarts/pomfrey/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a quiet Hogwarts garden bench after work","url":"sd_samples/cg/hogwarts/pomfrey/together_v1.webp"},
   "rita/together": {"actor":"rita","portrait":"sd_samples/characters/hogwarts/rita/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a quiet cafe booth","url":"sd_samples/cg/hogwarts/rita/together_v1.webp"},
-  "ron/flying": {"actor":"ron","portrait":"sd_samples/characters/hogwarts/ron/2d/1_neutral_v2.webp","outfit":"quidditch","kind":"flying","setting":"Quidditch pitch in flight","url":"sd_samples/cg/hogwarts/ron/flying_v1.webp"},
+  "romilda/dance": {"actor":"romilda","portrait":"sd_samples/characters/hogwarts/romilda/2d/1_neutral_v1.webp","outfit":"yule","kind":"romance","setting":"winter ballroom","url":"sd_samples/cg/hogwarts/romilda/dance_v1.webp"},
+  "romilda/together": {"actor":"romilda","portrait":"sd_samples/characters/hogwarts/romilda/2d/1_neutral_v1.webp","outfit":"default","kind":"romance","setting":"a Hogsmeade café table by an afternoon window","url":"sd_samples/cg/hogwarts/romilda/together_v1.webp"},
+  "ron/flying": {"actor":"ron","portrait":"sd_samples/characters/hogwarts/ron/2d/1_neutral_v6.webp","outfit":"quidditch","kind":"flying","setting":"Quidditch pitch in flight","url":"sd_samples/cg/hogwarts/ron/flying_v2.webp"},
   "rosmerta/together": {"actor":"rosmerta","portrait":"sd_samples/characters/hogwarts/rosmerta/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a peaceful Three Broomsticks table in warm window light","url":"sd_samples/cg/hogwarts/rosmerta/together_v1.webp"},
   "sinistra/together": {"actor":"sinistra","portrait":"sd_samples/characters/hogwarts/sinistra/2d/1_neutral_v1.webp","outfit":"default","kind":"romance","setting":"an astronomy balcony at early night","url":"sd_samples/cg/hogwarts/sinistra/together_v1.webp"},
   "sprout/together": {"actor":"sprout","portrait":"sd_samples/characters/hogwarts/sprout/2d/1_neutral.webp","outfit":"default","kind":"romance","setting":"a bright harmless Hogwarts greenhouse","url":"sd_samples/cg/hogwarts/sprout/together_v1.webp"},
