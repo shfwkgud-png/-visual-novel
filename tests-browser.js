@@ -1282,8 +1282,7 @@ async function hogwartsArtCheck(ctx) {
     await page.evaluate(()=>{setBg('corridor');setBg('great_hall');});
     await page.waitForTimeout(1200);
     const bg=await page.evaluate(()=>({
-      key:currentBgFile,actual:bgLayer.style.backgroundImage,
-      fading:_bgFading,revision:_bgTransitionRevision
+      key:currentBgFile,actual:bgLayer.style.backgroundImage
     }));
     assert.equal(bg.key,'great_hall','scene state must retain final destination');
     assert.match(bg.actual,/great_hall_portrait\.webp/,
@@ -1302,6 +1301,54 @@ async function hogwartsArtCheck(ctx) {
     await flushLocalSave(page);
     assert.equal(await page.evaluate(() => JSON.parse(bulkGet(saveKeyFor(STORY.id))).gameState.hogwarts.date),
       '1991-09-04');
+  });
+}
+
+async function hogwartsSlotBackgroundCheck(ctx) {
+  const {page, context} = ctx;
+  await check(ctx, 'Hogwarts slot one restores its recorded room and preserves the slot', async () => {
+    const raw = await page.evaluate(() => {
+      const save = JSON.parse(JSON.stringify(currentSavePayload()));
+      const room = 'slytherin_common_room';
+      save.gameState.hogwarts.house = '슬리데린';
+      save.gameState.hogwarts.scene.lastLocation = 'corridor';
+      save.gameState.hogwarts.visuals = {version:1, background:room, outfits:{}, cg:null};
+      save.lastBg = room;
+      save.gameHistory = [{role:'assistant', content:JSON.stringify({
+        background:'unregistered_room', narration:'자리에 앉는다.', dialogue:[], choices:['주위를 살핀다']
+      })}];
+      const raw = JSON.stringify(save);
+      if (!bulkSetSilent(slotKey(1), raw)) throw new Error('Test slot could not be saved');
+      setBgFile('great_hall');
+      toggleSlots();
+      return raw;
+    });
+    await page.locator('#slotList .slot-item').first().getByRole('button',{name:'불러오기', exact:true}).click();
+    await page.waitForFunction(() => currentBgFile==='slytherin_common_room' &&
+      bgLayer.style.backgroundImage.includes('/slytherin_common_room_portrait.webp'), null, {timeout:4500});
+    await drainDialogue(page);
+    assert.deepEqual(await page.evaluate(() => [lastBg,gameState.hogwarts.scene.lastLocation,bulkGet(slotKey(1))]),
+      ['slytherin_common_room','corridor',raw]);
+  });
+
+  await check(ctx, 'Hogwarts falls back to the same location when a portrait background fails', async () => {
+    const portrait = '**/sd_samples/backgrounds/hogwarts/library_portrait.webp';
+    const abort = route => route.abort('failed');
+    await context.route(portrait, abort);
+    try {
+      await page.evaluate(() => setBg('library'));
+      await page.waitForFunction(() => currentBgFile==='library' &&
+        bgLayer.style.backgroundImage.includes('/library.webp'), null, {timeout:4500});
+    } finally { await context.unroute(portrait, abort); }
+  });
+  await check(ctx, 'Hogwarts loads the corrected Crabbe dessert illustration', async () => {
+    await page.evaluate(() => showEventCG('crabbe/together'));
+    await page.waitForFunction(() => {
+      const image = document.getElementById('eventCG');
+      return image.complete && image.naturalWidth > 0 &&
+        image.getAttribute('src')==='sd_samples/cg/hogwarts/crabbe/together_v5.webp';
+    }, null, {timeout:4500});
+    await page.evaluate(() => hideEventCG());
   });
 }
 
@@ -1571,7 +1618,7 @@ async function hogwartsLooksCheck(ctx){
       const hogwartsCtx = await createFixturePage(origin, mobile, {
         freeMode: true, integrated: true, reply: hogwartsArtReply, capturePrompts: true
       });
-      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); await appUpdateChecks(hogwartsCtx); }
+      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); await appUpdateChecks(hogwartsCtx); await hogwartsSlotBackgroundCheck(hogwartsCtx); }
       finally { await hogwartsCtx.context.close(); }
       const hogwartsRPCtx=await createFixturePage(origin,mobile,{freeMode:true,reply:hogwartsArtReply,capturePrompts:true});
       try{await hogwartsRPCheck(hogwartsRPCtx);}

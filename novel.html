@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866">
+<meta name="pandora-build" content="11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=eaf3c76fcfb17d4069c7658cefcec12a8fd717675e34e47d758113025b250866"></script>
+<script src="pandora-consistency.js?v=369&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -11884,7 +11884,17 @@ function restoreAndReplayInner(save, checkTimeflow) {
     window._timeSkipNote = humanGap(Date.now() - save.savedAt);
   }
   updateStatusUI();
-  if (lastBg) setBg(lastBg);
+  const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
+  let savedReply = null;
+  try { if (lastAssistant) savedReply = JSON.parse(lastAssistant.content); } catch {}
+  if (STORY.id === 'hogwarts') {
+    const hp = gameState.hogwarts;
+    const recent = [...dialogueLog].reverse().find(line => hasStoryBackground(line?.bgFile));
+    lastBg = [hp?.visuals?.background, lastBg, recent?.bgFile, savedReply?.background,
+      hp?.scene?.lastLocation, STORY.startBg].find(hasStoryBackground) || null;
+    hideEventCG();
+    if (lastBg) setBgFile(lastBg);  // Saved artwork is display state, so restoring it does not request travel.
+  } else if (lastBg) setBg(lastBg);
   // ★이어하기 BGM 복원(2026-07-23 유저 "음악 안 나옴"): setMood는 새로하기(beginStory)에만 있고
   //   이어하기엔 없어 curCat=null → 모델이 mood를 다시 보낼 때까지 무음(프롬프트가 "유지 시 null"이라 장기 무음).
   //   히스토리에서 마지막 기록된 mood를 역스캔해 복원(없으면 calm). 자동재생 차단 시 첫 터치에서 재시도됨.
@@ -11894,10 +11904,8 @@ function restoreAndReplayInner(save, checkTimeflow) {
     try { const _md = JSON.parse(gameHistory[_mi].content).mood; if (_md) { _lastMood = _md; break; } } catch {}
   }
   Ambient.setMood(_lastMood);
-  const lastAssistant = [...gameHistory].reverse().find(h => h.role === 'assistant');
-  if (lastAssistant) {
+  if (savedReply) {
     try {
-      const data = JSON.parse(lastAssistant.content);
       const chars = detectActiveChars(gameHistory.slice(-6));
       // 연속 고정 장면 사이에는 입력 기록이 없으므로 저장된 대사를 그대로 둔다.
       try {
@@ -11908,7 +11916,8 @@ function restoreAndReplayInner(save, checkTimeflow) {
         }
       } catch {}
       replaying = true;
-      processResponse({ ...data, state_update: null }, chars);
+      processResponse({ ...savedReply, state_update: null,
+        background: STORY.id === 'hogwarts' && lastBg ? null : savedReply.background }, chars);
     } catch {
       replaying = false; window._replayFill = false;
       enterInputMode();
@@ -14121,10 +14130,7 @@ function processResponse(data, activeCharIds, streamed, stateOnly, source) {
   // NOTE: do NOT force historyMode=false here — if the player is browsing
   // history when the response lands, we defer playing it (see end of fn).
 
-  if (data.background) {
-    lastBg = data.background;
-    setBg(data.background);
-  }
+  if (data.background) setBg(data.background);
   if(STORY.id==='hogwarts'&&window.PandoraHogwartsLooks) syncHogwartsLooks(data,activeCharIds);
   else {
     if (data.cg) showEventCG(data.cg); else hideEventCG();
@@ -15991,7 +15997,11 @@ function idolBgTierKey(key) {
   const lv = (d.fac && d.fac[Object.keys(IDOL_SIM.FACILITY).find(k => IDOL_SIM.FACILITY[k].bg === key)]) || 0;
   return lv > 0 ? key + (lv + 1) : key;
 }
-function bgUrlFor(key) {
+function hasStoryBackground(key) {
+  return typeof key === 'string' && (Object.prototype.hasOwnProperty.call(STORY.customBgs || {}, key) ||
+    STORY_BG_FILES[STORY.id]?.includes(key));
+}
+function bgUrlFor(key, portrait = true) {
   if (STORY.id === 'hogwarts' && (key === 'dormitory' || key === 'common_room')) {
     const houses = { 그리핀도르: 'gryffindor', 슬리데린: 'slytherin', 레번클로: 'ravenclaw', 후플푸프: 'hufflepuff' };
     const house = houses[gameState?.hogwarts?.house];
@@ -16002,49 +16012,56 @@ function bgUrlFor(key) {
     if (tk !== key) return `sd_samples/backgrounds/idol/${tk}.webp`;
   }
   const scene = STORY.customBgs?.[key];
-  if (scene) return scene.portraitUrl || scene.url;
+  if (scene) return (portrait && scene.portraitUrl) || scene.url;
   const sb = STORY_BG_FILES[STORY.id];
   if (sb && sb.includes(key)) return `sd_samples/backgrounds/${STORY.id}/${key}.webp`;
   return `background/${key}.webp`;
 }
 // Crossfade to a new background: paint the B layer, fade it in over the old
 // image, then commit it to the base layer (no hard cuts).
-let _bgFading = false;
+let _bgRequestedUrl = null;
 let _bgTransitionRevision = 0;
-function crossfadeBg(url) {
-  // Previous async loads and 750ms fades must NEVER paint over a newer scene.
-  // This caused state="great_hall" while the visible canvas showed "corridor".
-  const revision=++_bgTransitionRevision;
-  const b = document.getElementById('bgLayerB');
-  if (!b || _bgFading) {   // fallback / re-entrancy: hard set
-    _bgFading=false;
-    bgLayer.style.backgroundImage = `url('${url}')`;
-    if (b) { b.style.transition = 'none'; b.style.opacity = 0; void b.offsetWidth; b.style.transition = ''; }
-    return;
-  }
-  _bgFading=true;
-  const img=new Image();
-  img.onload=()=>{
-    if(revision!==_bgTransitionRevision)return;
-    b.style.backgroundImage=`url('${url}')`;
-    b.style.opacity=1;
-    setTimeout(()=>{
-      if(revision!==_bgTransitionRevision)return;
-      bgLayer.style.backgroundImage=`url('${url}')`;
-      b.style.transition='none';
-      b.style.opacity=0;
-      void b.offsetWidth;
-      b.style.transition='';
-      _bgFading=false;
-    },750);
+function crossfadeBg(url, fallbackUrl) {
+  if (!url || url === _bgRequestedUrl) return;
+  _bgRequestedUrl = url;
+  const revision = ++_bgTransitionRevision;
+  const overlay = document.getElementById('bgLayerB');
+  const resetOverlay = () => {
+    if (!overlay) return;
+    overlay.style.transition = 'none';
+    overlay.style.opacity = 0;
+    void overlay.offsetWidth;
+    overlay.style.transition = '';
   };
-  img.onerror=()=>{
-    if(revision!==_bgTransitionRevision)return;
-    bgLayer.style.backgroundImage=`url('${url}')`;
-    b.style.opacity=0;
-    _bgFading=false;
+  resetOverlay();
+  const img = new Image();
+  let source = url;
+  img.onload = () => {
+    if (revision !== _bgTransitionRevision) return;
+    const background = "url('" + source + "')";
+    if (!overlay || !bgLayer.style.backgroundImage) {
+      bgLayer.style.backgroundImage = background;
+      return;
+    }
+    overlay.style.backgroundImage = background;
+    overlay.style.opacity = 1;
+    setTimeout(() => {
+      if (revision !== _bgTransitionRevision) return;
+      bgLayer.style.backgroundImage = background;
+      resetOverlay();
+    }, 750);
   };
-  img.src=url;
+  img.onerror = () => {
+    if (revision !== _bgTransitionRevision) return;
+    if (fallbackUrl && source !== fallbackUrl) {
+      source = fallbackUrl;
+      img.src = source;
+      return;
+    }
+    // The previous image stays visible. The failed location can be requested again.
+    _bgRequestedUrl = null;
+  };
+  img.src = source;
 }
 // ===== EVENT CG (full-screen NSFW / event illustration) =====
 let currentCG = null;
@@ -16100,21 +16117,18 @@ function setBg(name) {
   }
   const sb = STORY_BG_FILES[STORY.id];
   let key;
-  if ((STORY.customBgs && STORY.customBgs[name]) || (sb && sb.includes(name))) key = name;
+  if (hasStoryBackground(name)) key = name;
   else if (sb) {
     // ★신형 배경이 배선된 스토리는 구배경 폴백 절대 금지(유저 지시) —
     // 무효 키는 무시(현재 배경 유지), 첫 화면이면 startBg로
     if (currentBgFile) return;
-    key = (STORY.startBg && (sb.includes(STORY.startBg) || (STORY.customBgs && STORY.customBgs[STORY.startBg]))) ? STORY.startBg : sb[0];
+    key = hasStoryBackground(STORY.startBg) ? STORY.startBg : sb[0];
   } else key = pickBg(name);
-  if (key === currentBgFile) return;
-  currentBgFile = key;
-  // ★lastBg 동기화(2026-08-18 감사 확증): 전엔 processResponse의 비스트리밍 분기에서만
-  //   `lastBg = data.background`를 했다 — 스트리밍(일반적인 경로)으로 온 턴은 setBg가
-  //   currentBgFile은 바로 바꿔도 저장·복원에 쓰이는 lastBg는 갱신을 안 해, 세이브의 lastBg가
-  //   몇 턴 전 배경에 멈춰 있다가 이어하기·되돌리기 첫 화면에 옛 배경이 잠깐 보일 수 있었다.
+  if (!key) return;
+  const changed = key !== currentBgFile;
   lastBg = key;
-  crossfadeBg(bgUrlFor(key));
+  setBgFile(key);
+  if (!changed) return;
   if (STORY.id==='hogwarts' && window.PandoraHogwartsScenes &&
       PandoraHogwartsScenes.valid(gameState?.hogwarts?.scene) &&
       gameState.hogwarts.scene.phase==='idle')
@@ -16123,14 +16137,10 @@ function setBg(name) {
 }
 // Restore an exact background file (for history scrubbing)
 function setBgFile(file) {
-  if (!file || file === currentBgFile) return;
-  const sb = STORY_BG_FILES[STORY.id];
-  // 구세이브 기록의 구배경 파일도 차단(신형 배선 스토리)
-  if (sb && !sb.includes(file) && !(STORY.customBgs && STORY.customBgs[file])) return;
+  if (!file || (STORY_BG_FILES[STORY.id] && !hasStoryBackground(file))) return;
   currentBgFile = file;
-  crossfadeBg(bgUrlFor(file));
+  crossfadeBg(bgUrlFor(file), bgUrlFor(file, false));
 }
-
 // ===== STATUS UI =====
 let statusTab = 'chars';
 function updateStatusUI() {

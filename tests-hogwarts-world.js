@@ -219,8 +219,8 @@ for (const url of [...backgrounds,...portraitBackgrounds,...portraits,...outfits
 assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,82);
 const generated=JSON.parse(fs.readFileSync(path.join(__dirname,'docs/hogwarts-occasions-assets.json'),'utf8'));
-assert.equal(generated.assets.length,230);
-assert.equal(new Set(generated.assets.map(a=>a.target)).size,230);
+assert.equal(generated.assets.length,231);
+assert.equal(new Set(generated.assets.map(a=>a.target)).size,231);
 const activeGenerated=new Set(generated.assets.filter(a=>a.active).map(a=>a.target));
 assert.equal(activeGenerated.size,180);
 for(const [id,version,count] of [['harry','v5',6],['percy','v2',3],['snape','v3',6],['crabbe','v4',6],['goyle','v4',6]]){
