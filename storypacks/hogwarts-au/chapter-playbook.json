@@ -6730,7 +6730,9 @@
         "fred",
         "angelina",
         "malfoy",
-        "pansy"
+        "pansy",
+        "crabbe",
+        "goyle"
       ],
       "access": "public",
       "exposure": "public_school",

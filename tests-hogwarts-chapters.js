@@ -19,7 +19,7 @@ const catalog=chapters.compile(playbook,bundle);
 const yule=catalog.chapters.find(c=>c.id==='b04c23');
 assert.equal(yule.date,'1994-12-25');
 assert.equal(yule.background,'ballroom');
-for(const id of ['hermione','krum','parvati','padma','cho','cedric','ginny','neville']) assert(yule.actors.includes(id));
+for(const id of ['hermione','krum','parvati','padma','cho','cedric','ginny','neville','crabbe','goyle']) assert(yule.actors.includes(id));
 const curated=catalog.chapters.filter(x=>x.interactive);
 assert.equal(curated.length,52);
 assert.equal(new Set(curated.map(x=>x.sceneCue)).size,52);
