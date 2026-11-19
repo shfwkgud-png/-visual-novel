@@ -180,8 +180,8 @@ assert.equal(portraitBackgrounds.size,92);
 assert.equal(portraits.size,258);
 const outfits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.outfits||{}).flatMap(Object.values)));
 const eventCGs=new Set(Object.values(pack.eventCGs).map(entry=>entry.url));
-assert.equal(outfits.size,37);
-assert.equal(eventCGs.size,79);
+assert.equal(outfits.size,39);
+assert.equal(eventCGs.size,81);
 for(const entry of Object.values(pack.eventCGs)) assert.equal(typeof entry.setting,'string');
 const danceStudents='alicia angelina cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta millicent padma pansy parvati penelope romilda susan'.split(' ');
 assert.equal(Object.keys(pack.eventCGs).filter(key=>key.endsWith('/dance')).length,danceStudents.length);
@@ -194,6 +194,8 @@ const ron=pack.characters.ron;
 assert(Object.values(ron.emoImgs).every(url=>url.endsWith('_v6.webp')));
 assert.equal(pack.eventCGs['ron/flying'].portrait,ron.img);
 assert.equal(pack.eventCGs['ron/flying'].url,'sd_samples/cg/hogwarts/ron/flying_v2.webp');
+assert.equal(pack.eventCGs['george/flying'].portrait,pack.characters.george.img);
+assert.equal(pack.eventCGs['hermione/together'].portrait,pack.characters.hermione.img);
 for(const id of ['romilda','alecto']){
   const card=pack.characters[id];
   assert.equal(card.img,card.emoImgs.normal);
@@ -213,9 +215,9 @@ for (const url of [...backgrounds,...portraitBackgrounds,...portraits,...outfits
 assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,82);
 const generated=JSON.parse(fs.readFileSync(path.join(__dirname,'docs/hogwarts-occasions-assets.json'),'utf8'));
-assert.equal(generated.assets.length,154);
-assert.equal(new Set(generated.assets.map(a=>a.target)).size,154);
-assert.equal(generated.assets.filter(a=>a.active).length,146);
+assert.equal(generated.assets.length,158);
+assert.equal(new Set(generated.assets.map(a=>a.target)).size,158);
+assert.equal(generated.assets.filter(a=>a.active).length,150);
 for(const asset of generated.assets){
   const bytes=fs.readFileSync(path.join(__dirname,asset.target));
   assert.equal(require('node:crypto').createHash('sha256').update(bytes).digest('hex'),asset.sha256,asset.key);

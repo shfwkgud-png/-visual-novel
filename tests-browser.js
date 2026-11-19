@@ -1389,12 +1389,12 @@ async function hogwartsLooksCheck(ctx){
         gameHistory.push({role:'assistant',content:JSON.stringify(reply)});
         processResponse(reply,(reply.dialogue||[]).map(d=>d.char_id));
       };
-      window._looksRespond({background:'ballroom',dialogue:['hermione','parvati','padma','cho','ron'].map(id=>({
+      window._looksRespond({background:'ballroom',dialogue:['hermione','parvati','padma','cho','ron','fred'].map(id=>({
         char_id:id,speaker:CHARACTERS[id].name,emotion:'angry',text:CHARACTERS[id].name+'의 무도회 대사.'
       }))});
     });
     await drainDialogue(page);
-    const recorded=await page.evaluate(()=>['hermione','parvati','padma','cho','ron'].map(id=>{
+    const recorded=await page.evaluate(()=>['hermione','parvati','padma','cho','ron','fred'].map(id=>{
       const row=dialogueLog.findLast(d=>d.char_id===id&&d.text.endsWith('의 무도회 대사.'));
       return {id,outfit:row?.looks?.[id],sprite:PandoraHogwartsLooks.sprite(CHARACTERS[id],'angry',row?.looks?.[id])};
     }));
@@ -1447,7 +1447,8 @@ async function hogwartsLooksCheck(ctx){
     assert.equal(await page.evaluate(()=>currentCG),'hermione/dance');
     assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/outfits\/yule\//);
     await page.evaluate(()=>{
-      const reply={background:'library',cg:null,narration:'',choices:null,state_update:null,
+      const reply={background:'library',cg:'hermione/together',narration:'',choices:null,state_update:null,
+        visuals:{cgPartner:'player',cgConsent:'mutual'},
         dialogue:[{char_id:'hermione',speaker:'헤르미온느',text:'책은 여기 있어.',emotion:'normal'}]};
       document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
       inputMode=false;inputBar.style.display='none';waitingForTap=false;
@@ -1461,27 +1462,32 @@ async function hogwartsLooksCheck(ctx){
     assert.equal(await page.evaluate(()=>currentCG),'hermione/dance');
     assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/outfits\/yule\//);
     await page.evaluate(()=>exitHistory());
-    assert.equal(await page.evaluate(()=>currentCG),null);
+    assert.equal(await page.evaluate(()=>currentCG),'hermione/together');
+    await page.waitForFunction(()=>document.getElementById('eventCG').naturalWidth>0);
+    assert.match(await page.locator('#eventCG').getAttribute('src'),/hermione\/together_v1\.webp$/);
     assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/2d\/1_neutral_v2\.webp$/);
   });
   await check(ctx,'Hogwarts Quidditch participants and spectators keep distinct clothes and flight history',async()=>{
-    await page.evaluate(()=>{
-      const reply={background:'quidditch',cg:'ron/flying',narration:'',choices:null,state_update:null,
-        visuals:{outfits:{ron:'quidditch'},action:'flying'},dialogue:[
-          {char_id:'hermione',speaker:'헤르미온느',text:'난 관중석에서 볼게.'},
-          {char_id:'ron',speaker:'론 위즐리',text:'빗자루를 타고 올라갈게.',emotion:'angry'}]};
-      document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
-      inputMode=false;inputBar.style.display='none';waitingForTap=false;
-      gameHistory.push({role:'assistant',content:JSON.stringify(reply)});processResponse(reply,['hermione','ron']);
-    });
-    await drainDialogue(page);
-    await page.waitForFunction(()=>document.getElementById('eventCG').naturalWidth>0&&currentCG==='ron/flying');
-    assert.match(await page.locator('#sprite_ron').getAttribute('src'),/ron\/outfits\/quidditch\/1_neutral_v2\.webp$/);
-    assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/hermione\/2d\//);
-    assert.equal(await page.evaluate(()=>dialogueLog.findLast(d=>d.char_id==='ron').cg),'ron/flying');
-    assert.match(await page.locator('#eventCG').getAttribute('src'),/ron\/flying_v2\.webp$/);
-    await page.waitForFunction(()=>getComputedStyle(document.getElementById('eventCG')).opacity==='1');
-    await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-flight-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+    for(const [id,version] of [['ron','v2'],['george','v1']]){
+      await page.evaluate(id=>{
+        const reply={background:'quidditch',cg:id+'/flying',narration:'',choices:null,state_update:null,
+          visuals:{outfits:{[id]:'quidditch'},action:'flying'},dialogue:[
+            {char_id:'hermione',speaker:'헤르미온느',text:'난 관중석에서 볼게.'},
+            {char_id:id,speaker:CHARACTERS[id].name,text:'빗자루를 타고 올라갈게.',emotion:'angry'}]};
+        document.querySelectorAll('#choiceBox').forEach(e=>e.remove());
+        inputMode=false;inputBar.style.display='none';waitingForTap=false;
+        gameHistory.push({role:'assistant',content:JSON.stringify(reply)});processResponse(reply,['hermione',id]);
+      },id);
+      await drainDialogue(page);
+      await page.waitForFunction(id=>document.getElementById('eventCG').naturalWidth>0&&currentCG===id+'/flying',id);
+      assert.equal(await page.locator('#sprite_'+id).getAttribute('src'),
+        'sd_samples/characters/hogwarts/'+id+'/outfits/quidditch/1_neutral_'+version+'.webp');
+      assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/hermione\/2d\//);
+      assert.equal(await page.evaluate(id=>dialogueLog.findLast(d=>d.char_id===id).cg,id),id+'/flying');
+      assert.equal(await page.locator('#eventCG').getAttribute('src'),'sd_samples/cg/hogwarts/'+id+'/flying_'+version+'.webp');
+      await page.waitForFunction(()=>getComputedStyle(document.getElementById('eventCG')).opacity==='1');
+      await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-'+id+'-flight-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+    }
   });
   await check(ctx,'Hogwarts Malfoy, Crabbe, Lavender, Luna and Romilda use their individual dance CG and matching gown',async()=>{
     for(const id of ['malfoy','crabbe','lavender','luna','romilda']){
