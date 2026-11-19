@@ -219,15 +219,24 @@ for (const url of [...backgrounds,...portraitBackgrounds,...portraits,...outfits
 assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,82);
 const generated=JSON.parse(fs.readFileSync(path.join(__dirname,'docs/hogwarts-occasions-assets.json'),'utf8'));
-assert.equal(generated.assets.length,176);
-assert.equal(new Set(generated.assets.map(a=>a.target)).size,176);
+assert.equal(generated.assets.length,194);
+assert.equal(new Set(generated.assets.map(a=>a.target)).size,194);
 const activeGenerated=new Set(generated.assets.filter(a=>a.active).map(a=>a.target));
-assert.equal(activeGenerated.size,168);
-for(const [id,version,count] of [['harry','v5',6],['percy','v2',3],['snape','v3',6]]){
+assert.equal(activeGenerated.size,180);
+for(const [id,version,count] of [['harry','v5',6],['percy','v2',3],['snape','v3',6],['crabbe','v2',6],['goyle','v2',6]]){
   const card=pack.characters[id];
   assert.equal(card.img,`sd_samples/characters/hogwarts/${id}/2d/1_neutral_${version}.webp`);
   assert.equal(new Set(Object.values(card.emoImgs)).size,count,id);
   for(const sprite of Object.values(card.emoImgs)) assert(activeGenerated.has(sprite),sprite);
+}
+for(const id of ['crabbe','goyle']){
+  const card=pack.characters[id];
+  assert(activeGenerated.has(card.outfits.yule.normal),id+' yule');
+  for(const scene of ['dance','together']){
+    const entry=pack.eventCGs[id+'/'+scene];
+    assert.equal(entry.portrait,card.img,id+'/'+scene);
+    assert(activeGenerated.has(entry.url),entry.url);
+  }
 }
 for(const asset of generated.assets){
   const bytes=fs.readFileSync(path.join(__dirname,asset.target));
