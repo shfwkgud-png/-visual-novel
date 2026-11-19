@@ -6170,7 +6170,7 @@
         "notes": "Slides a treacle tart toward the player across the Great Hall table in her school uniform. Face revised to match the supplied identity reference. Gaze closer to the companion in front.",
         "referenceReview": "crabbe/2d/1_neutral_v4"
       },
-      "active": true
+      "active": false
     },
     {
       "key": "goyle/2d/1_neutral_v4",
@@ -6318,6 +6318,22 @@
         "verdict": "일치",
         "notes": "Sits beside the player on a courtyard bench, in her school uniform, with a book in her lap. Face revised to match the supplied identity reference. Softer under-eye light and more natural warmth in the face.",
         "referenceReview": "goyle/2d/1_neutral_v4"
+      },
+      "active": true
+    },
+    {
+      "key": "crabbe/together/1_scene_v5",
+      "target": "sd_samples/cg/hogwarts/crabbe/together_v5.webp",
+      "width": 981,
+      "height": 1602,
+      "sha256": "34c86db27d37037b635768b5081d9ca560b470f8d65ede281ad9e2acd14a9b3a",
+      "review": {
+        "key": "crabbe/together/1_scene_v5",
+        "framing": "981×1602 portrait",
+        "hairShape": "short side-parted wavy bob",
+        "verdict": "일치",
+        "notes": "Crabbe offers a treacle tart at the Great Hall table. She places both forearms separately on the table, and one hand rests naturally against the plate rim.",
+        "referenceReview": "crabbe/2d/1_neutral_v4"
       },
       "active": true
     }
