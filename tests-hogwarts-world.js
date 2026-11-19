@@ -180,8 +180,8 @@ assert.equal(portraitBackgrounds.size,92);
 assert.equal(portraits.size,258);
 const outfits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.outfits||{}).flatMap(Object.values)));
 const eventCGs=new Set(Object.values(pack.eventCGs).map(entry=>entry.url));
-assert.equal(outfits.size,39);
-assert.equal(eventCGs.size,81);
+assert.equal(outfits.size,41);
+assert.equal(eventCGs.size,82);
 for(const entry of Object.values(pack.eventCGs)) assert.equal(typeof entry.setting,'string');
 const danceStudents='alicia angelina cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta millicent padma pansy parvati penelope romilda susan'.split(' ');
 assert.equal(Object.keys(pack.eventCGs).filter(key=>key.endsWith('/dance')).length,danceStudents.length);
@@ -196,6 +196,10 @@ assert.equal(pack.eventCGs['ron/flying'].portrait,ron.img);
 assert.equal(pack.eventCGs['ron/flying'].url,'sd_samples/cg/hogwarts/ron/flying_v2.webp');
 assert.equal(pack.eventCGs['george/flying'].portrait,pack.characters.george.img);
 assert.equal(pack.eventCGs['hermione/together'].portrait,pack.characters.hermione.img);
+const harry=pack.characters.harry;
+assert.equal(pack.eventCGs['harry/flying'].portrait,harry.img);
+assert.equal(pack.eventCGs['harry/flying'].url,'sd_samples/cg/hogwarts/harry/flying_v1.webp');
+assert.equal(pack.eventCGs['harry/flying'].outfit,'quidditch');
 for(const id of ['romilda','alecto']){
   const card=pack.characters[id];
   assert.equal(card.img,card.emoImgs.normal);
@@ -215,9 +219,16 @@ for (const url of [...backgrounds,...portraitBackgrounds,...portraits,...outfits
 assert(!pack.characters.fred.emoImgs.angry);
 assert.equal(Object.values(pack.characters).filter(card=>card.img).length,82);
 const generated=JSON.parse(fs.readFileSync(path.join(__dirname,'docs/hogwarts-occasions-assets.json'),'utf8'));
-assert.equal(generated.assets.length,158);
-assert.equal(new Set(generated.assets.map(a=>a.target)).size,158);
-assert.equal(generated.assets.filter(a=>a.active).length,150);
+assert.equal(generated.assets.length,176);
+assert.equal(new Set(generated.assets.map(a=>a.target)).size,176);
+const activeGenerated=new Set(generated.assets.filter(a=>a.active).map(a=>a.target));
+assert.equal(activeGenerated.size,168);
+for(const [id,version,count] of [['harry','v5',6],['percy','v2',3],['snape','v3',6]]){
+  const card=pack.characters[id];
+  assert.equal(card.img,`sd_samples/characters/hogwarts/${id}/2d/1_neutral_${version}.webp`);
+  assert.equal(new Set(Object.values(card.emoImgs)).size,count,id);
+  for(const sprite of Object.values(card.emoImgs)) assert(activeGenerated.has(sprite),sprite);
+}
 for(const asset of generated.assets){
   const bytes=fs.readFileSync(path.join(__dirname,asset.target));
   assert.equal(require('node:crypto').createHash('sha256').update(bytes).digest('hex'),asset.sha256,asset.key);

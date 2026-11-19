@@ -989,7 +989,7 @@ async function hogwartsArtCheck(ctx) {
     })));
     assert.equal(gallery.length, 12);
     assert.match(gallery[0].name, /해리/);
-    assert.match(gallery[0].image, /harry\/2d\/1_neutral_v2\.webp/);
+    assert.match(gallery[0].image, /harry\/2d\/1_neutral_v5\.webp/);
     assert.match(gallery[2].name, /헤르미온느/);
     assert.match(gallery[2].image, /hermione\/2d\/1_neutral_v2\.webp/);
     assert.ok(gallery.every(card => card.image.includes('sd_samples/characters/hogwarts/')));
@@ -1086,7 +1086,7 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(scene.art.length, 2);
     assert.deepEqual(scene.filters, ['blur(6px) brightness(0.78)', 'blur(6px) brightness(0.78)']);
     assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
-    assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v4.webp')));
+    assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v5.webp')));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_ron' && src.endsWith('/4_sadness_v6.webp')));
     await page.screenshot({ path: path.join(ARTIFACTS, 'hogwarts-opening-' + (ctx.mobile ? 'mobile' : 'desktop') + '.png') });
     const houseScenes = await page.evaluate(async () => {
@@ -1150,7 +1150,9 @@ async function hogwartsArtCheck(ctx) {
       document.getElementById('sprite_goyle')?.naturalWidth === 1024);
     assert.match(await page.locator('#sprite_goyle').getAttribute('src'), /goyle\/2d\/4_sadness\.webp$/);
     for (const [id, emotion, file] of [
-      ['harry', 'angry', '3_anger_v4'],
+      ['harry', 'angry', '3_anger_v5'],
+      ['percy', 'angry', '3_anger_v5'],
+      ['snape', 'angry', '3_anger_v3'],
       ['george', 'smile', '2_joy_v2'],
       ['kingsley', 'smile', '2_joy_v2'],
       ['moody', 'smile', '2_joy_v2'],
@@ -1389,12 +1391,12 @@ async function hogwartsLooksCheck(ctx){
         gameHistory.push({role:'assistant',content:JSON.stringify(reply)});
         processResponse(reply,(reply.dialogue||[]).map(d=>d.char_id));
       };
-      window._looksRespond({background:'ballroom',dialogue:['hermione','parvati','padma','cho','ron','fred'].map(id=>({
+      window._looksRespond({background:'ballroom',dialogue:['hermione','harry','parvati','padma','cho','ron','fred'].map(id=>({
         char_id:id,speaker:CHARACTERS[id].name,emotion:'angry',text:CHARACTERS[id].name+'의 무도회 대사.'
       }))});
     });
     await drainDialogue(page);
-    const recorded=await page.evaluate(()=>['hermione','parvati','padma','cho','ron','fred'].map(id=>{
+    const recorded=await page.evaluate(()=>['hermione','harry','parvati','padma','cho','ron','fred'].map(id=>{
       const row=dialogueLog.findLast(d=>d.char_id===id&&d.text.endsWith('의 무도회 대사.'));
       return {id,outfit:row?.looks?.[id],sprite:PandoraHogwartsLooks.sprite(CHARACTERS[id],'angry',row?.looks?.[id])};
     }));
@@ -1402,6 +1404,13 @@ async function hogwartsLooksCheck(ctx){
     assert.match(recorded.find(row=>row.id==='ron').sprite,/ron\/outfits\/yule\/1_neutral_v2\.webp$/);
     await page.evaluate(()=>{
       historyBack();
+      while(historyPos>0&&dialogueLog[historyPos].char_id!=='harry')historyBack();
+    });
+    await page.waitForFunction(()=>document.getElementById('sprite_harry')?.complete&&
+      document.getElementById('sprite_harry')?.naturalWidth>0);
+    assert.equal(await page.locator('#sprite_harry').getAttribute('src'),recorded.find(row=>row.id==='harry').sprite);
+    await page.screenshot({path:path.join(ARTIFACTS,'hogwarts-harry-yule-'+(ctx.mobile?'mobile':'desktop')+'.jpg'),type:'jpeg',quality:100});
+    await page.evaluate(()=>{
       while(historyPos>0&&dialogueLog[historyPos].char_id!=='hermione')historyBack();
     });
     await page.waitForFunction(()=>document.getElementById('sprite_hermione')?.complete&&
@@ -1468,7 +1477,7 @@ async function hogwartsLooksCheck(ctx){
     assert.match(await page.locator('#sprite_hermione').getAttribute('src'),/\/2d\/1_neutral_v2\.webp$/);
   });
   await check(ctx,'Hogwarts Quidditch participants and spectators keep distinct clothes and flight history',async()=>{
-    for(const [id,version] of [['ron','v2'],['george','v1']]){
+    for(const [id,version] of [['ron','v2'],['george','v1'],['harry','v1']]){
       await page.evaluate(id=>{
         const reply={background:'quidditch',cg:id+'/flying',narration:'',choices:null,state_update:null,
           visuals:{outfits:{[id]:'quidditch'},action:'flying'},dialogue:[
