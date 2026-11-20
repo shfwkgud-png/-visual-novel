@@ -121,11 +121,11 @@ test('explicit empty chronicle commits a valid summary without changing facts', 
   const h = harness(), work = h.sb.summarizeIfNeeded(); h.reply(0, '새 요약', []); await work;
   assert.equal(h.sb.storySummary, '새 요약'); assert.deepEqual(h.sb.gameState.chronicle, ['기존 사실']);
 });
-test('uncommitted history receipts postpone summary without dropping recovery data', async () => {
-  for (const status of ['pending', 'failed']) {
+test('open receipts postpone summary until their state is applied or superseded by a later commit', async () => {
+  for (const [status,closed] of [['pending','applied'], ['failed','superseded'], ['review','superseded']]) {
     const h = harness(); h.sb.gameHistory[9]._stateExtract = { status };
     await h.sb.summarizeIfNeeded(); assert.equal(h.requests.length, 0); assert.equal(h.sb.summaryIndex, 4);
-    h.sb.gameHistory[9]._stateExtract.status = 'applied';
+    h.sb.gameHistory[9]._stateExtract.status = closed;
     const work = h.sb.summarizeIfNeeded(); assert.equal(h.requests.length, 1); h.reply(); await work;
     assert.equal(h.saves.length, 1);
   }

@@ -146,20 +146,54 @@ T('pending save reload: recover once, then applied reload performs no API call',
   assert.equal(old.sb.gameState.gold, 10, 'old session committed after reset');
 });
 
-T('malformed extraction stays recoverable and a later retry commits exactly once', async () => {
+T('one corrective pass for malformed output is shared by the next input and commits exactly once', async () => {
+  const repair=deferred();
   let attempt = 0;
-  const c = sandbox({ respond: async () => ++attempt === 1 ? '{broken' : JSON.stringify({ state_update: { gold: 4 }, choices: [] }) });
-  await fire(c);
-  assert.equal(c.entry._stateExtract.status, 'failed');
+  const c = sandbox({ respond: async () => ++attempt === 1 ? '{broken' : repair.promise });
+  const original=fire(c);
+  const waiting=c.sb.ensureStateExtractReady();
+  await flush();
+  assert.equal(c.entry._stateExtract.status, 'pending');
+  assert.equal(c.entry._stateExtract.attempts,2);
   assert.equal(c.sb.gameState.gold, 10);
   assert.equal(c.calls.apply.length, 0);
-  assert.match(c.calls.toasts.at(-1), /기록 형식/);
-  assert.equal(await c.sb.ensureStateExtractReady(), true);
+  assert.equal(c.calls.toasts.length,0);
   assert.match(c.calls.requests[1][1], /직전 상태 기록 재검토.*완전한 JSON/);
+  repair.resolve(JSON.stringify({state_update:{gold:4}}));
+  assert.deepEqual(await Promise.all([original,waiting]),[true,true]);
   assert.equal(c.sb.gameState.gold, 14);
   assert.equal(c.entry._stateExtract.status, 'applied');
   await c.sb.ensureStateExtractReady();
   assert.equal(c.calls.apply.length, 1);
+  assert.equal(c.calls.requests.length,2);
+});
+
+T('a reload in the middle of corrective extraction preserves the used allowance and discards the abandoned result', async () => {
+  const repair=deferred();
+  let count=0;
+  const c=sandbox({respond:()=> ++count===1 ? '{broken' : repair.promise});
+  const abandoned=fire(c);
+  await flush();
+  const saved=clone(c.calls.saves.at(-1));
+  assert.equal(saved.gameHistory.at(-1)._stateExtract.attempts,2);
+  c.sb.resetTurnAsyncWork();
+  const resumed=sandbox({globals:saved,respond:()=>'{still broken'});
+  assert.equal(await resumed.sb.ensureStateExtractReady(),false);
+  assert.equal(resumed.calls.requests.length,1);
+  assert.equal(resumed.entry._stateExtract.status,'failed');
+  assert.equal(resumed.sb.gameState.gold,10);
+  repair.resolve('{"state_update":{"gold":99}}');
+  assert.equal(await abandoned,false);
+  await flush();
+  assert.equal(c.sb.gameState.gold,10);
+});
+
+T('provider failures do not spend a second request on correction', async () => {
+  const c=sandbox({respond:()=>{throw Object.assign(Error('rate limited'),{recorderNotice:'API 요청 한도 (429)'});}});
+  assert.equal(await fire(c),false);
+  assert.equal(c.calls.requests.length,1);
+  assert.equal(c.entry._stateExtract.status,'failed');
+  assert.match(c.calls.toasts.at(-1),/429/);
 });
 
 T('partial state-apply exception rolls back data before retry', async () => {
@@ -178,6 +212,42 @@ T('partial state-apply exception rolls back data before retry', async () => {
   assert.equal(await c.sb.ensureStateExtractReady(), true);
   assert.equal(c.sb.gameState.gold, 14, 'partial failure was counted twice');
   assert.equal(c.entry._stateExtract.status, 'applied');
+});
+
+T('cold restore waits for the canon ledger, then applies the saved canon-changing scene exactly once', async () => {
+  const time = require('./storypacks/hogwarts-au/time.js'), world = require('./storypacks/hogwarts-au/world.js');
+  const bridge = require('./storypacks/hogwarts-au/canon-bridge.js'), engine = require('./storypacks/hogwarts-au/canon-engine.js');
+  const evidence = '교수들이 트롤을 대피 통로에서 막아 학생들이 안전하게 연회장에 남았다.';
+  const outcome = { event_id:null, summary:evidence, evidence, complete:false, choice:'freeform', ties:{},
+    canon:[{ id:'b01c10s01', outcome:'prevented', summary:evidence, evidence, effects:{} }] };
+  const c = sandbox({respond: () => {
+    assert.equal(c.sb.gameState.hogwarts.canon, undefined, 'static fetch committed the original event before validating the saved scene');
+    return JSON.stringify({state_update:{hogwarts:outcome}});
+  }});
+  let online=false, fetches=0;
+  Object.assign(c.sb, { STORY:{id:'hogwarts'}, PandoraHogwartsTime:time, PandoraHogwartsWorld:world,
+    PandoraHogwartsBridge:bridge, PandoraHogwartsCanon:engine, HOGWARTS_CANON_BUNDLE:null, HOGWARTS_CANON_PENDING:null,
+    fixSpeakerIds(){}, fetch:async (url, {signal}) => {
+      assert.ok(signal); fetches++;
+      if (!online) throw Error('offline fixture');
+      return {ok:true, json:async () => JSON.parse(fs.readFileSync(path.join(__dirname,url.split('?')[0]),'utf8'))};
+    } });
+  const hp = c.sb.gameState.hogwarts = time.createState();
+  time.chooseHouse(hp,'그리핀도르'); time.moveToScene(hp,'1991-10-31',2); hp.world=world.createState();
+  c.entry.content=JSON.stringify({narration:evidence,dialogue:[]});
+  c.entry._stateExtract={id:'restored',turn:c.sb.turnCount,status:'pending',attempts:0,userText:'트롤을 막는다',activeCharIds:[]};
+  vm.runInContext(['loadHogwartsCanonBundle','hogwartsOutcomeContract','applyHogwartsSceneState','commitHogwartsCanon'].map(grabFn).join('\n'),c.sb);
+  c.sb.processResponse=(data, ids, stream, stateOnly, source)=>c.sb.applyHogwartsSceneState(data,ids,source);
+  assert.equal(await c.sb.ensureStateExtractReady(),false);
+  assert.equal(c.entry._stateExtract.status,'failed'); assert.equal(c.entry._stateExtract.attempts,0);
+  assert.equal(c.calls.requests.length,0); assert.match(c.calls.toasts.at(-1),/호그와트 사건 자료/);
+  assert.equal(hp.canon,undefined); assert.equal(c.sb.HOGWARTS_CANON_PENDING,null);
+  online=true; const before=fetches;
+  const results=await Promise.all([c.sb.ensureStateExtractReady(),c.sb.ensureStateExtractReady()]);
+  assert.deepEqual(results,[true,true]); assert.equal(fetches-before,9);
+  assert.equal(c.calls.requests.length,1); assert.equal(c.entry._stateExtract.attempts,1);
+  assert.equal(hp.canon.statuses.b01c10s01,'prevented'); assert.equal(c.entry._stateExtract.status,'applied');
+  assert.equal(await c.sb.ensureStateExtractReady(),true); assert.equal(c.calls.requests.length,1);
 });
 
 T('Hogwarts action retries with time and event feedback, then commits the unchanged clock and actual action once', async () => {
@@ -211,11 +281,11 @@ T('Hogwarts action retries with time and event feedback, then commits the unchan
   const transitions=hp.transitions;
   assert.equal(await fire(c), false);
   assert.equal(c.sb.gameState.gold,10);
-  assert.equal(c.entry._stateExtract.correction,'outcome');
+  assert.equal(c.entry._stateExtract.correction,'time');
   assert.match(c.calls.requests[0][0], /진행 중인 행동은 state_update.hogwarts 기록이 필수/);
   assert.doesNotMatch(c.calls.requests[0][0], /"state_update":\{\}|state_update는 항상 객체다\. 변화가 없으면 \{\}/);
   assert.doesNotMatch(c.calls.requests[0][0], /'N일차 새벽/);
-  assert.equal(await c.sb.ensureStateExtractReady(),false);
+  assert.equal(c.entry._stateExtract.attempts,2);
   assert.match(c.calls.requests[1][1], /직전 상태 기록 재검토.*현재 event_id/);
   assert.match(c.calls.toasts.at(-1), /날짜가 맞지/);
   assert.equal(c.sb.gameState.gold,10);
@@ -249,6 +319,44 @@ for (const kind of ['state replacement', 'history replacement', 'epoch change', 
     assert.equal(c.calls.choices.length, 0, 'stale choices entered current screen');
   });
 }
+
+T('multi-day request at the end of a long player message survives first extraction and legacy retry', async () => {
+  const time=require('./storypacks/hogwarts-au/time.js');
+  const world=require('./storypacks/hogwarts-au/world.js');
+  const request='사흘 동안 수업을 들으며 지낸다';
+  const input='도서관에서 읽은 내용에 관해 친구들과 이야기한다. '.repeat(58)+request;
+  assert.ok(input.indexOf(request)>1200);
+  const evidence='사흘간 수업을 들은 뒤 수요일 아침에 일어났다.';
+  for (const legacy of [false,true]) {
+    const c=sandbox({respond:()=>JSON.stringify({state_update:{hogwarts:{event_id:null,choice:null,
+      complete:false,summary:evidence,evidence,time:{value:'1991-09-04 아침',days:3,evidence,request}}}})});
+    const hp=time.createState();
+    time.chooseHouse(hp,'그리핀도르');
+    hp.world=world.createState();
+    Object.assign(c.sb,{STORY:{id:'hogwarts'},PandoraHogwartsTime:time,PandoraHogwartsWorld:world,
+      HOGWARTS_CANON_BUNDLE:null,fixSpeakerIds(){}});
+    c.sb.gameState.hogwarts=hp;
+    c.sb.gameHistory[0].content=input;
+    c.entry.content=JSON.stringify({narration:evidence,dialogue:[]});
+    c.sb.processResponse=(data,ids,stream,stateOnly,source)=>c.sb.applyHogwartsSceneState(data,ids,source);
+    vm.runInContext(grabFn('hogwartsOutcomeContract') + grabFn('applyHogwartsSceneState'),c.sb);
+    if (legacy) {
+      c.entry._stateExtract={turn:3,status:'failed',attempts:1,userText:input.slice(0,1200),activeCharIds:[]};
+      c.sb.gameHistory.push({role:'user',content:'별개의 새 입력'});
+      assert.equal(await c.sb.ensureStateExtractReady(),true);
+    } else {
+      const author=c.sb.userMessageForExtract();
+      assert.equal(author,input);
+      assert.equal(await c.sb.fireStateExtract(author,JSON.parse(c.entry.content),[],1),true);
+    }
+    assert.equal(c.calls.requests.length,1);
+    assert.ok(c.calls.requests[0][1].includes(input));
+    assert.ok(!c.calls.requests[0][1].includes('별개의 새 입력'));
+    assert.equal(hp.date,'1991-09-04');
+    assert.equal(c.entry._stateExtract.status,'applied');
+    assert.equal(c.entry._stateExtract.userText,undefined);
+  }
+});
 
 T('old completion cannot clear the new session pending task', async () => {
   const firstReply = deferred(), secondReply = deferred();
@@ -468,9 +576,51 @@ function installPlayerInput(c) {
     callGemini: async () => generations.push({ gold: c.sb.gameState.gold }),
     resetDialogueLift: () => {},
   });
-  vm.runInContext(grabFn('sceneVisualSnapshot')+'\n'+grabFn('handlePlayerInput'), c.sb);
+  vm.runInContext(['sceneVisualSnapshot','handlePlayerInput','dispatchPlayerInput'].map(grabFn).join('\n'), c.sb);
   return { snapshots, generations };
 }
+
+T('restored historical receipt no longer blocks sends after a later committed scene, including a second reload', async () => {
+  for (const kind of ['split', 'integrated']) {
+    const c = sandbox();
+    const past = {id:'unresolved',status:'failed',turn:2,attempts:3,userText:'과거 입력',activeCharIds:[]};
+    c.sb.gameHistory.unshift({role:'assistant',content:'{"narration":"과거 장면"}',_stateExtract:clone(past)});
+    c.entry.content = '{"narration":"새 장면","state_update":{"gold":50}}';
+    if (kind === 'split') c.entry._stateExtract = {id:'settled',turn:3,status:'applied'};
+    else c.entry._turnBefore = {state:{gold:9}};
+    c.sb.resumeStateExtract();
+    await flush();
+    assert.equal(c.calls.saves.length,1);
+    assert.deepEqual(clone(c.sb.gameHistory[0]._stateExtract),{...past,status:'superseded',previousStatus:'failed'});
+    assert.equal(c.sb.gameHistory[0].content,'{"narration":"과거 장면"}');
+    assert.equal(c.calls.toasts.length,1);
+    assert.equal(c.calls.requests.length,0);
+    const again=sandbox({globals:clone(c.calls.saves[0])});
+    again.sb.resumeStateExtract();
+    const { generations }=installPlayerInput(again);
+    await again.sb.handlePlayerInput('보관된 장면에서 대화를 잇는다');
+    assert.equal(generations.length,1);
+    assert.equal(generations[0].gold,10);
+    assert.equal(again.calls.requests.length,0);
+    assert.equal(again.calls.toasts.length,0);
+  }
+});
+
+T('fixed scenes, unfinished later work and unproven state never supersede an old receipt', async () => {
+  for (const later of [
+    {content:'{"narration":"고정 장면","state_update":null}',_turnBefore:{state:{}}},
+    {content:'{"narration":"결과 대기"}',_stateExtract:{turn:3,status:'pending'}},
+    {content:'{"state_update":{}}'},
+  ]) {
+    const c=sandbox();
+    c.sb.gameHistory.unshift({role:'assistant',content:'{"narration":"이전 장면"}',_stateExtract:{turn:2,status:'pending'}});
+    Object.assign(c.entry,later);
+    assert.equal(await c.sb.ensureStateExtractReady(), false);
+    assert.equal(c.sb.gameHistory[0]._stateExtract.status,'pending');
+    assert.equal(c.calls.saves.length,0);
+    assert.equal(c.calls.requests.length,0);
+  }
+});
 
 T('next input snapshots and generates only after previous state commits', async () => {
   const reply = deferred();
@@ -489,6 +639,45 @@ T('next input snapshots and generates only after previous state commits', async 
   assert.equal(snapshots[0].gold, 14);
   assert.equal(generations.length, 1);
   assert.equal(generations[0].gold, 14);
+});
+
+T('switching saves while the input awaits the Hogwarts catalog cannot submit to the next save', async () => {
+  const c=sandbox(), wait=deferred();
+  const {generations,snapshots}=installPlayerInput(c);
+  c.sb.STORY={id:'hogwarts'}; c.sb.gameState.hogwarts={};
+  Object.assign(c.sb,{HOGWARTS_CANON_BUNDLE:null, choiceDisplayText:x=>x,syncHogwartsCanon:()=>wait.promise});
+  const pending=c.sb.handlePlayerInput('원래 저장의 입력');
+  await flush();
+  assert.ok(c.sb._inputRequest); assert.equal(c.sb.sendBtn.disabled,true);
+  await c.sb.handlePlayerInput('중복 입력');
+  c.sb.resetTurnAsyncWork();
+  c.sb.gameHistory=[{role:'user',content:'새 저장'}];
+  const newOwner={scope:c.sb.turnWorkScope()};
+  c.sb._inputRequest=newOwner; c.sb.sendBtn.disabled=true;
+  wait.resolve(true);
+  await pending;
+  assert.equal(c.sb._inputRequest,newOwner);assert.equal(c.sb.sendBtn.disabled,true);
+  assert.equal(c.sb.gameHistory.length,1);
+  assert.equal(snapshots.length,0);assert.equal(generations.length,0);
+});
+
+T('pre-submit exception restores the exact draft and releases only its own send lock', async () => {
+  const c=sandbox(), input='보존할 입력';
+  const {generations}=installPlayerInput(c);
+  c.sb.captureSnap=()=>{throw new Error('fixture input setup failure');};
+  const history=clone(c.sb.gameHistory);
+  await c.sb.handlePlayerInput(input);
+  assert.deepEqual(clone(c.sb.gameHistory),history);
+  assert.equal(c.sb.userInput.textContent,input);
+  assert.equal(c.sb.sendBtn.disabled,false);assert.equal(c.sb._inputRequest,null);
+  assert.equal(generations.length,0);
+});
+
+T('created character names remain literal when detecting actors for a new input', () => {
+  const c=sandbox();
+  c.sb.CHARACTERS={a:{name:'안내원['},b:{name:'주.인'},c:{name:''},d:null};
+  vm.runInContext(grabFn('detectActiveChars'),c.sb);
+  assert.deepEqual(clone(c.sb.detectActiveChars([{role:'user',content:'주인공이 안내원[에게 인사한다.'}])),['a']);
 });
 
 T('failed previous state keeps the new draft and creates no snapshot or model request', async () => {
@@ -795,6 +984,27 @@ T('changing saves cancels an in-flight parked read without retrying or touching 
   assert.equal(c.timers.size, 0);
 });
 
+T('integrated malformed JSON cannot become a completed scene with invented empty state', async () => {
+  const fixture = failedMainFixture(false), { c } = fixture;
+  const main = installMainRequest(c, async () => ({
+    text: '{"narration":"동전 네 개를 건넸다.","dialogue":[],"state_update":{"gold":4,',
+    finishReason: 'stop', relayId: null, timing: {ttfb:1,total:2}
+  }));
+  vm.runInContext(grabFn('extractFallback'), c.sb);
+  await c.sb.callGemini([]); await flush();
+  assert.deepEqual(clone(c.sb.gameHistory), fixture.history);
+  assert.equal(c.sb.gameState.gold, fixture.state.gold);
+  assert.equal(c.sb.turnCount, fixture.turn);
+  assert.equal(c.calls.apply.length, 0);
+  assert.equal(c.calls.requests.length, 0);
+  assert.equal(main.requests.length, 1);
+  assert.equal(c.sb.sendBtn.disabled, false);
+  assert.equal(c.sb._mainRequest, null);
+  assert.equal(c.sb._genText, fixture.input);
+  assert.ok(main.visible.flat().some(line => /완성된 장면과 상태/.test(line.text)));
+  assert.deepEqual(clone(c.sb.dialogueLog), fixture.log);
+});
+
 for (const split of [false, true]) {
   const mode = split ? 'split' : 'integrated';
   T(mode + ' main rejects valid-looking JSON when finishReason is length without committing a turn', async () => {
@@ -972,6 +1182,42 @@ T('integrated setting and idol mode keep main state and never schedule a recorde
   }
 });
 
+T('integrated and split turns persist the same valid numeric and on-scene character changes', async () => {
+  for (const split of [false, true]) {
+    const proposed = { gold: 2, rep: '5', chars: {
+      old: { location: '광장' }, fresh: { knows: '약속' },
+      absent: { knows: '몰래 한 약속' }, invented: { intimacy: 99 },
+    } };
+    const c = sandbox({ respond: () => Promise.resolve(JSON.stringify({ state_update: proposed })) });
+    c.sb.CHARACTERS.absent = { name: '자리에 없는 인물' };
+    c.sb.gameHistory = [{ role: 'user', content: '주변을 본다' }];
+    c.sb.localStorage.getItem = () => JSON.stringify({ splitPipe: split });
+    installMainRequest(c, async () => ({ text: JSON.stringify({ narration: '광장에서 동전을 받았다.',
+      dialogue: [{ speaker: '새 인물', text: '약속할게.' }], ...(split ? {} : { state_update: proposed }) }) }));
+    vm.runInContext(grabFn('resolveSpeakerName') + grabFn('fixSpeakerIds'), c.sb);
+    await c.sb.callGemini(['old']);
+    assert.equal(await c.sb.ensureStateExtractReady(), true);
+    const saved = JSON.parse(c.sb.gameHistory.at(-1).content);
+    assert.equal(saved.dialogue[0].char_id, 'fresh');
+    const expected = { gold: 2, chars: { old: proposed.chars.old, fresh: proposed.chars.fresh } };
+    assert.deepEqual(saved.state_update, expected, 'saved provider state for split=' + split);
+    assert.deepEqual(c.calls.apply.find(x => x.data.state_update).data.state_update, expected);
+    assert.equal(c.sb.gameState.rep, 1); assert.equal(c.sb.gameState.gold, 12);
+  }
+});
+
+T('resuming an older pending receipt preserves the known speaker named in its saved scene', async () => {
+  const scene = { narration: '인사를 나눴다.', dialogue: [{ speaker: '새 인물', text: '약속할게.' }] };
+  const c = sandbox({ respond: async () => JSON.stringify({
+    state_update: { rep: 1, chars: { fresh: { knows: '약속' }, invented: { knows: '허구' } } }
+  }) });
+  c.entry.content = JSON.stringify(scene);
+  c.entry._stateExtract = { id: 'older', turn: 3, status: 'failed', activeCharIds: [], userText: '인사한다' };
+  vm.runInContext(grabFn('resolveSpeakerName') + grabFn('fixSpeakerIds'), c.sb);
+  assert.equal(await c.sb.ensureStateExtractReady(), true);
+  assert.deepEqual(JSON.parse(c.entry.content).state_update, { rep: 1, chars: { fresh: { knows: '약속' } } });
+});
+
 T('split legacy nested combat and time remain main-owned while other state waits for extraction', async () => {
   const reply = deferred(), c = sandbox({ respond: () => reply.promise });
   c.sb.gameHistory = [{ role: 'user', content: '검을 든다' }];
@@ -1013,6 +1259,19 @@ T('main stream and result cannot affect a game loaded while the request is in fl
   assert.equal(c.calls.saves.length, saves);
   assert.equal(main.summaries, 0);
   assert.equal(main.visible.length, 0);
+});
+
+T('a prompt assembly failure releases the send lock and keeps the submitted input for retry', async () => {
+  const c = sandbox();
+  c.sb.gameHistory = [{ role: 'user', content: '문을 열고 들어간다.' }];
+  const main = installMainRequest(c, () => { throw new Error('must not call provider'); });
+  c.sb.buildStatePrompt = () => { throw new Error('stored scene could not be read'); };
+  await c.sb.callGemini([]);
+  assert.equal(c.sb.sendBtn.disabled, false);
+  assert.equal(c.sb._mainRequest, null);
+  assert.equal(main.requests.length, 0);
+  assert.equal(c.sb.gameHistory.at(-1).content, '문을 열고 들어간다.');
+  assert.ok(main.visible.flat().some(line => /stored scene could not be read/.test(line.text)));
 });
 
 T('old main completion and finally cannot unlock a new main request', async () => {
