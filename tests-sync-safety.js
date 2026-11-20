@@ -779,6 +779,16 @@ test('servers without the complete atomic history contract cannot enable any upl
   }
 });
 
+test('backup activation distinguishes old server, expired login, and server failure', async () => {
+  for (const [status, message] of [[400, /배포되지 않았습니다/], [401, /다시 로그인/], [503, /HTTP 503/]]) {
+    const h = harness();
+    h.setFetch(() => h.response(status, {}));
+    assert.equal(await h.sb.enableCloudBackup(), false);
+    assert.match(h.statuses.at(-1), message);
+    assert.equal(h.puts().length, 0);
+  }
+});
+
 test('missing ETags on either an existing save or a 404 never permit an unversioned PUT', async () => {
   const original = saveFixture(4), local = JSON.stringify(original);
   const existing = harness({ bulk: { nakin_save: local }, remote: { 'save:nakin': original } });

@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f">
+<meta name="pandora-build" content="350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=83dfb6f6442705f94a6acdcd7852715d7befc8ddd97420e0d6ddb882255f444f"></script>
+<script src="pandora-consistency.js?v=369&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=350a182c56a623af58f81d9b4a147b757e2beeab7ae093126a47b6e090d5cbd4"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -9434,9 +9434,19 @@ function assertCloudContext(ctx) {
 }
 async function requireAtomicCloud(ctx) {
   assertCloudContext(ctx);
-  const res = await fetch(SYNC_URL + '/sync/capabilities', { headers: ctx.headers, cache: 'no-store' });
+  let res;
+  try {
+    res = await fetch(SYNC_URL + '/sync/capabilities', { headers: ctx.headers, cache: 'no-store' });
+  } catch {
+    throw new Error('백업 서버에 연결하지 못했습니다. 연결이 복구되면 다시 시도하세요. 이 기기의 저장은 유지됩니다.');
+  }
   assertCloudContext(ctx);
-  if (!res.ok) throw new Error('백업 서버 업데이트가 필요해 자동 백업을 켜지 않았습니다. 이 기기의 저장은 유지됩니다.');
+  if (res.status === 401 || res.status === 403)
+    throw new Error('백업 서버에서 로그인 정보를 확인하지 못했습니다. 다시 로그인한 뒤 백업을 켜세요.');
+  if (res.status === 400 || res.status === 404)
+    throw new Error('운영 백업 서버에 새 백업 기능이 배포되지 않았습니다. 이 기기의 저장은 유지됩니다.');
+  if (!res.ok)
+    throw new Error('백업 서버에서 오류가 발생했습니다 (HTTP ' + res.status + '). 이 기기의 저장은 유지됩니다.');
   const caps = await res.json();
   assertCloudContext(ctx);
   if (!caps || caps.protocol !== 2 || caps.atomic !== true || caps.history !== true)
