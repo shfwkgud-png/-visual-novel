@@ -21,6 +21,10 @@ for(const [id,c] of Object.entries(story.characters)){
   assert(!c.personality.startsWith('등장 시점, 역사적 소속'),id+' still uses the generic-only card');
 }
 const c=story.characters;
+assert.match(story.worldLore,/나레이션과 대사에서 둘의 체격이나 주먹 크기를 과장하지 않는다/);
+assert.match(story.worldLore,/지난 대화의 과장된 비유는 두 사람의 외형 설정으로 이어 쓰지 않는다/);
+assert.match(c.crabbe.personality,/상대 말을 끊고 바로 되묻/);
+assert.match(c.goyle.personality,/상대와 출구를 번갈아 살피/);
 assert.match(c.hermione.speech,/또래.*반말.*교수.*존댓말/);
 assert.match(c.hermione.personality,/서툰 다정함/);
 assert.match(c.hermione.personality,/생각을 읽듯 모욕하지 않는다/);
