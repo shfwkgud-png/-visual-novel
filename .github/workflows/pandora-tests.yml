@@ -32,6 +32,9 @@ jobs:
           node tests-state-recovery.js
           node tests-summary.js
           node tests-background.js
+          node tests-notifications-client.js
+          node tests-notifications-worker.js
+          node tests-notifications-sw.js
           node tests-prompts.js
           node tests-provider.js
           node tests-settings.js

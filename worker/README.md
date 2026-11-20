@@ -141,6 +141,31 @@ real save to test destructive operations. Until this verification is complete,
 report the server deployment status separately from local tests and keep real
 cloud uploads off.
 
+## Reply completion notifications
+
+Foreground replies no longer dispatch Web Push. A relay request opts into the
+visibility protocol with `X-Push-Mode: visibility-v1`, `X-Push-Hidden: 0|1` and the
+existing base64 `X-Push-Sub`. Old clients without the protocol receive their
+normal streamed/parked reply but no completion push until the app is refreshed.
+
+The browser reports visibility changes with a CORS-simple, keepalive
+`POST /gen/visibility?id=<generation UUID>` carrying text/plain JSON
+`{seq, hidden, disabled}`. The UUID is a per-request capability; this route accepts
+neither an API key nor a push subscription. Increasing sequence numbers prevent
+a delayed hide event from overwriting a later foreground/cancellation event.
+Only request IDs and lifecycle metadata survive reload in sessionStorage.
+
+Notification state uses isolated `gen-notify:<uuid>` objects in the existing
+Durable Object binding. It contains no save data, prompts or API keys and expires
+after 15 minutes. Only a registered, hidden, uncancelled generation with a normal
+terminal SSE scene may send once. Errors and unknown storage state fail closed.
+The notification path never starts another model request or delays streaming.
+
+Deploy the Worker before the app. No binding or migration changes are required.
+Web Push uses TTL zero to avoid stale offline notifications; offline devices may
+miss an alert. A push already accepted while hidden cannot be recalled when the
+app is reopened. The service worker also checks visible game windows at delivery.
+
 ## Official references
 
 - [SQLite-backed Durable Object storage and transactionSync](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/)
