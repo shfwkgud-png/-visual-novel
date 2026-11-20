@@ -375,7 +375,9 @@ test('CORS permits validators and exposes revisions on success and conflict', as
   assert(preflight.headers.get('Access-Control-Expose-Headers').includes('ETag'));
   await put(h, { a: 1 }); const conflict = await h.send('PUT', 'save:library', { a: 2 }, '"missing"');
   assert.equal(conflict.status, 412); assert(conflict.headers.get('ETag'));
-  assert.equal(conflict.headers.get('Cache-Control'), 'no-store'); h.close();
+  assert.equal(conflict.headers.get('Cache-Control'), 'no-store, no-transform');
+  assert.equal((await h.send('GET')).headers.get('Cache-Control'), 'no-store, no-transform');
+  h.close();
 });
 
 function authFixture(user, secret) {

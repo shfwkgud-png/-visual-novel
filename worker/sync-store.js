@@ -12,11 +12,13 @@ const MAX_VERSIONS = 6;             // Includes the current version.
 const MAX_HISTORY_BYTES = 40_000_000;
 const CHUNK_CHARS = 128 * 1024;    // Safely below SQLite's row-size limit, including UTF-8.
 const EMPTY_REVISION = 'missing';
+// Edge compression can turn a strong ETag into a weak one that If-Match rejects.
+const REVISION_CACHE_CONTROL = 'no-store, no-transform';
 const encoder = new TextEncoder();
 
 function reply(value, status = 200, headers = {}) {
   return new Response(JSON.stringify(value), { status, headers: {
-    ...SYNC_CORS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store',
+    ...SYNC_CORS, 'Content-Type': 'application/json', 'Cache-Control': REVISION_CACHE_CONTROL,
     'X-Pandora-Sync-Protocol': '2', ...headers,
   } });
 }
@@ -192,7 +194,7 @@ export class PandoraSyncStore {
       const headers = { ETag: headTag(current) };
       if (!current || current.deleted) return reply({ error: 'not found', deleted: !!current?.deleted }, 404, headers);
       return new Response(this.body(key, current.revision), { headers: { ...SYNC_CORS,
-        'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Pandora-Sync-Protocol': '2', ...headers } });
+        'Content-Type': 'application/json', 'Cache-Control': REVISION_CACHE_CONTROL, 'X-Pandora-Sync-Protocol': '2', ...headers } });
     }
     const expected = req.headers.get('If-Match');
     if (!expected) return reply({ error: 'read the current revision before writing', code: 'revision_required' }, 428);
