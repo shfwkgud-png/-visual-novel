@@ -12,7 +12,7 @@ function grab(name) {
   return source.slice(start, source.indexOf('\n}', start) + 2);
 }
 const helpers = ['isFreeApiMode', 'isFreeOpenRouterModel', 'safeProviderErrorText', 'providerErrorDetails', 'providerRequestError', 'llmRequestCurrent',
-  'llmRequestProfile', 'callLlmTask', 'createSseParser', 'readProviderStream', 'providerText',
+  'providerDeadline', 'permanentProviderError', 'providerFailureText', 'llmRequestProfile', 'callLlmTask', 'createSseParser', 'readProviderStream', 'providerText',
   'fetchGemini', 'fetchNim', 'parseSseTranscript', 'llmSmall'];
 const cases = [];
 const test = (name, run) => cases.push({ name, run });
@@ -379,6 +379,77 @@ test('empty or malformed streams cannot masquerade as success', async () => {
   assert.equal((await h.sb.fetchNim('', [])).error.code, 'EMPTY_RESPONSE');
   const h2 = harness({ fetch: async () => stream('data: {broken}\n\n') });
   assert.equal((await h2.sb.fetchNim('', [])).error.code, 'INVALID_STREAM');
+});
+
+test('DONE finishes even when the connection stays open and later fails', async () => {
+  const bytes = new TextEncoder().encode(sse([{ choices: [{ delta: {content:'complete'}, finish_reason:'stop' }] }]));
+  let reads = 0;
+  const h = harness({ fetch: async () => ({ ok:true, body:{ getReader:() => ({
+    read:async () => { if (reads++) throw new Error('connection closed late'); return {value:bytes,done:false}; },
+    releaseLock() {}
+  }) } }) });
+  const r = await h.sb.fetchNim('', []);
+  assert.equal(r.text, 'complete');
+  assert.equal(reads, 1);
+});
+
+test('paid Flash never resends a rejected API key to a second model', async () => {
+  const h = harness({ curORModel:() => 'google/gemini-3.6-flash',
+    fetch:async () => ({ok:false,status:401,json:async () => ({error:{message:'Invalid API key'}})}) });
+  const r = await h.sb.fetchNim('', []);
+  assert.equal(h.calls.length, 1);
+  assert.equal(r.error.code, 401);
+  assert.equal(r.error.retryable, false);
+});
+
+test('ongoing main output survives its initial deadline on both transports', async () => {
+  for (const provider of ['openrouter', 'gemini']) {
+    let now = 0, id = 0;
+    const timers = new Map();
+    const advance = ms => {
+      now += ms;
+      for (const [key, timer] of [...timers]) if (timer.due <= now) {
+        timers.delete(key); timer.fn();
+      }
+    };
+    const h = harness({ PROVIDER:provider, Date:{now:() => now},
+      setTimeout:(fn,ms) => { timers.set(++id,{fn,due:now+ms}); return id; },
+      clearTimeout:key => timers.delete(key),
+      fetch: async (_,opts) => {
+        let n=0;
+        return {ok:true,body:{getReader:() => ({releaseLock(){},read:async () => {
+          if (n === 2) return {done:true};
+          advance(n++ === 0 ? 70000 : 60000);
+          opts.signal.throwIfAborted();
+          const ev = provider === 'gemini' ? {candidates:[{content:{parts:[{text:'ok'}]}}]} : {choices:[{delta:{content:'ok'}}]};
+          return {value:new TextEncoder().encode('data: '+JSON.stringify(ev)+'\n\n'),done:false};
+        }})}};
+      }
+    });
+    const r = await h.sb.callLlmTask('', [], {task:'main'});
+    assert.equal(r.text,'okok',provider);
+    assert.equal(timers.size,0);
+  }
+});
+
+test('only real main progress extends the timeout and the overall cap still applies', () => {
+  for (const [task,initialProgress,deadline] of [['main',0,120000], ['probe',10000,20000], ['main',110000,240000]]) {
+    let clock = 0, scheduled;
+    const h = harness({Date:{now:() => clock},setTimeout:(fn,ms) => {scheduled={fn,at:clock+ms};return 1;},clearTimeout:()=>{}});
+    const controller = new AbortController();
+    const timer = h.sb.providerDeadline(controller, task==='probe'?20000:120000, task);
+    clock=initialProgress; timer.progress();
+    if (deadline===240000) {
+      clock=120000; scheduled.fn();
+      clock=220000; timer.progress();
+      clock=230000; scheduled.fn();
+      assert.equal(controller.signal.aborted,false);
+    }
+    assert.equal(scheduled.at,deadline);
+    clock=deadline; scheduled.fn();
+    assert.equal(controller.signal.aborted,true);
+    timer.clear();
+  }
 });
 
 (async () => {

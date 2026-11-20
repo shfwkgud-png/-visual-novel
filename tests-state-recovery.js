@@ -51,6 +51,7 @@ function sandbox(options = {}) {
   let nextTimer = 0;
   const sb = {
     console, JSON, Math, String, Array, Object, RegExp, Number, Set, Map, Date, Promise,
+    AbortController,
     performance: { now: () => 100 },
     setTimeout: (fn, ms) => { const id = ++nextTimer; timers.set(id, { fn, ms }); return id; },
     clearTimeout: id => timers.delete(id),
@@ -527,7 +528,7 @@ function installMainRequest(c, responder) {
     main.requests.push({ onChunk: args[4] });
     return responder(main.requests.length, ...args);
   };
-  vm.runInContext(grabFn('sceneOutputContract') + grabFn('discardIncompleteScene') + grabFn('callGemini'), c.sb);
+  vm.runInContext(grabFn('sceneOutputContract') + grabFn('safeProviderErrorText') + grabFn('providerFailureText') + grabFn('permanentProviderError') + grabFn('readParkedScene') + grabFn('discardIncompleteScene') + grabFn('callGemini'), c.sb);
   return main;
 }
 
@@ -601,6 +602,30 @@ function assertUncommittedMain(fixture, main, finishReason) {
   assert(/자동.*(?:호출하지|재시도.*않)|자동.*없이/.test(message), 'failure message must explain that it will not retry automatically');
   assert(/다시 답변|직접.*재시도/.test(message), 'failure message must explain manual recovery');
 }
+
+T('a stalled parked response releases the input and preserves the failed turn', async () => {
+  const fixture=failedMainFixture(true), { c, input }=fixture;
+  c.sb.SYNC_URL='https://fixture.invalid';
+  let signal;
+  c.sb.fetch=async (_, opts) => { signal=opts.signal; return new Promise((resolve,reject) => {
+    signal.addEventListener('abort',() => reject(new Error('aborted')),{once:true});
+  }); };
+  const main=installMainRequest(c,async (...args) => {
+    args[5]('{"narration":"Partial."}');
+    c.sb._stream.active=true;
+    return {error:{code:'NETWORK_ERROR',message:'connection closed'}};
+  });
+  const work=c.sb.callGemini([]);
+  await flush();
+  assert.ok(signal);
+  [...c.timers.values()].find(t=>t.ms===8000).fn();
+  await work;
+  assert.equal(c.sb.sendBtn.disabled,false);
+  assert.equal(c.sb._mainRequest,null);
+  assert.equal(c.sb._stream,null);
+  assert.equal(c.sb.gameHistory.at(-1).content,input);
+  assert.ok(main.visible.flat().some(line => line.text.includes('NETWORK_ERROR')));
+});
 
 for (const split of [false, true]) {
   const mode = split ? 'split' : 'integrated';

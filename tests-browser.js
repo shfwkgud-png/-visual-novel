@@ -560,6 +560,8 @@ async function playthrough(ctx) {
     await enterText(page, '열람실의 책을 살펴본다.');
     await page.waitForFunction(() => !sendBtn.disabled && !window._mainRequest && !window._inputRequest);
     assert.equal(net.calls.length, before + 1, 'quota error generated additional API attempts');
+    await page.waitForFunction(() => String(window._typeFull).includes('(429)'));
+    assert.equal(await page.evaluate(() => gameHistory.at(-1).role), 'user');
     assert.equal(await page.evaluate(() => gameState.gold), 23);
     await page.waitForFunction(() => document.getElementById('dialogueText').textContent.trim().length > 0);
     assert.ok((await page.locator('#dialogueText').innerText()).trim(), 'failure left an empty dialogue screen');

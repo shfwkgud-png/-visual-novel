@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f">
+<meta name="pandora-build" content="000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=11a98ecbb720813c747f264c76f0e924b5a58da08eb5b46d901d011d7902927f"></script>
+<script src="pandora-consistency.js?v=369&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -12455,6 +12455,36 @@ async function callLlmTask(sysText, messages, options = {}) {
     ? await fetchGemini(sysText, messages, temp, maxTok, options.json === true, options.onChunk || null, opts)
     : await fetchNim(sysText, messages, temp, maxTok, options.onChunk || null, NIM_MODEL, null, 0, opts);
 }
+function providerDeadline(controller, timeoutMs, task) {
+  const started = Date.now();
+  let deadline = started + timeoutMs;
+  const expire = () => {
+    const remaining = deadline - Date.now();
+    if (remaining > 0) timer = setTimeout(expire, remaining);
+    else controller.abort();
+  };
+  let timer = setTimeout(expire, timeoutMs);
+  return {
+    progress() {
+      if (task === 'main') deadline = Math.min(started + 2 * timeoutMs, Date.now() + timeoutMs);
+    },
+    clear() { clearTimeout(timer); }
+  };
+}
+function permanentProviderError(code) {
+  const status = Number(code);
+  return status >= 400 && status < 500 && ![408, 425, 429].includes(status);
+}
+function providerFailureText(error) {
+  const code = error?.code || error?.httpStatus;
+  const labels = { 400:'모델이 요청 형식을 거절했습니다.', 401:'API 키 인증에 실패했습니다.',
+    402:'API 크레딧이 부족합니다.', 403:'이 모델을 사용할 권한이 없습니다.',
+    404:'요청한 모델 또는 API 경로를 찾을 수 없습니다.', 429:'API 요청 한도에 도달했습니다.',
+    TIMEOUT:'모델 응답 대기 시간이 초과됐습니다.', NETWORK_ERROR:'모델 서버와의 연결이 끊겼습니다.' };
+  const reason = safeProviderErrorText(error?.detail || error?.message, 150);
+  const label = labels[code] || (Number(code) >= 500 ? '모델 서버에서 오류가 발생했습니다.' : 'API 요청을 완료하지 못했습니다.');
+  return label + (code ? ' (' + safeProviderErrorText(code, 50) + ')' : '') + (reason ? '\n' + reason : '');
+}
 function createSseParser(onEvent) {
   let buffer = '', data = [], stopped = false;
   const dispatch = () => {
@@ -12479,6 +12509,7 @@ function createSseParser(onEvent) {
         line(buffer.slice(0, index)); buffer = buffer.slice(index + width);
       }
       if (final) { if (buffer) line(buffer); buffer = ''; dispatch(); }
+      return stopped;
     }
   };
 }
@@ -12489,7 +12520,11 @@ async function readProviderStream(response, onEvent) {
     while (true) {
       const chunk = await reader.read();
       if (chunk.done) break;
-      parser.push(decoder.decode(chunk.value, { stream: true }));
+      if (parser.push(decoder.decode(chunk.value, { stream: true }))) {
+        // The relay can keep its connection open after the protocol has finished.
+        if (reader.cancel) reader.cancel().catch(() => {});
+        return;
+      }
     }
     parser.push(decoder.decode(), true);
   } finally { try { reader.releaseLock(); } catch {} }
@@ -12507,7 +12542,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
   if (!llmRequestCurrent(options)) return { error: { code: 'CANCELLED', retryable: false, message: '이전 요청이 취소되었습니다.' } };
   const task = options.task || (onChunk ? 'main' : 'utility');
   const profile = llmRequestProfile('gemini', mdl, maxTok, task);
-  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), profile.timeoutMs);
+  const controller = new AbortController(), timeout = providerDeadline(controller, profile.timeoutMs, task);
   const started = Date.now(); let first = null;
   // JSON mode provides a complete object; an artificial model-prefix turn is not
   // needed and can conflict with current Gemini chat/thought-signature contracts.
@@ -12552,6 +12587,7 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
       if (j.promptFeedback?.blockReason || /SAFETY|RECITATION|PROHIBITED_CONTENT|BLOCKLIST/.test(finishReason || '')) blocked = true;
       const text = providerText(candidate?.content?.parts);
       if (text) {
+        timeout.progress();
         if (first === null) first = Date.now();
         full += text;
         if (onChunk && llmRequestCurrent(options)) { try { onChunk(full); } catch {} }
@@ -12571,9 +12607,9 @@ async function fetchGemini(systemContent, messages, temp = 0.9, maxTok = 1500, p
     if (!full.trim()) return { ...result, error: { code: 'EMPTY_RESPONSE', message: '모델이 빈 응답을 반환했습니다.' } };
     return result;
   } catch (e) {
-    return { error: { message: e.name === 'AbortError' ? '응답 시간 초과' : e.message },
+    return { error: { code: e.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR', message: e.name === 'AbortError' ? '응답 시간 초과' : e.message },
       modelUsed: mdl, timing: { ttfb: first === null ? 0 : first - started, total: Date.now() - started } };
-  } finally { clearTimeout(timeout); }
+  } finally { timeout.clear(); }
 }
 
 // NVIDIA NIM (via Cloudflare Worker proxy) — OpenAI-compatible, streaming required
@@ -12646,12 +12682,13 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     (scope ? () => turnWorkIsCurrent(scope) : () => true) };
   const current = () => llmRequestCurrent(opts) && PROVIDER === provider && isFreeApiMode() === free;
   const fail = (code, message, extra = {}) => ({ error: { code: typeof code === 'number' ? code : safeProviderErrorText(code, 64), message: safeProviderErrorText(message), ...extra,
+    ...(permanentProviderError(code) ? { retryable:false } : {}),
     ...(free || zeroPrice ? { retryable: false, freeTest: true } : {}) } });
   if (!current()) return fail('CANCELLED', '이전 요청이 취소되었습니다.');
   if (isOR && !OPENROUTER_KEY) return fail('AUTH_REQUIRED', 'OpenRouter API 키를 입력해 주세요.');
   const task = options.task || (onChunk ? 'main' : 'utility');
   const profile = llmRequestProfile(provider, mdl, maxTok, task);
-  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), profile.timeoutMs);
+  const controller = new AbortController(), timeout = providerDeadline(controller, profile.timeoutMs, task);
   const started = Date.now(); let first = null;
   const oai = [{ role: 'system', content: systemContent },
     ...messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))];
@@ -12699,7 +12736,10 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     try { showStatToast(message, true); } catch {}
     if (!nextModel) await new Promise(resolve => setTimeout(resolve, 1500));
     if (!current()) return fail('CANCELLED', '이전 요청이 취소되었습니다.');
-    return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, nextModel, nextAttempt, opts);
+    const result = await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, nextModel, nextAttempt, opts);
+    // Once the fallback has failed, the turn must not restart the whole chain.
+    if (nextModel && result.error) result.error.retryable = false;
+    return result;
   };
   try {
     const res = await fetch(url, { method: 'POST', headers, signal: controller.signal, body: JSON.stringify(reqBody) });
@@ -12712,7 +12752,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
         window._orNoSafety = true;
         return await fetchNim(systemContent, messages, temp, maxTok, onChunk, model, orModelOverride, _errRetry, opts);
       }
-      if (canErrFallback && current()) {
+      if (canErrFallback && !permanentProviderError(res.status) && current()) {
         if ((res.status === 429 || res.status >= 500) && _errRetry < 1)
           return await retry(null, _errRetry + 1, '⏳ 일시 오류 — 같은 모델로 한 번 재시도합니다');
         return await retry(SLOW_FALLBACK_MODEL, _errRetry, '⚠ 모델 연결 오류 — 이번 턴만 대체 모델을 사용합니다');
@@ -12731,6 +12771,7 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
       }
       const text = providerText(choice?.delta?.content);
       if (text) {
+        timeout.progress();
         if (first === null) first = Date.now();
         full += text;
         if (onChunk && current()) { try { onChunk(full); } catch {} }
@@ -12738,10 +12779,10 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     });
     if (usage && current()) recTokens(usage.prompt_tokens, usage.completion_tokens, false,
       (usage.cost_details && usage.cost_details.upstream_inference_cost) || usage.cost || 0);
-    const result = { text: full, finishReason, usage, modelUsed,
+    const result = { text: full, finishReason, usage, modelUsed, relayId: genId,
       timing: { ttfb: first === null ? 0 : first - started, total: Date.now() - started } };
     if (streamError) {
-      if (!full.trim() && canErrFallback && current()) {
+      if (!full.trim() && canErrFallback && !permanentProviderError(streamError.code) && current()) {
         if (_errRetry < 1) return await retry(null, _errRetry + 1, '⏳ 응답 오류 — 같은 모델로 한 번 재시도합니다');
         return await retry(SLOW_FALLBACK_MODEL, _errRetry, '⚠ 응답 오류 — 이번 턴만 대체 모델을 사용합니다');
       }
@@ -12756,8 +12797,8 @@ async function fetchNim(systemContent, messages, temp = 0.7, maxTok = 2000, onCh
     if (canErrFallback && first === null && current())
       return await retry(SLOW_FALLBACK_MODEL, _errRetry, '⚠ 연결 실패 — 이번 턴만 대체 모델을 사용합니다');
     return { ...fail(e.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR', e.name === 'AbortError' ? '응답 시간 초과' : e.message),
-      modelUsed: mdl, timing: { ttfb: first === null ? 0 : first - started, total: Date.now() - started } };
-  } finally { clearTimeout(timeout); }
+      relayId: genId, modelUsed: mdl, timing: { ttfb: first === null ? 0 : first - started, total: Date.now() - started } };
+  } finally { timeout.clear(); }
 }
 
 // ===== STREAMING PLAYBACK =====
@@ -13003,7 +13044,21 @@ function discardInconsistentScene(stream, review) {
   enterInputMode(); sendBtn.disabled = false;
   try { autoSave(); } catch {}
 }
-function discardIncompleteScene(stream, finishReason) {
+async function readParkedScene(id, request) {
+  if (!id || typeof SYNC_URL === 'undefined') return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    for (let i = 0; i < 3 && mainRequestIsCurrent(request) && !controller.signal.aborted; i++) {
+      const response = await fetch(SYNC_URL + '/gen?id=' + encodeURIComponent(id), { signal: controller.signal });
+      if (response.ok) return parseSseTranscript(await response.text());
+      if (response.status !== 404) break;
+      if (i < 2) await new Promise(resolve => setTimeout(resolve, 1200));
+    }
+  } catch {} finally { clearTimeout(timeout); }
+  return null;
+}
+function discardIncompleteScene(stream, finishReason, message) {
   window._stream = null;
   window._typeGen = (window._typeGen || 0) + 1;
   window._typeCallback = null;
@@ -13018,7 +13073,7 @@ function discardIncompleteScene(stream, finishReason) {
     gameState._turnStats.fin = finishReason || 'length';
   hideThinking(); window._genFailed = false; window._pendingGen = null;
   showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal',
-    text: '모델의 출력 한도에 도달해 장면을 완성하지 못했습니다. 이번 응답은 턴·상태·기억에 반영하지 않았습니다.\n입력을 보관했으며 자동으로 다시 호출하지 않습니다. 다시 답변을 누르거나 다른 무료 모델을 선택해 주세요.', pose: 'upper' }]);
+    text: message || '모델의 출력 한도에 도달해 장면을 완성하지 못했습니다. 이번 응답은 턴·상태·기억에 반영하지 않았습니다.\n입력을 보관했으며 자동으로 다시 호출하지 않습니다. 다시 답변을 누르거나 다른 무료 모델을 선택해 주세요.', pose: 'upper' }]);
   enterInputMode(); sendBtn.disabled = false;
 }
 async function callGemini(activeCharIds = [], retryCount = 0) {
@@ -13279,31 +13334,12 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       //   중간에 끊기면 여기서 바로 포기해 부분 출력 + "(흐름이 흐트러졌다…)"로 잘렸다.
       //   워커 보관본(전문)이 있으면 result.text로 갈아끼우고 정상 완료 경로로 흘려보낸다 —
       //   스트림 완료 처리가 '이미 표시된 것 이후만' 덧붙이므로 이중 재생 없이 뒷부분이 채워진다.
-      let _recovered = null, _incompleteFinish = null;
-      if (!result.blocked) {
-        try {
-          const _gid = window._pendingGen && window._pendingGen.id;
-          if (_gid && typeof SYNC_URL !== 'undefined') {
-            for (let _k = 0; _k < 3; _k++) {
-              const _r = await fetch(SYNC_URL + '/gen?id=' + _gid);
-              if (!mainRequestIsCurrent(request)) return;
-              if (_r.ok) {
-                const _full = parseSseTranscript(await _r.text());
-                if (!mainRequestIsCurrent(request)) return;
-                if (_full && /length|max_tokens/i.test(_full.finishReason || '')) {
-                  _incompleteFinish = _full.finishReason; break;
-                }
-                if (_full && _full.text && _full.text.trim().endsWith('}') &&
-                    _full.text.length > String(result.text || '').length) _recovered = _full;
-                break;
-              }
-              await new Promise(rs => setTimeout(rs, 1200));
-            }
-          }
-        } catch {}
-      }
+      const parked = result.blocked ? null : await readParkedScene(result.relayId === undefined ? window._pendingGen?.id : result.relayId, request);
       if (!mainRequestIsCurrent(request)) return;
-      if (_incompleteFinish) { discardIncompleteScene(stream, _incompleteFinish); return; }
+      if (/length|max_tokens/i.test(parked?.finishReason || '')) {
+        discardIncompleteScene(stream, parked.finishReason); return;
+      }
+      const _recovered = parked?.text?.trim().endsWith('}') && !/content_filter|safety|prohibited|recitation/i.test(parked.finishReason || '') ? parked : null;
       if (_recovered) {
         window._pendingGen = null;
         try { showStatToast('🔧 끊긴 응답을 서버 보관본으로 복구했습니다', false); } catch {}
@@ -13311,23 +13347,20 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
           modelUsed: _recovered.modelUsed || result.modelUsed };
         // 아래 정상 완료 경로로 낙하 — streamed 상태가 살아 있어 뒷부분만 덧붙는다
       } else {
-        window._stream = null;
-        window._genFailed = !request.freeTest;
-        enqueueLine({ speaker: '나레이터', char_id: null, emotion: 'normal', text: '(이야기의 흐름이 잠시 흐트러졌다…)', pose: 'upper' });
-        if (stream.waiting) { stream.waiting = false; showNextDialogue(); }
-        sendBtn.disabled = false;
+        const reason = result.blocked ? '모델이 응답 생성을 중단했습니다.' :
+          providerFailureText(result.error || {message:'완성된 응답을 받지 못했습니다.'});
+        discardIncompleteScene(stream, result.finishReason || 'interrupted',
+          reason + '\n입력을 보관했습니다. [↺ 다시 답변]으로 재시도할 수 있습니다.');
         return;
       }
     }
 
     if (result.error) {
       const em = result.error.message || '알 수 없는 오류';
-      if (request.freeTest || result.error.retryable === false) {
+      if (request.freeTest || result.error.retryable === false || permanentProviderError(result.error.code)) {
         hideThinking(); window._genFailed = false; window._pendingGen = null;
-        const limit = result.error.code === 429 || /quota|rate limit|RESOURCE_EXHAUSTED/i.test(em);
         showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal',
-          text: (request.freeTest ? (limit ? '무료 API 한도 또는 서버 혼잡으로 멈췄습니다.' : '무료 API 요청을 완료하지 못했습니다.') : 'API 요청을 완료하지 못했습니다.')
-            + '\n자동 재시도 없이 입력을 보관했습니다. [↺ 다시 답변]으로 직접 재시도할 수 있습니다.\n(' + em.slice(0, 120) + ')', pose: 'upper' }]);
+          text: providerFailureText(result.error) + '\n입력을 보관했습니다. [↺ 다시 답변]으로 재시도할 수 있습니다.', pose: 'upper' }]);
         enterInputMode(); sendBtn.disabled = false; return;
       }
       // Rate limit / server congestion (429) — backoff-retry a few times, then
@@ -13335,9 +13368,9 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       if (result.error.code === 429 || /quota|rate limit|RESOURCE_EXHAUSTED|too many requests/i.test(em)) {
         if (retryCount >= 3) {
           hideThinking();
-          const who = PROVIDER === 'nim' ? 'NVIDIA 서버가 혼잡합니다' : 'Gemini 사용량 한도입니다';
+          const message = providerFailureText(result.error);
           showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal',
-            text: `${who}. 잠시 후 [↺ 다시 답변]을 눌러 재시도하세요.\n(${em.slice(0, 120)})`, pose: 'upper' }]);
+            text: message + '\n잠시 후 [↺ 다시 답변]을 눌러 재시도하세요.', pose: 'upper' }]);
           enterInputMode();
           sendBtn.disabled = false;
           return;
@@ -13362,7 +13395,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       hideThinking();
       window._genFailed = true;   // ★백그라운드 네트워크 끊김 등 — 복귀 시 자동 재생성 대상
       showDialogue([{ speaker: '시스템', char_id: null, emotion: 'normal',
-        text: '서버 응답이 지연됩니다. [↺ 다시 답변]을 눌러 재시도하세요.\n(' + em.slice(0, 120) + ')', pose: 'upper' }]);
+        text: providerFailureText(result.error) + '\n[↺ 다시 답변]을 눌러 재시도하세요.', pose: 'upper' }]);
       enterInputMode();
       sendBtn.disabled = false;
       return;
@@ -13398,33 +13431,17 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     //   생성(fin=stop)했는데 앱에 도착한 원문은 528자(≈350토큰)뿐이었다. 릴레이(v281) 경유 중 스트림
     //   일부가 유실된 것. 워커가 같은 응답의 '전문'을 KV에 보관하므로, 받은 원문이 완결되지 않았으면
     //   보관본을 받아 대체한다(재생성·재과금 없음).
-    let _incompleteFinish = null;
-    try {
-      const _gid = window._pendingGen && window._pendingGen.id;
-      const _tail = String(raw || '').trimEnd();
-      const _incomplete = _tail && !_tail.endsWith('}');
-      if (_gid && _incomplete) {
-        for (let _k = 0; _k < 3; _k++) {
-          const _r = await fetch(SYNC_URL + '/gen?id=' + _gid);
-          if (!mainRequestIsCurrent(request)) return;
-          if (_r.ok) {
-            const _full = parseSseTranscript(await _r.text());
-            if (!mainRequestIsCurrent(request)) return;
-            if (_full && /length|max_tokens/i.test(_full.finishReason || '')) {
-              _incompleteFinish = _full.finishReason; break;
-            }
-            if (_full.text && _full.text.length > raw.length) {
-              raw = _full.text;
-              try { showStatToast('🔧 끊긴 응답을 서버 보관본으로 복구했습니다', false); } catch {}
-            }
-            break;
-          }
-          await new Promise(rs => setTimeout(rs, 1200));
-        }
+    if (raw.trimEnd() && !raw.trimEnd().endsWith('}')) {
+      const parked = await readParkedScene(result.relayId === undefined ? window._pendingGen?.id : result.relayId, request);
+      if (!mainRequestIsCurrent(request)) return;
+      if (/length|max_tokens/i.test(parked?.finishReason || '')) {
+        discardIncompleteScene(stream, parked.finishReason); return;
       }
-    } catch {}
-    if (!mainRequestIsCurrent(request)) return;
-    if (_incompleteFinish) { discardIncompleteScene(stream, _incompleteFinish); return; }
+      if (parked?.text && parked.text.length > raw.length && !/content_filter|safety|prohibited|recitation/i.test(parked.finishReason || '')) {
+        raw = parked.text;
+        try { showStatToast('🔧 끊긴 응답을 서버 보관본으로 복구했습니다', false); } catch {}
+      }
+    }
     let parsed;
     try {
       let cleaned = raw.replace(/```json\s*|```/g, '').trim();
