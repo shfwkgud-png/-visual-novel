@@ -82,7 +82,7 @@
     const period = /(새벽|아침|오전|정오|점심|오후|저녁|밤)/.exec(value.slice(date[0].length));
     const slots = {새벽:0,아침:0,오전:0,정오:1,점심:1,오후:1,저녁:2,밤:3};
     const slot = period ? slots[period[1]] : state.slot;
-    if (target === state.date && slot <= state.slot) return false;
+    if (target === state.date && slot <= state.slot) return slot === state.slot;
     state.date = target;
     state.slot = slot;
     state.transitions = (state.transitions || 0) + 1;

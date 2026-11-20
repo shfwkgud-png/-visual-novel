@@ -170,6 +170,40 @@ test('old summary completing after a 25-turn restore cannot overwrite restored f
   assertAllEntriesReachContext(h, 30);
 });
 
+test('rewind persistence packs the newest complete suffix once and retains in-memory rewind through quota retries', () => {
+  const { sb, store, toasts } = newSession();
+  const key = sb.snapKeyFor(sb.STORY.id);
+  const snapshots = Array.from({ length: 30 }, (_, turn) => ({ turn, s: JSON.stringify({ note: '한글 "인용"\\경로' }) }));
+  sb.turnSnaps = snapshots;
+  const expected = n => JSON.stringify(snapshots.slice(-n));
+  sb.SNAP_BYTES = expected(4).length;
+  let serialized = 0;
+  sb.JSON = { parse: JSON.parse, stringify(value) {
+    serialized += Array.isArray(value) ? value.length : 1;
+    return JSON.stringify(value);
+  } };
+  assert.equal(sb.persistSnaps(), 4);
+  assert.equal(store.get(key), expected(4));
+  assert.ok(serialized <= snapshots.length, 'rewind serialized the same snapshots repeatedly');
+  sb.SNAP_BYTES--;
+  assert.equal(sb.persistSnaps(), 3);
+  assert.equal(store.get(key), expected(3));
+  const writes = [];
+  sb.bulkSetSilent = (key, value) => {
+    writes.push(value);
+    if (value.length > expected(1).length) return false;
+    store.set(key, value); return true;
+  };
+  assert.equal(sb.persistSnaps(), 1);
+  assert.deepEqual(writes, [expected(3), expected(2), expected(1)]);
+  sb.SNAP_BYTES = 1; // the newest single snapshot still gets a write attempt
+  assert.equal(sb.persistSnaps(), 1);
+  sb.bulkSetSilent = () => false;
+  assert.equal(sb.persistSnaps(), 0); assert.equal(sb.persistSnaps(), 0);
+  assert.equal(toasts.length, 1); assert.equal(store.has(key), false);
+  assert.equal(sb.turnSnaps, snapshots); assert.equal(sb.turnSnaps.length, 30);
+});
+
 test('latest undo checkpoint survives 50 turns, history trimming, JSON persistence and session restart', async () => {
   const h = newSession(); await play(h, 1, 50);
   const saved = h.saved(), restored = newSession(saved, h.store);

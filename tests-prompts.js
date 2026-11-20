@@ -270,11 +270,31 @@ test('malformed legacy assistant text passes through unchanged and summary is co
 test('balanced context never drops unsummarized history; full keeps the previous larger window', () => {
   const history = Array.from({ length: 40 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: '가'.repeat(4000) }));
   const sb = sandbox(['recentWindowCount'], { gameHistory: history, storySummary: '처음 30개 요약', summaryIndex: 30,
-    CONTEXT_RECENT: 10, RECENT_CHARS_CAP: 120000, AI_CONTEXT_MODE: 'balanced', modelCtxTokens: () => 1000000 });
+    CONTEXT_RECENT: 10, SUMMARY_KEEP: 16, RECENT_CHARS_CAP: 120000, AI_CONTEXT_MODE: 'balanced', modelCtxTokens: () => 1000000 });
   assert.equal(sb.recentWindowCount(), 12);
   sb.AI_CONTEXT_MODE = 'full'; assert.equal(sb.recentWindowCount(), 30);
   sb.AI_CONTEXT_MODE = 'balanced'; sb.summaryIndex = 4; assert.equal(sb.recentWindowCount(), 36);
   sb.storySummary = ''; assert.equal(sb.recentWindowCount(), 40);
+});
+test('balanced requests stop resending whole summarized scenes after a long session', () => {
+  const history = Array.from({ length: 50 }, (_, i) => [
+    { role: 'user', content: '복도를 살핀다. ' + i },
+    { role: 'assistant', content: JSON.stringify({ narration: '복도 저편에서 조용한 발걸음이 들린다. '.repeat(30),
+      dialogue: [{ speaker: '친구', text: '기다려. 같이 가자.' }], background: 'corridor' }) }
+  ]).flat().slice(-60);
+  const sb = sandbox(['recentWindowCount', 'providerHistoryContent', 'buildMessages'], {
+    gameHistory: history, storySummary: '도서관에서 만나기로 약속했다.', summaryIndex: 44,
+    CONTEXT_RECENT: 10, SUMMARY_KEEP: 16, RECENT_CHARS_CAP: 120000, AI_CONTEXT_MODE: 'balanced', modelCtxTokens: () => 1000000
+  });
+  const messages = sb.buildMessages();
+  assert.equal(messages.length, 16);
+  assert.ok(messages[0].content.includes(sb.storySummary));
+  assert.ok(messages[0].content.includes(history[44].content));
+  assert.equal(messages.at(-1).content, history.at(-1).content);
+  sb.summaryIndex = 30;
+  assert.equal(sb.buildMessages().length, 30, 'all pending memory stays verbatim');
+  sb.AI_CONTEXT_MODE = 'full';
+  assert.equal(sb.buildMessages().length, 60, 'full mode retains its extended history');
 });
 function stateApplyFixture(intimacy = 20) {
   return sandbox(['processResponse'], { gameState: stateFixture({ event: '진행 중 사건', combat: true, metChars: { a: { name: '동료', intimacy, relationship: '동료' } } }),
