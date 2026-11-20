@@ -839,6 +839,13 @@ async function longSessionChecks(ctx) {
 
 const HOGWARTS_CAPTURE_SCENE='루핀은 결박된 페티그루의 지팡이를 회수했다. 도주를 막은 일행은 목격 증거와 함께 그를 마법부 경비대에 인계했다.';
 function hogwartsArtReply(kind, user = '', body = {}) {
+  if (kind==='main' && user.includes('모임 입구에 크래브와 고일이 함께 있다.')) {
+    return {narration:'모임 입구에서 두 학생이 길을 비켜 준다.',dialogue:[
+      {speaker:'크래브',char_id:null,emotion:'smile',text:'여기 앉을래?'},
+      {speaker:'나레이터',char_id:null,onstage:['goyle'],text:'고일이 말없이 옆자리를 가리킨다.'},
+      {speaker:'고일',char_id:null,text:'거기 비었어.'}
+    ],background:'corridor',cg:null};
+  }
   if(user.includes('[의상 검증]')){
     if(kind!=='main') return {state_update:{},choices:[],chronicle:[]};
     const npc=user.slice(user.lastIndexOf('[의상 검증]')).includes('헤르미온느가 크룸과 춤춘다.');
@@ -977,6 +984,32 @@ async function hogwartsRPCheck(ctx){
     await drainDialogue(page);
     assert.deepEqual(await page.evaluate(()=>({circle:gameState.hogwarts.world.agency.first_circle,
       ties:gameState.hogwarts.world.ties})),{circle:'malfoy',ties:{hermione:-1,malfoy:2}});
+  });
+  await check(ctx,'Malfoy meeting stages both companions, short names speak and silent action stays narration',async()=>{
+    const start=await page.evaluate(async()=>{
+      await ensureStateExtractReady();
+      const hp=gameState.hogwarts, w=PandoraHogwartsWorld;
+      hp.date='1991-09-03';hp.slot=2;hp.world=w.createState();hp.scene=PandoraHogwartsScenes.createState();
+      w.offer(hp.world,w.EVENTS.find(e=>e.id==='first_invitations'));w.startAmbient(hp.world);
+      document.getElementById('choiceBox')?.remove();showChoices(w.activeChoices(hp.world));
+      return dialogueLog.length;
+    });
+    await page.locator('#choiceBox .choice-btn').filter({hasText:'말포이의 모임'}).click();
+    await page.waitForFunction(()=>window._typeFull==='모임 입구에서 두 학생이 길을 비켜 준다.' &&
+      ['crabbe','goyle'].every(id=>document.getElementById('sprite_'+id)?.naturalWidth>0));
+    assert.deepEqual(await page.evaluate(()=>shownSprites.slice()),['crabbe','goyle']);
+    await drainDialogue(page);
+    const rows=await page.evaluate(start=>dialogueLog.slice(start).filter(e=>!e.isPlayer)
+      .map(e=>[e.speaker,e.char_id,e.text,e.sprites]),start);
+    assert.ok(rows.some(([name,id])=>name==='빈센트 크래브'&&id==='crabbe'));
+    assert.ok(rows.some(([name,id])=>name==='그레고리 고일'&&id==='goyle'));
+    assert.ok(rows.some(([name,id,text,ids])=>name==='나레이터'&&!id&&text.includes('옆자리')&&ids.join()==='goyle'));
+    const back=await page.evaluate(()=>{
+      historyPos=dialogueLog.findLastIndex(e=>e.text==='고일이 말없이 옆자리를 가리킨다.');
+      renderHistoryEntry();
+      return [shownSprites.slice(),document.getElementById('nameplate').classList.contains('narrator')];
+    });
+    assert.deepEqual(back,[['goyle'],true]);
   });
 }
 

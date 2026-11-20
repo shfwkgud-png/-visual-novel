@@ -18,6 +18,23 @@ let tests=0;
 const savedAction={speaker:'퍼시 위즐리',char_id:'percy',text:D.HOUSES['그리핀도르'].arrival.answer};
 assert.equal(D.normalizeDialogue({...savedAction}).speaker,'나레이터');
 assert.equal(D.normalizeDialogue({...savedAction,isPlayer:true}).speaker,'퍼시 위즐리');
+
+const meetingCast = ['crabbe','goyle'];
+for (const ambient of [false,true]) {
+  for (const choice of ['malfoy','hermione','alone']) {
+    const state=W.createState();
+    const event=W.EVENTS.find(e=>e.id==='first_invitations');
+    W.offer(state,event);
+    if(ambient) W.startAmbient(state);
+    const input={eventId:event.id,optionId:choice};
+    const opened=ambient?W.interrupt(state,input):W.start(state,input);
+    assert.deepEqual(opened.openingCast || [],choice==='malfoy'?meetingCast:[]);
+  }
+}
+for(const [surname,id] of [['크래브','crabbe'],['고일','goyle']]) {
+  assert.equal(D.normalizeDialogue({speaker:surname,char_id:null,text:'여기야.'}).char_id,id);
+  assert.deepEqual(D.mentionedCompanions(surname+'에게 인사한다.'),[id]);
+}
 const interrupted=D.createState();D.startArrival(interrupted,'그리핀도르','윤서');
 D.take(interrupted);interrupted.paused=true;
 const pausedSave=JSON.parse(JSON.stringify(interrupted));
