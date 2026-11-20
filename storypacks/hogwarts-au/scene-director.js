@@ -81,7 +81,17 @@
       &&s.visited&&typeof s.visited==='object');
   }
   function ensure(s){if(!valid(s))throw Error('Hogwarts scene continuity state invalid');return s;}
+  const companionNames = { '크래브':'crabbe', '고일':'goyle' };
+  function mentionedCompanions(text){
+    return Object.entries(companionNames).filter(([name])=>String(text||'').includes(name)).map(([,id])=>id);
+  }
   function normalizeDialogue(line){
+    const label=String(line.speaker||'').trim();
+    if(label==='나레이터' && Array.isArray(line.onstage)) line.char_id=null;
+    if(!line.isPlayer && !line.isPlayerLine && Object.hasOwn(companionNames,label)){
+      line.char_id=companionNames[label];
+      line.speaker=line.char_id;
+    }
     if(!line.isPlayer && Object.values(HOUSES).some(h=>
       line.text===h.arrival.answer && line.speaker===h.arrival.reply)){
       line.speaker='나레이터';line.char_id=null;
@@ -324,5 +334,5 @@
       +(s.interrupted?.length?'\n플레이어가 입학 도중 개입했다. 현재 대화·행동에서 이어가며 장소나 주인공 행동을 강제하지 않는다. '
         +'남은 학교 절차는 NPC 일정에 맞춰 자연스럽게 진행하되 이미 일어난 일로 간주하지 않는다: '+s.interrupted.join(' / '):'');
   }
-  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,stageCanonResults,outcomeBeat,take,hasPending,interrupt,describe,arrival,onEnter,daysBetween,normalizeDialogue,HOUSES});
+  return Object.freeze({createState,valid,startArrival,stageEvent,injectNews,startRoomReturn,parseManualTravel,resolveBackground,stageCanonResults,outcomeBeat,take,hasPending,interrupt,describe,arrival,onEnter,daysBetween,normalizeDialogue,mentionedCompanions,HOUSES});
 });

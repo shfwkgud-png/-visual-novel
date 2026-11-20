@@ -81,6 +81,7 @@
       .map(([key,e])=>key+'('+e.kind+','+e.outfit+(e.setting?'; '+e.setting:'')+')');
     if(!looks.length&&!pictures.length) return '';
     return '\n\n## 호그와트 장면 의상·유저 시점 삽화\n'
+      +'현장 인물이 하는 말은 dialogue에 화자별로 쓴다. 크래브=crabbe, 고일=goyle. 플레이어가 말을 건 상대는 자기 말투로 직접 답한다. 말없이 모습을 보이는 행동은 dialogue에 {"speaker":"나레이터","char_id":null,"onstage":["인물ID"],"text":"눈앞의 행동"} 형식으로 넣는다. onstage에는 이 순간 화면에 보일 한두 인물만 적는다. 다른 장소의 일이나 대화 중 언급한 사람은 빼고, 같은 행동을 narration에 중복하지 않는다.\n'
       +'실제 현재 장면에 맞는 그림만 고른다. 의상은 dialogue 항목의 outfit에 default/yule/quidditch를 넣고, 복장이 바뀌는 응답에는 visuals.outfits에도 char_id별로 적는다. yule=무도회 예복, quidditch=참가 선수의 경기복이다. 관중을 경기복으로 갈아입히지 않는다. 없는 의상·CG 키는 만들지 않는다.\n'
       +'의상 목록: '+looks.join(' · ')+'\n'
       +'CG 목록: '+pictures.join(' · ')+'\n'

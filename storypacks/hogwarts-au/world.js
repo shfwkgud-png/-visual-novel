@@ -28,7 +28,7 @@
       title:'같은 저녁, 다른 두 통의 초대', background:'corridor', actors:['malfoy','crabbe','goyle','hermione'],
       intro:'입학식이 끝난 지 이틀째. 헤르미온느는 함께 도서관에서 과제를 조사하자고 한다. 거의 동시에 여성 말포이는 슬리데린 학생들의 비공식 모임에 당신을 초대한다. 두 약속은 같은 저녁이다. 누군가의 하루는 당신이 없어도 계속된다.',
       options:[
-        {id:'malfoy',label:'말포이의 모임에 간다',intent:'말포이의 사교 모임에 참석한다. 말포이는 쉽게 마음을 열지 않으며 혈통과 가문에 대한 날 선 질문을 한다.',delta:{malfoy:3,hermione:-1},flags:{first_circle:'malfoy'},offscreen:'헤르미온느는 혼자 과제를 조사했고, 도와주지 않은 일을 기억한다.'},
+        {id:'malfoy',label:'말포이의 모임에 간다',openingCast:['crabbe','goyle'],intent:'모임 입구에 크래브와 고일이 함께 있다. 크래브가 먼저 말을 걸고 고일은 주위를 살핀 뒤 짧게 거든다. 두 사람이 한 말은 각자의 dialogue에 담는다. 말포이는 쉽게 마음을 열지 않으며 혈통과 가문에 대한 날 선 질문을 한다.',delta:{malfoy:3,hermione:-1},flags:{first_circle:'malfoy'},offscreen:'헤르미온느는 혼자 과제를 조사했고, 도와주지 않은 일을 기억한다.'},
         {id:'hermione',label:'헤르미온느와 도서관에서 공부한다',intent:'도서관에서 헤르미온느를 돕는다. 그녀는 실제 실력과 태도를 보고 판단하며 호의적으로 미리 굴지 않는다.',delta:{malfoy:-1,hermione:3},flags:{first_circle:'hermione'},offscreen:'말포이는 크래브와 고일과 함께 모임을 열었고, 당신의 불참을 기억한다.'},
         {id:'alone',label:'두 약속 모두 거절하고 혼자 탐색한다',intent:'성의 비밀 통로를 혼자 탐색한다. 발견이나 위험은 현재 능력에 맞게 제한한다.',delta:{malfoy:-1,hermione:-1},flags:{first_circle:'independent'},offscreen:'말포이는 자신의 모임을 진행하고, 헤르미온느는 혼자 과제를 마쳤다.'}
       ]},
@@ -369,6 +369,18 @@
       background:event.background,intro:introFor(event,st),
       choices:optionsFor(event,st)};
   }
+  function openingCastForInput(entry) {
+    if (entry?.role !== 'user') return;
+    if (Array.isArray(entry.openingCast)) return entry.openingCast;
+    // Older saves store the director's invitation choice as a two-line receipt.
+    const [header, action] = String(entry.content || '').split('\n', 2);
+    const event = EVENTS.find(e => e.id === 'first_invitations');
+    const option = event.options.find(o => o.id === 'malfoy');
+    if ((header === '[호그와트 확정 장면: '+event.title+']' &&
+         action === '사건 시점: '+event.date+'. 플레이어가 선택한 행동: '+option.label+'.') ||
+        (header === '[호그와트 사건 진행 중 플레이어의 실제 개입] '+event.title &&
+         action === '사용자가 직접 선택한 행동: '+option.label)) return option.openingCast;
+  }
   function start(st, selected) {
     ensure(st);
     const choice=typeof selected==='string'?parseChoice(selected):selected;
@@ -380,7 +392,7 @@
     st.active={id:ev.id,choice:opt.id,at:ev.date,
       needsResult:!['observe','skip'].includes(opt.id) && !opt.confirmedBySystem};
     return {id:ev.id,year:ev.year,date:ev.date,background:ev.background,location:ev.title,
-      actors:ev.actors.slice(),kind:KIND[ev.kind],title:ev.title,
+      actors:ev.actors.slice(),openingCast:opt.openingCast,kind:KIND[ev.kind],title:ev.title,
       instruction:'[호그와트 확정 장면: '+ev.title+']\n'
         +'사건 시점: '+ev.date+'. 플레이어가 선택한 행동: '+opt.label+'.\n'
         +'진입 상황: '+introFor(ev,st)+'\n'
@@ -421,7 +433,7 @@
     if(!opt)return null;
     st.active.choice=opt.id;
     st.active.needsResult=!opt.confirmedBySystem;
-    return {id:ev.id,choice:opt.id,title:ev.title,
+    return {id:ev.id,choice:opt.id,title:ev.title,openingCast:opt.openingCast,
       instruction:'[호그와트 사건 진행 중 플레이어의 실제 개입] '+ev.title+'\n'
         +'사용자가 직접 선택한 행동: '+opt.label+'\n'
         +'의도: '+opt.intent+'\n'
@@ -600,6 +612,6 @@
     return {title,narration:note,canonStatus:known||'unverified'};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
+  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });

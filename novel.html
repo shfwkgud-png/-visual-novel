@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc">
+<meta name="pandora-build" content="f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=000018d3fc8e48ebf05a18545faadd9f082bda2450348c82106e039eaf9e6dcc"></script>
+<script src="pandora-consistency.js?v=369&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=f42a9cd8cb2698ace7329a190c11439bdd427b386140dc885025cca89511a634"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -11889,6 +11889,10 @@ function restoreAndReplayInner(save, checkTimeflow) {
   try { if (lastAssistant) savedReply = JSON.parse(lastAssistant.content); } catch {}
   if (STORY.id === 'hogwarts') {
     const hp = gameState.hogwarts;
+    if (savedReply && !savedReply.openingCast) {
+      const input = gameHistory[gameHistory.lastIndexOf(lastAssistant) - 1];
+      savedReply.openingCast = window.PandoraHogwartsWorld?.openingCastForInput?.(input);
+    }
     const recent = [...dialogueLog].reverse().find(line => hasStoryBackground(line?.bgFile));
     lastBg = [hp?.visuals?.background, lastBg, recent?.bgFile, savedReply?.background,
       hp?.scene?.lastLocation, STORY.startBg].find(hasStoryBackground) || null;
@@ -13079,6 +13083,7 @@ function discardIncompleteScene(stream, finishReason, message) {
 async function callGemini(activeCharIds = [], retryCount = 0) {
   const _turnRequestStart = performance.now();
   const request = { scope: turnWorkScope(), input: gameHistory[gameHistory.length - 1], startedAt: Date.now(), freeTest: typeof FREE_TEST_MODE !== 'undefined' && FREE_TEST_MODE, split: splitPipeOn() };
+  const openingCast = STORY.id === 'hogwarts' && window.PandoraHogwartsWorld?.openingCastForInput?.(request.input);
   window._mainRequest = request;
   sendBtn.disabled = true;
   // The full commit is a boundary, not a six-second race against stale state.
@@ -13248,6 +13253,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       resetTurnLineKeys();   // 새 턴 시작 — 이전 턴 투입 기록은 버린다
       window._lastShownKey = null;   // ★턴 경계에서 함께 리셋(2026-08-18 감사 확증) — 안 하면 이전 턴 마지막 줄과 새 턴 첫 줄이 우연히 같을 때 새 줄이 삭제된다
       resetSprites();
+      if (openingCast) showHogwartsStage(openingCast);
       // ★유저 에코 라인 제거(2026-07-20 UX): 입력은 pill(_genText)에 이미 표시됨 —
       //   응답 첫 라인으로 또 보여주면 같은 내용을 3번 접함(입력→에코→모델의 재서술). 백로그엔 입력 시점 기록으로 남음.
       window._pendingPlayerLine = null;
@@ -13456,6 +13462,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
     parsed = normalizeSceneContract(parsed, request.split);
     if (!parsed) throw new Error('응답이 장면 JSON 객체가 아닙니다. 입력을 보관했으니 다시 답변을 눌러 주세요.');
+
+    if (openingCast) parsed.openingCast = openingCast;
 
     // Detect soft refusal (model complied with filter off but refused in content)
     if (!stream.active && isSoftRefusal(parsed, raw)) {
@@ -14494,6 +14502,8 @@ function processResponse(data, activeCharIds, streamed, stateOnly, source) {
   }
 
   window._pendingChoices = data.choices || null;
+  if (STORY.id === 'hogwarts' && data.openingCast && dialogueQueue[0])
+    dialogueQueue[0].onstage ??= data.openingCast;
   window._activeCharIds = activeCharIds;
 
   if (historyMode) {
@@ -14506,7 +14516,6 @@ function processResponse(data, activeCharIds, streamed, stateOnly, source) {
     return;
   }
 
-  // Sprites now appear lazily — only when a character actually speaks
   resetSprites();
   showNextDialogue();
 }
@@ -14641,6 +14650,13 @@ function highlightSpeaker(charId, emotion, pose) {
 }
 
 // Rebuild an exact sprite set (for history restore)
+function showHogwartsStage(cast) {
+  if (STORY.id !== 'hogwarts' || !Array.isArray(cast)) return;
+  const ids = [...new Set(cast.filter(id => typeof id === 'string' && CHARACTERS[id]?.img))].slice(0, STORY.maxSprites || 2);
+  if (cast.length && !ids.length) return;
+  if (ids.length !== shownSprites.length || ids.some((id,i) => id !== shownSprites[i]))
+    rebuildSprites(ids, null, 'normal', 'upper');
+}
 function rebuildSprites(charIds, speakingId, emotion, pose, outfits) {
   if(STORY.id==='hogwarts'&&window.PandoraHogwartsLooks)
     window._hogwartsDisplayedOutfits=PandoraHogwartsLooks.snapshot(outfits===undefined?gameState?.hogwarts?.visuals?.outfits:outfits,CHARACTERS);
@@ -14838,6 +14854,7 @@ function showNextDialogue() {
     for(const id of shownSprites) updateSpriteEmotion(id,document.getElementById('sprite_'+id)?.dataset.emotion||'normal','upper');
     if(gameState.hogwarts.visuals.cg) showEventCG(gameState.hogwarts.visuals.cg); else hideEventCG();
   }
+  if (d.onstage) showHogwartsStage(d.onstage);
   setNameplate(d.speaker, d.char_id);
 
   // Reveal the speaker's sprite the moment they speak, then highlight
@@ -15662,7 +15679,7 @@ async function handlePlayerInput(text) {
           const action=hw.interrupt(world,chosen);
           if(!action){enterInputMode();return;}
           dialogueLog.push({...sceneVisualSnapshot(),speaker:playerName,text:choiceDisplayText(text),isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
-          gameHistory.push({role:'user',content:action.instruction});
+          gameHistory.push({role:'user',content:action.instruction,openingCast:action.openingCast});
           autoSave();
           const incident=hw.EVENTS.find(e=>e.id===action.id);
           await callGemini(incident?incident.actors:[]);return;
@@ -15692,7 +15709,7 @@ async function handlePlayerInput(text) {
         }
         dialogueLog.push({...sceneVisualSnapshot(),speaker:playerName,text:choiceDisplayText(text),isPlayer:true,char_id:null,
           bgFile:currentBgFile,sprites:[...shownSprites]});
-        gameHistory.push({role:'user',content:scene.instruction});
+        gameHistory.push({role:'user',content:scene.instruction,openingCast:scene.openingCast});
         autoSave();
         await callGemini(scene.actors);
         return;
@@ -15933,6 +15950,11 @@ function detectActiveChars(history) {
     }
   });
 
+  if (STORY.id === 'hogwarts' && window.PandoraHogwartsScenes) {
+    const user = [...history].reverse().find(h => h.role === 'user');
+    const named = PandoraHogwartsScenes.mentionedCompanions(String(user?.content || '').split('\n\n[')[0]);
+    return [...new Set([...named, ...mentioned])].slice(0, 4);
+  }
   return [...mentioned].slice(0, 4);
 }
 
