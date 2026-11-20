@@ -1,9 +1,11 @@
+import { notifyGeneration, expireGeneration } from './gen-notify.js';
+
 // Atomic save storage. Each authenticated namespace owns one SQLite Durable Object.
 // PANDORA_KV remains a read-only source for old backups; it is never deleted here.
 export const SYNC_CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,X-OR-Key,X-Push-Sub,Range,If-Match',
+  'Access-Control-Allow-Headers': 'Content-Type,X-Sync-Token,X-Auth,X-OR-Key,X-Push-Sub,X-Push-Mode,X-Push-Hidden,Range,If-Match',
   'Access-Control-Expose-Headers': 'Content-Range,Accept-Ranges,Content-Length,ETag,X-Pandora-Sync-Protocol',
 };
 
@@ -92,12 +94,19 @@ export class PandoraSyncStore {
   constructor(ctx, env) {
     this.ctx = ctx; this.env = env;
     this.sql = ctx.storage.sql;
+  }
+
+  initSaveTables() {
+    if (this.saveTablesReady) return;
     // Synchronous setup completes before the first request can access these tables.
     this.sql.exec('CREATE TABLE IF NOT EXISTS heads (key TEXT PRIMARY KEY, revision TEXT NOT NULL, updated INTEGER NOT NULL, deleted INTEGER NOT NULL, bytes INTEGER NOT NULL)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS versions (key TEXT NOT NULL, revision TEXT NOT NULL, updated INTEGER NOT NULL, deleted INTEGER NOT NULL, bytes INTEGER NOT NULL, PRIMARY KEY (key, revision))');
     this.sql.exec('CREATE INDEX IF NOT EXISTS versions_recent ON versions (key, updated DESC, revision DESC)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS chunks (key TEXT NOT NULL, revision TEXT NOT NULL, part INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY (key, revision, part))');
+    this.saveTablesReady = true;
   }
+
+  async alarm() { await expireGeneration(this.ctx); }
 
   head(key) { return row(this.sql.exec('SELECT * FROM heads WHERE key = ?', key)); }
 
@@ -158,8 +167,13 @@ export class PandoraSyncStore {
 
   async handle(req) {
     const url = new URL(req.url);
+    if (url.pathname === '/generation-notification' && url.hostname === 'internal' && req.method === 'POST') {
+      await notifyGeneration(this.ctx, this.env, await req.json());
+      return new Response(null, { status: 204 });
+    }
     const ns = req.headers.get('X-Pandora-Sync-Namespace');
     if (!ns) return reply({ error: 'namespace required' }, 401);
+    this.initSaveTables();
     if (url.pathname === '/sync/list') {
       if (req.method !== 'GET') return reply({ error: 'method' }, 405);
       const history = url.searchParams.get('history') === '1';
