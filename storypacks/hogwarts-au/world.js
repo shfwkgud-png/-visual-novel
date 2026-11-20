@@ -369,6 +369,18 @@
       background:event.background,intro:introFor(event,st),
       choices:optionsFor(event,st)};
   }
+  function openingCastForInput(entry) {
+    if (entry?.role !== 'user') return;
+    if (Array.isArray(entry.openingCast)) return entry.openingCast;
+    // Older saves store the director's invitation choice as a two-line receipt.
+    const [header, action] = String(entry.content || '').split('\n', 2);
+    const event = EVENTS.find(e => e.id === 'first_invitations');
+    const option = event.options.find(o => o.id === 'malfoy');
+    if ((header === '[호그와트 확정 장면: '+event.title+']' &&
+         action === '사건 시점: '+event.date+'. 플레이어가 선택한 행동: '+option.label+'.') ||
+        (header === '[호그와트 사건 진행 중 플레이어의 실제 개입] '+event.title &&
+         action === '사용자가 직접 선택한 행동: '+option.label)) return option.openingCast;
+  }
   function start(st, selected) {
     ensure(st);
     const choice=typeof selected==='string'?parseChoice(selected):selected;
@@ -600,6 +612,6 @@
     return {title,narration:note,canonStatus:known||'unverified'};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
+  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
     isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });

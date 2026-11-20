@@ -28,9 +28,12 @@ for (const ambient of [false,true]) {
     if(ambient) W.startAmbient(state);
     const input={eventId:event.id,optionId:choice};
     const opened=ambient?W.interrupt(state,input):W.start(state,input);
-    assert.deepEqual(opened.openingCast || [],choice==='malfoy'?meetingCast:[]);
+    const expected=choice==='malfoy'?meetingCast:[];
+    assert.deepEqual(opened.openingCast || [],expected);
+    assert.deepEqual(W.openingCastForInput({role:'user',content:opened.instruction}) || [],expected);
   }
 }
+assert.equal(W.openingCastForInput({role:'user',content:'다른 곳에서 크래브와 고일 이야기를 들었다.'}),undefined);
 for(const [surname,id] of [['크래브','crabbe'],['고일','goyle']]) {
   assert.equal(D.normalizeDialogue({speaker:surname,char_id:null,text:'여기야.'}).char_id,id);
   assert.deepEqual(D.mentionedCompanions(surname+'에게 인사한다.'),[id]);
