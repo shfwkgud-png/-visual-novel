@@ -1109,6 +1109,8 @@ async function hogwartsArtCheck(ctx) {
       assert(firstTurn.messages.some(message=>message.content.includes(cue)),id+' voice must reach the actual model request');
     }
     const system = firstTurn.messages[0].content;
+    assert.match(system,/크래브는 흑갈색 웨이브 단발.*고일은 허리까지 오는 검은 생머리/);
+    assert.match(system,/나레이션과 대사에서 둘의 체격이나 주먹 크기를 과장하지 않는다/);
     assert.match(system, /여성 말포이는 해리를 명성과 기숙사 경쟁의 맞수로 대하고/);
     assert.match(system,/현재 인물 카드.*과거에 잘못 생성된 어조보다 우선/);
     assert.match(system, /말포이는 경쟁 구도 속에서도 해리에게 사적인 호감/);
