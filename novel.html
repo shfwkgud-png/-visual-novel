@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36">
+<meta name="pandora-build" content="1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=c3219c9893c064d3ead7b3ca20de0909e7559cee30f55a6eeb5a01e252d65f36"></script>
+<script src="pandora-consistency.js?v=369&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=1daf56b8fedecf1419aea3b177860c644009b02ec644e632709ae2c306e34d05"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -11393,22 +11393,38 @@ function setProvider(p) {
 // the retryable error instead of claiming offscreen history was verified.
 let HOGWARTS_CANON_BUNDLE=null;
 let HOGWARTS_CANON_PENDING=null;
+async function loadHogwartsCanonBundle() {
+  if (HOGWARTS_CANON_BUNDLE) return HOGWARTS_CANON_BUNDLE;
+  if (HOGWARTS_CANON_PENDING) return HOGWARTS_CANON_PENDING;
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),8000);
+  try {
+    HOGWARTS_CANON_PENDING=PandoraHogwartsBridge.load(url=>window.fetch(url,{signal:controller.signal}),PandoraHogwartsCanon);
+    HOGWARTS_CANON_BUNDLE=await HOGWARTS_CANON_PENDING;
+    return HOGWARTS_CANON_BUNDLE;
+  } finally {
+    clearTimeout(timeout);
+    HOGWARTS_CANON_PENDING=null;
+  }
+}
 async function syncHogwartsCanon() {
   if (STORY.id!=='hogwarts'||!gameState||!gameState.hogwarts ||
       !window.PandoraHogwartsBridge||!window.PandoraHogwartsCanon) return false;
   const hp=gameState.hogwarts;
+  const scope=turnWorkScope();
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(), 8000);
+  const fetchAsset=url=>window.fetch(url,{signal:controller.signal});
   try {
-    if (!HOGWARTS_CANON_BUNDLE) {
-      if (!HOGWARTS_CANON_PENDING)
-        HOGWARTS_CANON_PENDING=PandoraHogwartsBridge.load(window.fetch.bind(window),PandoraHogwartsCanon);
-      HOGWARTS_CANON_BUNDLE=await HOGWARTS_CANON_PENDING;
-    }
+    await loadHogwartsCanonBundle();
+    if(!turnWorkIsCurrent(scope))return false;
     // Register each of the 198 source-grounded chapter scenarios before the
     // next-event director can select a playable chapter.
     let chapterCatalog=null;
     if (window.PandoraHogwartsChapters && window.PandoraHogwartsWorld) {
       try {
-        chapterCatalog=await PandoraHogwartsChapters.load(window.fetch.bind(window),HOGWARTS_CANON_BUNDLE);
+        chapterCatalog=await PandoraHogwartsChapters.load(fetchAsset,HOGWARTS_CANON_BUNDLE);
+        if(!turnWorkIsCurrent(scope))return false;
         PandoraHogwartsWorld.installChapterCatalog(chapterCatalog,PandoraHogwartsChapters);
         if (!PandoraHogwartsChapters.valid(hp.chapters))hp.chapters=PandoraHogwartsChapters.createState();
         delete hp.chaptersLoadError;
@@ -11417,14 +11433,14 @@ async function syncHogwartsCanon() {
         try { console.warn('[Hogwarts chapter playbook]',e); } catch {}
       }
     }
+    if(!turnWorkIsCurrent(scope))return false;
     commitHogwartsCanon(hp,chapterCatalog);
     return true;
   } catch(e) {
     hp.canonSyncError=String(e&&e.message||e);
-    HOGWARTS_CANON_PENDING=null;
     try { console.warn('[Hogwarts canon]',e); } catch {}
     return false;
-  }
+  } finally {clearTimeout(timeout);}
 }
 
 // Loaded assets let the scene receipt and its world consequences save atomically.
@@ -12266,7 +12282,7 @@ async function summarizeIfNeeded() {
   const toSummarize = gameHistory.slice(summaryIndex, gameHistory.length - SUMMARY_KEEP);
   if (toSummarize.length < 4) return;
   // Uncommitted receipts must remain recoverable original history, not memory.
-  if (toSummarize.some(h => h._stateExtract && h._stateExtract.status !== 'applied')) return;
+  if (toSummarize.some(h => h._stateExtract && !['applied','superseded'].includes(h._stateExtract.status))) return;
 
   // 한 세션에서는 요약 한 개만 진행한다. 새 세션은 이전 네트워크 요청을 기다리지 않는다.
   const myState = gameState, myStory = STORY, myEpoch = window._turnEpoch || 0;
@@ -13118,9 +13134,10 @@ function discardIncompleteScene(stream, finishReason, message) {
 async function callGemini(activeCharIds = [], retryCount = 0) {
   const _turnRequestStart = performance.now();
   const request = { scope: turnWorkScope(), input: gameHistory[gameHistory.length - 1], startedAt: Date.now(), freeTest: typeof FREE_TEST_MODE !== 'undefined' && FREE_TEST_MODE, split: splitPipeOn() };
-  const openingCast = STORY.id === 'hogwarts' && window.PandoraHogwartsWorld?.openingCastForInput?.(request.input);
   window._mainRequest = request;
   sendBtn.disabled = true;
+  try {
+  const openingCast = STORY.id === 'hogwarts' && window.PandoraHogwartsWorld?.openingCastForInput?.(request.input);
   // The full commit is a boundary, not a six-second race against stale state.
   if (pendingStateExtractEntry()) {
     const _waitStart = performance.now();
@@ -13320,7 +13337,6 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     }
   };
 
-  try {
     const _modelStart = performance.now();
     let result;
     if (PROVIDER !== 'gemini') {   // nim·openrouter는 OpenAI 호환 fetchNim 경로(fetchNim이 프로바이더별 URL·인증 처리)
@@ -13492,6 +13508,11 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
       }
       parsed = JSON.parse(cleaned);
     } catch {
+      if (!request.split) {
+        discardIncompleteScene(stream, 'invalid_json',
+          '완성된 장면과 상태 기록을 받지 못했습니다. 입력을 보관했어요. 다시 답변으로 재시도할 수 있습니다.');
+        return;
+      }
       parsed = extractFallback(raw);
     }
     parsed = normalizeSceneContract(parsed, request.split);
@@ -13535,6 +13556,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         }
       }
     }
+    try { fixSpeakerIds(parsed); } catch {}
+    if (!request.split) filterLiveStateUpdate(parsed.state_update, activeCharIds, parsed.dialogue);
     const turnBefore = rememberTurnBefore();
     // Only the latest answer can be regenerated. Keep one checkpoint, not a full
     // copy of gameState for every retained history row.
@@ -13549,7 +13572,6 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     recTokens(0, 0, true);   // 토큰 추적: 본편 턴 카운트(사용량은 fetch단에서 합산)
     // ★분리 모드: 상태·선택지·연대기를 후행 소형 호출로 추출(본편은 이미 화면에 흐르는 중)
     if (request.split && parsed && !parsed.state_update) {
-      try { fixSpeakerIds(parsed); } catch {}
       fireStateExtract(userMessageForExtract(), parsed, activeCharIds, gameHistory.length - 1, request.consistency).catch(() => {});
     }
     try {
@@ -13682,9 +13704,23 @@ function normalizeSceneContract(data, split) {
   delete scene.state_update; delete scene.choices; delete scene.chronicle;
   return scene;
 }
+// Filter new provider data before saving it. Replays use the state already committed for that turn.
+function filterLiveStateUpdate(state, activeCharIds, dialogue = []) {
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return;
+  for (const key of ['gold', 'rep']) {
+    if (key in state && !Number.isFinite(state[key])) delete state[key];
+  }
+  if (!state.chars || typeof state.chars !== 'object') return;
+  const present = new Set(activeCharIds || []);
+  if (Array.isArray(dialogue)) for (const line of dialogue) present.add(line?.char_id);
+  for (const [id, change] of Object.entries(state.chars)) {
+    if (!present.has(id) || !Object.prototype.hasOwnProperty.call(CHARACTERS, id)
+        || !change || typeof change !== 'object' || Array.isArray(change)) delete state.chars[id];
+  }
+}
 function userMessageForExtract() {
-  for (let i = gameHistory.length - 1; i >= 0; i--) if (gameHistory[i].role === 'user') return String(gameHistory[i].content || '').slice(0, 1200);
-  return '';
+  const input = gameHistory[gameHistory.length - 2];
+  return input?.role === 'user' ? String(input.content || '') : '';
 }
 // 사건 커밋(P0-3): 모델이 event/chronicle로 "이 사건을 열었다"고 확인한 턴에만 확정.
 // 분리 모드에서는 후행 추출 결과 도착 시 호출된다.
@@ -13745,7 +13781,39 @@ function resetTurnAsyncWork() {
 }
 function pendingStateExtractEntry() {
   return gameHistory.find(h => h && h.role === 'assistant' && h._stateExtract
-    && h._stateExtract.status !== 'applied') || null;
+    && !['applied','superseded'].includes(h._stateExtract.status)) || null;
+}
+// Older saves can contain unfinished receipts before the state the player
+// actually continued playing. Reapplying those deltas would rewrite later turns.
+function archiveSupersededStateReceipts() {
+  let latestApplied = -1, hasIntegratedCheckpoint = false, archived = false;
+  for (let i = gameHistory.length - 1; i >= 0; i--) {
+    const entry = gameHistory[i];
+    if (entry?.role !== 'assistant') continue;
+    const meta = entry._stateExtract;
+    if (!meta) {
+      if (entry._turnBefore?.state) {
+        try {
+          const state = JSON.parse(entry.content)?.state_update;
+          if (state && typeof state === 'object' && !Array.isArray(state)) hasIntegratedCheckpoint = true;
+        } catch {}
+      }
+      continue;
+    }
+    if (!Number.isInteger(meta.turn) || meta.turn > turnCount) continue;
+    if (meta.status === 'applied') latestApplied = Math.max(latestApplied, meta.turn);
+    else if (['pending','failed','review'].includes(meta.status) && meta.turn < turnCount
+        && (latestApplied > meta.turn || hasIntegratedCheckpoint)) {
+      meta.previousStatus = meta.status;
+      meta.status = 'superseded';
+      archived = true;
+    }
+  }
+  if (archived) {
+    try { autoSave(); } catch {}
+    try { showStatToast('과거 턴의 미완료 기록은 보관하고, 이후 저장된 상태에서 이어갑니다.'); } catch {}
+  }
+  return archived;
 }
 function stateExtractIsCurrent(task) {
   return turnWorkIsCurrent(task.scope) && task.entry._stateExtract === task.meta
@@ -13790,6 +13858,7 @@ async function ensureStateExtractReady() {
     const entry = pendingStateExtractEntry();
     if (!entry) return true;
     const meta = entry._stateExtract;
+    if (meta.turn !== turnCount && archiveSupersededStateReceipts()) continue;
     if (meta.status === 'review') {
       if (typeof showTurnReviewNotice === 'function') showTurnReviewNotice(meta.reviewMessage);
       return false;
@@ -13825,7 +13894,7 @@ function applyStateExtract(task, sx) {
     if (typeof reviewTurnConsistency === 'function') {
       if (!meta.consistency && typeof createTurnConsistency === 'function') {
         const checkpoint = assistantTurnCheckpoint(entry);
-        meta.consistency = createTurnConsistency(meta.userText, meta.turn,
+        meta.consistency = createTurnConsistency(task.userText, meta.turn,
           gameHistory.slice(0, gameHistory.indexOf(entry)), checkpoint && checkpoint.state || gameState);
       }
       consistencyReview = reviewTurnConsistency(meta.consistency, merged, sx);
@@ -13838,19 +13907,12 @@ function applyStateExtract(task, sx) {
     }
     // combat belongs to the displayed main scene, including on save replay.
     delete sx.state_update.combat;
-    for (const key of ['gold', 'rep']) {
-      if (key in sx.state_update && !Number.isFinite(sx.state_update[key])) delete sx.state_update[key];
-    }
-    if (sx.state_update.chars && typeof sx.state_update.chars === 'object') {
-      for (const id of Object.keys(sx.state_update.chars)) {
-        if (!meta.activeCharIds.includes(id) || !sx.state_update.chars[id]
-          || typeof sx.state_update.chars[id] !== 'object') delete sx.state_update.chars[id];
-      }
-    }
+    try { fixSpeakerIds(merged); } catch {} // older pending receipts may omit a speaker from the saved cast
+    filterLiveStateUpdate(sx.state_update, meta.activeCharIds, merged.dialogue);
     // Replaying the saved prose does not mean this uncommitted state was applied.
     replaying = false;
     processResponse({ state_update: sx.state_update, chronicle: sx.chronicle }, meta.activeCharIds, null, true,
-      {scene:merged,userText:meta.userText});
+      {scene:merged,userText:task.userText});
     if (consistencyReview) PandoraConsistency.commit(gameState, consistencyReview);
     commitPendingEventFrom(sx, meta.pendingEvent, meta.turn);
     merged.state_update = sx.state_update;
@@ -13860,6 +13922,8 @@ function applyStateExtract(task, sx) {
     entry.content = JSON.stringify(merged);
     meta.status = 'applied';
     delete meta.consistency; delete meta.reviewMessage; delete meta.correction;
+    // The committed player input remains in history; don't keep a second long copy.
+    if (gameHistory[gameHistory.indexOf(entry) - 1]?.role === 'user') delete meta.userText;
     if (typeof clearTurnReviewNotice === 'function') clearTurnReviewNotice();
     if (typeof recordTurnPerformance === 'function') recordTurnPerformance();
     return true;
@@ -13889,7 +13953,7 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx, cons
       consistency: consistency || (typeof createTurnConsistency === 'function'
         ? createTurnConsistency(userText, turnCount, gameHistory.slice(0, histIdx),
           entry._turnBefore && entry._turnBefore.state || gameState) : null),
-      userText: String(userText || '').slice(0, 1200),
+      userText: String(userText || ''),
       activeCharIds: [...new Set([...(activeCharIds || []),
         ...(mainData.dialogue || []).map(d => d && d.char_id)])].filter(id => id && CHARACTERS[id]),
       pendingEvent: window._pendingEvent ? { ...window._pendingEvent } : null
@@ -13906,32 +13970,53 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx, cons
   if (active && active.entry === entry && stateExtractIsCurrent(active)) return active.promise;
   // Single-flight across entry points: another unfinished turn must commit first.
   if (active && stateExtractIsCurrent(active)) return false;
-  const task = { entry, meta, scope: turnWorkScope() };
-  const started = performance.now();
+  // Old receipts kept only the first 1,200 characters. Recover the tail from
+  // this answer's own preceding input, never from a later draft or another turn.
+  const input = gameHistory[histIdx - 1];
+  const savedInput = String(meta.userText || '');
+  const exactInput = savedInput.length === 1200 && input?.role === 'user'
+    && typeof input.content === 'string' && input.content.startsWith(savedInput) ? input.content : savedInput;
+  const task = { entry, meta, userText: exactInput, scope: turnWorkScope() };
   meta.status = 'pending';
-  meta.attempts = (meta.attempts || 0) + 1;
-  if (meta.attempts > 1 && gameState._turnStats && gameState._turnStats.turn === meta.turn) gameState._turnStats.retried = true;
+  const needsCanon = STORY.id === 'hogwarts' && gameState.hogwarts && window.PandoraHogwartsBridge
+    && window.PandoraHogwartsCanon && !HOGWARTS_CANON_BUNDLE;
   window._splitExtractTask = task;
   const cancelled = new Promise(resolve => { task.cancel = resolve; });
   const work = Promise.resolve().then(async () => {
     if (!stateExtractIsCurrent(task)) return false;
-    let sx = null, notice = '';
-    try {
-      sx = await requestStateExtract(meta.userText, mainData, meta.activeCharIds, meta.consistency, meta.correction);
-    } catch (error) {
-      notice = error?.recorderNotice || '상태 기록을 요청하는 중 오류가 발생했습니다.';
+    let sx = null, notice = '', applied = false;
+    if (needsCanon) {
+      try { await loadHogwartsCanonBundle(); }
+      catch { notice = '호그와트 사건 자료를 불러오지 못했습니다.'; }
+      if (!stateExtractIsCurrent(task)) return false;
+      if (notice) meta.status = 'failed';
     }
-    pandoraPerfRecord('state_extract_complete', performance.now() - started, meta.turn);
-    if (!stateExtractIsCurrent(task)) {
-      pandoraPerfRecord('state_extract_discarded_stale', 0, meta.turn);
-      return false;
-    }
-    const valid = sx && sx.state_update && typeof sx.state_update === 'object' && !Array.isArray(sx.state_update);
-    if (!valid && !notice) meta.correction = 'format';
-    const applied = !!valid && applyStateExtract(task, sx);
-    if (!applied) {
+    while (!notice) {
+      meta.attempts = (meta.attempts || 0) + 1;
+      meta.status = 'pending';
+      if (meta.attempts > 1 && gameState._turnStats?.turn === meta.turn) gameState._turnStats.retried = true;
+      try { autoSave(); } catch {} // persist each provider attempt before dispatch, including corrections
+      const started = performance.now();
+      try {
+        sx = await requestStateExtract(task.userText, mainData, meta.activeCharIds, meta.consistency, meta.correction);
+      } catch (error) {
+        notice = error?.recorderNotice || '상태 기록을 요청하는 중 오류가 발생했습니다.';
+      }
+      pandoraPerfRecord('state_extract_complete', performance.now() - started, meta.turn);
+      if (!stateExtractIsCurrent(task)) {
+        pandoraPerfRecord('state_extract_discarded_stale', 0, meta.turn);
+        return false;
+      }
+      const valid = sx && sx.state_update && typeof sx.state_update === 'object' && !Array.isArray(sx.state_update);
+      if (!valid && !notice) meta.correction = 'format';
+      applied = !notice && !!valid && applyStateExtract(task, sx);
+      if (applied) break;
       if (meta.status !== 'review') meta.status = 'failed';
       pandoraPerfRecord('state_extract_failed', 0, meta.turn);
+      // A known output defect gets one correction with the actual evidence,
+      // on the same receipt and shared promise. A reload must not reset this budget.
+      if (notice || meta.status === 'review' || meta.attempts !== 1 || !stateExtractCorrections.has(meta.correction)) break;
+      sx = null;
     }
     try { autoSave(); } catch {}
     if (!applied) {
@@ -13958,7 +14043,7 @@ async function fireStateExtract(userText, mainData, activeCharIds, histIdx, cons
     }
   });
   window._splitExtractPending = task.promise;
-  try { autoSave(); } catch {}   // the receipt precedes the network request
+  if (needsCanon) try { autoSave(); } catch {} // preserve the receipt while fetching the static ledger
   return task.promise;
 }
 // Read only the scene belonging to the receipt. The caller owns validation and commit.
@@ -14514,7 +14599,9 @@ function processResponse(data, activeCharIds, streamed, stateOnly, source) {
       return;
     }
     // 완료 시 잔여분도 동일: AUTO만 자동 재생, 수동은 탭 대기(2026-07-23)
-    if (streamed.waiting) {
+    if (streamed.firstDisplayMs == null) {
+      showNextDialogue();
+    } else if (streamed.waiting) {
       streamed.waiting = false;
       if (autoPlay || dialogueQueue.length === 0) { showNextDialogue(); }
       else {
@@ -15560,7 +15647,7 @@ function handleKey(e) {
 
 async function sendMessage() {
   const text = (userInput.innerText || '').trim();
-  if (!text || sendBtn.disabled || replaying) return;
+  if (!text || sendBtn.disabled || window._inputRequest || replaying) return;
   // ★기록(히스토리) 모드에 갇힌 채 전송하면 응답이 _pendingDialogues에 홀드돼 화면 침묵
   //   ("응답이 없어요" 사고의 진범, 2026-07-20) — 전송 순간 반드시 현재로 복귀
   if (historyMode) exitHistory();
@@ -15572,24 +15659,48 @@ async function sendMessage() {
   if (cb) cb.remove();
 
   SFX.play('send');
-  handlePlayerInput(text);
+  return handlePlayerInput(text);
 }
 
 async function handlePlayerInput(text) {
   // Acquire input ownership before the first await (choices and direct input share it).
   if (sendBtn.disabled || window._inputRequest || replaying) return;
   const request = { scope: turnWorkScope() };
+  const current = () => window._inputRequest === request && turnWorkIsCurrent(request.scope);
+  const release = () => {
+    if (!current()) return;
+    window._inputRequest = null;
+    if (!window._mainRequest) sendBtn.disabled = false;
+  };
   window._inputRequest = request;
   sendBtn.disabled = true;
+  try {
+    await dispatchPlayerInput(text, request, current, release);
+  } catch (error) {
+    if (!current()) return;
+    if (request.snapshot?.s) {
+      const index = turnSnaps.indexOf(request.snapshot);
+      if (index !== -1) {
+        Object.assign(window, request.setup);
+        restoreSnap(index, true);
+      }
+    }
+    hideThinking();
+    userInput.textContent = text;
+    enterInputMode();
+    try { showStatToast('입력을 처리하지 못해 작성한 내용을 보관했습니다. 다시 보낼 수 있어요.', true); } catch {}
+    console.error('[Pandora input]', error?.name || 'Error');
+  } finally { release(); }
+}
+
+async function dispatchPlayerInput(text, request, current, release) {
   if (pendingStateExtractEntry()) {
     window._genText = text;
     showThinking();
   }
   const _waitStart = performance.now();
   const ready = await ensureStateExtractReady();
-  if (window._inputRequest !== request || !turnWorkIsCurrent(request.scope)) return;
-  window._inputRequest = null;
-  sendBtn.disabled = false;
+  if (!current()) return;
   pandoraPerfRecord('previous_extract_wait', performance.now() - _waitStart, turnCount);
   if (!ready) {
     hideThinking();
@@ -15601,11 +15712,24 @@ async function handlePlayerInput(text) {
     return;
   }
   // ★앱 주입 선택지(⏵)는 AI를 타지 않고 버튼과 같은 경로로 보낸다(runNextPlan이 다시 이 함수를 부른다)
-  if (idolRunInjected(text)) return;
-  captureSnap(text);   // ★되감기용 — 이 입력을 하기 '직전' 상태를 보관
+  if (String(text).startsWith('⏵')) {
+    release(); // The selected schedule submits its own player action.
+    if (!idolRunInjected(text)) { userInput.textContent = text; enterInputMode(); }
+    return;
+  }
+  if (STORY.id==='hogwarts' && gameState?.hogwarts) {
+    const loading = !HOGWARTS_CANON_BUNDLE || (window.PandoraHogwartsChapters && !PandoraHogwartsChapters.getLoaded());
+    if (loading) {window._genText=choiceDisplayText(text);showThinking();}
+    await syncHogwartsCanon();
+    if (!current()) return;
+    if (loading) hideThinking();
+  }
+  const generate = active => { release(); return callGemini(active); };
+  request.setup = { _startPhase:window._startPhase, _proIdx:window._proIdx,
+    _modeChosen:window._modeChosen, _freeMode:window._freeMode };
+  request.snapshot = captureSnap(text);   // The same pre-input checkpoint supports rewind and failed dispatch.
   if(STORY.id==='hogwarts'&&gameState?.hogwarts?.scene?.paused&&window.PandoraHogwartsScenes)
     PandoraHogwartsScenes.interrupt(gameState.hogwarts.scene);
-  if (STORY.id==='hogwarts' && gameState?.hogwarts) await syncHogwartsCanon();
   if (typeof handleHogwartsMagicCommand==='function' && handleHogwartsMagicCommand(text))return;
   if (typeof handleHogwartsDarkResearch==='function' && handleHogwartsDarkResearch(text))return;
   if (typeof handleHogwartsFreeStudy==='function' && handleHogwartsFreeStudy(text))return;
@@ -15657,6 +15781,7 @@ async function handlePlayerInput(text) {
         gameState.event = null;
         gameState.combat = false; gameState._combatStart = null;
         await syncHogwartsCanon(); // commit canon only AFTER participant outcome is known
+        if (!current()) return;
         updateStatusUI();
         if (window.PandoraHogwartsChapters && window.PandoraHogwartsScenes &&
             PandoraHogwartsChapters.getLoaded() && gameState.hogwarts.canon &&
@@ -15722,6 +15847,7 @@ async function handlePlayerInput(text) {
           PandoraHogwartsScenes.stageEvent(clock.scene,oldClock,upcoming,clock.house,world);
         }
         await syncHogwartsCanon(); // stop before the unchosen event's consequences
+        if (!current()) return;
         updateStatusUI();
         if(runHogwartsAutomaticScene()){autoSave();return;}
         renderFixedStep('['+gameState.time+']\n\n'+offer.intro,offer.choices,
@@ -15737,7 +15863,7 @@ async function handlePlayerInput(text) {
           gameHistory.push({role:'user',content:action.instruction,openingCast:action.openingCast});
           autoSave();
           const incident=hw.EVENTS.find(e=>e.id===action.id);
-          await callGemini(incident?incident.actors:[]);return;
+          await generate(incident?incident.actors:[]);return;
         }
         const scene=hw.start(world,chosen);
         if (!scene) {
@@ -15754,6 +15880,7 @@ async function handlePlayerInput(text) {
           const skipped=hw.finish(world);
           gameState.event=null;
           await syncHogwartsCanon(); // unseen historical events still occur off-screen
+          if (!current()) return;
           const after=window.PandoraHogwartsScenes
             ? PandoraHogwartsScenes.outcomeBeat(skipped,world) : null;
           renderFixedStep('당신은 현장에서 물러나기로 했다.\n\n'+
@@ -15766,7 +15893,7 @@ async function handlePlayerInput(text) {
           bgFile:currentBgFile,sprites:[...shownSprites]});
         gameHistory.push({role:'user',content:scene.instruction,openingCast:scene.openingCast});
         autoSave();
-        await callGemini(scene.actors);
+        await generate(scene.actors);
         return;
       }
       if (world.pending) {
@@ -15777,7 +15904,7 @@ async function handlePlayerInput(text) {
           bgFile:currentBgFile,sprites:[...shownSprites]});
         gameHistory.push({role:'user',content:text+'\n\n'+scene.instruction});
         autoSave();
-        await callGemini(scene.actors);
+        await generate(scene.actors);
         return;
       }
     }
@@ -15834,6 +15961,7 @@ async function handlePlayerInput(text) {
     dialogueLog.push({...sceneVisualSnapshot(),speaker:playerName,text,isPlayer:true,char_id:null,bgFile:currentBgFile,sprites:[...shownSprites]});
     updateStatusUI();
     await syncHogwartsCanon(); // confirm train and sorting chapters without spoilers
+    if (!current()) return;
     if (window.PandoraHogwartsScenes) {
       if(!PandoraHogwartsScenes.valid(gameState.hogwarts.scene))gameState.hogwarts.scene=PandoraHogwartsScenes.createState();
       PandoraHogwartsScenes.startArrival(gameState.hogwarts.scene,pick.house,playerName);
@@ -15841,7 +15969,7 @@ async function handlePlayerInput(text) {
       if(runHogwartsAutomaticScene())return;
     }
     autoSave();
-    await callGemini(['mcgonagall']); return;
+    await generate(['mcgonagall']); return;
   }
   if (window._startPhase === 'mode') {
     dialogueLog.push({ ...sceneVisualSnapshot(), speaker: playerName, text, isPlayer: true, char_id: null, bgFile: currentBgFile, sprites: [...shownSprites] });
@@ -15914,7 +16042,7 @@ async function handlePlayerInput(text) {
     if (window._freeMode) gameHistory = [gameHistory[gameHistory.length - 1]];
     window._fateRoll = null;
     autoSave();
-    await callGemini(window._freeMode ? [] : (STORY.startChars || []));
+    await generate(window._freeMode ? [] : (STORY.startChars || []));
     return;
   }
   // ★AI에게만 숨겨 보내는 지시(화면 대사엔 절대 노출 X). 캐릭터 설정 확정·자유모드 시드 등.
@@ -15966,14 +16094,15 @@ async function handlePlayerInput(text) {
   const recentHistory = gameHistory.slice(-6);
   const mentionedChars = detectActiveChars(recentHistory);
 
-  await callGemini(mentionedChars);
+  await generate(mentionedChars);
 }
 
 // ===== DETECT ACTIVE CHARS (exact matching) =====
 function detectActiveChars(history) {
   // Sort by name length descending to match longer names first (레오나르 before 레온)
   const sorted = Object.entries(CHARACTERS)
-    .map(([id, c]) => ({ id, name: c.name }))
+    .map(([id, c]) => ({ id, name: c?.name }))
+    .filter(({name}) => typeof name === 'string' && name.trim())
     .sort((a, b) => b.name.length - a.name.length);
 
   const mentioned = new Set();
@@ -15981,18 +16110,14 @@ function detectActiveChars(history) {
 
   sorted.forEach(({ id, name }) => {
     // Check if this name appears, but not as part of an already-matched longer name
-    const regex = new RegExp(name, 'g');
-    let match;
-    while ((match = regex.exec(recentText)) !== null) {
-      const before = recentText[match.index - 1] || ' ';
-      const after = recentText[match.index + name.length] || ' ';
+    for (let index = recentText.indexOf(name); index !== -1; index = recentText.indexOf(name, index + name.length)) {
       // For 레온: skip if followed by characters that make it 레오나르
       let dominated = false;
       for (const other of sorted) {
         if (other.name.length > name.length && other.name.includes(name) && recentText.includes(other.name)) {
           // Check if this specific occurrence is part of the longer name
           const longerIdx = recentText.indexOf(other.name);
-          if (match.index >= longerIdx && match.index < longerIdx + other.name.length) {
+          if (index >= longerIdx && index < longerIdx + other.name.length) {
             dominated = true;
             break;
           }
@@ -18344,7 +18469,8 @@ function captureSnap(label) {
     };
     turnSnaps.push(snap);
     if (turnSnaps.length > SNAP_MAX) turnSnaps.shift();
-    persistSnaps();
+    try { persistSnaps(); } catch {}
+    return snap;
   } catch {}
 }
 
@@ -18438,7 +18564,7 @@ function openRewind() {
 }
 function closeRewind() { document.getElementById('rewindBox').classList.remove('on'); }
 
-function restoreSnap(i) {
+function restoreSnap(i, recoveringInput = false) {
   const sn = turnSnaps[i]; if (!sn) return;
   let d;
   try { d = JSON.parse(sn.s); } catch { showStatToast('스냅샷을 읽지 못했다', true); return; }
@@ -18498,7 +18624,7 @@ function restoreSnap(i) {
   // ★화면에 남아 있던 '되감기 전' 선택지를 반드시 지운다(2026-07-26 유저 스샷)
   const cb = document.getElementById('choiceBox'); if (cb) cb.remove();
   autoSave();
-  showStatToast(`⏪ ${sn.turn}턴 시점으로 되돌렸다`);
+  if (!recoveringInput) showStatToast(`⏪ ${sn.turn}턴 시점으로 되돌렸다`);
   if (d.choices && d.choices.length) { window._lastChoices = d.choices; showChoices(d.choices); }
   else { window._lastChoices = null; enterInputMode(); }
   resumeStateExtract();

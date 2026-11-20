@@ -94,7 +94,7 @@ function harness() {
     'restoreAndReplay', 'restoreAndReplayInner', 'resetTurnLineKeys', 'enqueueLine', 'dropLogEntry',
     '_echoNorm', '_sameText', '_isNarrationEcho', 'splitNarration', 'processResponse', 'resetSprites',
     'showNextDialogue', 'sceneVisualSnapshot', 'typeText', 'scheduleAuto', 'navNext', 'enterInputMode',
-    'liftDialogueForInput', 'resetDialogueLift', 'sendMessage', 'handlePlayerInput', 'exitToMain'];
+    'liftDialogueForInput', 'resetDialogueLift', 'sendMessage', 'handlePlayerInput', 'dispatchPlayerInput', 'exitToMain'];
   vm.runInContext(names.map(grab).join('\n'), sb);
   async function advance(ms) {
     const target = time + ms; let steps = 0;
@@ -113,6 +113,22 @@ function harness() {
   }
   return { sb, calls, elements, timers, node, advance, record };
 }
+
+test('a completed stream with no visible lines releases thinking and returns to input', () => {
+  const h = harness();
+  h.sb.inputMode = false;
+  h.sb.inputBar.style.display = 'none';
+  h.sb.autoPlay = false;
+  let hidden = 0;
+  h.sb.hideThinking = () => { hidden++; };
+  const stream = { active:true, narrDone:true, dlgCount:1, waiting:false, firstDisplayMs:null };
+  h.sb._stream = stream;
+  h.sb.processResponse({narration:'',dialogue:[{speaker:'다온',text:'문을 연다.'}],choices:['기다린다']},[],stream);
+  assert.equal(hidden, 1);
+  assert.equal(h.sb.inputMode, true);
+  assert.equal(h.sb.inputBar.style.display, 'flex');
+  assert.equal(h.sb._stream, null);
+});
 
 test('restore closes inherited input and choices before replaying the saved scene', async () => {
   const h = harness();

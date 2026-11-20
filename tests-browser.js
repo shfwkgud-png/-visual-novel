@@ -834,6 +834,36 @@ async function longSessionChecks(ctx) {
     await page.waitForTimeout(850);
     assert.equal(net.calls.length, callsBefore, 'synthetic foreground return generated a completed turn again');
   });
+  await check(ctx, 'a superseded receipt in a persisted save survives two restores and the next send uses the committed balance', async () => {
+    const {id, prose, gold} = await page.evaluate(() => {
+      const previous=gameHistory.findLast(h=>h._stateExtract?.status==='applied' && h._stateExtract.turn < turnCount);
+      previous._stateExtract.status='failed';
+      autoSave();
+      return {id:previous._stateExtract.id,prose:previous.content,gold:gameState.gold};
+    });
+    const count=kind=>net.calls.filter(call=>call.kind===kind).length;
+    const before={main:count('main'),state:count('state')};
+    for(let i=0;i<2;i++){
+      await flushLocalSave(page);
+      await page.reload({waitUntil:'domcontentloaded'});
+      await page.locator('.enter-btn').click();
+      await page.locator('#introScreen').waitFor({state:'hidden'});
+      await page.locator('#tabMy').click();
+      await page.locator('#myStories .play-item').filter({hasText:LONG_STORY_FIXTURE.title}).click();
+      await page.locator('#detailContinueBtn').click();
+      await waitGold(page,gold);
+      const historical=await page.evaluate(id=>{
+        const row=gameHistory.find(h=>h._stateExtract?.id===id);
+        return [row._stateExtract.status,row._stateExtract.previousStatus,row.content];
+      },id);
+      assert.deepEqual(historical,['superseded','failed',prose]);
+      assert.deepEqual([count('main'),count('state')],[before.main,before.state]);
+    }
+    await enterText(page,'[장기 검증 26] 새로운 거래 없이 장부 26쪽을 민서와 확인한다.');
+    await page.waitForFunction(()=>turnCount===26 && gameHistory.at(-1)?._stateExtract?.status==='applied');
+    assert.equal(await page.evaluate(()=>gameState.gold),gold);
+    assert.deepEqual([count('main'),count('state')],[before.main+1,before.state+1]);
+  });
 }
 
 
@@ -857,7 +887,8 @@ function hogwartsArtReply(kind, user = '', body = {}) {
   const capture=/페티그루.{0,50}구금/.test(input);
   const switched=input.includes('약속을 취소')&&input.includes('말포이');
   const sleeping=/침실에서 잠을 잔다/.test(input);
-  const narration=capture?HOGWARTS_CAPTURE_SCENE:switched
+  const meeting=kind==='state' && user.split('[이번 턴 장면]').at(-1).includes('모임 입구에서 두 학생이 길을 비켜 준다.');
+  const narration=meeting?'모임 입구에서 두 학생이 길을 비켜 준다.':capture?HOGWARTS_CAPTURE_SCENE:switched
     ?'헤르미온느는 취소를 듣고 책을 덮었다. 말포이는 빈 의자를 내주며 모임에 온 당신을 맞았다.'
     :sleeping?'기숙사 침대에서 잠든 뒤 다음 날 아침에 눈을 떴다.'
     :'대연회장에서 분류가 끝나고 학생들이 이야기를 나눈다.';
@@ -1010,6 +1041,61 @@ async function hogwartsRPCheck(ctx){
       return [shownSprites.slice(),document.getElementById('nameplate').classList.contains('narrator')];
     });
     assert.deepEqual(back,[['goyle'],true]);
+  });
+  await check(ctx,'Hogwarts saved meeting resumes a typed action once through a stalled cold canon asset',async()=>{
+    await page.waitForFunction(()=>gameHistory.at(-1)?._stateExtract?.status==='applied');
+    await flushLocalSave(page);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.getElementById('mainScreen')?.style.display==='flex');
+    await page.locator('.enter-btn').click();
+    await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
+    await page.locator('#detailContinueBtn').click();
+    await drainDialogue(page);
+    const seen=deferred(), release=deferred(), pattern='**/canon-index.json*';
+    let firstLoad=true;
+    await page.route(pattern,async route=>{
+      if(!firstLoad)return route.fallback();
+      firstLoad=false;
+      seen.release();await release.promise;
+      await route.abort().catch(()=>{});
+    });
+    const prior=net.mainTurn;
+    try {
+      const text='고일에게 빈 의자 옆에 앉아도 되는지 묻는다.';
+      await page.locator('#userInput').fill(text);
+      await page.locator('#sendBtn').click();
+      await within(seen.promise,'cold canon request after slot restore');
+      assert.deepEqual(await page.evaluate(()=>({busy:sendBtn.disabled,owned:!!window._inputRequest,
+        pill:document.getElementById('genPill').style.display})),{busy:true,owned:true,pill:'block'});
+      await page.evaluate(()=>handlePlayerInput('중복 제출 검사용 입력'));
+      await page.waitForFunction(()=>gameHistory.at(-1)?._stateExtract?.status==='applied' &&
+        gameHistory.at(-2)?.content.includes('빈 의자 옆에 앉아도'),null,{timeout:16000});
+      assert.equal(net.mainTurn,prior+1);
+      assert.equal(await page.evaluate(()=>gameHistory.some(h=>h.content.includes('중복 제출 검사용 입력'))),false);
+      await drainDialogue(page);
+    } finally {release.release();await page.unroute(pattern);}
+  });
+  await check(ctx,'dispatch failure after appending the player row rolls back and the restored draft sends once',async()=>{
+    const {page,net}=ctx, draft='장부를 어디에 둘지 묻는다.';
+    const before=await page.evaluate(async()=>{
+      await syncHogwartsCanon();
+      const detect=detectActiveChars;
+      detectActiveChars=history=>{
+        detectActiveChars=detect;
+        window.__failedAfterAppend=history.at(-1)?.role==='user';
+        gameState.gold+=19;throw new Error('fixture dispatch failure');
+      };
+      return {rows:gameHistory.length,log:dialogueLog.length,gold:gameState.gold,turn:turnCount};
+    });
+    const prior=net.mainTurn;
+    await enterText(page,draft);
+    await page.waitForFunction(t=>window.__failedAfterAppend&&inputMode&&!sendBtn.disabled&&userInput.innerText===t,draft);
+    assert.equal(net.mainTurn,prior);
+    assert.deepEqual(await page.evaluate(()=>({rows:gameHistory.length,log:dialogueLog.length,gold:gameState.gold,turn:turnCount})),before);
+    await page.locator('#sendBtn').click();
+    await page.waitForFunction(t=>gameHistory.at(-2)?.content.includes(t)&&gameHistory.at(-1)?._stateExtract?.status==='applied',draft);
+    assert.equal(net.mainTurn,prior+1);
+    await drainDialogue(page);
   });
 }
 
