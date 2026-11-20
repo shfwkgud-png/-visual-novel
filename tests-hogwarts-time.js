@@ -64,6 +64,10 @@ for (const invalid of ['내일 아침','1991년 9월 3일 밤','1992년 2월 30�
 assert.equal(within.date,'1991-09-04');
 const evening='수업과 과제를 마칠 무렵 창밖의 해가 지고 저녁이 되었다.';
 assert.equal(t.readSceneTime(within,'1991-09-04 저녁',passage(0,evening)),true);
+const recordedEvening=JSON.stringify(within);
+assert.equal(t.readSceneTime(within,'1991년 9월 4일 저녁',passage(0,evening)),true);
+assert.equal(JSON.stringify(within),recordedEvening,'reporting the current period is a no-op');
+assert.equal(t.readSceneTime(within,'1991-09-04 저녁',passage(0,evening,{scene:slept})),false);
 assert.equal(t.readSceneTime(within,'1991-09-04 오후',passage(0,evening)),false);
 assert.equal(within.slot,2);
 assert.equal(t.readSceneTime(within,'1995-09-01 아침'),false,'a date alone cannot skip four years');

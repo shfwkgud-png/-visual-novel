@@ -97,6 +97,16 @@ test('free request carries zero price ceiling and no Google-only routing fields'
   assert.equal(b.max_tokens, 128); assert.equal(b.response_format.type, 'json_object');
   assert.equal(h.timers.size, 0);
 });
+test('a lost legacy Gemini relay connection retains its original id without starting a paid fallback', async () => {
+  const h = harness({ curORModel: () => 'google/gemini-3.6-flash',
+    SYNC_URL: 'https://fixture.invalid/relay', crypto: { randomUUID: () => 'fixture-original' },
+    fetch: async () => { throw new Error('Failed to fetch'); } });
+  const r = await h.sb.fetchNim('scene', [{role:'user',content:'continue'}], 0.7, 4000, () => {});
+  assert.equal(h.calls.length, 1);
+  assert.equal(r.relayId, 'fixture-original');
+  assert.equal(r.error.code, 'NETWORK_ERROR');
+  assert.equal(h.timers.size, 0);
+});
 test('Flint free main relay reserves output room without disabling mandatory reasoning', async () => {
   const h = harness({ FREE_TEST_MODE: true, curORModel: () => 'recursive/flint-v1.0:free',
     SYNC_URL: 'https://fixture.invalid/relay', crypto: { randomUUID: () => 'fixture-flint-main' } });
@@ -334,10 +344,31 @@ test('Gemini 3.8 is routed via OpenRouter to Google Vertex BYOK', async () => {
   assert.equal(c.headers.Authorization,'Bearer fixture-only');
   assert.equal(c.body.model,'google/gemini-3.8-flash');
   assert.equal(c.body.provider.only[0],'google-vertex');
+  assert.equal(c.body.response_format.type,'json_object');
   assert.equal(c.body.reasoning.effort,'low');
   assert.equal(c.body.temperature,undefined);
   assert.equal(c.body.top_p,undefined);
   assert.equal(c.body.stream,true);
+});
+test('Vertex state recorder requests JSON, ordinary text requests keep text output', async () => {
+  const h = harness({curORModel:()=>'google/gemini-3.8-flash'});
+  await h.sb.callLlmTask('JSON',[],{task:'state',json:true});
+  await h.sb.callLlmTask('plain text',[],{task:'summary'});
+  assert.deepEqual(h.calls[0].body.response_format,{type:'json_object'});
+  assert.equal(h.calls[1].body.response_format,undefined);
+});
+test('native Gemini finishes on the terminal candidate with usage even if HTTP stays open', async () => {
+  const event = {candidates:[{content:{parts:[{text:'완료'}]},finishReason:'STOP'}],
+    usageMetadata:{candidatesTokenCount:3}};
+  let reads=0, cancelled=false;
+  const h=harness({PROVIDER:'gemini',fetch:async()=>({ok:true,body:{getReader:()=>({
+    read:async()=>{ if (++reads>1) throw new Error('idle connection after final event');
+      return {done:false,value:new TextEncoder().encode(sse([event],false)+'\n\n')}; },
+    cancel:async()=>{cancelled=true;},releaseLock(){}
+  })}})});
+  const r=await h.sb.callLlmTask('JSON',[],{task:'state',json:true});
+  assert.equal(r.text,'완료'); assert.equal(r.usage.completion_tokens,3);
+  assert.equal(reads,1); assert.equal(cancelled,true);
 });
 test('Gemini thinking compatibility is retried once and cached per model', async () => {
   let count = 0;
@@ -354,7 +385,15 @@ test('Gemini thinking compatibility is retried once and cached per model', async
 test('small state extraction refuses a token-truncated response', async () => {
   const h = harness({ fetch: async () => answer('{"state_update":{}}', 'length') });
   assert.equal(await h.sb.llmSmall('', 'test', 2500, 0.3), null);
+  await assert.rejects(h.sb.llmSmall('', 'test', 2500, 0.3, {task:'state'}), /출력 한도/);
   assert.equal(h.calls[0].body.max_tokens, 3524);
+});
+test('recorder rate-limit notice keeps the HTTP reason without exposing provider details', async () => {
+  const h = harness({fetch:async () => ({ok:false,status:429,
+    json:async () => ({error:{message:'private fixture detail'}})})});
+  await assert.rejects(h.sb.llmSmall('', 'test', 2500, 0.3, {task:'state'}), error =>
+    /API 요청 한도.*429/.test(error.recorderNotice) && !error.recorderNotice.includes('private'));
+  assert.equal(h.calls.length,1);
 });
 test('NIM utility retains requested limit and receives no OpenRouter-only fields', async () => {
   const h = harness({ PROVIDER: 'nim' }); await h.sb.llmSmall('', 'test', 900, 0.3);
@@ -402,8 +441,8 @@ test('paid Flash never resends a rejected API key to a second model', async () =
   assert.equal(r.error.retryable, false);
 });
 
-test('ongoing main output survives its initial deadline on both transports', async () => {
-  for (const provider of ['openrouter', 'gemini']) {
+test('ongoing scene and recorder output survive their initial deadline on both transports', async () => {
+  for (const provider of ['openrouter', 'gemini']) for (const task of ['main','state']) {
     let now = 0, id = 0;
     const timers = new Map();
     const advance = ms => {
@@ -419,15 +458,16 @@ test('ongoing main output survives its initial deadline on both transports', asy
         let n=0;
         return {ok:true,body:{getReader:() => ({releaseLock(){},read:async () => {
           if (n === 2) return {done:true};
-          advance(n++ === 0 ? 70000 : 60000);
+          const delays = task === 'state' ? [35000, 15000] : [70000, 60000];
+          advance(delays[n++]);
           opts.signal.throwIfAborted();
           const ev = provider === 'gemini' ? {candidates:[{content:{parts:[{text:'ok'}]}}]} : {choices:[{delta:{content:'ok'}}]};
           return {value:new TextEncoder().encode('data: '+JSON.stringify(ev)+'\n\n'),done:false};
         }})}};
       }
     });
-    const r = await h.sb.callLlmTask('', [], {task:'main'});
-    assert.equal(r.text,'okok',provider);
+    const r = await h.sb.callLlmTask('', [], {task});
+    assert.equal(r.text,'okok',provider + ' ' + task);
     assert.equal(timers.size,0);
   }
 });

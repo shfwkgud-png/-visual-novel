@@ -153,7 +153,9 @@ T('malformed extraction stays recoverable and a later retry commits exactly once
   assert.equal(c.entry._stateExtract.status, 'failed');
   assert.equal(c.sb.gameState.gold, 10);
   assert.equal(c.calls.apply.length, 0);
+  assert.match(c.calls.toasts.at(-1), /기록 형식/);
   assert.equal(await c.sb.ensureStateExtractReady(), true);
+  assert.match(c.calls.requests[1][1], /직전 상태 기록 재검토.*완전한 JSON/);
   assert.equal(c.sb.gameState.gold, 14);
   assert.equal(c.entry._stateExtract.status, 'applied');
   await c.sb.ensureStateExtractReady();
@@ -176,6 +178,56 @@ T('partial state-apply exception rolls back data before retry', async () => {
   assert.equal(await c.sb.ensureStateExtractReady(), true);
   assert.equal(c.sb.gameState.gold, 14, 'partial failure was counted twice');
   assert.equal(c.entry._stateExtract.status, 'applied');
+});
+
+T('Hogwarts action retries with time and event feedback, then commits the unchanged clock and actual action once', async () => {
+  const time = require('./storypacks/hogwarts-au/time.js');
+  const world = require('./storypacks/hogwarts-au/world.js');
+  const hp = time.createState();
+  time.chooseHouse(hp, '그리핀도르');
+  time.moveToScene(hp, '1991-09-03', 2);
+  hp.world = world.createState();
+  world.offer(hp.world, world.EVENTS.find(e => e.id === 'first_invitations'));
+  world.start(hp.world, {eventId:'first_invitations', optionId:'hermione'});
+  assert.equal(hp.world.active.needsResult, true);
+  const evidence='저녁 식탁에서 두 사람은 함께 도서관에 가기로 약속했다.';
+  const outcome={event_id:'first_invitations', choice:'hermione', summary:'도서관에 가기로 약속했다.',
+    evidence, complete:false, ties:{}, canon:[], time:{value:'1991-09-03 저녁', days:0, evidence}};
+  const replies = [{}, {...outcome, time:{...outcome.time, value:'1991-09-03 오후'}}, outcome];
+  const c = sandbox({respond: () => {
+    const next = replies.shift();
+    return JSON.stringify({state_update: {gold:4, ...(next.choice ? {hogwarts:next} : {})}});
+  }});
+  Object.assign(c.sb, {STORY:{id:'hogwarts'}, PandoraHogwartsTime:time, PandoraHogwartsWorld:world,
+    HOGWARTS_CANON_BUNDLE:null, fixSpeakerIds(){}});
+  c.sb.gameState.hogwarts=hp;
+  c.entry.content=JSON.stringify({narration:evidence,dialogue:[]});
+  vm.runInContext(grabFn('hogwartsOutcomeContract') + grabFn('applyHogwartsSceneState'), c.sb);
+  const originalApply=c.sb.processResponse;
+  c.sb.processResponse=(data, ids, stream, stateOnly, source) => {
+    originalApply(data, ids, stream, stateOnly, source);
+    c.sb.applyHogwartsSceneState(data,ids,source);
+  };
+  const transitions=hp.transitions;
+  assert.equal(await fire(c), false);
+  assert.equal(c.sb.gameState.gold,10);
+  assert.equal(c.entry._stateExtract.correction,'outcome');
+  assert.match(c.calls.requests[0][0], /진행 중인 행동은 state_update.hogwarts 기록이 필수/);
+  assert.doesNotMatch(c.calls.requests[0][0], /"state_update":\{\}|state_update는 항상 객체다\. 변화가 없으면 \{\}/);
+  assert.doesNotMatch(c.calls.requests[0][0], /'N일차 새벽/);
+  assert.equal(await c.sb.ensureStateExtractReady(),false);
+  assert.match(c.calls.requests[1][1], /직전 상태 기록 재검토.*현재 event_id/);
+  assert.match(c.calls.toasts.at(-1), /날짜가 맞지/);
+  assert.equal(c.sb.gameState.gold,10);
+  assert.equal(await c.sb.ensureStateExtractReady(),true);
+  assert.match(c.calls.requests[2][1], /직전 상태 기록 재검토.*days/);
+  assert.equal(c.sb.gameState.hogwarts.transitions,transitions);
+  assert.equal(c.sb.gameState.hogwarts.world.active.outcome.choice,'hermione');
+  assert.equal(c.sb.gameState.hogwarts.world.active.needsResult,false);
+  assert.equal(c.sb.gameState.gold,14);
+  assert.equal(c.entry._stateExtract.correction,undefined);
+  assert.equal(await c.sb.ensureStateExtractReady(),true);
+  assert.equal(c.calls.requests.length,3);
 });
 
 for (const kind of ['state replacement', 'history replacement', 'epoch change', 'turn advance']) {
@@ -427,6 +479,7 @@ T('next input snapshots and generates only after previous state commits', async 
   const old = fire(c);
   const next = c.sb.handlePlayerInput('인사를 나눈다');
   await flush();
+  assert.deepEqual(c.calls.toasts, [], 'a normal recorder wait showed a warning before any failure');
   assert.equal(snapshots.length, 0, 'snapshot captured uncommitted state');
   assert.equal(generations.length, 0, 'next main request used stale state');
   assert.equal(c.sb.gameHistory.length, 2, 'next input appended before state barrier');
@@ -450,6 +503,8 @@ T('failed previous state keeps the new draft and creates no snapshot or model re
     oldHistory.map(h => ({ role: h.role, content: h.content })));
   assert.equal(c.sb.userInput.textContent, '보관할 입력');
   assert.equal(c.sb.sendBtn.disabled, false, 'failed barrier locked input indefinitely');
+  assert.match(c.calls.toasts.at(-1), /기록 형식.*입력을 보관/);
+  assert.equal(c.calls.toasts.length,2,'a failed send should show one notice with both the reason and retry action');
 });
 
 T('reset while next input is waiting does not append the input to a loaded game', async () => {
@@ -574,6 +629,28 @@ function failedMainFixture(split) {
     state: clone(c.sb.gameState), event: clone(c.sb._pendingEvent), turn: c.sb.turnCount };
 }
 
+T('dialogue-only streaming shows the first real speaker automatically in manual mode', async () => {
+  const fixture = failedMainFixture(false), { c, input } = fixture, reply = deferred();
+  const main = installMainRequest(c, () => reply.promise);
+  installMainStreaming(c, main);
+  const work = c.sb.callGemini([]); await flush();
+  const chunk = main.requests[0].onChunk;
+  const start = '{"narration":"","dialogue":[';
+  chunk(start);
+  assert.equal(c.sb._stream.active, false, 'empty narration started blank playback');
+  const echo = JSON.stringify({speaker:'테스터',text:input});
+  chunk(start + echo + ',');
+  assert.equal(main.streamVisible.length, 0);
+  assert(!c.calls.metrics.some(([name]) => name === 'main_first_display'), 'an input echo counted as first display');
+  const spoken = {speaker:'새 인물',char_id:'fresh',text:'빌려준 책을 돌려주러 왔어.'};
+  const final = start + echo + ',' + JSON.stringify(spoken) + ']}';
+  chunk(final);
+  assert.deepEqual(main.streamVisible.map(d => d.text), [spoken.text]);
+  assert.equal(c.calls.metrics.filter(([name]) => name === 'main_first_display').length, 1);
+  reply.resolve({text:final, finishReason:'stop', timing:{ttfb:50,total:100}});
+  await work;
+});
+
 function assertUncommittedMain(fixture, main, finishReason) {
   const { c, input, history, state, event, turn } = fixture;
   const stateNow = clone(c.sb.gameState);
@@ -618,13 +695,104 @@ T('a stalled parked response releases the input and preserves the failed turn', 
   const work=c.sb.callGemini([]);
   await flush();
   assert.ok(signal);
-  [...c.timers.values()].find(t=>t.ms===8000).fn();
+  [...c.timers.values()].find(t=>t.ms===15000).fn();
   await work;
   assert.equal(c.sb.sendBtn.disabled,false);
   assert.equal(c.sb._mainRequest,null);
   assert.equal(c.sb._stream,null);
   assert.equal(c.sb.gameHistory.at(-1).content,input);
   assert.ok(main.visible.flat().some(line => line.text.includes('NETWORK_ERROR')));
+});
+
+T('empty EOF before the first rendered line uses the completed relay answer once', async () => {
+  const c = failedMainFixture(false).c;
+  c.sb.SYNC_URL='https://relay.fixture.invalid';
+  const saved=JSON.stringify({narration:'성인 사서는 반납 기록을 차분하게 확인했다.',dialogue:[],
+    state_update:{},choices:[],chronicle:[]});
+  let reads=0;
+  c.sb.fetch=async url=>{
+    assert.equal(url,c.sb.SYNC_URL+'/gen?id=fixture-relay');
+    reads++;
+    return {ok:true,text:async()=>'completed transcript'};
+  };
+  c.sb.parseSseTranscript=()=>({text:saved,finishReason:'stop'});
+  const main=installMainRequest(c,async()=>({error:{code:'EMPTY_RESPONSE',message:'empty response'},
+    relayId:'fixture-relay'}));
+  await c.sb.callGemini([]);
+  assert.equal(main.requests.length,1); assert.equal(reads,1); assert.equal(main.countdowns,0);
+  assert.equal(JSON.parse(c.sb.gameHistory.at(-1).content).narration,JSON.parse(saved).narration);
+});
+
+for (const active of [false, true]) {
+  for (const completes of [true, false]) {
+    T('relay loss ' + (active ? 'during' : 'before') + ' playback, original ' + (completes ? 'ready after 6s' : 'never ready') + ': one generation', async () => {
+      const fixture = failedMainFixture(false), { c } = fixture;
+      const line = '사서가 반납 장부를 펼쳤다.';
+      const saved = JSON.stringify({ narration: line + ' 돌려준 책을 찾아 표시했다.', dialogue: [], state_update: {}, choices: [] });
+      let clock = 0, reads = 0;
+      const schedule = c.sb.setTimeout;
+      c.sb.setTimeout = (fn, ms) => {
+        const id = schedule(fn, ms);
+        c.timers.get(id).at = clock + ms;
+        return id;
+      };
+      c.sb.SYNC_URL = 'https://relay.fixture.invalid';
+      c.sb.fetch = async url => {
+        assert.equal(url, c.sb.SYNC_URL + '/gen?id=fixture-original');
+        reads++;
+        return completes && clock >= 6000 ? { ok: true, text: async () => 'transcript' } : { ok: false, status: 404 };
+      };
+      c.sb.parseSseTranscript = () => ({ text: saved, finishReason: 'stop' });
+      const main = installMainRequest(c, async (n, ...args) => {
+        if (active) args[4]('{"narration":"' + line + ' 아직');
+        return { error: { code: 'NETWORK_ERROR', message: 'Failed to fetch' }, relayId: 'fixture-original' };
+      });
+      installMainStreaming(c, main);
+      let done = false;
+      const work = c.sb.callGemini([]).then(() => { done = true; });
+      await flush();
+      while (!done) {
+        const next = [...c.timers.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+        assert.ok(next && next[1].at <= 20000, 'recovery failed to return control within its budget');
+        const [id, timer] = next;
+        c.timers.delete(id); clock = timer.at; timer.fn();
+        await flush();
+      }
+      await work;
+      assert.ok(reads > 3);
+      assert.equal(main.requests.length, 1); assert.equal(main.countdowns, 0);
+      assert.equal(c.sb.sendBtn.disabled, false); assert.equal(c.sb._mainRequest, null);
+      if (completes) {
+        assert.equal(c.sb.turnCount, fixture.turn + 1);
+        assert.equal(JSON.parse(c.sb.gameHistory.at(-1).content).narration, JSON.parse(saved).narration);
+      } else {
+        assert.deepEqual(clone(c.sb.gameHistory), fixture.history);
+        assert.deepEqual(clone(c.sb.dialogueLog), fixture.log);
+        assert.equal(c.sb._genText, fixture.input);
+        assert.equal(c.sb._genFailed, false, 'resuming the app must not generate again');
+        assert.ok(main.visible.flat().some(row => row.text.includes('다시 답변')));
+      }
+      assert.equal(c.timers.size, 0);
+    });
+  }
+}
+
+T('changing saves cancels an in-flight parked read without retrying or touching the new scene', async () => {
+  const { c } = failedMainFixture(false);
+  c.sb.SYNC_URL = 'https://relay.fixture.invalid';
+  let signal;
+  c.sb.fetch = (_, options) => new Promise((resolve, reject) => {
+    signal = options.signal;
+    signal.addEventListener('abort', () => reject(new Error('aborted')), {once:true});
+  });
+  const main = installMainRequest(c, async () => ({ error: { code:'NETWORK_ERROR', message:'Failed to fetch' }, relayId:'fixture-original' }));
+  const work = c.sb.callGemini([]);
+  await flush();
+  c.sb.resetTurnAsyncWork();
+  assert.equal(signal.aborted, true);
+  await work;
+  assert.equal(main.requests.length, 1); assert.equal(main.visible.length, 0);
+  assert.equal(c.timers.size, 0);
 });
 
 for (const split of [false, true]) {
