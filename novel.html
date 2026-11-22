@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404">
+<meta name="pandora-build" content="1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=4485fc896ef9163d11fa58a9b23c4dce392660b5a4298079370599f96603b404"></script>
+<script src="pandora-consistency.js?v=369&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=1b913745da50005d72f1795be111e521e0592e187326dc02fb17ab04d87aa6ce"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -16362,7 +16362,13 @@ function crossfadeBg(url, fallbackUrl) {
 // ===== EVENT CG (full-screen NSFW / event illustration) =====
 let currentCG = null;
 function cgUrlFor(name) {
-  if(STORY.id==='hogwarts') return window.PandoraHogwartsLooks?.url(name,STORY.eventCGs,CHARACTERS)||null;
+  if(STORY.id==='hogwarts') {
+    const asset=window.PandoraHogwartsLooks?.url(name,STORY.eventCGs,CHARACTERS);
+    if(!asset) return null;
+    if(asset.startsWith('r2:'))
+      return `https://pandora-sync.pasokong99.workers.dev/img?name=${encodeURIComponent(asset.slice(3))}&t=${encodeURIComponent(authToken())}`;
+    return asset;
+  }
   // name = "charId/sceneId" or "sceneId" — NSFW는 repo에 없음(비공개), R2 워커에서 서빙(로그인 토큰 게이트)
   const flat = `nsfw_${STORY.id}_${String(name).replace(/\//g, '_')}`;
   return `https://pandora-sync.pasokong99.workers.dev/img?name=${encodeURIComponent(flat)}&t=${encodeURIComponent(authToken())}`;

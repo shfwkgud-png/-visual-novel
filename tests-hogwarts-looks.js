@@ -1,5 +1,7 @@
 'use strict';
 const assert=require('assert/strict');
+const fs=require('fs');
+const vm=require('vm');
 const L=require('./storypacks/hogwarts-au/looks.js');
 const p='sd_samples/characters/hogwarts/';
 const q='sd_samples/cg/hogwarts/';
@@ -65,4 +67,32 @@ assert(prompt.includes('winter ballroom'));
 assert(prompt.includes('cgPartner="player"'));
 assert(prompt.includes('관중을 경기복으로 갈아입히지'));
 assert(!L.prompt(custom,scenes,before).includes('hermione/together('));
+const privateScene={...scenes,'hermione/facial':{
+  actor:'hermione',portrait:chars.hermione.img,outfit:'default',kind:'adult',url:'r2:nsfw_hogwarts_hermione_facial'
+}};
+const adult={cg:'hermione/facial',dialogue:[{char_id:'hermione'}],visuals:{action:'adult',cgPartner:'player',cgConsent:'mutual'}};
+assert.equal(L.scene(before,adult,'library',chars,privateScene,[]).cg,'hermione/facial');
+assert.equal(L.scene(before,{...adult,visuals:{cgPartner:'player',cgConsent:'mutual'}},'library',chars,privateScene,[]).cg,null);
+assert.equal(L.scene(before,{...adult,visuals:{action:'adult',cgPartner:'other',cgConsent:'mutual'}},'library',chars,privateScene,[]).cg,null);
+assert.equal(L.scene(before,{...adult,dialogue:[]},'library',chars,privateScene,[]).cg,null);
+assert.equal(L.scene(before,adult,'library',custom,privateScene,[]).cg,null);
+assert.equal(L.url('hermione/facial',privateScene,chars),'r2:nsfw_hogwarts_hermione_facial');
+assert.equal(L.url('hermione/facial',{'hermione/facial':{...privateScene['hermione/facial'],url:'r2:nsfw_hogwarts_harry_facial'}},chars),null);
+const sandbox={window:{}};
+vm.runInNewContext(fs.readFileSync('./storypacks/hogwarts-au/art.js','utf8'),sandbox);
+vm.runInNewContext(fs.readFileSync('./storypacks/hogwarts-au/story.js','utf8'),sandbox);
+const story=sandbox.window.PANDORA_HOGWARTS_STORY;
+const privateEntries=Object.entries(story.eventCGs).filter(([,e])=>e.kind==='adult');
+assert.equal(privateEntries.length,86);
+assert.equal(new Set(privateEntries.map(([,e])=>e.actor)).size,43);
+assert(privateEntries.every(([key,e])=>L.url(key,story.eventCGs,story.characters)===e.url));
+const html=fs.readFileSync('./novel.html','utf8');
+const cgFn=html.match(/function cgUrlFor\(name\) \{[\s\S]*?\n\}/)?.[0];
+assert(cgFn);
+const resolved=vm.runInNewContext(cgFn+'\ncgUrlFor("hermione/facial")',{
+  STORY:{id:'hogwarts',eventCGs:story.eventCGs},CHARACTERS:story.characters,
+  window:{PandoraHogwartsLooks:L},authToken:()=> 'test-token',encodeURIComponent
+});
+assert(resolved.includes('name=nsfw_hogwarts_hermione_facial'));
+assert(resolved.includes('t=test-token'));
 console.log('PASS Hogwarts looks: wardrobe fallback, spectators, player-only mutual CG, appearance consistency, history snapshots and legacy defaults');
