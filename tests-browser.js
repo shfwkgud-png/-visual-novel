@@ -1332,7 +1332,7 @@ async function hogwartsArtCheck(ctx) {
     await page.waitForFunction(()=>{
       const img=document.querySelector('#sprite_anthony.speaking');
       return img?.naturalWidth===1024 && getComputedStyle(img).visibility==='visible' &&
-        img.currentSrc.endsWith('/anthony/2d/1_neutral.webp');
+        img.currentSrc.endsWith('/anthony/2d/1_neutral_v2.webp');
     });
     assert.match(await page.locator('#nameplate').innerText(),/앤서니 골드스타인/);
     await page.evaluate(()=>{dialogueLog.pop();historyPos=dialogueLog.length-1;renderHistoryEntry();});
