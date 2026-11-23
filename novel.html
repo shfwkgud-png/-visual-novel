@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b">
+<meta name="pandora-build" content="794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="pandora-consistency.js?v=369&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=794aea65a1e9d5c1ece75fa73ce4108cac7d4b5cc7892e54323826398bd9e0e3"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -13683,7 +13683,8 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
     // Only the latest answer can be regenerated. Keep one checkpoint, not a full
     // copy of gameState for every retained history row.
     for (const h of gameHistory) delete h._turnBefore;
-    gameHistory.push({ role: 'assistant', content: JSON.stringify(parsed), _turnBefore: turnBefore });
+    const entry={role:'assistant',content:JSON.stringify(parsed),_turnBefore:turnBefore};
+    gameHistory.push(entry);
     turnCount++;
     if(STORY.id==='hogwarts' && gameState.hogwarts?.world && window.PandoraHogwartsWorld)
       PandoraHogwartsWorld.commitSocialTurn(gameState.hogwarts,parsed.background||currentBgFile,parsed,
@@ -13704,6 +13705,7 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
         pandoraPerfRecord('main_first_display', performance.now() - _turnRequestStart, turnCount);
       }
       processResponse(parsed, activeCharIds, stream.active ? stream : null);
+      if(!request.split && STORY.id==='hogwarts')entry.content=JSON.stringify(parsed);
       if (consistencyReview) PandoraConsistency.commit(gameState, consistencyReview);
       if (parsed && parsed.state_update) commitPendingEventFrom(parsed);
     } catch (error) {
