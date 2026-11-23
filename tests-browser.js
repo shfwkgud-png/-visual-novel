@@ -893,6 +893,15 @@ function hogwartsArtReply(kind, user = '', body = {}) {
       visuals:{cgPartner:npc?'krum':'player',cgConsent:'mutual'},mood:null};
   }
   const input=/\[플레이어 입력\] ([\s\S]*?)\n\[본편 응답/.exec(user)?.[1]||user;
+  if(input.endsWith('플리트윅 교수의 오후 수업을 마친다.')){
+    const narration='오후 마법 수업이 끝났다. 학생들이 양피지를 챙긴다.';
+    const text='다음 수업에 뵙죠!';
+    if(kind==='main')return {time:'1991-09-05 아침',narration,background:'classroom',
+      dialogue:[{char_id:'flitwick',speaker:'필리우스 플리트윅',text}]};
+    return {state_update:{hogwarts:{event_id:null,choice:null,summary:narration,evidence:narration,
+      complete:false,ties:{},canon:[],time:{value:'1991-09-05 아침',days:1,evidence:text}}},
+      choices:['교실을 나선다.'],chronicle:[]};
+  }
   const capture=/페티그루.{0,50}구금/.test(input);
   const switched=input.includes('약속을 취소')&&input.includes('말포이');
   const sleeping=/침실에서 잠을 잔다/.test(input);
@@ -1433,6 +1442,20 @@ async function hogwartsArtCheck(ctx) {
     await flushLocalSave(page);
     assert.equal(await page.evaluate(() => JSON.parse(bulkGet(saveKeyFor(STORY.id))).gameState.hogwarts.date),
       '1991-09-04');
+  });
+  await check(ctx, 'Afternoon class dismissal keeps the banner, saved clock and next turn in sync',async()=>{
+    await enterText(page,'플리트윅 교수의 오후 수업을 마친다.');
+    await drainDialogue(page);
+    await page.waitForFunction(()=>gameHistory.at(-1)?._stateExtract?.status==='applied' &&
+      document.querySelector('#choiceBox')?.textContent.includes('교실을 나선다'));
+    assert.match(await page.locator('#sceneBanner').textContent(),/9월 4일 오후/);
+    await flushLocalSave(page);
+    const saved=await page.evaluate(()=>JSON.parse(bulkGet(saveKeyFor(STORY.id))));
+    assert.equal(saved.gameState.hogwarts.date,'1991-09-04');
+    assert.equal(saved.gameState.hogwarts.slot,1);
+    const answer=JSON.parse(saved.gameHistory.at(-1).content);
+    assert.match(answer.time,/9월 4일 오후/);
+    assert.equal(answer.state_update.hogwarts.time,undefined);
   });
 }
 

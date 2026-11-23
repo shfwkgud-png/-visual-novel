@@ -300,6 +300,35 @@ T('Hogwarts action retries with time and event feedback, then commits the unchan
   assert.equal(c.calls.requests.length,3);
 });
 
+T('afternoon class dismissal survives a next-morning recorder timestamp and receipt reload',async()=>{
+  const time=require('./storypacks/hogwarts-au/time.js'),world=require('./storypacks/hogwarts-au/world.js');
+  const narration='오후 마법 수업이 끝났다. 플리트윅이 교재를 덮는다.';
+  const text='다음 수업에 뵙죠!';
+  const c=sandbox({respond:()=>JSON.stringify({state_update:{hogwarts:{event_id:null,choice:null,
+    complete:false,summary:'마법 수업 종료',evidence:narration,canon:[],ties:{},
+    time:{value:'1991-09-05 아침',days:1,evidence:text}}},choices:['교실을 나선다.']})});
+  const hp={...time.createState(),house:'그리핀도르',date:'1991-09-04',slot:0,world:world.createState()};
+  Object.assign(c.sb,{STORY:{id:'hogwarts'},PandoraHogwartsTime:time,PandoraHogwartsWorld:world,
+    HOGWARTS_CANON_BUNDLE:null,fixSpeakerIds(){}});
+  c.sb.gameState.hogwarts=hp;
+  const data={narration,dialogue:[{speaker:'플리트윅',text}]};
+  c.entry.content=JSON.stringify(data);
+  vm.runInContext(grabFn('hogwartsOutcomeContract')+grabFn('applyHogwartsSceneState'),c.sb);
+  c.sb.processResponse=(data,ids,stream,stateOnly,source)=>c.sb.applyHogwartsSceneState(data,ids,source);
+  c.sb.applyHogwartsSceneState(data,[]);
+  assert.match(c.sb.gameState.time,/9월 4일 오후/);
+  assert(await c.sb.fireStateExtract('교재를 덮는다.',data,[],1));
+  assert.equal(c.entry._stateExtract.status,'applied');
+  assert.match(c.sb.gameState.time,/9월 4일 오후/);
+  assert.equal(hp.transitions,1);
+  assert.deepEqual(JSON.parse(c.entry.content).choices,['교실을 나선다.']);
+  assert.equal(JSON.parse(c.entry.content).state_update.hogwarts.time,undefined);
+  c.sb.gameState=clone(c.sb.gameState);
+  assert(await c.sb.ensureStateExtractReady());
+  assert.equal(c.calls.requests.length,1);
+  assert.match(time.display(c.sb.gameState.hogwarts),/9월 4일 오후/);
+});
+
 for (const kind of ['state replacement', 'history replacement', 'epoch change', 'turn advance']) {
   T('stale result is rejected after ' + kind, async () => {
     const reply = deferred();
