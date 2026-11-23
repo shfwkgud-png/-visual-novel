@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce">
+<meta name="pandora-build" content="e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -2164,18 +2164,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=e5ffcd37a217751624e935f46b8e0c8da268cf81e32fd1fc404a74d6699901ce"></script>
+<script src="pandora-consistency.js?v=369&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=e653b80e63c87b339db4acc4cb1eece72fdb1527484499500fd6b22d9200d69b"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -14399,6 +14399,8 @@ function applyHogwartsSceneState(data,activeCharIds=[],source) {
   }
   if(world?.active&&window.PandoraHogwartsWorld)gameState.event=PandoraHogwartsWorld.resume(world).title;
   gameState.time = PandoraHogwartsTime.display(hp);
+  if(data.state_update && typeof shown.time==='string')shown.time=gameState.time;
+  if(typeof state.time==='string')delete state.time;
   if (hp.house) {
     gameState.flags = {...(gameState.flags || {}), 학년도:PandoraHogwartsTime.studyYear(hp.date)};
     if (!gameState.status || /^호그와트 [1-7]학년/.test(gameState.status))
