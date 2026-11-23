@@ -67,7 +67,8 @@
       "kind": "student",
       "affiliation": "Ravenclaw",
       "cohort": "1991-cohort",
-      "firstReferencedBook": null
+      "firstReferencedBook": null,
+      "auGender": "female"
     },
     {
       "id": "aragog",
@@ -715,7 +716,8 @@
       "kind": "student",
       "affiliation": "Ravenclaw",
       "cohort": "1991-cohort",
-      "firstReferencedBook": null
+      "firstReferencedBook": null,
+      "auGender": "female"
     },
     {
       "id": "millicent",

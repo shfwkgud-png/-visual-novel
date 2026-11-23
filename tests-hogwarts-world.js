@@ -163,7 +163,7 @@ assert(pack);
 assert.equal(pack.id,'hogwarts');
 assert.equal(pack.maxSprites,2);
 assert.equal(pack.endings.length,5);
-for (const id of ['malfoy','crabbe','goyle']) {
+for (const id of ['malfoy','crabbe','goyle','anthony','michael']) {
   assert.equal(pack.characters[id].gender,'여성');
   assert.equal(cast.actors.find(actor=>actor.id===id).auGender,'female');
 }
