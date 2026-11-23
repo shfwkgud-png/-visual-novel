@@ -93,7 +93,7 @@ for(const actor of 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah 
     assert.equal(entry.kind,'adult',key);
     assert.equal(entry.moment,moment,key);
     assert.equal(entry.portrait,story.characters[actor].img,key);
-    if(scene==='hairline') assert.equal(entry.url,q+actor+'/hairline_v2.webp',key);
+    if(scene==='hairline') assert.equal(entry.url,q+actor+'/hairline_'+(actor==='malfoy'?'v4':'v2')+'.webp',key);
     assert(fs.existsSync(entry.url),key+' asset missing');
     const sample={cg:key,dialogue:[{char_id:actor}],visuals:{action:'adult',cgPartner:'player',cgConsent:'mutual',cgMoment:moment}};
     assert.equal(L.scene(before,sample,'library',story.characters,story.eventCGs,[]).cg,key);
