@@ -1322,6 +1322,21 @@ async function hogwartsArtCheck(ctx) {
       if (ctx.mobile) await page.screenshot({ path: path.join(ARTIFACTS, id + '-' + emotion + '-mobile.png') });
     }
   });
+  await check(ctx, 'a saved Great Hall line restores Anthony from his name even without an old sprite list',async()=>{
+    await page.evaluate(()=>{
+      dialogueLog.push({speaker:'앤서니 골드스타인',char_id:null,bgFile:'great_hall',emotion:'curious',
+        text:'소문이랑 다르게 실습이 무난하게 끝난 거야?'});
+      historyPos=dialogueLog.length-1;
+      renderHistoryEntry();
+    });
+    await page.waitForFunction(()=>{
+      const img=document.querySelector('#sprite_anthony.speaking');
+      return img?.naturalWidth===1024 && getComputedStyle(img).visibility==='visible' &&
+        img.currentSrc.endsWith('/anthony/2d/1_neutral.webp');
+    });
+    assert.match(await page.locator('#nameplate').innerText(),/앤서니 골드스타인/);
+    await page.evaluate(()=>{dialogueLog.pop();historyPos=dialogueLog.length-1;renderHistoryEntry();});
+  });
   await check(ctx, 'saved speaker names restore their own portraits and entrance actions stay narration', async () => {
     const restored = await page.evaluate(() => {
       const start = dialogueLog.length;

@@ -118,6 +118,11 @@ window.PANDORA_HOGWARTS_ART = {
     "forest_final_clearing": "금지된 숲의 마지막 대면 장소",
   },
   sprites: {
+    "anthony": {"normal":"1_neutral"},
+    "ernie": {"normal":"1_neutral"},
+    "justin": {"normal":"1_neutral"},
+    "michael": {"normal":"1_neutral"},
+    "terry": {"normal":"1_neutral"},
     "albus": {"normal":"1_neutral","smile":"2_joy","angry":"3_anger","sad":"4_sadness","pleasure":"5_pleasure","pain":"6_pain"},
     "alicia": {"normal":"1_neutral"},
     "andromeda": {"normal":"1_neutral","smile":"2_joy","angry":"3_anger"},
