@@ -52,6 +52,9 @@ const T=require(path.join(dir,'time.js'));
   assert.deepEqual(W.nearby({...library,slot:3},'library',()=>true),[]);
   assert.deepEqual(W.directAddress('파드마의 책이야.',cards),[]);
   assert.deepEqual(W.directAddress('파드마, 그 책은 어때?',cards),['padma']);
+  assert.equal(W.travelDestination('(안뜰에서 도서관으로 간다.)'),'library');
+  assert.equal(W.travelDestination('마법약 교실로 들어간다.'),'potions');
+  assert.equal(W.travelDestination('내일 도서관에 가서 만나자.'),null);
   assert.equal(JSON.stringify(clock),save);
 }
 const HOUSE=['그리핀도르','슬리데린','레번클로','후플푸프'];

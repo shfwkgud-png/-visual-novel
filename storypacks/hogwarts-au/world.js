@@ -203,6 +203,15 @@
     if(/아침|오전/.test(text))return 0;
     return null;
   }
+  function travelDestination(input) {
+    const text=String(input||'').split('\n')[0];
+    if(!text||text.startsWith('[')||/내일|모레|다음\s*주|나중에|할까|갈까|가자|갈래|갈게|갈\s*거|가지\s*(않|마)|못\s*가|[?？]/.test(text))return null;
+    for(const [id,name] of Object.entries(places).sort((a,b)=>b[1].length-a[1].length)){
+      const tail=text.split(name).at(-1);
+      if(tail!==text&&/^(?:으?로|에|에다)?\s*(?:들어(?:간다|가서|갔다)|향(?:한다|했다|해)|간다|갔다|가서|이동(?:한다|했다)|들(?:른다|렀다))/.test(tail))return id;
+    }
+    return null;
+  }
   const activities = {
     library:'자료를 찾거나 빌린 책을 돌려주러 온 학생',
     classroom:'같은 수업에서 과제를 나눠 맡을 수 있는 짝',
@@ -804,6 +813,6 @@
     return {title,narration:note,canonStatus:known||'unverified'};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,getEvent,incidentCast,socialKey,socialRoom,activities,nearby,classmates,directAddress,commitSocialTurn,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
+  return Object.freeze({createState,valid,nextEvent,getEvent,incidentCast,socialKey,socialRoom,activities,nearby,classmates,directAddress,travelDestination,commitSocialTurn,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
     isNext,isFinish,fastChoice,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });

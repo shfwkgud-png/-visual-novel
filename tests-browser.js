@@ -869,6 +869,10 @@ async function longSessionChecks(ctx) {
 
 const HOGWARTS_CAPTURE_SCENE='루핀은 결박된 페티그루의 지팡이를 회수했다. 도주를 막은 일행은 목격 증거와 함께 그를 마법부 경비대에 인계했다.';
 function hogwartsArtReply(kind, user = '', body = {}) {
+  if(user.endsWith('안뜰에서 도서관으로 간다.')){
+    if(kind==='main')return {background:'library',narration:'도서관 문을 열고 안으로 들어간다.',dialogue:[]};
+    if(kind==='state')return {state_update:{},choices:['서가를 살핀다'],chronicle:[]};
+  }
   if(user.includes('목요일 오후 도서관에서 그 책을 같이 볼래?') || user.includes('도서관 약속 · 파드마 파틸')){
     if(kind==='state')return {state_update:{},choices:['책을 펼친다'],chronicle:[]};
     if(kind==='main')return {background:'library',narration:'파드마가 책갈피를 꽂는다.',
@@ -1497,6 +1501,15 @@ async function hogwartsSocialCheck(ctx){
     });
     await drainDialogue(page);
     assert.equal(await page.evaluate(()=>gameState.hogwarts.date),'1991-09-23');
+    await page.evaluate(()=>{setBg('hogwarts_courtyard');gameState.location='안뜰';});
+    await enterText(page,'안뜰에서 도서관으로 간다.');
+    await page.waitForFunction(()=>currentBgFile==='library');
+    await drainDialogue(page);
+    const arrival=net.prompts.findLast(p=>p.kind==='main').messages.map(m=>m.content).join('\n');
+    assert.match(arrival,/도착한 뒤에만 마주칠 수 있는 사람/);assert.match(arrival,/프레드 위즐리\(fred\)/);
+    // Put Padma back at her table for the pre-social save/appointment path.
+    await page.evaluate(()=>{toggleSlots();loadFromSlot(1);});
+    await drainDialogue(page);
     await enterText(page,'파드마, 목요일 오후 도서관에서 그 책을 같이 볼래?');
     await page.waitForFunction(()=>gameState.hogwarts.world.appointments?.length===1);
     await drainDialogue(page);
