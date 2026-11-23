@@ -46,7 +46,7 @@ assert.equal(clock.moveToScene(c,'1991-09-02',0).advanced,false);
 assert.equal(clock.advance(c,'너와 더 오래 이야기하고 싶어').advanced,false);
 assert.equal(c.date,'1991-09-03');
 let scene=world.start(s,p.choices.find(x=>x.includes('hermione')));
-assert.ok(['crabbe','goyle'].every(id=>scene.actors.includes(id)));
+assert.deepEqual(scene.actors,['hermione'],'the Slytherin meeting is offstage on the library branch');
 assert.equal(scene.id,'first_invitations');
 assert.equal(world.resume(JSON.parse(JSON.stringify(s))).mode,'active');
 const study='헤르미온느와 함께 과제를 마치고 도서관을 나왔다. 말포이는 모임에 오지 않은 당신에게 불만을 표시했다.';
