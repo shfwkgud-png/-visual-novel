@@ -55,6 +55,35 @@ assert.equal(t.moveToScene(within,'1991-09-02',2).advanced,false);
 assert.equal(t.moveToScene(within,'1991-09-03',1).advanced,false);
 const slept='기숙사 침대에서 잠든 뒤 다음 날 아침에 눈을 떴다.';
 const passage=(days,evidence=slept,extra={})=>({days,evidence,scene:evidence,...extra});
+const afterClass={...within,date:'1991-09-04',slot:1};
+const dismissal='플리트윅이 교재를 덮고 다음 수업에 보자고 인사했다.';
+const goodbye='다음 수업에 뵙죠!';
+for(const narration of [dismissal,'교수는 이튿날 아침에 만나기로 했다고 전했다.',
+  '플리트윅이 “다음 날 아침이 밝았다.”라는 예문을 읽었다.']){
+  const shown=t.clockNarration({narration,dialogue:[{speaker:'플리트윅',text:goodbye}]});
+  assert(t.readSceneTime(afterClass,'1991-09-05 아침',passage(1,goodbye,{narration:shown})));
+  assert.equal(afterClass.date,'1991-09-04');
+  assert.equal(afterClass.slot,1);
+}
+const lateClock={...afterClass,slot:0};
+const lesson=t.clockNarration({dialogue:[{speaker:'나레이터',text:'오후 마법 수업이 끝났다.'}]});
+t.syncNarratedPeriod(lateClock,lesson);
+assert.match(t.display(lateClock),/9월 4일 오후/);
+const once=lateClock.transitions;
+t.syncNarratedPeriod(lateClock,lesson);
+assert.equal(lateClock.transitions,once);
+for(const text of ['저녁 수업이 시작됐던 기억이 떠올랐다.','저녁이 되자 만나기로 했다.']){
+  t.syncNarratedPeriod(lateClock,text);
+  assert.equal(lateClock.slot,1);
+}
+const arrival='이튿날 아침, 학생들이 교실에 들어섰다.';
+const midnight={...afterClass,date:'1991-09-30',slot:3};
+t.syncNarratedPeriod(midnight,arrival);
+assert.equal(midnight.date,'1991-09-30');
+t.syncNarratedPeriod(midnight,arrival,true);
+assert.match(t.display(midnight),/10월 1일 아침/);
+assert(t.readSceneTime(afterClass,'1991-09-05 아침',passage(1,arrival,{narration:arrival})));
+assert.match(t.display(afterClass),/9월 5일 아침/);
 assert.equal(t.readSceneTime(within,'1991년 9월 4일 아침',passage(1)),true);
 assert.equal(within.date,'1991-09-04');
 assert.equal(within.slot,0);
