@@ -1501,7 +1501,8 @@ async function hogwartsSocialCheck(ctx){
     await page.waitForFunction(()=>gameState.hogwarts.world.appointments?.length===1);
     await drainDialogue(page);
     const main=net.prompts.findLast(p=>p.kind==='main').messages.map(m=>m.content).join('\n');
-    assert.match(main,/주변에 먼저 와 있는 사람/);assert.doesNotMatch(main,/매 응답에 최소 1명의/);
+    assert.match(main,/주변에 먼저 와 있는 사람/);
+    assert.doesNotMatch(main,/매 응답에 최소 1명의|여러 인물이 있으면 서로 주고받게 해서|매 턴 최소 하나는 주인공과 무관한 움직임/);
     await page.evaluate(()=>{saveToSlot(1);toggleSlots();loadFromSlot(1);});
     await drainDialogue(page);
     await page.evaluate(()=>selectChoice(PandoraHogwartsWorld.fastChoice));
