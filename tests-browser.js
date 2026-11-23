@@ -869,6 +869,15 @@ async function longSessionChecks(ctx) {
 
 const HOGWARTS_CAPTURE_SCENE='루핀은 결박된 페티그루의 지팡이를 회수했다. 도주를 막은 일행은 목격 증거와 함께 그를 마법부 경비대에 인계했다.';
 function hogwartsArtReply(kind, user = '', body = {}) {
+  if(user.endsWith('안뜰에서 도서관으로 간다.')){
+    if(kind==='main')return {background:'library',narration:'도서관 문을 열고 안으로 들어간다.',dialogue:[]};
+    if(kind==='state')return {state_update:{},choices:['서가를 살핀다'],chronicle:[]};
+  }
+  if(user.includes('목요일 오후 도서관에서 그 책을 같이 볼래?') || user.includes('도서관 약속 · 파드마 파틸')){
+    if(kind==='state')return {state_update:{},choices:['책을 펼친다'],chronicle:[]};
+    if(kind==='main')return {background:'library',narration:'파드마가 책갈피를 꽂는다.',
+      dialogue:[{speaker:'파드마 파틸',char_id:'padma',text:'좋아. 목요일 오후 도서관에서 보자.'}]};
+  }
   if (kind==='main' && user.includes('모임 입구에 크래브와 고일이 함께 있다.')) {
     return {narration:'모임 입구에서 두 학생이 길을 비켜 준다.',dialogue:[
       {speaker:'크래브',char_id:null,emotion:'smile',text:'여기 앉을래?'},
@@ -1475,6 +1484,52 @@ async function hogwartsSlotBackgroundCheck(ctx) {
   });
 }
 
+async function hogwartsSocialCheck(ctx){
+  const {page,net}=ctx;
+  await check(ctx,'Hogwarts legacy slot keeps a library conversation, meets Padma before Halloween and restores the appointment',async()=>{
+    await page.evaluate(()=>{
+      const save=JSON.parse(JSON.stringify(currentSavePayload()));
+      const hp=save.gameState.hogwarts;
+      Object.assign(hp,{date:'1991-09-23',slot:1,house:'그리핀도르',scene:PandoraHogwartsScenes.createState(),world:PandoraHogwartsWorld.createState(),canon:null});
+      hp.scene.lastLocation='library';hp.visuals={version:1,background:'library',outfits:{},cg:null};
+      save.gameState.location='도서관';save.gameState.time=PandoraHogwartsTime.display(hp);save.gameState.event=null;
+      save.gameState.metChars={padma:{location:'도서관'}};
+      const line={speaker:'파드마 파틸',char_id:'padma',text:'참고서를 찾았어.',emotion:'normal'};
+      save.lastBg='library';save.gameHistory=[{role:'assistant',content:JSON.stringify({background:'library',dialogue:[line]})}];
+      save.dialogueLog=[{...line,bgFile:'library',sprites:['padma']}];
+      bulkSetSilent(slotKey(1),JSON.stringify(save));toggleSlots();loadFromSlot(1);
+    });
+    await drainDialogue(page);
+    assert.equal(await page.evaluate(()=>gameState.hogwarts.date),'1991-09-23');
+    await page.evaluate(()=>{setBg('hogwarts_courtyard');gameState.location='안뜰';});
+    await enterText(page,'안뜰에서 도서관으로 간다.');
+    await page.waitForFunction(()=>currentBgFile==='library');
+    await drainDialogue(page);
+    const arrival=net.prompts.findLast(p=>p.kind==='main').messages.map(m=>m.content).join('\n');
+    assert.match(arrival,/도착한 뒤에만 마주칠 수 있는 사람/);assert.match(arrival,/프레드 위즐리\(fred\)/);
+    // Put Padma back at her table for the pre-social save/appointment path.
+    await page.evaluate(()=>{toggleSlots();loadFromSlot(1);});
+    await drainDialogue(page);
+    await enterText(page,'파드마, 목요일 오후 도서관에서 그 책을 같이 볼래?');
+    await page.waitForFunction(()=>gameState.hogwarts.world.appointments?.length===1);
+    await drainDialogue(page);
+    const main=net.prompts.findLast(p=>p.kind==='main').messages.map(m=>m.content).join('\n');
+    assert.match(main,/주변에 먼저 와 있는 사람/);
+    assert.doesNotMatch(main,/매 응답에 최소 1명의|여러 인물이 있으면 서로 주고받게 해서|매 턴 최소 하나는 주인공과 무관한 움직임/);
+    await page.evaluate(()=>{saveToSlot(1);toggleSlots();loadFromSlot(1);});
+    await drainDialogue(page);
+    await page.evaluate(()=>selectChoice(PandoraHogwartsWorld.fastChoice));
+    await page.waitForFunction(()=>gameState.hogwarts.date==='1991-09-26');
+    await drainDialogue(page);
+    await page.waitForFunction(()=>gameState.hogwarts.world.active?.id.startsWith('meeting_'));
+    await drainDialogue(page);
+    const meeting=net.prompts.findLast(p=>p.kind==='main').messages.map(m=>m.content).join('\n');
+    assert.match(meeting,/주변에 먼저 와 있는 사람/);assert.match(meeting,/파드마 파틸/);
+    const continued=await page.evaluate(()=>{saveToSlot(1);toggleSlots();loadFromSlot(1);return gameState.hogwarts.world.active.id;});
+    assert.match(continued,/^meeting_/);
+  });
+}
+
 async function appUpdateChecks(ctx){
   const {page,context}=ctx;
   const loaded=await page.evaluate(()=>APP_BUILD);
@@ -1741,7 +1796,7 @@ async function hogwartsLooksCheck(ctx){
       const hogwartsCtx = await createFixturePage(origin, mobile, {
         freeMode: true, integrated: true, reply: hogwartsArtReply, capturePrompts: true
       });
-      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); await appUpdateChecks(hogwartsCtx); await hogwartsSlotBackgroundCheck(hogwartsCtx); }
+      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); await appUpdateChecks(hogwartsCtx); await hogwartsSlotBackgroundCheck(hogwartsCtx); await hogwartsSocialCheck(hogwartsCtx); }
       finally { await hogwartsCtx.context.close(); }
       const hogwartsRPCtx=await createFixturePage(origin,mobile,{freeMode:true,reply:hogwartsArtReply,capturePrompts:true});
       try{await hogwartsRPCheck(hogwartsRPCtx);}

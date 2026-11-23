@@ -158,7 +158,7 @@ assert(html.includes('storypacks/hogwarts-au/world.js?v=15'));
 assert(html.includes('PandoraHogwartsWorld.installChapterCatalog'));
 assert(html.includes('PandoraHogwartsChapters.currentContext'));
 assert(html.includes('PandoraHogwartsChapters.ending('));
-assert(html.includes('hw.nextEvent(world,clock.date,clock.slot,clock.canon)'));
+assert(html.includes('hw.nextEvent(world,clock.date,clock.slot,clock.canon,text===hw.fastChoice,clock.house)'));
 new Function(html.slice(html.indexOf('<script>')+8,html.lastIndexOf('</script>')));
 console.log(JSON.stringify({test:'hogwarts-all-chapters',result:'PASS',
   chapters:catalog.summary.chapters,beats:catalog.summary.beats,causalEdges:55,
