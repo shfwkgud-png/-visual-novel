@@ -20,6 +20,7 @@
   // JavaScript \b only recognizes ASCII word characters: after Korean text it
   // does NOT match a space. These controls were falling through into AI chat.
   const SCENE_NEXT = /^▶\s*다음 장면(?=\s|$)/;
+  const fastChoice='▶ 다음 주요 일정 — 일상을 건너뛰고 약속이나 주요 사건으로';
   const SCENE_FINISH = /^▶\s*장면 마치기(?=\s|$)/;
   // Fixed design anchors are intentionally broad except for unambiguous canon dates
   // (e.g. Halloween). Other dates are scenario pacing, NOT asserted novel canon.
@@ -185,6 +186,184 @@
     return t.toISOString().slice(0,10);
   }
   function dayGap(a,b) { return Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/86400000); }
+  const housePeers = {
+    '그리핀도르':['parvati','lavender','dean','seamus','neville','hermione','ron','harry'],
+    '레번클로':['padma','terry','anthony','michael'],
+    '슬리데린':['daphne','millicent','pansy','blaise','theodore','goyle','crabbe','malfoy'],
+    '후플푸프':['hannah','susan','justin','ernie']
+  };
+  const places = {library:'도서관',classroom:'교실',potions:'마법약 교실',hogwarts_courtyard:'안뜰',great_hall:'대연회장',quidditch:'퀴디치 경기장'};
+  function meetingPlace(text) {
+    return Object.keys(places).sort((a,b)=>places[b].length-places[a].length).find(key=>text.includes(places[key]));
+  }
+  function meetingSlot(text) {
+    if(/밤|야간/.test(text))return 3;
+    if(/저녁/.test(text))return 2;
+    if(/오후|점심|방과\s*후|수업\s*후/.test(text))return 1;
+    if(/아침|오전/.test(text))return 0;
+    return null;
+  }
+  const activities = {
+    library:'자료를 찾거나 빌린 책을 돌려주러 온 학생',
+    classroom:'같은 수업에서 과제를 나눠 맡을 수 있는 짝',
+    potions:'같은 실습대에서 재료와 도구를 쓰는 학생',
+    hogwarts_courtyard:'다음 수업 사이에 쉬거나 친구를 만나러 나온 학생',
+    great_hall:'식사와 기숙사 소식을 나누러 온 학생',
+    common_room:'같은 기숙사에서 과제나 개인 용무를 보는 학생',
+    quidditch:'훈련이나 경기 준비를 하러 온 선수'
+  };
+  function socialRoom(bg) {
+    return /common_room$/.test(bg) ? 'common_room' : bg;
+  }
+  function classmates(hp,bg) {
+    const room=socialRoom(bg),home=housePeers[hp.house==='래번클로'?'레번클로':hp.house];
+    const year=Number(hp.date.slice(0,4))-(hp.date.slice(5,7)>='09'?1990:1991);
+    if(!home||!activities[room]||year<1||year>7||['07','08'].includes(hp.date.slice(5,7)))return [];
+    if((room==='potions'||room==='classroom')&&(hp.slot>1||[0,6].includes(new Date(hp.date+'T12:00:00Z').getUTCDay())))return [];
+    if(room==='quidditch')return year<=3?['angelina','katie','alicia','wood','cho']:['ginny','katie'];
+    if(room==='common_room' && bg!=='common_room'){
+      const homes={'그리핀도르':'gryffindor','슬리데린':'slytherin','후플푸프':'hufflepuff','래번클로':'ravenclaw','레번클로':'ravenclaw'};
+      if(!bg.startsWith(homes[hp.house]+'_'))return [];
+    }
+    if(room==='common_room')return home;
+    if(room==='potions')return home.concat(hp.house==='그리핀도르'?housePeers['슬리데린']:hp.house==='슬리데린'?housePeers['그리핀도르']:[]);
+    const common=Object.values(housePeers).flat();
+    if(year<=3)common.push('wood','penelope','percy');
+    if(year<=5)common.push('angelina','alicia','fred','george');
+    if(year<=6)common.push('cho','katie');
+    if(year>=2)common.push('ginny','luna');
+    return common;
+  }
+  function socialKey(hp,bg) {
+    return [hp.date,hp.slot,bg,hp.world?.active?.id||'',hp.world?.active?.choice||''].join('/');
+  }
+  function nearby(hp,bg,eligible) {
+    const day=Math.floor(Date.parse(hp.date+'T00:00:00Z')/86400000),room=socialRoom(bg);
+    if(hp.slot===3&&room!=='common_room')return [];
+    const periods=['library','hogwarts_courtyard','common_room','great_hall','quidditch'];
+    const weekday=[1,2,3,4,5].includes(new Date(hp.date+'T12:00:00Z').getUTCDay());
+    const peers=classmates(hp,bg).filter(id=>{
+      if(hp.date>='1997-09-01'&&['harry','ron','hermione','dean','justin'].includes(id))return false;
+      const seed=Array.from(id).reduce((n,ch)=>(n*31+ch.charCodeAt(0))>>>0,0);
+      const block=day+seed+hp.slot*3;
+      const studying=weekday&&hp.slot<=1&&block%3!==0;
+      const where=studying?(block%2?'classroom':'potions'):hp.slot===3?'common_room':periods[block%periods.length];
+      return where===room;
+    });
+    if(!peers.length)return [];
+    const index=(day+hp.slot+bg.length)%peers.length;
+    const count=room==='library'&&peers.length>1&&(day+hp.slot)%2===0?2:1;
+    const seen=hp.world?.seenAt;
+    return peers.slice(index).concat(peers.slice(0,index)).slice(0,count).filter(id=>eligible(id)&&
+      (seen?.period!==hp.date+'/'+hp.slot||!seen.rooms[id]||seen.rooms[id]===bg));
+  }
+  function directAddress(text,cards) {
+    const ids=[];
+    for(const [id,card] of Object.entries(cards)) {
+      const words=String(card.name||'').split(/\s+/);
+      const aliases=[card.name,words[0]];
+      if(['crabbe','goyle','malfoy','snape','mcgonagall'].includes(id))aliases.push(words.at(-1));
+      if(aliases.some(name=>name && text.split(name).slice(1).some(tail=>/^(?:[아야](?:[,!！?？\s]|$)|\s*[,!！?？]|(?:에게|한테)(?:\s|$)|$)/.test(tail))))ids.push(id);
+    }
+    return ids;
+  }
+  function socialDate(text,today) {
+    const explicit=/(\d{1,2})월\s*(\d{1,2})일/.exec(text);
+    if(explicit){
+      const date=today.slice(0,4)+'-'+explicit[1].padStart(2,'0')+'-'+explicit[2].padStart(2,'0');
+      if(!Number.isFinite(Date.parse(date))||dayISO(date,0)!==date)return null;
+      return date<today?String(+today.slice(0,4)+1)+date.slice(4):date;
+    }
+    if(/모레/.test(text))return dayISO(today,2);
+    if(/내일/.test(text))return dayISO(today,1);
+    const week=/(다음\s*주\s*)?([일월화수목금토])요일/.exec(text);
+    if(week){
+      const now=(new Date(today+'T12:00:00Z').getUTCDay()+6)%7, target='월화수목금토일'.indexOf(week[2]);
+      return dayISO(today,week[1]?7-now+target:(target-now+7)%7||7);
+    }
+    if(/다음\s*주/.test(text))return dayISO(today,7);
+    return /오늘|이따/.test(text)?today:null;
+  }
+  function commitSocialTurn(hp,bg,data,userText,turn,cards) {
+    const world=hp.world;
+    if(!valid(world))return;
+    const lines=(Array.isArray(data.dialogue)?data.dialogue:[]).filter(x=>x&&typeof x.text==='string');
+    const actors=[...new Set(lines.flatMap(x=>[x.char_id,...(Array.isArray(x.onstage)?x.onstage:[])]))].filter(id=>Object.hasOwn(cards,id));
+    const key=socialKey(hp,bg);
+    const previousOffer=world.conversation?.key===key?world.conversation.offer:null;
+    const previousActors=world.conversation?.key===key?world.conversation.actors:[];
+    world.conversation={key,actors:(actors.length?actors:previousActors).slice(-7)};
+    const period=hp.date+'/'+hp.slot;
+    if(world.seenAt?.period!==period)world.seenAt={period,rooms:{}};
+    for(const id of actors)world.seenAt.rooms[id]=bg;
+    const known=(world.appointments||[]).filter(p=>world.active?.id===p.id||world.pending?.id===p.id||
+      p.date>hp.date||(p.date===hp.date&&p.slot>=hp.slot));
+    for(const line of lines){
+      const actor=line.char_id;
+      if(!Object.hasOwn(cards,actor)||typeof userText!=='string'||userText.startsWith('['))continue;
+      const prior=previousOffer?.actor===actor?previousOffer.text:'';
+      if(/[?？]|할래|어때/.test(line.text)&&socialDate(line.text,hp.date)&&meetingPlace(line.text))
+        world.conversation.offer={actor,text:line.text.slice(0,240)};
+      const note=line.appointment||{};
+      if(note.playerQuote!==undefined && (typeof note.playerQuote!=='string'||!note.playerQuote.trim()||!userText.includes(note.playerQuote)))continue;
+      const playerQuote=note.playerQuote||userText;
+      const priorPlans=known.filter(p=>p.actor===actor&&![world.active?.id,world.pending?.id].includes(p.id));
+      if(!note.close&&priorPlans.length===1&&
+          ((/약속.{0,12}취소|약속.{0,12}못\s*가/.test(playerQuote)&&/알겠|취소|다음에/.test(line.text))||
+           (/책.{0,16}(돌려|반납)/.test(playerQuote)&&/고마워|받았/.test(line.text)&&/책/.test(priorPlans[0].quote)))){
+        known.splice(known.indexOf(priorPlans[0]),1);
+        continue;
+      }
+      if(note.close){
+        const old=known.find(p=>p.id===note.close&&p.actor===actor);
+        if(old && ![world.active?.id,world.pending?.id].includes(old.id) && /취소|다음에|돌려|반납|고마워|받았/.test(line.text))known.splice(known.indexOf(old),1);
+        continue;
+      }
+      if(/거절|못\s*(가|만나)|안\s*(가|갈|만나)|싫어|취소/.test(userText+' '+line.text)||!/만나|보자|볼래|빌|돌려|반납|연습|가자|같이|좋아|그래|약속|갈게|알겠|그러자|^응/.test(playerQuote))continue;
+      if(/[?？]|할래|어때/.test(line.text)||!/만나|보자|갈게|기다릴게|가져올게|돌려줄게|연습하자|하자|좋아|그러자|약속/.test(line.text))continue;
+      const evidence=[line.text,playerQuote,prior].filter(Boolean);
+      const place=evidence.map(meetingPlace).find(Boolean);
+      const date=evidence.map(t=>socialDate(t,hp.date)).find(Boolean);
+      // An agreed day without a time is an all-day errand. Same-day vague
+      // invitations lack a future time and should remain ordinary dialogue.
+      const agreedSlot=evidence.map(meetingSlot).find(Number.isInteger);
+      const slot=agreedSlot??(date>hp.date?1:null);
+      if(!place||slot==null||!date||date>'1998-06-30'||dayGap(hp.date,date)>90||date<hp.date||(date===hp.date&&slot<=hp.slot))continue;
+      if(known.some(p=>p.actor===actor&&p.date===date&&p.slot===slot&&p.place===place))continue;
+      const id='meeting_'+turn+'_'+actor;
+      if(known.some(p=>p.id===id)||world.finished[id])continue;
+      known.push({id,actor,name:cards[actor].name,date,slot,anyTime:agreedSlot==null,place,quote:(prior||playerQuote).slice(0,120)+' / '+line.text.slice(0,120)});
+    }
+    if(known.length||world.appointments)world.appointments=known;
+  }
+  function meetingEvent(p) {
+    return {id:p.id,year:Number(p.date.slice(0,4))-(p.date.slice(5,7)>='09'?1990:1991),date:p.date,slot:p.slot,
+      kind:'person',title:places[p.place]+' 약속 · '+p.name,actors:[p.actor],background:p.place,
+      intro:places[p.place]+'에 약속 상대인 '+p.name+'도 도착했다. 지난 대화: “'+p.quote+'”',
+      options:[]};
+  }
+  const errands={
+    library:['도서관의 예약 도서','빌리려는 책이 한 권만 남아 대출 순서를 확인하고 있다.'],
+    classroom:['다음 실습 준비','다음 수업의 짝 과제에서 어떤 부분을 맡을지 정하려 한다.'],
+    hogwarts_courtyard:['안뜰에서의 연습','바람에 자꾸 빗나가는 주문을 연습하고 있다.']
+  };
+  function schoolEncounter(id) {
+    const match=/^school_(\d{4}-\d{2}-\d{2})_(library|classroom|hogwarts_courtyard)_([a-z]+)_([a-z0-9_]+)$/.exec(id);
+    if(!match)return null;
+    const [,date,room,actor]=match, [title,task]=errands[room];
+    return {id,date,year:Number(date.slice(0,4))-(date.slice(5,7)>='09'?1990:1991),slot:1,kind:'life',title,
+      actors:[actor],background:room,intro:'현장 인물 '+actor+'의 용무: '+task+' 플레이어가 관여하지 않아도 자기 일을 이어간다.',
+      options:[]};
+  }
+  function incidentCast(ev,choice){
+    if(!ev)return [];
+    if(ev.id==='first_invitations'){
+      if(choice==='hermione')return ['hermione'];
+      if(choice==='malfoy')return ['malfoy','crabbe','goyle'];
+      if(choice==='alone')return [];
+    }
+    return ev.actors;
+  }
   function routine(date, st) {
     const id='routine_'+date.replace(/-/g,'_');
     const i=(Number(date.replace(/-/g,''))+st.decisions.length)%3;
@@ -213,6 +392,9 @@
         offscreen:'다른 학생들은 플레이어의 참여와 무관하게 자신들의 일정과 관계를 이어간다.'}))};
   }
   function getEvent(id, st) {
+    if(typeof id==='string'&&id.startsWith('school_'))return schoolEncounter(id);
+    const meeting=st.appointments?.find(p=>p.id===id);
+    if(meeting)return meetingEvent(meeting);
     if (EVENT_BY_ID[id]) return EVENT_BY_ID[id];
     if (ALT_EVENTS[id]) return ALT_EVENTS[id];
     if (CHAPTER_CATALOG?.byId[id] && CHAPTER_CATALOG.byId[id].interactive)
@@ -330,7 +512,7 @@
     const m=EVENT_CHOICE.exec(String(v||'').trim());
     return m ? {eventId:m[1],optionId:m[2]} : null;
   }
-  function isNext(v) { return SCENE_NEXT.test(String(v||'').trim()); }
+  function isNext(v) { return v===fastChoice || SCENE_NEXT.test(String(v||'').trim()); }
   function isFinish(v) { return SCENE_FINISH.test(String(v||'').trim()); }
   function fitSceneSlot(event,date,currentSlot){
     if(!event)return null;
@@ -339,7 +521,7 @@
       return {...event,slot:currentSlot};
     return event;
   }
-  function nextEvent(st, date, currentSlot, canonState) {
+  function nextEvent(st, date, currentSlot, canonState, majorOnly=false, house=null) {
     ensure(st);
     // A manually skipped overdue event becomes a genuine off-screen event,
     // never an encounter the player retroactively attended.
@@ -354,12 +536,20 @@
     if(st.agency.tower==='sealed_cabinet' && !st.finished[alt.id] &&
        st.active?.id!==alt.id && st.pending?.id!==alt.id && alt.date>=date &&
        (!upcoming||alt.date<=upcoming.date))upcoming=alt;
-    const oneChapter=CHAPTER_CATALOG && CHAPTER_HELPER &&
+    const oneChapter=!majorOnly && CHAPTER_CATALOG && CHAPTER_HELPER &&
       CHAPTER_HELPER.nextPlayable(CHAPTER_CATALOG,st,date,upcoming,canonState);
-    if(oneChapter)return fitSceneSlot(oneChapter,date,currentSlot);
-    if (!upcoming) return null;
-    if (dayGap(date,upcoming.date)>65) return routine(dayISO(date,45),st);
-    return fitSceneSlot(upcoming,date,currentSlot);
+    let next=oneChapter||upcoming;
+    if(house && !majorOnly && next && dayGap(date,next.date)>=14 &&
+       !st.decisions.some(d=>d.id.startsWith('school_')&&d.id.endsWith('_'+next.id))){
+      const when=dayISO(date,3), day=Math.floor(Date.parse(when+'T00:00:00Z')/86400000);
+      const room=Object.keys(errands)[day%3], actor=nearby({date:when,slot:1,house},room,()=>true)[0];
+      if(actor)next=schoolEncounter('school_'+when+'_'+room+'_'+actor+'_'+next.id);
+    }else if(!house&&!oneChapter&&!majorOnly&&next&&dayGap(date,next.date)>65)next=routine(dayISO(date,45),st);
+    const meeting=(st.appointments||[]).filter(p=>!st.finished[p.id]&&p.id!==st.active?.id&&p.id!==st.pending?.id&&
+      (p.date>date||(p.date===date&&p.slot>=(currentSlot??0))))
+      .sort((a,b)=>a.date.localeCompare(b.date)||a.slot-b.slot)[0];
+    if(meeting&&(!next||meeting.date<next.date||(meeting.date===next.date&&meeting.slot<=next.slot)))next=meetingEvent(meeting);
+    return fitSceneSlot(next,date,currentSlot);
   }
   function offer(st, event) {
     ensure(st);
@@ -392,7 +582,7 @@
     st.active={id:ev.id,choice:opt.id,at:ev.date,
       needsResult:!['observe','skip'].includes(opt.id) && !opt.confirmedBySystem};
     return {id:ev.id,year:ev.year,date:ev.date,background:ev.background,location:ev.title,
-      actors:ev.actors.slice(),openingCast:opt.openingCast,kind:KIND[ev.kind],title:ev.title,
+      actors:incidentCast(ev,opt.id).slice(),openingCast:opt.openingCast,kind:KIND[ev.kind],title:ev.title,
       instruction:'[호그와트 확정 장면: '+ev.title+']\n'
         +'사건 시점: '+ev.date+'. 플레이어가 선택한 행동: '+opt.label+'.\n'
         +'진입 상황: '+introFor(ev,st)+'\n'
@@ -433,7 +623,7 @@
     if(!opt)return null;
     st.active.choice=opt.id;
     st.active.needsResult=!opt.confirmedBySystem;
-    return {id:ev.id,choice:opt.id,title:ev.title,openingCast:opt.openingCast,
+    return {id:ev.id,choice:opt.id,title:ev.title,actors:incidentCast(ev,opt.id).slice(),openingCast:opt.openingCast,
       instruction:'[호그와트 사건 진행 중 플레이어의 실제 개입] '+ev.title+'\n'
         +'사용자가 직접 선택한 행동: '+opt.label+'\n'
         +'의도: '+opt.intent+'\n'
@@ -533,6 +723,7 @@
       actions,offscreen:outcome ? '' : opt?.offscreen||'',visible:outcome?.summary||'현장을 떠났다.'};
     const record={choice:actualChoice,date:ev.date,actions,...(outcome?{outcome}:{} )};
     st.finished[ev.id]=record;
+    if(ev.id.startsWith('meeting_'))st.appointments=st.appointments.filter(p=>p.id!==ev.id);
     st.decisions.push({id:ev.id,...record});
     st.publicConsequences.push(consequence);
     st.publicConsequences=st.publicConsequences.slice(-32);
@@ -559,6 +750,7 @@
     return '\n\n## 호그와트 개인 세계선(실제 확정된 플레이 기록; 대사에 메타 상태 표기 금지)\n'
       +'- 유저 행동으로 쌓인 인상: '+(ties||'아직 초면')+'\n'
       +'- 관계/분기 확정: '+JSON.stringify(st.agency)+'\n'
+      +(st.appointments?.length?'합의한 약속(당사자만 알고 있음): '+st.appointments.map(p=>p.id+' '+p.date+' '+(p.anyTime?'시간 미정':['아침','오후','저녁','밤'][p.slot])+' '+places[p.place]+' '+p.name+' “'+p.quote+'”').join(' / ')+'\n':'')
       +'- 최근 사건과 독립적인 NPC 행동:\n'+(last||'- 아직 없음')+'\n'
       +(active?'- 진행 중인 장면: '+active.title+' / 플레이어의 현재 대화와 행동에서 이어간다.\n':'')
       +(st.active?.outcome?'- 이 장면에서 이미 확인된 실제 결과: '+st.active.outcome.summary+'\n':'')
@@ -612,6 +804,6 @@
     return {title,narration:note,canonStatus:known||'unverified'};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
-    isNext,isFinish,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
+  return Object.freeze({createState,valid,nextEvent,getEvent,incidentCast,socialKey,socialRoom,activities,nearby,classmates,directAddress,commitSocialTurn,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
+    isNext,isFinish,fastChoice,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });

@@ -7,6 +7,53 @@ const root=__dirname,dir=path.join(root,'storypacks/hogwarts-au');
 const D=require(path.join(dir,'scene-director.js'));
 const W=require(path.join(dir,'world.js'));
 const T=require(path.join(dir,'time.js'));
+// A pre-social save takes three different paths from the same September date.
+{
+  const clock={...T.createState(),date:'1991-09-23',slot:1,house:'그리핀도르',world:W.createState()};
+  const save=JSON.stringify(clock),cards={padma:{name:'파드마 파틸'}};
+  const resume=()=>JSON.parse(save);
+  const next=(hp,fast)=>W.nextEvent(hp.world,hp.date,hp.slot,null,fast,hp.house);
+  const say=(hp,user,text,turn)=>W.commitSocialTurn(hp,'library',{dialogue:[{char_id:'padma',text}]},user,turn,cards);
+  const solo=resume(),visit=resume(),bond=resume();
+  assert.equal(next(solo,true).id,'halloween_troll');
+  const chance=next(visit,false);
+  assert.match(chance.id,/^school_/);
+  W.offer(visit.world,chance);
+  assert.equal(W.resume(JSON.parse(JSON.stringify(visit.world))).title,chance.title);
+  W.startAmbient(visit.world); W.finish(visit.world);
+  visit.date=chance.date;
+  assert.equal(next(visit,false).id,'halloween_troll','do not require a string of filler encounters');
+  say(bond,'무슨 책이야?','목요일 오후 도서관에서 나랑 같이 볼래?',1);
+  assert.equal(next(bond,true).id,'halloween_troll','an unaccepted invitation is not an appointment');
+  const refusal=JSON.parse(JSON.stringify(bond));
+  say(refusal,'못 가.','알겠어. 다음에 보자.',2);
+  assert.equal(next(refusal,true).id,'halloween_troll');
+  say(bond,'좋아, 같이 보자.','좋아. 참고서는 내가 가져올게.',2);
+  const appt=next(bond,true);
+  assert.equal(appt.date,'1991-09-26');assert.deepEqual(appt.actors,['padma']);
+  assert.equal(next(bond,false).id,appt.id);
+  const cancel=JSON.parse(JSON.stringify(bond));
+  say(cancel,'목요일 약속은 취소해야겠어.','알겠어. 다음에 보자.',3);
+  assert.equal(next(cancel,true).id,'halloween_troll');
+  const returned=resume();
+  say(returned,'목요일 도서관에서 책을 돌려줄게.','좋아, 거기서 보자.',1);
+  say(returned,'책을 지금 돌려줄게.','고마워. 잘 받았어.',2);
+  assert.equal(next(returned,true).id,'halloween_troll');
+  W.offer(bond.world,appt);const loaded=JSON.parse(JSON.stringify(bond));
+  assert.equal(W.resume(loaded.world).title,appt.title);
+  assert.deepEqual(W.startAmbient(loaded.world).actors,['padma']);
+  assert.equal(W.finish(loaded.world).id,appt.id);
+  assert.equal(next(loaded,true).id,'halloween_troll');
+  const library={...clock,date:appt.date,slot:appt.slot};
+  const bystanders=W.nearby(library,'library',()=>true);
+  assert(bystanders.some(id=>id!=='padma'));
+  assert.deepEqual(W.nearby(JSON.parse(JSON.stringify(library)),'library',()=>true),bystanders);
+  assert(!W.nearby(library,'hogwarts_courtyard',()=>true).some(id=>bystanders.includes(id)));
+  assert.deepEqual(W.nearby({...library,slot:3},'library',()=>true),[]);
+  assert.deepEqual(W.directAddress('파드마의 책이야.',cards),[]);
+  assert.deepEqual(W.directAddress('파드마, 그 책은 어때?',cards),['padma']);
+  assert.equal(JSON.stringify(clock),save);
+}
 const HOUSE=['그리핀도르','슬리데린','레번클로','후플푸프'];
 const byHouse={
   그리핀도르:{speaker:'뚱보 여인',key:'gryffindor_common_room'},
