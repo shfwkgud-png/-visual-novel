@@ -84,6 +84,23 @@ t.syncNarratedPeriod(midnight,arrival,true);
 assert.match(t.display(midnight),/10월 1일 아침/);
 assert(t.readSceneTime(afterClass,'1991-09-05 아침',passage(1,arrival,{narration:arrival})));
 assert.match(t.display(afterClass),/9월 5일 아침/);
+const prior={...afterClass,date:'1991-09-04',slot:1};
+const original={gameState:{hogwarts:{...afterClass,world:{
+  seenAt:{period:'1991-09-05/0',rooms:{flitwick:'classroom'}},
+  conversation:{key:'1991-09-05/0/classroom//',actors:['flitwick']}}}},turnCount:18,gameHistory:[
+  {role:'user',content:'책을 덮는다.'},{role:'assistant',_turnBefore:{state:{hogwarts:prior}},
+    content:JSON.stringify({narration:dismissal,dialogue:[],state_update:{hogwarts:{time:{days:1}}}})}]};
+assert.deepEqual(t.afternoonRecovery(original),{date:'1991-09-05',previous:'1991-09-04'});
+const copied=JSON.parse(JSON.stringify(original));
+assert(t.resumeAfternoon(copied));
+assert.equal(copied.gameState.hogwarts.world.conversation.key,'1991-09-05/1/classroom//');
+assert.equal(copied.gameState.hogwarts.world.seenAt.period,'1991-09-05/1');
+assert.match(copied.gameState.time,/9월 5일 오후/);
+assert.equal(copied.turnCount,18);
+assert.equal(original.gameState.hogwarts.slot,0);
+assert.equal(t.afternoonRecovery(copied),null);
+original.gameHistory[1].content=JSON.stringify({narration:slept,state_update:{hogwarts:{time:{days:1}}}});
+assert.equal(t.afternoonRecovery(original).previous,null);
 assert.equal(t.readSceneTime(within,'1991년 9월 4일 아침',passage(1)),true);
 assert.equal(within.date,'1991-09-04');
 assert.equal(within.slot,0);

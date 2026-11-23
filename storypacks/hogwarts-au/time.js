@@ -66,6 +66,45 @@
       '일 '+SLOTS[state.slot]+' · '+studyYear(state.date)+'학년'+
       (state.house ? ' · '+state.house : ' · 기숙사 미배정');
   }
+  function afternoonRecovery(save) {
+    const hp=save?.gameState?.hogwarts;
+    if(!valid(hp)||!hp.house||hp.slot!==0||(save.startPhase && save.startPhase!=='playing'))return null;
+    const last=save.gameHistory?.at(-1);
+    const before=last?._turnBefore?.state?.hogwarts;
+    let previous=null;
+    if(last?.role==='assistant' && save.gameHistory.at(-2)?.role==='user' &&
+        valid(before) && before.house===hp.house && before.slot===1 && nextDays(before.date,1)===hp.date){
+      try{
+        const answer=JSON.parse(last.content);
+        if(answer.state_update?.hogwarts?.time?.days===1 && !crossedMidnight(clockNarration(answer),hp.date))
+          previous=before.date;
+      }catch{}
+    }
+    return {date:hp.date,previous};
+  }
+  function resumeAfternoon(save) {
+    const recovery=afternoonRecovery(save);
+    if(!recovery)return false;
+    const hp=save.gameState.hogwarts;
+    if(!moveToScene(hp,hp.date,1).advanced)return false;
+    save.gameState.time=display(hp);
+    const old=hp.date+'/0',now=hp.date+'/1',w=hp.world;
+    if(w?.seenAt?.period===old)w.seenAt.period=now;
+    if(w?.conversation?.key?.startsWith(old+'/'))w.conversation.key=now+w.conversation.key.slice(old.length);
+    const last=save.gameHistory?.at(-1);
+    if(last?.role==='assistant'){
+      try{
+        const answer=JSON.parse(last.content);
+        answer.time=save.gameState.time;
+        if(answer.state_update?.hogwarts)delete answer.state_update.hogwarts.time;
+        if(answer.state_update)delete answer.state_update.time;
+        last.content=JSON.stringify(answer);
+        if(last._stateExtract?.turn===save.turnCount && !['applied','superseded'].includes(last._stateExtract.status))
+          hp.correctedClockTurn=save.turnCount;
+      }catch{}
+    }
+    return true;
+  }
   // Only narrator beats establish the present. NPC dialogue, choices and quoted plans do not.
   function clockNarration(data) {
     return [data.narration,...(data.dialogue||[]).filter(d=>d && !d.char_id &&
@@ -233,6 +272,6 @@
       +'- 시간 건너뛰기가 선택되면 그 사이의 원작 사건을 무조건 주인공이 직접 목격한 것으로 만들지 마라. 공개 소식과 개인 지식은 구분한다.\n'
       +'- 시계가 현재 학년을 결정한다. 원작의 과거와 미래 비밀은 현재 날짜에 맞춰 숨겨라.\n';
   }
-  return Object.freeze({createState,valid,display,clockNarration,syncNarratedPeriod,readSceneTime,studyYear,phase,advance,moveToScene,chooseHouse,
+  return Object.freeze({createState,valid,display,afternoonRecovery,resumeAfternoon,clockNarration,syncNarratedPeriod,readSceneTime,studyYear,phase,advance,moveToScene,chooseHouse,
     actionCode,possibleActions,context,HOUSE_OPTIONS:HOUSE_OPTIONS.slice(),END});
 });
