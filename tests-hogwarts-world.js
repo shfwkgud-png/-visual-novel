@@ -177,7 +177,7 @@ const portraitBackgrounds=new Set(Object.values(pack.customBgs).map(entry=>entry
 const portraits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.emoImgs||{})));
 assert.equal(backgrounds.size,92);
 assert.equal(portraitBackgrounds.size,92);
-assert.equal(portraits.size,258);
+assert.equal(portraits.size,263);
 const outfits=new Set(Object.values(pack.characters).flatMap(card=>Object.values(card.outfits||{}).flatMap(Object.values)));
 const eventCGs=new Set(Object.values(pack.eventCGs).map(entry=>entry.url));
 const localEventCGs=[...eventCGs].filter(url=>url.startsWith('sd_samples/'));
@@ -222,7 +222,15 @@ for (const url of [...backgrounds,...portraitBackgrounds,...portraits,...outfits
   assert.equal(bytes.toString('ascii',8,12),'WEBP',url);
 }
 assert(!pack.characters.fred.emoImgs.angry);
-assert.equal(Object.values(pack.characters).filter(card=>card.img).length,82);
+assert.equal(Object.values(pack.characters).filter(card=>card.img).length,87);
+for(const year of [1991,1992,1995,1997]){
+  for(const house of ['그리핀도르','레번클로','슬리데린','후플푸프']){
+    for(const room of Object.keys(world.activities)){
+      for (const id of world.classmates({date:year+'-09-09',slot:1,house},room))
+        assert(pack.characters[id]?.emoImgs?.normal,'Missing daily encounter portrait: '+id);
+    }
+  }
+}
 const generated=JSON.parse(fs.readFileSync(path.join(__dirname,'docs/hogwarts-occasions-assets.json'),'utf8'));
 assert.equal(generated.assets.length,231);
 assert.equal(new Set(generated.assets.map(a=>a.target)).size,231);
