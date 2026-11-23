@@ -340,9 +340,10 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
     ['resting', '방 안에서 플레이어와 둘이 함께 있는 베드 장면 직전', 'before_bed', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
     ['hairline', '딥 진행 중 플레이어가 상대의 머리카락을 누르는 순간', 'during_deep', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
   ];
+  const hairlineVersions = { malfoy: 'v4', cho: 'v7', maxime: 'v6' };
   for (const [scene, setting, moment, actors] of scenes) {
     for (const actor of actors.split(' ')) {
-      const version = scene === 'hairline' ? (actor === 'malfoy' ? 'v4' : 'v2') : actor === 'malfoy' && scene === 'resting' ? 'v4' : 'v1';
+      const version = scene === 'hairline' ? (hairlineVersions[actor] || 'v2') : actor === 'malfoy' && scene === 'resting' ? 'v4' : 'v1';
       art.eventCGs[actor + '/' + scene] = {
         actor, setting, moment, kind: 'adult', outfit: 'default',
         portrait: 'sd_samples/characters/hogwarts/' + actor + '/2d/' + art.sprites[actor].normal + '.webp',

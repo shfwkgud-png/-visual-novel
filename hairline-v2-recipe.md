@@ -7,4 +7,6 @@
 - Delivery: `hairline_v2.webp` in the same character folder, converted from generated PNG with Pillow WebP quality 95, method 6.
 - Validation: all 18 files passed Pillow decode verification. Visual review is reserved for the user by request.
 
-Malfoy's v2 and v3 were superseded after the user identified the source hairline as incorrect. `malfoy/hairline_v4.webp` uses the old close-up for camera framing and the deployed Malfoy normal portrait as the authoritative face, hair color, part and hairline reference. The game uses v4 for Malfoy; the other 17 actors still use v2. The discarded v3 and resting v5 experiments are not connected to the game.
+Malfoy's v2 and v3 were superseded after the user identified the source hairline as incorrect. `malfoy/hairline_v4.webp` uses the old close-up for camera framing and the deployed Malfoy normal portrait as the authoritative face, hair color, part and hairline reference. The game uses v4 for Malfoy. The discarded v3 and resting v5 experiments are not connected to the game.
+
+Cho also used the wrong-looking base identity and the first portrait-guided attempt made the head too small. `cho/hairline_v7.webp` starts from the portrait-guided v4 and sets the expression between the too-weak v4 and too-strong v6. `maxime/hairline_v6.webp` starts from the portrait-first v5 and adds visible but restrained blush, tears and upward gaze. The user approved v7 and v6 for deployment. These two are the connected versions; the other 15 unchanged actors continue to use v2.
