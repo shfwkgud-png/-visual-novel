@@ -342,7 +342,7 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
   ];
   for (const [scene, setting, moment, actors] of scenes) {
     for (const actor of actors.split(' ')) {
-      const version = scene === 'hairline' ? 'v2' : actor === 'malfoy' && scene === 'resting' ? 'v4' : 'v1';
+      const version = scene === 'hairline' ? (actor === 'malfoy' ? 'v4' : 'v2') : actor === 'malfoy' && scene === 'resting' ? 'v4' : 'v1';
       art.eventCGs[actor + '/' + scene] = {
         actor, setting, moment, kind: 'adult', outfit: 'default',
         portrait: 'sd_samples/characters/hogwarts/' + actor + '/2d/' + art.sprites[actor].normal + '.webp',
