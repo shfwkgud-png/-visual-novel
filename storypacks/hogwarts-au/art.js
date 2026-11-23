@@ -331,3 +331,23 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
   "vector/together": {"actor":"vector","portrait":"sd_samples/characters/hogwarts/vector/2d/1_neutral_v1.webp","outfit":"default","kind":"romance","setting":"a quiet arithmancy study window","url":"sd_samples/cg/hogwarts/vector/together_v1.webp"},
   "wood/flying": {"actor":"wood","portrait":"sd_samples/characters/hogwarts/wood/2d/1_neutral.webp","outfit":"quidditch","kind":"flying","setting":"Quidditch pitch in flight","url":"sd_samples/cg/hogwarts/wood/flying_v1.webp"},
 };
+
+// Character-specific story stills. Only list finished assets.
+{
+  const art = window.PANDORA_HOGWARTS_ART;
+  const scenes = [
+    ['hair_tie', '성인 장면에서 딥 직전, 머리를 묶는 순간', 'before_deep', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
+    ['resting', '방 안에서 플레이어와 둘이 함께 있는 베드 장면 직전', 'before_bed', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
+    ['hairline', '딥 진행 중 플레이어가 상대의 머리카락을 누르는 순간', 'during_deep', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
+  ];
+  for (const [scene, setting, moment, actors] of scenes) {
+    for (const actor of actors.split(' ')) {
+      const version = scene === 'hairline' ? 'v2' : actor === 'malfoy' && scene === 'resting' ? 'v4' : 'v1';
+      art.eventCGs[actor + '/' + scene] = {
+        actor, setting, moment, kind: 'adult', outfit: 'default',
+        portrait: 'sd_samples/characters/hogwarts/' + actor + '/2d/' + art.sprites[actor].normal + '.webp',
+        url: 'sd_samples/cg/hogwarts/' + actor + '/' + scene + '_' + version + '.webp',
+      };
+    }
+  }
+}

@@ -83,9 +83,28 @@ vm.runInNewContext(fs.readFileSync('./storypacks/hogwarts-au/art.js','utf8'),san
 vm.runInNewContext(fs.readFileSync('./storypacks/hogwarts-au/story.js','utf8'),sandbox);
 const story=sandbox.window.PANDORA_HOGWARTS_STORY;
 const privateEntries=Object.entries(story.eventCGs).filter(([,e])=>e.kind==='adult');
-assert.equal(privateEntries.length,86);
+assert.equal(privateEntries.length,140);
 assert.equal(new Set(privateEntries.map(([,e])=>e.actor)).size,43);
 assert(privateEntries.every(([key,e])=>L.url(key,story.eventCGs,story.characters)===e.url));
+const momentByScene={hair_tie:'before_deep',resting:'before_bed',hairline:'during_deep'};
+for(const actor of 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'.split(' ')){
+  for(const [scene,moment] of Object.entries(momentByScene)){
+    const key=actor+'/'+scene,entry=story.eventCGs[key];
+    assert.equal(entry.kind,'adult',key);
+    assert.equal(entry.moment,moment,key);
+    assert.equal(entry.portrait,story.characters[actor].img,key);
+    if(scene==='hairline') assert.equal(entry.url,q+actor+'/hairline_v2.webp',key);
+    assert(fs.existsSync(entry.url),key+' asset missing');
+    const sample={cg:key,dialogue:[{char_id:actor}],visuals:{action:'adult',cgPartner:'player',cgConsent:'mutual',cgMoment:moment}};
+    assert.equal(L.scene(before,sample,'library',story.characters,story.eventCGs,[]).cg,key);
+    assert.equal(L.scene(before,{...sample,visuals:{...sample.visuals,cgMoment:'before_other'}},'library',story.characters,story.eventCGs,[]).cg,null);
+    assert.equal(L.scene(before,{...sample,visuals:{...sample.visuals,action:'romance'}},'library',story.characters,story.eventCGs,[]).cg,null);
+  }
+}
+assert.equal(story.eventCGs['malfoy/resting'].url,q+'malfoy/resting_v4.webp');
+const adultPrompt=L.prompt(story.characters,story.eventCGs,before);
+assert(adultPrompt.includes('/hair_tie, /resting, /hairline'));
+assert(adultPrompt.includes('cgMoment="before_bed"'));
 const html=fs.readFileSync('./novel.html','utf8');
 const cgFn=html.match(/function cgUrlFor\(name\) \{[\s\S]*?\n\}/)?.[0];
 assert(cgFn);
