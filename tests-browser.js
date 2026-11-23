@@ -1486,6 +1486,41 @@ async function hogwartsSlotBackgroundCheck(ctx) {
       ['slytherin_common_room','corridor',raw]);
   });
 
+  await check(ctx,'Hogwarts slot two resumes the class in the afternoon without rewriting the original slot',async()=>{
+    const original=await page.evaluate(()=>{
+      const save=JSON.parse(JSON.stringify(currentSavePayload()));
+      Object.assign(save.gameState.hogwarts,{date:'1991-09-05',slot:0});
+      save.gameState.time=PandoraHogwartsTime.display(save.gameState.hogwarts);
+      const before=JSON.parse(JSON.stringify(save.gameState));
+      Object.assign(before.hogwarts,{date:'1991-09-04',slot:1});
+      before.time=PandoraHogwartsTime.display(before.hogwarts);
+      const lesson={narration:'마법 수업이 끝났다.',dialogue:[{speaker:'필리우스 플리트윅',char_id:'flitwick',text:'다음 수업에 뵙죠!'}],
+        choices:['교실을 나선다.'],state_update:{hogwarts:{time:{days:1,value:'1991-09-05 아침',evidence:'다음 수업에 뵙죠!'}}}};
+      save.gameHistory=[{role:'assistant',content:JSON.stringify({narration:'교수가 교탁에 선다.',dialogue:[]})},
+        {role:'user',content:'교재를 덮는다.'},{role:'assistant',_turnBefore:{state:before},content:JSON.stringify(lesson)}];
+      save.dialogueLog=[];save.turnCount=19;
+      const raw=JSON.stringify(save);
+      if(!bulkSetSilent(slotKey(2),raw))throw Error('Slot two fixture was not stored');
+      toggleSlots();return raw;
+    });
+    const row=page.locator('#slotList .slot-item').nth(1);
+    await row.getByRole('button',{name:'9월 5일 오후로 이어가기'}).click();
+    await drainDialogue(page);
+    assert.match(await page.locator('#sceneBanner').textContent(),/9월 5일 오후/);
+    await flushLocalSave(page);
+    const resumed=await page.evaluate(()=>JSON.parse(bulkGet(saveKeyFor(STORY.id))));
+    assert.equal(resumed.turnCount,19);
+    assert.equal(resumed.gameState.hogwarts.slot,1);
+    const last=JSON.parse(resumed.gameHistory.at(-1).content);
+    assert.equal(last.dialogue[0].text,'다음 수업에 뵙죠!');
+    assert.deepEqual(last.choices,['교실을 나선다.']);
+    await page.evaluate(()=>toggleSlots());
+    await row.getByRole('button',{name:'9월 4일 오후 · 마지막 입력 직전'}).click();
+    await drainDialogue(page);
+    assert.match(await page.locator('#sceneBanner').textContent(),/9월 4일 오후/);
+    assert.deepEqual(await page.evaluate(()=>[turnCount,gameHistory.length,bulkGet(slotKey(2))]),[18,1,original]);
+  });
+
   await check(ctx, 'Hogwarts falls back to the same location when a portrait background fails', async () => {
     const portrait = '**/sd_samples/backgrounds/hogwarts/library_portrait.webp';
     const abort = route => route.abort('failed');

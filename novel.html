@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28">
+<meta name="pandora-build" content="d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -1174,6 +1174,8 @@
     flex-shrink: 0;
   }
   .slot-btn.save { border-color: var(--gold-dim); color: var(--gold); }
+  .slot-item.clock-recovery { flex-wrap: wrap; }
+  .slot-recovery { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
 
   /* ENDING CARD */
   #endingCard {
@@ -2164,18 +2166,18 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=03e64fbf05cfb54e5a496872c8b0faf6072da587e40e027d247cb4e68c074f28"></script>
+<script src="pandora-consistency.js?v=369&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=d0603ca6ea24df14c4843476775e1052517e8f41c4b255271eb5543f013915da"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -14369,11 +14371,13 @@ function applyHogwartsSceneState(data,activeCharIds=[],source) {
   const result=state.hogwarts,world=hp.world;
   const shown=source?.scene||data;
   const narration=PandoraHogwartsTime.clockNarration(shown);
+  const corrected=hp.correctedClockTurn===turnCount;
   if(result && window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(world)){
     const normalized={dialogue:(shown.dialogue||[]).map(d=>({...d}))};
     fixSpeakerIds(normalized);
     const scene=[shown.narration||'',...(shown.dialogue||[]),...normalized.dialogue]
       .map(d=>typeof d==='string'?d:`${d.speaker}: ${d.text||''}`).join('\n');
+    if(corrected)delete result.time;
     if(result.time){
       if(!PandoraHogwartsTime.readSceneTime(hp,result.time.value,
         {...result.time,scene,narration,userText:source?.userText??window._genText??''}))
@@ -14393,7 +14397,8 @@ function applyHogwartsSceneState(data,activeCharIds=[],source) {
   }else if(data.state_update && world?.active?.needsResult){
     throw Object.assign(Error('이번 행동의 실제 결과가 누락되어 다시 확인해야 합니다'),{stateCorrection:'outcome'});
   }
-  if(hp.date===before)PandoraHogwartsTime.syncNarratedPeriod(hp,narration,!!data.state_update);
+  if(!corrected && hp.date===before)PandoraHogwartsTime.syncNarratedPeriod(hp,narration,!!data.state_update);
+  if(data.state_update)delete hp.correctedClockTurn;
   if (hp.world?.active && window.PandoraHogwartsWorld && PandoraHogwartsWorld.valid(hp.world) &&
       result && (result.complete===true || hp.date > hp.world.active.at)) {
     PandoraHogwartsWorld.finish(hp.world);
@@ -17985,11 +17990,15 @@ function renderSlots() {
     const meta = sv
       ? `${esc(sv.gameState?.time || '')} · ${esc(sv.gameState?.location || '')} · ${timeAgo(sv.savedAt)}`
       : '비어 있음';
-    html += `<div class="slot-item"><div class="slot-info">` +
+    const recovery=STORY.id==='hogwarts' && window.PandoraHogwartsTime?.afternoonRecovery(sv);
+    const dateLabel=d=>Number(d.slice(5,7))+'월 '+Number(d.slice(8))+'일 오후';
+    html += `<div class="slot-item${recovery?' clock-recovery':''}"><div class="slot-info">` +
       `<div class="slot-name">슬롯 ${n}</div><div class="slot-meta">${meta}</div></div>` +
       `<button class="slot-btn save" onclick="saveToSlot(${n})">저장</button>` +
       (sv ? `<button class="slot-btn" onclick="loadFromSlot(${n})">불러오기</button>` : '') +
       (sv ? `<button class="slot-btn" onclick="clearSlot(${n})">✕</button>` : '') +
+      (recovery ? `<div class="slot-recovery"><button class="slot-btn" onclick="loadFromSlot(${n},'afternoon')">${dateLabel(recovery.date)}로 이어가기</button>` +
+        (recovery.previous ? `<button class="slot-btn" onclick="loadFromSlot(${n},'before')">${dateLabel(recovery.previous)} · 마지막 입력 직전</button>` : '')+'</div>' : '') +
       `</div>`;
   }
   document.getElementById('slotList').innerHTML = html;
@@ -18014,12 +18023,29 @@ function saveToSlot(n) {
   renderSlots();
 }
 
-function loadFromSlot(n) {
+function loadFromSlot(n,clockMode) {
   let sv = null;
   try { sv = JSON.parse(bulkGet(slotKey(n)) || 'null'); } catch {}
   if (sv) sv = migrateSave(sv, STORY.id);   // 슬롯도 세이브다 — 구구조를 그대로 복원하면 마이그레이션이 비켜간다(2026-09-16)
   if (!sv) return;
-  if (!confirm(`슬롯 ${n}을 불러올까요? 현재 진행은 자동 저장에 남습니다.`)) return;
+  if(clockMode){
+    const recovery=STORY.id==='hogwarts' && window.PandoraHogwartsTime?.afternoonRecovery(sv);
+    if(!recovery || (clockMode==='before' && !recovery.previous))return;
+    const prior=clockMode==='before';
+    const target=prior?recovery.previous:recovery.date;
+    const message=prior?'마지막 입력 직전의 상태에서 다시 시작합니다.':'현재 대사와 선택지를 유지하고 수업 시각을 오후로 바로잡습니다.';
+    if(!confirm(`${target} 오후로 이어갈까요? ${message} 원본 슬롯 ${n}은 보존됩니다.`))return;
+    if(prior){
+      const before=sv.gameHistory.at(-1)._turnBefore;
+      sv.gameState=before.state;
+      sv.pendingEvent=before.pendingEvent||null;
+      sv.gameHistory.splice(-2);
+      sv.turnCount=Math.max(0,sv.turnCount-1);
+      const i=sv.dialogueLog?.findLastIndex(line=>line.isPlayer)??-1;
+      if(i>=0)sv.dialogueLog.splice(i);
+      sv.lastBg=sv.gameState.hogwarts.visuals?.background || sv.dialogueLog?.at(-1)?.bgFile || null;
+    }else if(!PandoraHogwartsTime.resumeAfternoon(sv))return;
+  }else if (!confirm(`슬롯 ${n}을 불러올까요? 현재 진행은 자동 저장에 남습니다.`)) return;
   toggleSlots();
   resetSprites();
   restoreAndReplay(sv, false);
@@ -18715,9 +18741,15 @@ function openRewind() {
   const rows = turnSnaps.slice().reverse().map((sn, ri) => {
     const i = turnSnaps.length - 1 - ri;
     const ago = Math.max(0, Math.round((Date.now() - sn.t) / 60000));
-    const w = snapWhen(sn);
+    const w = idol && snapWhen(sn);
     // ★"5/1 수"는 **5월 1일**로 읽힌다(2026-07-31 유저 지적). 주차임을 드러낸다.
-    const when = w ? `${w.m}월 ${w.wk}주<br>${IDOL_SIM.DOW[Math.min(6, w.k)]}요일` : '';
+    let when = w ? `${w.m}월 ${w.wk}주<br>${IDOL_SIM.DOW[Math.min(6, w.k)]}요일` : '';
+    if(STORY.id==='hogwarts'){
+      try{
+        const clock=JSON.parse(sn.s).gameState.hogwarts;
+        if(PandoraHogwartsTime.valid(clock))when=esc(PandoraHogwartsTime.display(clock).split(' · ')[0]);
+      }catch{}
+    }
     return `<button class="rw-item" onclick="restoreSnap(${i})">
       <span class="rw-turn">${when || (sn.turn + '턴')}</span>
       <span class="rw-label">${sn.label ? esc(sn.label) : '(시작)'}</span>
