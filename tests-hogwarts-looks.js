@@ -83,10 +83,10 @@ vm.runInNewContext(fs.readFileSync('./storypacks/hogwarts-au/art.js','utf8'),san
 vm.runInNewContext(fs.readFileSync('./storypacks/hogwarts-au/story.js','utf8'),sandbox);
 const story=sandbox.window.PANDORA_HOGWARTS_STORY;
 const privateEntries=Object.entries(story.eventCGs).filter(([,e])=>e.kind==='adult');
-assert.equal(privateEntries.length,140);
+assert.equal(privateEntries.length,158);
 assert.equal(new Set(privateEntries.map(([,e])=>e.actor)).size,43);
 assert(privateEntries.every(([key,e])=>L.url(key,story.eventCGs,story.characters)===e.url));
-const momentByScene={hair_tie:'before_deep',resting:'before_bed',hairline:'during_deep'};
+const momentByScene={hair_tie:'before_deep',cheek_pull:'after_hair_tie',resting:'before_bed',hairline:'during_deep'};
 for(const actor of 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'.split(' ')){
   for(const [scene,moment] of Object.entries(momentByScene)){
     const key=actor+'/'+scene,entry=story.eventCGs[key];
@@ -103,7 +103,10 @@ for(const actor of 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah 
 }
 assert.equal(story.eventCGs['malfoy/resting'].url,q+'malfoy/resting_v4.webp');
 const adultPrompt=L.prompt(story.characters,story.eventCGs,before);
-assert(adultPrompt.includes('/hair_tie, /resting, /hairline'));
+assert(adultPrompt.includes('/hair_tie, /cheek_pull, /resting, /hairline'));
+assert(adultPrompt.includes('/hair_tie=상대가 머리를 묶는 순간'));
+assert(adultPrompt.includes('/cheek_pull=머리를 묶은 뒤, 헤어라인 전'));
+assert(adultPrompt.includes('cgMoment="after_hair_tie"'));
 assert(adultPrompt.includes('cgMoment="before_bed"'));
 const html=fs.readFileSync('./novel.html','utf8');
 const cgFn=html.match(/function cgUrlFor\(name\) \{[\s\S]*?\n\}/)?.[0];

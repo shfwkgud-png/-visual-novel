@@ -337,8 +337,9 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
   const art = window.PANDORA_HOGWARTS_ART;
   const scenes = [
     ['hair_tie', '성인 장면에서 딥 직전, 머리를 묶는 순간', 'before_deep', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
-    ['resting', '방 안에서 플레이어와 둘이 함께 있는 베드 장면 직전', 'before_bed', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
+    ['cheek_pull', '머리를 묶은 뒤 헤어라인 장면 직전, 볼을 살짝 당기고 입을 보여주는 순간', 'after_hair_tie', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
     ['hairline', '딥 진행 중 플레이어가 상대의 머리카락을 누르는 순간', 'during_deep', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
+    ['resting', '방 안에서 플레이어와 둘이 함께 있는 베드 장면 직전', 'before_bed', 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah hermione katie lavender luna malfoy marietta maxime myrtle narcissa'],
   ];
   const hairlineVersions = { malfoy: 'v4', cho: 'v7', maxime: 'v6' };
   for (const [scene, setting, moment, actors] of scenes) {
