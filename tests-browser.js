@@ -1117,6 +1117,25 @@ async function hogwartsRPCheck(ctx){
   });
 }
 
+async function libraryNavigationCheck(ctx) {
+  const {page}=ctx;
+  await check(ctx,'library controls, genre filter and storage open before a game starts',async()=>{
+    const library=page.locator('#homeHero');
+    assert.ok((await library.boundingBox()).width >= (ctx.mobile ? 350 : 850));
+    await page.locator('#heroNext').click();
+    await page.waitForFunction(()=>document.querySelector('#heroPosition').textContent.startsWith('2 /'));
+    await page.locator('#heroPrev').click();
+    await page.locator('#genreChips').getByRole('button',{name:'판타지',exact:true}).click();
+    const genres=await page.locator('#rowAllCards .mini-sub').allTextContents();
+    assert.ok(genres.length && genres.every(genre=>genre==='판타지'));
+    await page.locator('#tabMy').click();
+    await page.getByRole('button',{name:'저장 공간 및 백업',exact:true}).click();
+    await page.locator('#rewindBox .rw-close').click();
+    await page.locator('#tabHome').click();
+    await page.locator('#genreChips').getByRole('button',{name:'전체',exact:true}).click();
+  });
+}
+
 async function hogwartsArtCheck(ctx) {
   const { page } = ctx;
   await check(ctx, 'Hogwarts opens from the library and loads its own WebP portraits and house rooms', async () => {
@@ -1172,7 +1191,7 @@ async function hogwartsArtCheck(ctx) {
     assert.ok(controls.every(text => !/다음 장면|장면 마치기|마법 도감/.test(text)));
     await chooseHogwartsMenu(page,'호그와트 달력');
     await page.locator('#hwDays button[aria-label^="1991-09-03"]').click();
-    await page.locator('#hwDateDetail .hwTravel').filter({hasText:'두 통의 초대'}).click();
+    await page.locator('#hwDateDetail').getByRole('button',{name:/두 통의 초대 일정으로 이동/}).click();
     await waitForStoryChoice(page,'헤르미온느와 도서관');
     assert.equal(await page.evaluate(() => gameState.hogwarts.world.active?.choice), 'observe');
     assert.ok((await page.locator('#choiceBox').innerText()).indexOf('[first_invitations]') === -1);
@@ -1596,7 +1615,7 @@ async function hogwartsSocialCheck(ctx){
     await page.locator('#sceneBanner .hwOpen').click();
     await page.locator('#hwDiary button').filter({hasText:'파드마 파틸'}).click();
     assert.match(await page.locator('#hwDateDetail').innerText(),/약속 · 오후/);
-    await page.locator('#hwDateDetail .hwTravel').filter({hasText:'파드마 파틸'}).click();
+    await page.locator('#hwDateDetail').getByRole('button',{name:/파드마 파틸.*일정으로 이동/}).click();
     await page.waitForFunction(()=>gameState.hogwarts.date==='1991-09-26');
     await drainDialogue(page);
     await page.waitForFunction(()=>gameState.hogwarts.world.active?.id.startsWith('meeting_'));
@@ -1874,7 +1893,7 @@ async function hogwartsLooksCheck(ctx){
       const hogwartsCtx = await createFixturePage(origin, mobile, {
         freeMode: true, integrated: true, reply: hogwartsArtReply, capturePrompts: true
       });
-      try { await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); await appUpdateChecks(hogwartsCtx); await hogwartsSlotBackgroundCheck(hogwartsCtx); await hogwartsSocialCheck(hogwartsCtx); }
+      try { await libraryNavigationCheck(hogwartsCtx); await hogwartsArtCheck(hogwartsCtx); await hogwartsLooksCheck(hogwartsCtx); await appUpdateChecks(hogwartsCtx); await hogwartsSlotBackgroundCheck(hogwartsCtx); await hogwartsSocialCheck(hogwartsCtx); }
       finally { await hogwartsCtx.context.close(); }
       const hogwartsRPCtx=await createFixturePage(origin,mobile,{freeMode:true,reply:hogwartsArtReply,capturePrompts:true});
       try{await hogwartsRPCheck(hogwartsRPCtx);}

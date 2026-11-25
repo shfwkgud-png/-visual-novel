@@ -70,21 +70,26 @@ window.PandoraHogwartsCalendar = (() => {
           detail.append(msg);
         }
         const target=picked;
-        const action=button(ev?'일정으로 이동 · '+ev.title:'이날 자유시간으로 이동',()=>{
+        const action=button(ev?'이 일정으로 이동 →':'이날 자유시간으로 이동 →',()=>{
           if(lockReason())return render();
           dialog.close();go(target,ev?.id);
         });
+        if(ev)action.setAttribute('aria-label',ev.title+' 일정으로 이동');
         action.className='hwTravel'; detail.append(action);
       }
       for(const e of selected){
-        detail.append(label(e.category+' · '+slots[e.slot]+'  '+e.title+(e.done?'  · 완료':''),'p'));
+        detail.append(label(e.category+' · '+slots[e.slot]+(e.done?' · 완료':''),'small'),label(e.title,'h4'));
         if(e.available)destination(e);
       }
       if(!selected.length){
         detail.append(label('등록된 사건이나 약속이 없습니다.','p'));destination(null);
       }
       const lessons=hp.magic ? window.PandoraHogwartsMagic.curriculum(hp.magic,picked) : [];
-      if(lessons.length)detail.append(label(lessons.map(u=>slots[u.slot]+' · '+u.name+' / '+u.topic).join('　'),'small'));
+      if(lessons.length){
+        const schedule=document.createElement('ul');schedule.className='hwLessons';schedule.setAttribute('aria-label','수업 시간표');
+        for(const lesson of lessons)schedule.append(label(slots[lesson.slot]+' · '+lesson.name+' / '+lesson.topic,'li'));
+        detail.append(schedule);
+      }
       if(!reason && lessons.length && world.calendarDestination(hp,picked,'after_school')){
         const after=button('오늘 방과 후로 이동',()=>{if(lockReason())return render();dialog.close();go(picked,'after_school');});
         after.className='hwTravel';detail.append(after);
