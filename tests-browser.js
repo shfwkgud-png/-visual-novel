@@ -1170,7 +1170,9 @@ async function hogwartsArtCheck(ctx) {
     assert(arrival.speakers.some(x=>x==='슬리데린 반장'));
     const controls = await page.locator('#choiceBox .choice-btn').allTextContents();
     assert.ok(controls.every(text => !/다음 장면|장면 마치기|마법 도감/.test(text)));
-    await chooseHogwartsMenu(page,'다음 장면');
+    await chooseHogwartsMenu(page,'호그와트 달력');
+    await page.locator('#hwDays button[aria-label^="1991-09-03"]').click();
+    await page.locator('#hwDateDetail .hwTravel').filter({hasText:'두 통의 초대'}).click();
     await waitForStoryChoice(page,'헤르미온느와 도서관');
     assert.equal(await page.evaluate(() => gameState.hogwarts.world.active?.choice), 'observe');
     assert.ok((await page.locator('#choiceBox').innerText()).indexOf('[first_invitations]') === -1);
@@ -1591,7 +1593,10 @@ async function hogwartsSocialCheck(ctx){
     assert.doesNotMatch(main,/매 응답에 최소 1명의|여러 인물이 있으면 서로 주고받게 해서|매 턴 최소 하나는 주인공과 무관한 움직임/);
     await page.evaluate(()=>{saveToSlot(1);toggleSlots();loadFromSlot(1);});
     await drainDialogue(page);
-    await page.evaluate(()=>selectChoice(PandoraHogwartsWorld.fastChoice));
+    await page.locator('#sceneBanner .hwOpen').click();
+    await page.locator('#hwDiary button').filter({hasText:'파드마 파틸'}).click();
+    assert.match(await page.locator('#hwDateDetail').innerText(),/약속 · 오후/);
+    await page.locator('#hwDateDetail .hwTravel').filter({hasText:'파드마 파틸'}).click();
     await page.waitForFunction(()=>gameState.hogwarts.date==='1991-09-26');
     await drainDialogue(page);
     await page.waitForFunction(()=>gameState.hogwarts.world.active?.id.startsWith('meeting_'));

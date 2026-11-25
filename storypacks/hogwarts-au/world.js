@@ -42,6 +42,7 @@
         {id:'focus',label:'수업을 수습하고 조용히 실력을 증명한다',intent:'위험을 안전하게 수습하는 데 집중하되 다른 사람의 공은 빼앗지 않는다.',delta:{snape:1,neville:0},flags:{snape_class:'focus'},offscreen:'네빌은 다른 이의 도움으로 실습을 마친다.'}
       ]},
     { id:'midnight_corridor',year:1,date:'1991-09-22',slot:3,kind:'aftermath',
+      sceneGuide:'말포이가 나타나지 않고 필치의 순찰을 피해 달아난 해리 일행이 세 머리 개와 함정문을 마주치는 경로다. 플레이어가 어디까지 동행했는지 따르고 다른 일행이 겪은 장면을 자동 목격으로 돌리지 않는다.',
       title:'밤의 결투 약속',background:'corridor',actors:['malfoy','harry','ron'],
       intro:'해리와 말포이가 밤늦게 결투를 약속했다는 소문이 돈다. 약속을 곧이곧대로 믿는 학생도, 함정을 의심하는 학생도 있다. 필치는 야간 순찰을 시작했다.',
       options:[
@@ -73,8 +74,16 @@
         {id:'study',label:'도서관에서 공부와 조사를 이어간다',intent:'스스로 공부하고 헤르미온느와 함께할 가능성을 살핀다. 친분은 현재 관계값을 따르게 한다.',delta:{hermione:2},flags:{winter:'study'},offscreen:'말포이의 모임은 다른 학생들과 진행된다.'},
         {id:'hagrid',label:'해그리드의 오두막을 방문한다',intent:'해그리드와 차를 마시며 학교 생활에 관한 이야기를 듣는다. 위험한 비밀은 쉽게 말하지 않는다.',delta:{hagrid:2},flags:{winter:'hagrid'},offscreen:'기숙사 모임과 도서관 일정은 독립적으로 끝난다.'}
       ]},
+    {id:'christmas_parcels',year:1,date:'1991-12-25',slot:0,kind:'life',title:'크리스마스 아침의 선물',background:'great_hall',actors:['ron','fred','george'],
+      intro:'방학 동안 남은 학생들 사이로 부엉이들이 내려앉는다. 론은 집에서 온 스웨터를 펼치고, 쌍둥이는 소포의 포장끈을 길게 이어 붙인다.',
+      sceneGuide:'같은 아침 해리는 아버지가 남긴 투명망토를 개인적으로 받는다. 망토의 수취인은 해리다. 그가 직접 보여 주기 전에는 포장의 내용이나 소망의 거울 방을 플레이어에게 공개하지 않는다.',
+      options:[
+        {id:'breakfast',label:'론 옆에 앉아 방학 계획을 묻는다',intent:'성에 남은 학생들과 아침을 보내고 각자의 계획을 듣는다.',delta:{},flags:{},offscreen:'해리는 자신의 소포를 따로 연다.'},
+        {id:'post',label:'집에 보낼 편지를 부엉이에게 맡긴다',intent:'플레이어가 직접 정한 수신인에게 편지를 보낸다.',delta:{},flags:{},offscreen:'남의 선물과 편지는 당사자들 사이의 일이다.'}
+      ]},
     { id:'mirror_rumor',year:1,date:'1992-02-12',slot:2,kind:'life',
-      title:'사라진 학생과 금지된 복도',background:'library',actors:['hermione','harry','filch'],
+      sceneGuide:'도서관 조사의 실마리는 니콜라 플라멜의 이름과 연금술 기록이다. 직접 자료를 대조하거나 사실을 전해 들을 때만 마법사의 돌과 연결한다.',
+      title:'도서관의 단서, 니콜라 플라멜',background:'library',actors:['hermione','harry','filch'],
       intro:'금지된 복도 근처에서 이상한 흔적이 발견된다. 도서관의 기록 몇 장도 사라졌다. 그 소문을 말하는 학생마다 본 것이 다르다.',
       options:[
         {id:'records',label:'도서관에서 정식 자료부터 조사한다',intent:'확인 가능한 자료만 조사한다. 초자연적 비밀은 자동으로 알아내지 못한다.',delta:{hermione:1},flags:{clue_path:'records'},offscreen:'해리는 자신이 겪은 일을 모든 사람에게 공개하지 않는다.'},
@@ -89,15 +98,31 @@
         {id:'defend',label:'친구로 선택한 사람을 공개적으로 지지한다',intent:'기존에 쌓인 관계를 기준으로 실제 가까운 쪽을 지지한다.',delta:{},flags:{spring_duel:'supported_friend'},offscreen:'지지받지 못한 쪽은 그 장면을 기억한다.'},
         {id:'practice',label:'말싸움 대신 자기 결투 실력을 보여준다',intent:'성급한 만능 마법은 불가능하다. 수련의 성취와 실패를 실제 준비 상태로 판정한다.',delta:{neville:1},flags:{spring_duel:'practiced'},offscreen:'학생들의 갈등은 당신이 자리를 떠난 뒤에도 계속된다.'}
       ]},
+    { id:'norbert_hatching',year:1,date:'1992-04-07',slot:1,kind:'plot',
+      title:'해그리드의 오두막',background:'hagrid_hut',actors:['hagrid','ron','harry','hermione'],
+      intro:'봄날인데도 해그리드는 창문을 꼭 닫고 난로에 장작을 더 넣는다. 찻주전자를 들던 그의 손이 멎는다. 불 속에서 딱, 하고 껍데기가 갈라지는 소리가 난다.',
+      options:[
+        {id:'stay',label:'해그리드 곁에서 알이 깨지는 것을 지켜본다',intent:'눈앞에서 노르웨이 리지백 노버트가 부화한다. 해그리드의 애착과 성에서 용을 기를 수 없는 사정을 행동과 대화로 풀어낸다.',delta:{},flags:{norbert:'witness'},offscreen:'창밖을 지나간 사람이 누구인지 여기서는 알 수 없다.'},
+        {id:'letter',label:'론에게 용을 돌볼 사람을 아는지 묻는다',intent:'론의 형 찰리가 루마니아에서 용을 돌본다는 이야기를 듣고 편지를 의논한다. 답장과 인계는 나중 일이다.',delta:{},flags:{norbert:'letter'},offscreen:'해그리드는 오두막에서 노버트를 돌본다.'}
+      ]},
+    { id:'norbert_delivery',year:1,date:'1992-05-09',slot:3,kind:'plot',
+      sceneGuide:'해리는 크리스마스에 받은 투명망토에 상자를 가려 노버트를 천문탑으로 옮긴다. 찰리 본인은 루마니아에 있고 친구들이 빗자루로 데려간다. 망토를 두고 내려온 해리와 헤르미온느가 야간 순찰에 걸리는 흐름이다. 플레이어가 바꾼 결과와 실제 목격 범위를 따른다.',
+      title:'천문탑에서의 한밤 약속',background:'astronomy',actors:['harry','hermione','filch'],
+      intro:'통금 종이 울린 뒤, 천문탑으로 이어지는 계단에서 무거운 상자가 돌에 부딪히는 소리가 난다. 저 위에서 누군가 빗자루의 등불을 두 번 깜박인다.',
+      options:[
+        {id:'carry',label:'계단을 올라가 상자를 나르는 일을 돕는다',intent:'해리와 헤르미온느는 크리스마스에 해리가 받은 투명망토로 상자를 숨겨 왔다. 노버트를 찰리의 친구들에게 인계한다. 두 사람이 탑에 망토를 두고 내려가다 필치에게 들키는 경위는 플레이어가 현장에 머문 범위에서만 보여 준다.',delta:{},flags:{tower_errand:'helped'},offscreen:'탑 아래에서도 야간 순찰이 계속된다.'},
+        {id:'detention',label:'순찰 중인 필치에게 나도 통금을 어겼다고 말한다',intent:'필치가 이름을 적고 맥고나걸이 야간 징계를 직접 통보했을 때만 detention 선택 결과를 확정한다. 노버트와 망토의 비밀을 저절로 알게 하지 않는다.',delta:{},flags:{tower_errand:'detention'},offscreen:'용의 인계는 탑 위에서 진행된다.'}
+      ]},
     { id:'forest_warning',year:1,date:'1992-05-18',slot:3,kind:'plot',
-      title:'금지된 숲에서 들려온 소리',background:'night_garden',actors:['hagrid','harry','hermione','neville'],
-      intro:'금지된 숲에서 다친 생물이 발견됐다는 소문. 해그리드는 불안해 보인다. 출입 제한 구역을 조사할지, 맡은 일만 할지 판단해야 한다.',
+      title:'금지된 숲에서 들려온 소리',background:'forbidden_forest',actors:['hagrid','harry','hermione','neville','malfoy'],
+      intro:'밤이 되자 야간 통행으로 징계를 받은 학생들이 해그리드의 등불 앞으로 모인다. 숲 가장자리 풀잎에 은빛 핏방울이 묻어 있다. 해그리드는 다친 유니콘의 자취를 찾아야 한다고 말한다.',
       options:[
         {id:'with_hagrid',label:'해그리드를 도와 안전하게 조사한다',intent:'해그리드가 허락한 범위에서 발자국과 현장을 살핀다.',delta:{hagrid:2},flags:{forest:'helped'},offscreen:'다른 학생들은 자신들의 징계·수업과 관련된 일을 처리한다.'},
         {id:'secret',label:'규칙을 어기고 직접 추적한다',intent:'교직원 보호 없이 추적한다. 위험과 실패가 실제로 따를 수 있다.',delta:{hagrid:-1},flags:{forest:'sneaked'},offscreen:'누군가 숲에서 당신을 목격했을 가능성이 남는다.'},
         {id:'abstain',label:'무리하지 않고 정보를 기록해 둔다',intent:'안전한 경로로 소문을 확인한다.',delta:{},flags:{forest:'stayed'},offscreen:'금지된 숲의 사건은 다른 인물들의 선택대로 진행된다.'}
       ]},
     { id:'stone_finale',year:1,date:'1992-06-07',slot:2,kind:'plot',
+      sceneGuide:'해그리드가 용알을 얻던 날 낯선 사람에게 음악을 들려주면 세 머리 개가 잠든다고 말한 일이 경비의 허점이다. 누구에게서 무엇을 들었는지 확인한 뒤에만 그 단서를 쓰고, 이미 경비가 달라졌다면 실제 경로를 따른다.',
       title:'함정문 너머의 밤',background:'corridor',actors:['harry','ron','hermione','mcgonagall'],
       intro:'시험이 끝나고도 호그와트는 조용하지 않다. 해리 일행은 무언가를 서두르는 눈치다. 당신은 1학년 동안 모아 온 정보와 신뢰만 가지고 판단해야 한다.',
       options:[
@@ -129,6 +154,12 @@
     {id:'goblet_tournament',year:4,date:'1994-10-31',slot:2,kind:'plot',title:'불의 잔의 이름',background:'great_hall',actors:['harry','cedric','malfoy'],intro:'트리위저드 대표가 발표되고 규칙을 벗어난 이름이 나온다. 학교 전체가 편을 나누기 시작한다.',options:[
       {id:'support',label:'소문보다 사실을 확인하고 해리에게 접근한다',intent:'상대가 즉시 신뢰하지 않을 수 있다.',delta:{harry:1},flags:{goblet:'support'},offscreen:'각 학교와 선수의 판단은 별개다.'},
       {id:'rival',label:'학생들 사이의 경쟁과 의혹을 추적한다',intent:'근거를 모으면서 위험을 감수한다.',delta:{},flags:{goblet:'rival'},offscreen:'시합은 당신이 없어도 계속된다.'}]},
+    {id:'goblet_lake',year:4,date:'1995-02-28',slot:0,kind:'plot',title:'검은 호수의 두 번째 과제',background:'hogwarts_grounds',actors:['cedric','fleur','harry','krum'],
+      intro:'검은 호수 기슭에 관중석이 섰다. 물 위의 부표가 흔들리고, 네 대표가 호각을 기다린다. 기슭에서는 수면 아래가 보이지 않는다.',
+      options:[
+        {id:'watch',label:'부표 옆 관중석에서 대표들을 지켜본다',intent:'출발, 기다림, 물 위로 돌아온 사람 순으로 눈에 보이는 것만 경험한다.',delta:{},flags:{lake_task:'watched'},offscreen:'구조 과정은 호수 아래에서 진행된다.'},
+        {id:'shore',label:'기슭에 마른 담요를 가져다 놓는다',intent:'돌아오는 대표와 구조된 사람들을 기슭에서 돕는다. 선수 대신 과제에 참가하지 않는다.',delta:{},flags:{lake_task:'shore'},offscreen:'심사위원들이 기록을 정리한다.'}
+      ]},
     {id:'goblet_graveyard',year:4,date:'1995-06-24',slot:3,kind:'plot',title:'시합이 끝난 밤',background:'great_hall',actors:['harry','cedric','albus'],intro:'세 번째 시합의 마지막 밤. 축제가 공포로 뒤바뀌고 돌아오지 않는 사람을 기다리는 시간이 길어진다.',options:[
       {id:'comfort',label:'돌아온 이들을 돕고 소식을 확인한다',intent:'실제 목격·증언만 믿는다.',delta:{harry:1},flags:{goblet_end:'comfort'},offscreen:'볼드모트 부활의 구체적 경위는 직접 확인한 인물만 알고 있다.'},
       {id:'investigate',label:'현장의 이상한 조짐을 조사한다',intent:'기록과 증인을 찾는다.',delta:{},flags:{goblet_end:'investigate'},offscreen:'마법부의 정치적 대응은 독립적으로 발생한다.'}]},
@@ -445,6 +476,12 @@
       else if(h>d) intro+='\n\n헤르미온느는 당신이 자신과 함께 조사했던 일을 기억한다. 말포이도 그때 당신의 선택을 잊지 않았다.';
       else intro+='\n\n누구에게도 쉽게 편을 들어 주지 않았던 선택이 되돌아온다.';
     }
+    if(ev.id==='norbert_delivery' && st.agency.norbert==='letter')
+      intro+=' 론과 의논했던 편지에 적혀 있던 신호다.';
+    if(ev.id==='forest_warning'){
+      if(st.agency.tower_errand==='detention')intro+=' 필치가 통금 위반 때 적어 둔 명단에서 당신의 이름도 부른다.';
+      else intro+=' 필치는 손에 든 징계 명단을 펼친다.';
+    }
     if(ev.id==='end_of_first_year') {
       if((st.ties.malfoy||0)>=3)intro+='\n\n말포이는 표현하지 않지만, 떠나기 전에 당신에게 따로 할 말이 있어 보인다.';
       if((st.ties.hermione||0)>=3)intro+='\n\n헤르미온느는 여러 번 함께 공부하거나 조사했던 일을 적어 두었다.';
@@ -530,19 +567,64 @@
       return {...event,slot:currentSlot};
     return event;
   }
+  // Calendar titles describe the occasion without revealing an unplayed outcome.
+  const calendarTitles={
+    norbert_hatching:'해그리드의 오두막과 용알',goblet_graveyard:'세 번째 과제 · 폐막식',
+    b02c05:'개학날 버드나무 앞',b02c14:'병동에서 온 소식',b02c18:'교장실 앞 복도',
+    b03c08:'그리핀도르 탑 입구',b03c09:'빗속의 퀴디치 경기',b03c13:'기숙사 야간 소동',
+    b03c15:'퀴디치 결승전',b04c24:'예언자 일보의 새 기사',b05c25:'호그스미드의 인터뷰',
+    b05c33:'금지된 숲의 길목',b06c08:'새 학기 마법약 교실',b06c18:'병동의 생일',
+    b06c29:'천문탑 아래의 모임',b06c30:'호숫가의 의식',b07c30:'대연회장의 대치'
+  };
+  function calendarEvents(hp){
+    const st=ensure(hp.world), rows=[];
+    function add(ev,category,order=0){
+      if(st.calendarPassed?.includes(ev.id))return;
+      const done=!!st.finished[ev.id], isMeeting=category==='약속';
+      const missed=ev.date<hp.date || (isMeeting && ev.date===hp.date && ev.slot<hp.slot && !ev.anyTime);
+      rows.push({id:ev.id,date:ev.date,slot:ev.slot,title:calendarTitles[ev.id]||ev.title,
+        category,order,done,available:!done&&!missed&&ev.id!==st.pending?.id&&ev.id!==st.active?.id});
+    }
+    for(const ev of EVENTS){
+      const linked=CHAPTER_CATALOG?.byMajor[ev.id]?.[0];
+      add(ev,'주요 사건',linked?CHAPTER_CATALOG.byId[linked].chapter:0);
+    }
+    if(st.agency.tower==='sealed_cabinet')add(ALT_EVENTS.tower_survival_morning,'주요 사건');
+    for(const c of CHAPTER_CATALOG?.upcoming||[]){
+      if(!CHAPTER_HELPER.blockedByHistory(c,hp.canon))add(c,'원작 장면',c.chapter);
+    }
+    for(const p of st.appointments||[])add({...meetingEvent(p),anyTime:p.anyTime},'약속');
+    return rows.sort((a,b)=>a.date.localeCompare(b.date)||a.slot-b.slot||a.order-b.order);
+  }
+  function calendarDestination(hp,date,id){
+    if(!hp.house||hp.world.active||hp.world.pending||hp.world.epilogue||date<hp.date||
+        date>'1998-06-30'||(date>'1998-05-02'&&!hp.world.finished.battle_of_hogwarts&&hp.date<='1998-05-02')||!/^\d{4}-\d{2}-\d{2}$/.test(date))return null;
+    const parsed=new Date(date+'T00:00:00Z');
+    if(!Number.isFinite(+parsed)||parsed.toISOString().slice(0,10)!==date)return null;
+    const entries=calendarEvents(hp).filter(x=>x.date===date&&x.available);
+    if(id==='after_school'){
+      if(date!==hp.date||hp.slot>=2||entries.some(e=>e.slot<=2))return null;
+      return {date,slot:2,freeDay:true,afterSchool:true};
+    }
+    if(!id)return date>hp.date&&!entries.length?{date,slot:0,freeDay:true}:null;
+    const index=entries.findIndex(x=>x.id===id);
+    if(index<0)return null;
+    const event=fitSceneSlot(getEvent(id,hp.world),hp.date,hp.slot);
+    return {...event,passed:entries.slice(0,index).map(x=>x.id)};
+  }
   function nextEvent(st, date, currentSlot, canonState, majorOnly=false, house=null) {
     ensure(st);
     // A manually skipped overdue event becomes a genuine off-screen event,
     // never an encounter the player retroactively attended.
     let upcoming=null;
     for (const ev of EVENTS) {
-      if (st.finished[ev.id] || (st.active && st.active.id===ev.id) ||
+      if (st.calendarPassed?.includes(ev.id) || st.finished[ev.id] || (st.active && st.active.id===ev.id) ||
           (st.pending && st.pending.id===ev.id)) continue;
       if (ev.date < date) continue;
       upcoming=ev;break;
     }
     const alt=ALT_EVENTS.tower_survival_morning;
-    if(st.agency.tower==='sealed_cabinet' && !st.finished[alt.id] &&
+    if(st.agency.tower==='sealed_cabinet' && !st.calendarPassed?.includes(alt.id) && !st.finished[alt.id] &&
        st.active?.id!==alt.id && st.pending?.id!==alt.id && alt.date>=date &&
        (!upcoming||alt.date<=upcoming.date))upcoming=alt;
     const oneChapter=!majorOnly && CHAPTER_CATALOG && CHAPTER_HELPER &&
@@ -554,7 +636,7 @@
       const room=Object.keys(errands)[day%3], actor=nearby({date:when,slot:1,house},room,()=>true)[0];
       if(actor)next=schoolEncounter('school_'+when+'_'+room+'_'+actor+'_'+next.id);
     }else if(!house&&!oneChapter&&!majorOnly&&next&&dayGap(date,next.date)>65)next=routine(dayISO(date,45),st);
-    const meeting=(st.appointments||[]).filter(p=>!st.finished[p.id]&&p.id!==st.active?.id&&p.id!==st.pending?.id&&
+    const meeting=(st.appointments||[]).filter(p=>!st.calendarPassed?.includes(p.id)&&!st.finished[p.id]&&p.id!==st.active?.id&&p.id!==st.pending?.id&&
       (p.date>date||(p.date===date&&p.slot>=(currentSlot??0))))
       .sort((a,b)=>a.date.localeCompare(b.date)||a.slot-b.slot)[0];
     if(meeting&&(!next||meeting.date<next.date||(meeting.date===next.date&&meeting.slot<=next.slot)))next=meetingEvent(meeting);
@@ -596,6 +678,7 @@
         +'사건 시점: '+ev.date+'. 플레이어가 선택한 행동: '+opt.label+'.\n'
         +'진입 상황: '+introFor(ev,st)+'\n'
         +(ev.kind==='chapter'?'이 장은 198개 원작 장 가운데 한 개다. 433개 세부 사건 장부와 연결되지만 아직 일어나지 않은 결과나 비밀은 먼저 밝히지 마라.\n':'')
+        +(ev.sceneGuide?'현장 진행 단서: '+ev.sceneGuide+'\n':'')
         +'장면의 실제 목표: '+opt.intent+'\n'
         +'플레이어가 없는 곳에서 진행되는 일: '+opt.offscreen+'\n'
         +'이번 응답은 이 장면의 첫 대사/행동을 실제로 보여 줘야 한다. '
@@ -813,6 +896,6 @@
     return {title,narration:note,canonStatus:known||'unverified'};
   }
   function titleFor(id){ const e=getEvent(id,{decisions:[]});return e&&e.title; }
-  return Object.freeze({createState,valid,nextEvent,getEvent,incidentCast,socialKey,socialRoom,activities,nearby,classmates,directAddress,travelDestination,commitSocialTurn,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
+  return Object.freeze({createState,valid,calendarEvents,calendarDestination,nextEvent,getEvent,incidentCast,socialKey,socialRoom,activities,nearby,classmates,directAddress,travelDestination,commitSocialTurn,installChapterCatalog,offer,parseChoice,openingCastForInput,start,startAmbient,shouldStartAmbient,activeChoices,interrupt,noteAction,recordOutcome,outcomeContract,finish,resume,context,ending,
     isNext,isFinish,fastChoice,titleFor,EVENTS:EVENTS.map(x=>({...x,options:x.options.map(y=>({...y}))}))});
 });

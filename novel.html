@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63">
+<meta name="pandora-build" content="b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -1489,6 +1489,29 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     pointer-events: none; z-index: 19; display: none;
   }
+  #sceneBanner .hwOpen { pointer-events:auto; cursor:pointer; border:0; background:none; padding:3px 2px; color:inherit; font:inherit; max-width:100%; overflow:hidden; text-overflow:ellipsis; vertical-align:middle }
+  #sceneBanner .hwOpen b { color:#eed9a2; margin-right:6px }
+  #hwCalendar { color-scheme:dark; width:min(420px,94vw); box-sizing:border-box; max-height:min(86dvh,740px); overflow:auto; overscroll-behavior:contain; margin:auto; padding:20px; color:#f3efe6; background:#1b2223; border:1px solid #646050; border-radius:16px; box-shadow:0 20px 70px #0009; font:14px/1.45 system-ui,sans-serif }
+  #hwCalendar::backdrop { background:#07090bbd }
+  #hwCalendar header,#hwCalendar nav,#hwDiary button { display:flex; align-items:center; gap:8px }
+  #hwCalendar h2,#hwCalendar h3 { font-family:Georgia,serif; margin:0; color:#f3e5bd }
+  #hwCalendar h2 { font-size:22px; margin-right:auto } #hwCalendar h3 { font-size:17px }
+  #hwCalendar button,#hwCalendar select { font:inherit; color:inherit; border:1px solid #555a55; background:#272f2f; border-radius:8px; padding:6px 10px; cursor:pointer }
+  #hwCalendar :focus-visible { outline:2px solid #ecd591; outline-offset:1px }
+  #hwCalendar button:disabled { opacity:.35; cursor:default }
+  #hwCalendar nav { margin:18px 0 10px } #hwMonth { flex:1; text-align:center; min-width:0; }
+  .hwWeek,#hwDays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); text-align:center; gap:2px }
+  .hwWeek { color:#babcae; font-size:12px; margin-bottom:4px }
+  #hwDays button { position:relative; min-height:36px; background:transparent; border:1px solid transparent; padding:3px 0 7px; border-radius:6px; font-variant-numeric:tabular-nums }
+  #hwDays [aria-current=date] { color:#f6d683; border-color:#7c714d } #hwDays [aria-pressed=true] { background:#dfca92; color:#202423 }
+  .hwDots { position:absolute; bottom:3px; left:0; right:0; display:flex; gap:3px; justify-content:center }
+  .hwDots span { width:4px; height:4px; border-radius:50%; background:#d9b66b } .hwDots .meeting { background:#83c7b6 }
+  #hwDays [aria-pressed=true] .hwDots span { outline:1px solid #36413e }
+  #hwDateDetail { margin:14px 0; padding:12px 14px; border:1px solid #4a514c; border-radius:10px; background:#252d2c }
+  #hwCalendar p,#hwCalendar small { margin:4px 0; color:#d1d1c4 } #hwCalendar small { display:block; line-height:1.45 }
+  #hwDateDetail .hwTravel { background:#e2c993; color:#222624; width:100%; margin:5px 0; border:0; font-weight:650 }
+  #hwDiary { margin-top:6px } #hwDiary button { border:0; border-radius:0; border-bottom:1px solid #434a46; background:none; text-align:left; width:100%; padding:9px 2px }
+  #hwDiary strong { width:33px; color:#ddcfad; flex:none; } .hwName { flex:1 } .hwType,.hwMeeting { color:#d5bd83; font-size:12px } .hwMeeting { color:#9ad8c8 }
   #sceneBanner .ev { color: var(--accent); font-weight: 600; }
   #sceneBanner .biz { color: #f2c14e; font-weight: 700; }   /* 아이돌: 회사 자금(경영 게임이라 상시 노출) */
   body[data-story="idol"] #sceneBanner { pointer-events: auto; cursor: pointer; }
@@ -2114,6 +2137,12 @@
   <button onclick="closeTopMenu(); exitToMain()">홈으로</button>
 </div>
 <div id="sceneBanner" onclick="openIdolBoard()"></div>
+<dialog id="hwCalendar" aria-labelledby="hwCalendarTitle">
+  <header><h2 id="hwCalendarTitle">호그와트 달력</h2><button id="hwToday" type="button">오늘</button><button type="button" aria-label="달력 닫기" onclick="this.closest('dialog').close()">✕</button></header>
+  <nav aria-label="달 선택"><button id="hwPrev" aria-label="이전 달">‹</button><select id="hwMonth" aria-label="연도와 월"></select><button id="hwNext" aria-label="다음 달">›</button></nav>
+  <div class="hwWeek" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+  <div id="hwDays"></div><section id="hwDateDetail" aria-live="polite"></section><h3>이달의 일정</h3><div id="hwDiary"></div>
+</dialog>
   <div id="rewindBox"></div>
   <div id="idolBoard"><button class="ib-close" onclick="closeIdolBoard()">✕</button><div id="ibBody"></div></div>
   <div id="statToasts"></div>
@@ -2166,18 +2195,19 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=a78b5305bee31599eec84ed6e245ef9f7033d5e744df95b3894e87d0077d4d63"></script>
+<script src="pandora-consistency.js?v=369&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/calendar.js?build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=b3fe162ecc2a3805f4e03896c520d2085aa4abce58b65222663a12e2786d44e6"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -11674,6 +11704,8 @@ function handleHogwartsMagicCommand(text){
     title='학년별 주문·마법약 실습\n\n'
       +'기초 주문은 학기 중 정규 수업으로도 익힌다. 어려운 실습은 반복 훈련, 선행 주문과 지도·안전한 장소가 필요하다.\n'
       +'하루 최대 3회 집중 연습 · 현재 '+st.practice.sessions+'/3회 · 피로 '+st.practice.fatigue+'/100';
+    const units=api.curriculum(st,ctx.date);
+    if(units.length)title+='\n\n'+units.map(u=>(u.slot?'오후':'아침')+' · '+u.name+' — '+u.topic+' / 과목 경험 '+(st.subjectXP[u.subject]||0)).join('\n');
     options=menu.choices.slice();
     if(menu.page>0)options.push('▶ 마법 수업 ['+(menu.page-1)+'] — 앞쪽');
     if(menu.page<menu.pages-1)options.push('▶ 마법 수업 ['+(menu.page+1)+'] — 다음쪽');
@@ -15236,7 +15268,7 @@ setInterval(() => {
 function isInteractive(el) {
   // ★#sceneBanner·#idolBoard·#rewindBox 누락 시 배너 탭이 "대화 진행/히스토리 이동"으로
   //   먹혀 보드가 열리자마자 덮인다(2026-07-26 "아예 일정이 안 눌린다" 원인 중 하나).
-  return el.closest && el.closest('button, textarea, input, #backlogPanel, #inputBar, #choiceBox, #topBar, #statusPanel, #sceneBanner, #idolBoard, #rewindBox, #topMenu');
+  return el.closest && el.closest('button, textarea, input, #backlogPanel, #inputBar, #choiceBox, #topBar, #statusPanel, #sceneBanner, #hwCalendar, #idolBoard, #rewindBox, #topMenu');
 }
 
 function setupInputHandlers() {
@@ -15615,11 +15647,50 @@ async function genFallbackChoices() {
 
 function choiceDisplayText(choice) {
   return STORY.id === 'hogwarts' && /^▶/.test(choice)
-    ? String(choice).replace(/^▶\s*선택\s*\[[a-z0-9_-]+\]\s*[a-z0-9_-]+\s*—\s*/i, '')
+    ? String(choice).replace(/^▶ 달력 이동 \[[^\]]*\] /,'달력 · ').replace(/^▶\s*선택\s*\[[a-z0-9_-]+\]\s*[a-z0-9_-]+\s*—\s*/i, '')
       .replace(/\s*\[[a-z0-9_-]+\]/gi, '')
     : choice;
 }
+async function startHogwartsFreeDay(clock,upcoming,current){
+  const summer=['07','08'].includes(clock.date.slice(5,7));
+  const bg=upcoming.afterSchool?'hogwarts_courtyard':summer?'diagon_alley':PandoraHogwartsScenes.resolveBackground('common_room',clock.house);
+  gameState.location=upcoming.afterSchool?'호그와트 안뜰':summer?'다이애건 앨리':clock.house+' 공용실';
+  gameState.event=null;gameState.combat=false;gameState._combatStart=null;
+  if(clock.scene)clock.scene.lastLocation=bg;
+  await syncHogwartsCanon();if(!current())return;
+  updateStatusUI();
+  const units=PandoraHogwartsMagic.curriculum(clock.magic,clock.date);
+  const notes=upcoming.afterSchool?'':units.map(u=>(u.slot?'오후':'아침')+' · '+u.name+' — '+u.topic).join('\n');
+  renderFixedStep(gameState.time+'\n\n'+(notes?notes+'\n\n':'')+(upcoming.afterSchool?'마지막 수업의 종이 울린 지 한참이다. 안뜰에 길어진 그림자 사이로 사람들이 삼삼오오 흩어진다.':summer?'여름 방학이다. 다이애건 앨리의 상점들이 문을 열고 있다.':'공용실 창으로 빛이 든다. 오늘 어디로 갈지는 당신이 정한다.'),
+    upcoming.afterSchool?['퀴디치 경기장으로 가서 훈련을 구경한다.','공용실로 돌아가 친구들과 저녁 시간을 보낸다.']:summer?['서점에 들어가 신간을 살핀다.','부엉이 우편으로 친구에게 편지를 쓴다.']:['안뜰로 나가 바람을 쐰다.','도서관에서 관심 있던 책을 찾는다.',...(units.length?['오늘 실습에서 궁금했던 부분을 연습하러 간다.']:[])],
+    {background:bg,resetSprites:true});autoSave();
+}
+function hogwartsCalendarLock(){
+  const hp=gameState?.hogwarts;
+  if(!hp?.house||window._startPhase!=='playing')return '기숙사 배정 후 이동할 수 있습니다.';
+  if(!inputMode||sendBtn.disabled||window._inputRequest||replaying||gameState.combat||window.PandoraHogwartsScenes?.hasPending(hp.scene||{}))
+    return '현재 장면을 읽고 입력할 수 있을 때 이동할 수 있습니다.';
+  if(hp.world.pending||hp.world.active)return '현재 사건을 마치면 이동할 수 있습니다.';
+  if(hp.world.epilogue)return '여정이 끝났습니다.';
+  return '';
+}
+async function openHogwartsCalendar(){
+  if(STORY.id!=='hogwarts'||!gameState.hogwarts?.house)return;
+  closeTopMenu();
+  const hp=gameState.hogwarts;
+  if(!window.PandoraHogwartsChapters?.getLoaded()){
+    await syncHogwartsCanon();
+    if(STORY.id!=='hogwarts'||gameState.hogwarts!==hp)return;
+    if(!window.PandoraHogwartsChapters?.getLoaded()){
+      showStatToast('학사 일정을 불러오지 못했습니다. 연결 후 다시 열어 주세요.',true);return;
+    }
+  }
+  PandoraHogwartsCalendar.open(gameState.hogwarts,hogwartsCalendarLock,(date,id)=>{
+    selectChoice('▶ 달력 이동 ['+(id||'')+'] '+date);
+  });
+}
 function selectChoice(choice) {
+  if(choice==='▶ 호그와트 달력'){openHogwartsCalendar();return;}
   if (sendBtn.disabled || window._inputRequest || replaying) return;
   SFX.play('choice');
   document.getElementById('choiceBox')?.remove();
@@ -15643,8 +15714,7 @@ function hogwartsMenuChoices() {
   if (hw.epilogue) choices.push('▶ 결말을 기록하고 엔딩 보기');
   else if (!hw.pending) choices.push(hw.active
     ? '▶ 장면 마치기 — 결과를 확정하고 이어가기'
-    : '▶ 다음 장면 — 다음 사건·일상으로 진행');
-  if(!hw.active&&!hw.pending&&!hw.epilogue)choices.push(PandoraHogwartsWorld.fastChoice);
+    : hw.finished.battle_of_hogwarts?'▶ 7년의 여정을 돌아보고 결말을 이야기한다':'▶ 호그와트 달력');
   return choices;
 }
 function showChoices(choices) {
@@ -15709,8 +15779,11 @@ function showChoices(choices) {
     for (const action of PandoraHogwartsWorld.activeChoices(gameState.hogwarts.world)) {
       if (!choices.includes(action)) choices.push(action);
     }
-    if(choices.some(PandoraHogwartsWorld.isNext)&&!choices.includes(PandoraHogwartsWorld.fastChoice))
-      choices.push(PandoraHogwartsWorld.fastChoice);
+    if(choices.some(PandoraHogwartsWorld.isNext)){
+      choices=choices.filter(c=>!PandoraHogwartsWorld.isNext(c));
+      choices.push(gameState.hogwarts.world.finished.battle_of_hogwarts?
+        '▶ 7년의 여정을 돌아보고 결말을 이야기한다':'▶ 호그와트 달력');
+    }
   }
   // ★★AI가 choices를 안 주는 턴이 간간이 있다(2026-08-04 유저: "간간이 선택지 안 나와").
   //   전엔 아이돌만 보장 선택지가 있었고 나머지 스토리는 입력창만 떴다. 어느 스토리든
@@ -15945,7 +16018,8 @@ async function dispatchPlayerInput(text, request, current, release) {
           {dialogue:after?.dialogue || [],resetSprites:false});
         autoSave(); return;
       }
-      if (hw.isNext(text)) {
+      const selectedDate=/^▶ 달력 이동 \[([a-z0-9_]*)\] (\d{4}-\d{2}-\d{2})$/.exec(text);
+      if (hw.isNext(text)||selectedDate) {
         if (world.active) {
           renderFixedStep('이 장면은 아직 진행 중입니다. 대화를 이어가거나 직접 장면을 마무리할 수 있습니다.',
             ['▶ 장면 마치기 — 결과를 확정하고 이어가기']);
@@ -15956,12 +16030,26 @@ async function dispatchPlayerInput(text, request, current, release) {
           renderFixedStep(r.intro,r.choices,{background:r.background,resetSprites:true});
           return;
         }
-        const upcoming=hw.nextEvent(world,clock.date,clock.slot,clock.canon,text===hw.fastChoice,clock.house);
+        const upcoming=selectedDate?hw.calendarDestination(clock,selectedDate[2],selectedDate[1]):hw.nextEvent(world,clock.date,clock.slot,clock.canon,text===hw.fastChoice,clock.house);
+        if(selectedDate && (!upcoming||!HOGWARTS_CANON_BUNDLE||!window.PandoraHogwartsChapters?.getLoaded())){
+          showStatToast('현재 장면에서 이 일정으로 이동할 수 없습니다. 달력을 다시 열어 확인해 주세요.',true);enterInputMode();return;
+        }
         if (!upcoming) {
           const fin=hw.ending(world,gameState.hogwarts.canon);
           renderFixedStep(fin ? '호그와트에서 보낸 7년의 마지막 페이지다. 이제 직접 걸어온 길의 결말을 확인할 수 있다.' : '더는 등록된 주요 사건이 없습니다. 일상 대화를 이어가거나 마지막 장면을 돌아볼 수 있습니다.',
             fin ? ['▶ 7년의 여정을 돌아보고 결말을 이야기한다'] : null);
           autoSave(); return;
+        }
+        if(selectedDate && upcoming.chapterId && upcoming.date>clock.date){
+          const before=new Date(upcoming.date+'T00:00:00Z');
+          before.setUTCDate(before.getUTCDate()-1);
+          const preview=PandoraHogwartsBridge.sync(HOGWARTS_CANON_BUNDLE,structuredClone(clock.canon),
+            before.toISOString().slice(0,10),world.decisions);
+          const chapter=PandoraHogwartsChapters.getLoaded().byId[upcoming.chapterId];
+          if(PandoraHogwartsChapters.blockedByHistory(chapter,preview.state)){
+            showStatToast('앞선 사건에서 달라진 결과 때문에 이 장면으로 이동할 수 없습니다.',true);
+            enterInputMode();return;
+          }
         }
         const oldClock={date:clock.date,slot:clock.slot};
         const travel=PandoraHogwartsTime.moveToScene(clock,upcoming.date,upcoming.slot);
@@ -15977,6 +16065,8 @@ async function dispatchPlayerInput(text, request, current, release) {
         gameState.flags=gameState.flags||{};
         gameState.flags['학년도']=PandoraHogwartsTime.studyYear(clock.date);
         gameState.status='호그와트 '+gameState.flags['학년도']+'학년 · '+clock.house;
+        if(upcoming.passed?.length)world.calendarPassed=[...new Set([...(world.calendarPassed||[]),...upcoming.passed])];
+        if(upcoming.freeDay){await startHogwartsFreeDay(clock,upcoming,current);return;}
         gameState.event=upcoming.title;
         const hwPlace={great_hall:'호그와트 대연회장',corridor:'호그와트 복도',library:'호그와트 도서관',
           potions:'호그와트 마법약 교실',dormitory:'기숙사',quidditch:'퀴디치 경기장',
@@ -16632,6 +16722,14 @@ function updateSceneBanner() {
     if (on) pb.classList.toggle('need', IDOL_SIM.needPlan(gameState.idol));
   }
   if (!t && !ev && !biz) { el.style.display = 'none'; layoutTopStack(); return; }
+  if(STORY.id==='hogwarts' && gameState.hogwarts?.house && window.PandoraHogwartsCalendar){
+    const btn=document.createElement('button');btn.className='hwOpen';btn.type='button';
+    const name=document.createElement('b');name.textContent='달력';
+    btn.append(name,document.createTextNode(t+(ev?' · '+ev:'')));
+    btn.setAttribute('aria-label','호그와트 달력 열기 · '+t);
+    btn.onclick=e=>{e.stopPropagation();openHogwartsCalendar();};
+    el.replaceChildren(btn);el.style.display='block';layoutTopStack();return;
+  }
   el.innerHTML = [biz, t ? `🕐 ${t}` : '', ev ? `<span class="ev">📌 ${ev}</span>` : ''].filter(Boolean).join(' · ');
   el.style.display = 'block';
   layoutTopStack();

@@ -175,45 +175,68 @@
       learned:p.xp>=LESSON_THRESHOLD,firstLearned:first&&p.xp>=LESSON_THRESHOLD,
       fatigue:s.practice.fatigue,danger};
   }
+  const timetable=[
+    ['charms','potions'],['transfiguration','herbology'],['history','defense'],
+    ['potions','charms'],['rotation','astronomy']
+  ];
+  const units={
+    charms:['지팡이 동작과 빛 조절','목표물에 작용하는 힘','둘 이상의 효과를 잇는 순서'],
+    potions:['약재 식별과 계량','불의 세기와 투입 순서','변질된 시료의 원인 추적'],
+    defense:['위험 신호 판별','방어 시점과 거리','상황별 보호·대피 판단'],
+    transfiguration:['재질 관찰과 형태 유지','변형의 정밀도','실패한 변형 복원'],
+    herbology:['생장 환경과 표본 관찰','안전한 분갈이','생육 기록 비교'],
+    history:['동시대 사료 읽기','충돌하는 증언 비교','사건의 원인과 영향'],
+    astronomy:['별자리와 방위','관측 시각 보정','행성 궤도 대조'],
+    flying:['이륙과 착지','선회와 감속','장애물 사이의 비행']
+  };
+  function schoolDay(date){
+    const d=new Date(date+'T00:00:00Z'), weekday=d.getUTCDay(), md=date.slice(5);
+    if(md==='09-01'||date>='1998-05-02'||!isTerm(date)||weekday<1||weekday>5||md>='12-21'||md<='01-05')return null;
+    const year=schoolYear(date), start=Date.UTC(1990+year,8,1);
+    return {weekday,year,week:Math.floor((+d-start)/604800000),
+      term:md>='09-01' ? 0 : md<'04-01' ? 1 : 2};
+  }
+  function curriculum(s,date){
+    const day=schoolDay(date);
+    if(!day)return [];
+    return timetable[day.weekday-1].map((period,slot)=>{
+      const choices=day.year>=3?s.electives.filter(id=>SUBJECT_BY_ID[id]):[];
+      const subject=period!=='rotation'?period:day.year===1?'flying':choices.length?
+        choices[day.week%choices.length]:['defense','transfiguration','herbology'][day.week%3];
+      const grade=s.exams?.OWL_1996?.[subject];
+      if(day.year>=6 && grade && !['O','E'].includes(grade))return null;
+      const spells=SPELLS.filter(x=>x.subject===subject&&x.year===day.year&&
+        ['ordinary','caution'].includes(x.law)&&!courseAllowed(s,x,{date}));
+      const spell=spells[Math.min(spells.length-1,Math.floor(day.week*spells.length/41))];
+      const topic=spell?.name||(units[subject]||['기초 자료 판독','사례 대조','개별 연구'])[day.term];
+      const approach=['시범을 보고 차이를 짚기','짝과 조건을 바꿔 비교하기','실패 사례의 원인 찾기','배운 것을 낯선 사례에 적용하기'][day.week%4];
+      return {slot,subject,name:SUBJECT_BY_ID[subject].name,topic,approach,spell:spell?.id};
+    }).filter(Boolean);
+  }
   function passiveSchool(s,from,to){
-    need(s);if(!/^\d{4}-\d{2}-\d{2}$/.test(to))return [];
-    const previous=String(from||s.lastDate);
-    if(to<=previous)return []; // never rewind training or daily counters on stale save
+    need(s);
+    const previous=from>s.lastDate?from:s.lastDate;
+    if(to<=previous||!/^\d{4}-\d{2}-\d{2}$/.test(to))return [];
     const start=Date.parse(previous+'T00:00:00Z'),end=Date.parse(to+'T00:00:00Z');
     if(!Number.isFinite(start)||!Number.isFinite(end))return [];
-    const earned=[],months=Math.floor((end-start)/86400000/18);
-    if(months>0&&isTerm(to)){
-      // Lessons continue between major story scenes; ordinary attendance
-      // improves a subject without instantly mastering any advanced spell.
-      for(const subj of SUBJECTS){
-        const eligible=subj.year<=schoolYear(to) &&
-          (subj.group==='필수'||subj.group==='1학년 필수'&&schoolYear(to)===1||
-           subj.group==='선택'&&s.electives.includes(subj.id));
-        if(eligible){
-          const beforeXP=s.subjectXP[subj.id]||0;
-          s.subjectXP[subj.id]=Math.max(beforeXP,
-            Math.min(125,beforeXP+Math.min(50,months*8)));
-        }
+    const earned=[];
+    for(let t=start;t<end;t+=86400000){
+      const date=new Date(t).toISOString().slice(0,10);
+      for(const unit of curriculum(s,date)){
+        const xp=s.subjectXP[unit.subject]||0;
+        if(xp<125)s.subjectXP[unit.subject]=Math.min(125,xp+1);
+        const spell=SPELL_BY_ID[unit.spell];
+        if(!spell||spell.year>4||spell.law!=='ordinary'||spell.difficulty>2||spell.form==='potion')continue;
+        const p=record(s,spell.id),old=p.xp;
+        if(old<72)p.xp=Math.min(72,old+6);
+        if(old<LESSON_THRESHOLD&&p.xp>=LESSON_THRESHOLD){p.firstLearned=date;earned.push(spell.name);}
       }
-    }
-    // An ordinary school term teaches foundational magic off-screen,
-    // without making the player master advanced spells by clicking "next".
-    for(const spell of SPELLS.filter(x=>x.year<=schoolYear(to)&&x.year<=4&&
-      x.law==='ordinary'&&x.difficulty<=2&&x.form!=='potion'&&
-      !isElective(x.subject))){
-      if(!isTerm(to)||months<1)continue;
-      const p=record(s,spell.id),add=Math.min(50,Math.max(0,months*10));
-      const old=p.xp;p.xp=Math.min(72,Math.max(p.xp,Math.min(72,add)));
-      if(old<LESSON_THRESHOLD&&p.xp>=LESSON_THRESHOLD){p.firstLearned=to;earned.push(spell.name);}
-    }
-    if(previous<'1996-06-01'&&to>='1996-06-01'){
-      s.exams.OWL_1996=examGrade(s,5);
-    }
-    if(previous<'1998-06-01'&&to>='1998-06-01'){
-      s.exams.NEWT_1998=examGrade(s,7);
+      const nextDay=new Date(t+86400000).toISOString().slice(0,10);
+      if(nextDay==='1996-06-01')s.exams.OWL_1996=examGrade(s,5);
+      if(nextDay==='1998-06-01')s.exams.NEWT_1998=examGrade(s,7);
+      resetDay(s,nextDay);
     }
     s.lastDate=to;
-    resetDay(s,to);
     return earned;
   }
   function examGrade(s,level){
@@ -363,11 +386,15 @@
   }
   function context(s,ctx){
     need(s);ctx=ctx||{};const year=schoolYear(ctx.date||s.lastDate);
+    const today=curriculum(s,ctx.date||s.lastDate);
+    const timetableLine=today.map(u=>(u.slot?'오후 ':'아침 ')+u.name+' · '+u.topic+' ('+u.approach+')').join(' / ');
     const learned=SPELLS.filter(x=>(s.spells[x.id]?.xp||0)>=LESSON_THRESHOLD);
     const list=learned.map(x=>x.name+'('+rank(s.spells[x.id].xp)+')').join(', ');
     const selected=s.electives.map(id=>SUBJECT_BY_ID[id]?.name).filter(Boolean).join(', ');
     return '\n\n## ★호그와트 전용 마법학(이 상태만이 주문 습득·시전의 확정 근거)\n'
       +'- 학년 '+year+'. 실제로 배운 주문/실습: '+(list||'아직 없음')+'.\n'
+      +'- 오늘의 정규 진도: '+(timetableLine||'정규 수업 없음')+'. 현재 시간대와 장소, 진행 중인 사건·약속이 우선이다. 수업을 실제로 선택한 경우에만 해당 단원을 사용한다.\n'
+      +'- 이미 끝난 실습은 한 문장으로 넘긴다. 종이 울리면 지난 수업을 다시 열지 말고 학생들이 자신의 용무로 흩어지게 한다. 선택지는 현재 인물과 장소에서 가능한 행동을 주며 다음 수업을 의무화하지 않는다.\n'
       +'- 선택과목: '+(selected||'미정')+'. 실습 피로도 '+s.practice.fatigue+'/100.\n'
       +'- 금서 접근: '+(s.darkAccess?'접근 기록 있음(저주 사용 허가 아님)':'없음')+'. 내부 위험행위 '+s.infractions.length+'건, 실제 목격된 위반 '+s.infractions.filter(x=>x.discovered).length+'건. 목격되지 않은 위반은 자동 신고되지 않는다.\n'
       +'- 최근 앱 확정 시전: '+(s.lastCast ? s.lastCast.name+' / '+(s.lastCast.success?'발동':'실패')+' / '+(s.lastCast.violation||'규정 위반 없음') : '없음')+'. 타인에 대한 실제 결과는 장면과 방어·증거 판정을 따른다.\n'
@@ -379,6 +406,6 @@
       +(PROFILE?PROFILE.context(s):'');
   }
   return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,ALIASES,createState,valid,schoolYear,rank,courseAllowed,
-    lesson,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
+    lesson,curriculum,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
     findIncantation,parseCommand,parseFreeCast,context,LESSON_THRESHOLD});
 });

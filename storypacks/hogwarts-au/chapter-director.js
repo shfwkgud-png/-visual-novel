@@ -9,7 +9,7 @@
   if(root)root.PandoraHogwartsChapters=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const BASE='storypacks/hogwarts-au/chapter-playbook.json?v=6';
+  const BASE='storypacks/hogwarts-au/chapter-playbook.json?v=7';
   const SCHOOL=['hogwarts','great_hall','quidditch_pitch','hagrids_hut','forbidden_forest',
     'hogwarts_grounds','hogsmeade','chamber_of_secrets','shrieking_shack',
     'astronomy_tower','room_requirement','hogwarts_express'];
@@ -104,7 +104,7 @@
         if(!firstMajorChapter ||
           c.book*100+c.chapter>=firstMajorChapter.book*100+firstMajorChapter.chapter)break;
       }
-      if(st.finished[c.id]||st.pending?.id===c.id||st.active?.id===c.id)continue;
+      if(st.calendarPassed?.includes(c.id)||st.finished[c.id]||st.pending?.id===c.id||st.active?.id===c.id)continue;
       if(blockedByHistory(c,canonState))continue; // broken prerequisite: never replay original scene
       return eventFor(c,st);
     }

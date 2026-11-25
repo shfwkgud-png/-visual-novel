@@ -56,6 +56,25 @@ assert.equal(M.lesson(state,'expecto_patronum',{date:'1993-10-02'}).ok,false,
 assert.equal(M.lesson(state,'expecto_patronum',{date:'1993-10-02',
   flags:{dementor:'study'}}).ok,true);
 
+// Identical elapsed school days must earn identical progress, however the clock arrived.
+const oneJump=M.createState('1991-09-01'),daily=JSON.parse(JSON.stringify(oneJump));
+oneJump.spells.lumos={xp:130,attempts:4,success:4,firstLearned:'1991-09-01'};
+daily.spells.lumos={...oneJump.spells.lumos};
+M.passiveSchool(oneJump,'1991-09-01','1992-04-08');
+for(let d='1991-09-01';d<'1992-04-08';){
+  const next=new Date(Date.parse(d+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+  M.passiveSchool(daily,d,next);d=next;
+}
+assert.deepEqual(oneJump,daily);
+assert.equal(oneJump.spells.lumos.xp,130);
+const savedProgress=JSON.stringify(oneJump);
+M.passiveSchool(oneJump,'1991-09-01','1992-04-08');
+assert.equal(JSON.stringify(oneJump),savedProgress);
+assert.deepEqual(M.curriculum(daily,'1991-12-25'),[]);
+assert.deepEqual(M.curriculum(daily,'1992-07-06'),[]);
+assert.deepEqual(M.curriculum(daily,'1991-09-07'),[]);
+assert.notEqual(M.curriculum(daily,'1991-09-02')[0].topic,M.curriculum(daily,'1992-04-06')[0].topic);
+assert.notEqual(M.curriculum(daily,'1991-09-02')[0].approach,M.curriculum(daily,'1991-09-09')[0].approach);
 const before=M.createState('1991-09-03');
 let from='1991-09-03',schedule=['1991-11-03','1992-02-01','1992-06-01',
   '1992-09-03','1993-05-31','1993-09-02','1994-06-01','1994-09-02',

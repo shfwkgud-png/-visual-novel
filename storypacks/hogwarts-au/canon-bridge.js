@@ -70,6 +70,7 @@
       Object.assign(cDate,SCENE_DATE_OVERRIDES[b]||{});
       for(const e of ledger.events)if(e.book===b)dates[e.id]=cDate[e.chapter];
     }
+    dates.b01c14s02='1992-05-09'; // Delivery and detention take place after the egg hatches.
     // The chronicle was authored in causal order; pacing dates must not run backwards.
     let previous='1900-01-01';
     for(const e of ledger.events){
