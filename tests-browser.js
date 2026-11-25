@@ -1654,16 +1654,29 @@ async function hogwartsSocialCheck(ctx){
       save.gameState.metChars={padma:{location:'도서관'}};
       const line={speaker:'파드마 파틸',char_id:'padma',text:'참고서를 찾았어.',emotion:'normal'};
       save.lastBg='library';save.gameHistory=[{role:'assistant',content:JSON.stringify({background:'library',dialogue:[line]})}];
-      save.dialogueLog=[{...line,bgFile:'library',sprites:['padma']}];
+      delete hp.magic.seenClasses;
+      save.dialogueLog=[{speaker:'미네르바 맥고나걸',char_id:'mcgonagall',text:'성냥을 바늘로 바꾸어 보세요.',bgFile:'classroom'},
+        {...line,bgFile:'library',sprites:['padma']}];
       bulkSetSilent(slotKey(1),JSON.stringify(save));toggleSlots();loadFromSlot(1);
     });
     await drainDialogue(page);
     assert.equal(await page.evaluate(()=>gameState.hogwarts.date),'1991-09-23');
+    assert.equal(await page.evaluate(()=>gameState.hogwarts.magic.seenClasses.transfiguration),true);
+    assert.equal(await page.evaluate(()=>JSON.parse(bulkGet(slotKey(1))).gameState.hogwarts.magic.seenClasses),undefined);
+    await chooseHogwartsMenu(page,'호그와트 달력');
+    for(const [date,topic] of [['17','바늘귀를 내고 실을 통과시키기'],['24','휘어진 바늘을 원래 성냥으로 복원하기'],['26','자유활동']]){
+      await page.locator('#hwDays button[aria-label^="1991-09-'+date+'"]').click();
+      assert.ok((await page.locator('#hwDateDetail .hwLessons').innerText()).includes(topic));
+    }
+    await page.locator('#hwCalendar button[aria-label="달력 닫기"]').click();
     await page.evaluate(()=>{setBg('hogwarts_courtyard');gameState.location='안뜰';});
     await enterText(page,'안뜰에서 도서관으로 간다.');
     await page.waitForFunction(()=>currentBgFile==='library');
     await drainDialogue(page);
     const arrival=net.prompts.findLast(p=>p.kind==='main').messages.map(m=>m.content).join('\n');
+    assert.match(arrival,/실제 장면 기록에 이미 나온 수업: 변신술/);
+    assert.match(arrival,/마법 주문학 6차시/);
+    assert.match(arrival,/고양이가 교수로 변하는 첫 시범과 자기소개를 다시 시작하지 않는다/);
     assert.match(arrival,/도착한 뒤에만 마주칠 수 있는 사람/);assert.match(arrival,/프레드 위즐리\(fred\)/);
     // Put Padma back at her table for the pre-social save/appointment path.
     await page.evaluate(()=>{toggleSlots();loadFromSlot(1);});

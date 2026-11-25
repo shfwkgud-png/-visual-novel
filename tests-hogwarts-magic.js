@@ -75,6 +75,34 @@ assert.deepEqual(M.curriculum(daily,'1992-07-06'),[]);
 assert.deepEqual(M.curriculum(daily,'1991-09-07'),[]);
 assert.notEqual(M.curriculum(daily,'1991-09-02')[0].topic,M.curriculum(daily,'1992-04-06')[0].topic);
 assert.notEqual(M.curriculum(daily,'1991-09-02')[0].approach,M.curriculum(daily,'1991-09-09')[0].approach);
+// September calendar and RP use the same chronological course, even on a legacy slot.
+const legacy=M.createState('1991-09-01');
+for(const [date,number] of [['1991-09-03',1],['1991-09-17',3],['1991-09-24',4]]){
+  const agenda=M.agenda(legacy,date);
+  assert.deepEqual(agenda.map(x=>x.unit.number),[number,number]);
+  assert.match(M.context(legacy,{date,slot:0}),new RegExp(agenda[0].label));
+}
+const elementary=M.agenda(legacy,'1991-09-17'),nextLesson=M.agenda(legacy,'1991-09-24');
+assert.equal(M.agenda(legacy,'1991-09-23')[0].unit.spell,'lumos');
+assert.notEqual(elementary[0].unit.topic,nextLesson[0].unit.topic);
+assert.notEqual(elementary[1].unit.topic,nextLesson[1].unit.topic);
+const xpBefore=JSON.stringify(legacy);
+M.agenda(legacy,'1998-03-17');M.context(legacy,{date:'1991-09-24'});
+assert.equal(JSON.stringify(legacy),xpBefore,'previewing a date must not teach or record a class');
+M.passiveSchool(legacy,'1991-09-01','1991-09-23');
+assert.deepEqual(M.agenda(legacy,'1991-09-24'),nextLesson);
+assert.equal(legacy.seenClasses,undefined,'the calendar cannot invent witnessed classes');
+assert.match(M.context(legacy,{date:'1991-09-23',input:'맥고나걸 교수의 교실로 간다.'}),/변신술 3차시/);
+assert.equal(M.agenda(legacy,'1991-09-26')[1].unit,undefined,'free Thursday afternoon');
+assert.deepEqual(M.agenda(legacy,'1991-09-22'),[]);
+M.recordClasses(legacy,[{isPlayer:true,speaker:'주인공',text:'변신술 수업을 마쳤다.'},
+  {speaker:'론',text:'맥고나걸 교수님이 고양이로 변한다면?'},
+  {speaker:'나레이터',text:'저녁 교탁 위에서 고양이가 졸고 있다.'}]);
+assert.equal(legacy.seenClasses,undefined);
+const witnessed=[{char_id:'mcgonagall',speaker:'맥고나걸',text:'성냥을 바늘로 바꾸어 보세요.'}];
+M.recordClasses(legacy,witnessed);M.recordClasses(legacy,witnessed);
+assert.deepEqual(legacy.seenClasses,{transfiguration:true});
+assert.match(M.context(legacy,{date:'1991-09-03'}),/실제 장면 기록에 이미 나온 수업: 변신술/);
 const before=M.createState('1991-09-03');
 let from='1991-09-03',schedule=['1991-11-03','1992-02-01','1992-06-01',
   '1992-09-03','1993-05-31','1993-09-02','1994-06-01','1994-09-02',

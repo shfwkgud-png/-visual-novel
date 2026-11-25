@@ -179,39 +179,170 @@
     ['charms','potions'],['transfiguration','herbology'],['history','defense'],
     ['potions','charms'],['rotation','astronomy']
   ];
-  const units={
-    charms:['지팡이 동작과 빛 조절','목표물에 작용하는 힘','둘 이상의 효과를 잇는 순서'],
-    potions:['약재 식별과 계량','불의 세기와 투입 순서','변질된 시료의 원인 추적'],
-    defense:['위험 신호 판별','방어 시점과 거리','상황별 보호·대피 판단'],
-    transfiguration:['재질 관찰과 형태 유지','변형의 정밀도','실패한 변형 복원'],
-    herbology:['생장 환경과 표본 관찰','안전한 분갈이','생육 기록 비교'],
-    history:['동시대 사료 읽기','충돌하는 증언 비교','사건의 원인과 영향'],
-    astronomy:['별자리와 방위','관측 시각 보정','행성 궤도 대조'],
-    flying:['이륙과 착지','선회와 감속','장애물 사이의 비행']
+  // Opening practicals are individual lessons. Later units pair a concrete subject with
+  // a different practical each meeting; the calendar describes school, not personal XP.
+  const opening={
+    charms:['지팡이 빛 켜기','빛의 밝기와 거리 조절','불빛 끄기와 잔광 확인','두 가지 신호를 빛으로 주고받기','종이 너머로 빛의 세기 맞추기','거리별로 지팡이 불빛을 일정하게 유지하기','상대 신호에 맞춰 빛을 끄고 되살리기','지도 위 한 지점만 비추기'],
+    potions:['약재 저울의 영점 맞추기','쐐기풀과 뱀니 손질','가마를 불에서 내릴 시점','호저 가시 투입 순서','종기 치료제의 색으로 온도 판별','엉긴 시료의 제조 기록 대조','식힌 종기 치료제에서 침전물 걸러내기','완성된 치료제를 두 병에 나눠 보관하기','시험 시료의 점도와 색 대조하기'],
+    transfiguration:['성냥 끝을 금속으로 바꾸기','나뭇결을 없애고 바늘 몸통 다듬기','바늘귀를 내고 실을 통과시키기','휘어진 바늘을 원래 성냥으로 복원하기'],
+    herbology:['온실 표본에 이름표 달기','같은 모종의 양지·그늘 생장 비교','뿌리를 다치지 않게 모종 옮겨심기','옮겨 심은 모종의 새잎과 수분 기록'],
+    defense:['위험 징후를 발견하고 거리 두기','교실 배치도에 대피 경로 표시','소리로 접근 방향 가려내기','짝에게 퇴로 신호 보내기'],
+    history:['두 연표에서 같은 사건 찾기','고블린 봉기의 지명 대조','목격담과 후대 기록 구별','서로 다른 증언으로 사건 순서 복원'],
+    astronomy:['북쪽 하늘의 기준별 찾기','별자리 두 점을 성도에 옮기기','같은 별의 방위 변화 재기','달빛에 가려진 별의 위치 추정'],
+    flying:['빗자루 부르기와 안전한 착지','낮은 고도에서 정지하기','표지 깃발을 돌아 감속하기','바람 방향에 맞춰 착륙 지점 고르기']
   };
+  // Three units per term. Subjects without a new wand spell still have a syllabus.
+  const courses={
+    charms:['지팡이 빛','불빛 끄기','깃털의 공중부양','부양 높이 유지','잠금장치','깨진 기물','이동 표적','연속 주문','마법 해제'],
+    transfiguration:['목재와 금속','바늘의 무게중심','원형 복원','단추의 구멍과 테두리','서로 다른 금속','변형의 지속 시간','손잡이와 이음매','부분 변형','복원 전후의 질량'],
+    potions:['마른 약재 계량','종기 치료제','달인 액의 농도','약재의 보관 조건','교반과 온도','침전물 분리','망각 마법약','중화 시료','실패한 배합'],
+    herbology:['온실 표본','빛과 배수','뿌리와 새순','휴면 구근','삽목과 분갈이','발아 온도','꽃가루 수집','토양 회복','약초 수확'],
+    defense:['위험의 흔적','보호 거리','경로 차단','시야 확보','기습 징후','보호물 선택','짝 대피','현장 대응','구조 신호'],
+    history:['고블린 봉기','마법사 의회','초기 마법 학교','비밀 유지 법령','조약과 관할권','시대별 지도','당대의 편지','공문서의 공백','지역별 구전'],
+    astronomy:['북쪽 하늘','달의 위상','자정의 성도','겨울 별자리','행성의 위치','관측 시각','달의 궤도','망원경의 오차','연속 관측 기록'],
+    flying:['공중 정지','선회 반경','안전 착지','측풍','고도 유지','장애물 통과','대형 비행','긴급 감속','비행 경로 설계'],
+    care_beasts:['동물의 경계 신호','먹이와 서식지','안전 거리','겨울 우리','발자국','상처 돌보기','보호 구역','귀소 경로','방사 계획'],
+    divination:['찻잎 무늬','상징의 해석','꿈 일지','수정구','별자리의 상징','해석 비교','예측과 결과','우연의 기록','해석 검증'],
+    ancient_runes:['룬 자형','어순','석문 탁본','시대별 표기','복합 기호','결락 부분','비문 대조','필사 오류','주석 번역'],
+    arithmancy:['수와 성질','수열','이름의 수치','반복 주기','수치 변환','계산 오차','대칭식','가설 검산','수치 모형'],
+    muggle_studies:['가정의 도구','교통 체계','소식 전달','에너지 공급','병원과 진료','학교 생활','신문 보도','지역 생활','문화 교류']
+  };
+  const practicals={
+    charms:['기준 동작 익히기','손목 각도 비교','유지 시간 재기','실패한 주문 교정','거리 바꾸기','짝의 동작 관찰','힘의 크기 조절','두 목표 번갈아 연습','좁은 공간에 적용','중단 신호 맞추기','오류 원인 설명','혼자 재현하기'],
+    transfiguration:['재질 비교','형태를 정밀하게 맞추기','유지 시간 측정','흔적 없이 복원','원본과 무게 대조','남은 재질 흔적 찾기'],
+    potions:['재료 손질','가열 순서 비교','이상 시료 판별','배합 오차 수정','대조 시료 조제','온도 곡선 기록','거르는 시점 정하기','보관 용기 선택','점도 검사','응고 원인 대조','제조 기록 검산','한 병 분량 환산'],
+    herbology:['표본 구별','재배 조건 바꾸기','대조군 관찰','생육 기록 해석','이상 징후 감별','다음 관찰 조건 정하기'],
+    defense:['징후 식별','대응 순서 연습','짝과 역할 교대','퇴로 확보','시야가 가려진 경우 대응','모의 상황 평가'],
+    history:['원자료 읽기','기록의 출처 비교','엇갈린 증언 검토','근거를 들어 해석','누락된 관점 찾기','새 자료로 연표 수정'],
+    astronomy:['성도에 표시','망원경 관측','위치 변화 계산','측정 오차 보정','다른 관측지와 대조','다음 위치 예측'],
+    flying:['지상에서 동작 점검','낮은 고도에서 실습','조건을 바꿔 조종','안전하게 복귀','착지 오차 줄이기','짝과 간격 맞추기']
+  };
+  const laterWork=['관찰','재현','비교 실험','조건 통제','독립 실습','응용 설계','종합 연구'];
   function schoolDay(date){
     const d=new Date(date+'T00:00:00Z'), weekday=d.getUTCDay(), md=date.slice(5);
-    if(md==='09-01'||date>='1998-05-02'||!isTerm(date)||weekday<1||weekday>5||md>='12-21'||md<='01-05')return null;
+    if(!Number.isFinite(+d)||md==='09-01'||date>='1998-05-02'||!isTerm(date)||weekday<1||weekday>5||md>='12-21'||md<='01-05')return null;
     const year=schoolYear(date), start=Date.UTC(1990+year,8,1);
     return {weekday,year,week:Math.floor((+d-start)/604800000),
       term:md>='09-01' ? 0 : md<'04-01' ? 1 : 2};
   }
+  const schoolPlans=new Map();
+  function schoolPlan(s,year){
+    const electives=year>=3?s.electives.filter(id=>isElective(id)):[];
+    const key=electives.join(',');
+    const cached=schoolPlans.get(year);
+    if(cached?.key===key)return cached;
+    const days=new Map(),bySubject={},termCounts={};
+    const start=1990+year;
+    for(let t=Date.UTC(start,8,2);t<Date.UTC(start+1,6,1);t+=86400000){
+      const date=new Date(t).toISOString().slice(0,10),day=schoolDay(date);
+      if(!day)continue;
+      const meetings=[];
+      for(const [slot,period] of timetable[day.weekday-1].entries()){
+        // Alternate Thursday afternoons are free for clubs, errands and appointments.
+        if(day.weekday===4 && slot===1 && day.week%2===1)continue;
+        const pool=electives.length?electives:['defense','transfiguration','herbology'];
+        const subject=period!=='rotation'?period:year===1?'flying':pool[day.week%pool.length];
+        const subjectDates=bySubject[subject]||=[];
+        const termKey=subject+day.term,termIndex=termCounts[termKey]||0;
+        const meeting={date,subject,slot,year,term:day.term,week:day.week,number:subjectDates.length+1,termIndex};
+        meetings.push(meeting);subjectDates.push(meeting);termCounts[termKey]=termIndex+1;
+      }
+      days.set(date,meetings);
+    }
+    const plan={key,days,bySubject,termCounts};
+    schoolPlans.set(year,plan);return plan;
+  }
+  function unitFor(s,plan,meeting){
+    const {slot,subject,year,week,term,termIndex,number}=meeting;
+    const grade=s.exams?.OWL_1996?.[subject];
+    if(year>=6 && grade && !['O','E'].includes(grade))return null;
+    const spells=SPELLS.filter(x=>x.subject===subject&&x.year===year&&['ordinary','caution'].includes(x.law));
+    let spell=spells[Math.min(spells.length-1,Math.floor(week*spells.length/41))];
+    const steps=practicals[subject]||['자료 판독','조건 비교','사례 해석','독립 과제','자료의 빈틈 찾기','결과 검증'];
+    const unit=Math.min(2,Math.floor(termIndex*3/plan.termCounts[subject+term]));
+    let focus=courses[subject][term*3+unit];
+    if(year===1 && subject==='charms'){
+      let id;
+      if(number<=opening.charms.length)id=(number===3||number===7)?'nox':'lumos';
+      else if(meeting.date<'1991-10-31')id=unit===0?'lumos':'nox';
+      else if(term===0)id='wingardium_leviosa';
+      else id=(term===1?['wingardium_leviosa','alohomora','reparo']:['wingardium_leviosa','nox','reparo'])[unit];
+      spell=SPELL_BY_ID[id];
+      focus=spell.name;
+    }
+    const task=steps[(termIndex+term)%steps.length];
+    const introductory=year===1 && opening[subject]?.[number-1];
+    const topic=introductory || (year>1?(spell?.name||laterWork[year-1])+' · ':'')+focus+' — '+task;
+    return {slot,subject,name:SUBJECT_BY_ID[subject].name,number,topic,approach:task,spell:spell?.id};
+  }
   function curriculum(s,date){
-    const day=schoolDay(date);
-    if(!day)return [];
-    return timetable[day.weekday-1].map((period,slot)=>{
-      const choices=day.year>=3?s.electives.filter(id=>SUBJECT_BY_ID[id]):[];
-      const subject=period!=='rotation'?period:day.year===1?'flying':choices.length?
-        choices[day.week%choices.length]:['defense','transfiguration','herbology'][day.week%3];
-      const grade=s.exams?.OWL_1996?.[subject];
-      if(day.year>=6 && grade && !['O','E'].includes(grade))return null;
-      const spells=SPELLS.filter(x=>x.subject===subject&&x.year===day.year&&
-        ['ordinary','caution'].includes(x.law)&&!courseAllowed(s,x,{date}));
-      const spell=spells[Math.min(spells.length-1,Math.floor(day.week*spells.length/41))];
-      const topic=spell?.name||(units[subject]||['기초 자료 판독','사례 대조','개별 연구'])[day.term];
-      const approach=['시범을 보고 차이를 짚기','짝과 조건을 바꿔 비교하기','실패 사례의 원인 찾기','배운 것을 낯선 사례에 적용하기'][day.week%4];
-      return {slot,subject,name:SUBJECT_BY_ID[subject].name,topic,approach,spell:spell?.id};
-    }).filter(Boolean);
+    const plan=schoolPlan(s,schoolYear(date));
+    return (plan.days.get(date)||[]).map(meeting=>unitFor(s,plan,meeting)).filter(Boolean);
+  }
+  function lessonLabel(unit){return unit.name+' '+unit.number+'차시 · '+unit.topic;}
+  function agenda(s,date){
+    if(!schoolDay(date))return [];
+    const lessons=curriculum(s,date);
+    return [0,1].map(slot=>{
+      const unit=lessons.find(u=>u.slot===slot);
+      return {slot,unit,label:unit?lessonLabel(unit):'자유활동 · 정해진 수업 없음'};
+    });
+  }
+  const teachers={mcgonagall:'transfiguration',flitwick:'charms',snape:'potions',sprout:'herbology',
+    binns:'history',sinistra:'astronomy',hooch:'flying'};
+  const teacherNames={맥고나걸:'transfiguration',플리트윅:'charms',스프라우트:'herbology',
+    빈스:'history',시니스트라:'astronomy',후치:'flying'};
+  function recordClasses(s,lines){
+    if(!valid(s)||!Array.isArray(lines))return;
+    for(const line of lines){
+      if(!line||line.isPlayer||line.isPlayerLine||line.pending||typeof line.text!=='string')continue;
+      const text=String(line.text);
+      const name=String(line.speaker||'');
+      const transfig=/(?:성냥|바늘|변신술|고양이)/.test(text);
+      const teacher=teachers[line.char_id]||teacherNames[Object.keys(teacherNames).find(n=>name.includes(n))];
+      const narrated=!name||/^(?:나레이터|나레이션|내레이션|서술)$/.test(name);
+      const classAction=/(?:교재를 펼|지팡이를 들어 보|과제를 제출|따라\s*해|실습을 (?:시작|마|끝)|교탁을 두드|수업을 (?:시작|마|끝)|수업은 여기까지|다음 수업에 봅|바꿔 보|바꾸어 보)/.test(text);
+      let subject=classAction?teacher:null;
+      if(subject==='potions'&&(/방어술/.test(text)||!/(?:마법약|약재|가마|조제|배합)/.test(text)))subject=null;
+      if(narrated && /변신술\s*(?:첫\s*)?수업(?:이|을)\s*(?:시작했|시작되었|시작됐|마쳤|마치고|끝났|끝나자)/.test(text))subject='transfiguration';
+      if((teacher==='transfiguration'||(narrated&&/맥고나걸/.test(text)))&&transfig&&
+         /(?:성냥.{0,24}바늘|고양이.{0,60}(?:사람|교수|맥고나걸|본모습)(?:의 모습)?(?:으로|로)\s*(?:변했|변신했|돌아왔|바뀌)|고양이.{0,20}맥고나걸.{0,12}(?:변했|돌아왔))/.test(text) &&
+         !/(?:라면|한다면|할까|할지도|다음 시간에|다음 수업에|예정|소문|[?？])/.test(text))subject='transfiguration';
+      if(subject){s.seenClasses||={};s.seenClasses[subject]=true;}
+    }
+  }
+  function restoreClasses(s,log,history){
+    if(!valid(s))return;
+    recordClasses(s,log);
+    for(const turn of history||[]){
+      if(turn?.role!=='assistant'||typeof turn.content!=='string')continue;
+      let scene;
+      try{scene=JSON.parse(turn.content);}catch{continue;}
+      if(Array.isArray(scene?.dialogue))
+        recordClasses(s,[{text:scene.narration},...scene.dialogue]);
+    }
+  }
+  function schoolContext(s,ctx){
+    const date=ctx.date||s.lastDate,year=schoolYear(date),plan=schoolPlan(s,year);
+    const schedule=agenda(s,date);
+    const lines=[schedule.map(u=>(u.slot?'오후':'아침')+' '+u.label).join(' / ')||'정규 수업 없음'];
+    const seen=SUBJECTS.filter(x=>s.seenClasses?.[x.id]).map(x=>x.name);
+    if(seen.length)lines.push('실제 장면 기록에 이미 나온 수업: '+seen.join(', ')+'. 그 수업의 첫 만남·첫 시범을 다시 열지 않는다.');
+    const current=schedule.find(u=>u.slot===ctx.slot);
+    if(current)lines.push('현재 시간표: '+current.label+'.');
+    const trans=plan.bySubject.transfiguration||[];
+    const first=trans[0];
+    const introPassed=year>1 || (first && date>first.date) || s.seenClasses?.transfiguration;
+    if(introPassed){
+      lines.push('변신술 입문 차시는 이미 지났다. 맥고나걸은 후속 수업을 사람 모습으로 진행하며, 교탁의 고양이가 교수로 변하는 첫 시범과 자기소개를 다시 시작하지 않는다.');
+      if(!schedule.some(u=>u.unit?.subject==='transfiguration') && /맥고나걸|변신술/.test((ctx.location||'')+' '+(ctx.input||''))){
+        const prior=trans.filter(m=>m.date<=date).at(-1);
+        const unit=prior&&unitFor(s,plan,prior);
+        if(unit)lines.push('시간표 밖에서 이어지는 변신술은 '+prior.date+'의 '+lessonLabel(unit)+' 과제나 질문으로 연결한다.');
+      }
+    }
+    lines.push('차시는 학교 전체의 진도다. 건너뛴 날에 주인공이 직접 출석하거나 시범을 목격했다고 단정하지 않는다. 같은 차시는 이어서, 2차시부터는 후속 실습으로 다룬다. 진행 중인 사건·약속·사용자 행동이 먼저다. 시간표는 배경이다. 직전 장면이 수업이거나 사용자가 수업을 선택할 때만 교실 장면을 진행한다. 별일 없는 수업은 짧게 넘기고 공강에는 다른 수업을 자동으로 시작하지 않는다.');
+    return lines.join('\n- ');
   }
   function passiveSchool(s,from,to){
     need(s);
@@ -226,7 +357,7 @@
         const xp=s.subjectXP[unit.subject]||0;
         if(xp<125)s.subjectXP[unit.subject]=Math.min(125,xp+1);
         const spell=SPELL_BY_ID[unit.spell];
-        if(!spell||spell.year>4||spell.law!=='ordinary'||spell.difficulty>2||spell.form==='potion')continue;
+        if(!spell||spell.year>4||spell.law!=='ordinary'||spell.difficulty>2||spell.form==='potion'||courseAllowed(s,spell,{date}))continue;
         const p=record(s,spell.id),old=p.xp;
         if(old<72)p.xp=Math.min(72,old+6);
         if(old<LESSON_THRESHOLD&&p.xp>=LESSON_THRESHOLD){p.firstLearned=date;earned.push(spell.name);}
@@ -386,14 +517,12 @@
   }
   function context(s,ctx){
     need(s);ctx=ctx||{};const year=schoolYear(ctx.date||s.lastDate);
-    const today=curriculum(s,ctx.date||s.lastDate);
-    const timetableLine=today.map(u=>(u.slot?'오후 ':'아침 ')+u.name+' · '+u.topic+' ('+u.approach+')').join(' / ');
     const learned=SPELLS.filter(x=>(s.spells[x.id]?.xp||0)>=LESSON_THRESHOLD);
     const list=learned.map(x=>x.name+'('+rank(s.spells[x.id].xp)+')').join(', ');
     const selected=s.electives.map(id=>SUBJECT_BY_ID[id]?.name).filter(Boolean).join(', ');
     return '\n\n## ★호그와트 전용 마법학(이 상태만이 주문 습득·시전의 확정 근거)\n'
       +'- 학년 '+year+'. 실제로 배운 주문/실습: '+(list||'아직 없음')+'.\n'
-      +'- 오늘의 정규 진도: '+(timetableLine||'정규 수업 없음')+'. 현재 시간대와 장소, 진행 중인 사건·약속이 우선이다. 수업을 실제로 선택한 경우에만 해당 단원을 사용한다.\n'
+      +'- 오늘의 정규 진도: '+schoolContext(s,ctx)+'\n'
       +'- 이미 끝난 실습은 한 문장으로 넘긴다. 종이 울리면 지난 수업을 다시 열지 말고 학생들이 자신의 용무로 흩어지게 한다. 선택지는 현재 인물과 장소에서 가능한 행동을 주며 다음 수업을 의무화하지 않는다.\n'
       +'- 선택과목: '+(selected||'미정')+'. 실습 피로도 '+s.practice.fatigue+'/100.\n'
       +'- 금서 접근: '+(s.darkAccess?'접근 기록 있음(저주 사용 허가 아님)':'없음')+'. 내부 위험행위 '+s.infractions.length+'건, 실제 목격된 위반 '+s.infractions.filter(x=>x.discovered).length+'건. 목격되지 않은 위반은 자동 신고되지 않는다.\n'
@@ -406,6 +535,6 @@
       +(PROFILE?PROFILE.context(s):'');
   }
   return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,ALIASES,createState,valid,schoolYear,rank,courseAllowed,
-    lesson,curriculum,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
+    lesson,curriculum,agenda,recordClasses,restoreClasses,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
     findIncantation,parseCommand,parseFreeCast,context,LESSON_THRESHOLD});
 });
