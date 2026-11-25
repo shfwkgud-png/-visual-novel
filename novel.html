@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643">
+<meta name="pandora-build" content="db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -753,7 +753,7 @@
 
   /* DIALOGUE — OUTSIDE #gameScreen, full-height (100vh = true bottom 852) so it
      always reaches the real bottom (no black strip) AND does NOT rise with the
-     keyboard (it's not in the shrinking #gameScreen). Content anchored to bottom. */
+     keyboard (it's not in the shrinking #gameScreen). Text starts at a fixed height. */
   #dialogueBox {
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -1588,29 +1588,40 @@
   #sceneBanner .date-glyph::after {content:'';position:absolute;inset:2px 0 auto;border-top:1px solid currentColor;}
   #topMenu {max-height:calc(100dvh - 90px - env(safe-area-inset-top));overflow-y:auto;}
   #dialogueBox {background:linear-gradient(0deg,#090b10 1%,#090b10eF 13%,#090b10af 29%,#090b1050 43%,transparent 64%);}
-  #dialogueContent {top:auto;bottom:calc(max(var(--reply-height,0px),env(safe-area-inset-bottom)) + 22px);padding:0 23px;max-height:min(39lvh,calc(100lvh - var(--reply-height,0px) - 86px - env(safe-area-inset-top)));overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;scrollbar-width:thin;}
-  #dialogueBox:has(+ #genPill[style*="block"]) #dialogueContent {bottom:calc(98px + env(safe-area-inset-bottom));}
-  #nameplate {margin:0 0 7px;padding:0 0 0 9px;border:0;border-left:2px solid #e9c39a;}
-  #speakerName {font:670 14px/1.35 var(--ui);color:#ffebce;letter-spacing:0;}
-  #dialoguePanel {min-height:0;} #continueHint {position:static;text-align:right;color:#f6d9b6;font-size:11px;margin-top:6px;}
+  /* Anchor the nameplate or narration at the original 61% mark as the line grows. */
+  :root {--reading-top:min(61%,calc(100% - var(--reply-height,0px) - 92px));}
+  #dialogueContent {
+    top:var(--reading-top);
+    max-height:calc(100% - var(--reading-top) - max(var(--reply-height,0px),env(safe-area-inset-bottom)) - 12px);
+    overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;scrollbar-width:thin;
+  }
+  #dialogueBox:has(+ #genPill[style*="block"]) #dialogueContent {
+    max-height:calc(100% - var(--reading-top) - 90px - env(safe-area-inset-bottom));
+  }
+  #dialoguePanel {display:flex;flex-direction:column;}
+  #continueHint {position:static;align-self:flex-end;margin-top:auto;padding-top:4px;color:#f6d9b6;}
   #inputBar {padding:0 16px calc(11px + env(safe-area-inset-bottom));gap:6px;background:linear-gradient(0deg,#0a0b10f8 40%,#0a0b10b0 79%,transparent);}
   #inputRow {gap:3px;min-height:45px;padding:2px 4px;border:1px solid #ffffff36;background:#17191dec;border-radius:23px;}
   #inputRow:focus-within {border-color:#e4c9a8;}
   #userInput,#userInput:focus {color:#f6f3f0;min-height:37px;max-height:85px;padding:9px;border:0;background:none;box-shadow:none;font:450 15px/1.45 var(--ui);}
   #userInput:empty::before {color:#b9b7bd;}
   #sendBtn {display:grid;place-items:center;flex:none;width:35px;height:35px;background:#f4dfbf;color:#31291e;box-shadow:none;}
-  #choiceBox {position:absolute;top:var(--choice-top,calc(64px + env(safe-area-inset-top)));left:0;right:0;z-index:18;
-    display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 14px;max-height:45%;overflow-y:auto;overscroll-behavior-y:contain;pointer-events:none;}
-  #choiceBox .choice-btn {flex:none;pointer-events:auto;}
-  body:has(#choiceBox) #dialogueContent {
-    max-height:min(39lvh,max(48px,calc(100lvh - var(--choice-top,64px) - var(--choice-height,0px) - var(--reply-height,0px) - 34px)));
+  #choiceBox {
+    --choice-start:var(--choice-top,calc(50px + env(safe-area-inset-top)));
+    position:absolute;top:var(--choice-start);left:0;right:0;z-index:18;
+    display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 14px;
+    max-height:min(55%,calc(var(--reading-top) - var(--choice-start) - 12px));overflow-y:auto;overscroll-behavior-y:contain;pointer-events:none;
   }
+  #gameScreen:has(#sceneBanner:not(:empty):not([style*="none"])) #choiceBox {
+    --choice-start:max(var(--choice-top,0px),calc(83px + env(safe-area-inset-top)));
+  }
+  #choiceBox .choice-btn {flex:none;pointer-events:auto;}
   #gameScreen:has(#inputBar.kb-open) #choiceBox {display:none;}
   #genPill,#appFrame #genPill {top:auto;bottom:calc(15px + env(safe-area-inset-bottom));left:auto;right:20px;width:max-content;max-width:calc(100% - 40px);transform:none;padding:0;border:0;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;animation:none;text-align:right;color:#fff;}
   #genPill .gen-text {width:fit-content;max-width:100%;margin-left:auto;padding:8px 13px;background:#292b32f2;border-radius:14px 14px 3px 14px;font:500 13px/1.5 var(--ui);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
   #genPill .gen-text:empty {display:none;} .wait-caption {display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;font:520 12px var(--ui);color:#e4dbcf;}
   #genPill .gen-dots {margin:0;gap:3px;} #genPill .gen-dots i {width:4px;height:4px;background:#edcba5;}
-  @media(max-height:540px){#dialogueContent {bottom:calc(var(--reply-height,0px) + 7px);max-height:36lvh;padding-inline:16px;} #inputBar{padding-bottom:max(4px,env(safe-area-inset-bottom));}}
+  @media(max-height:540px){#inputBar{padding-bottom:max(4px,env(safe-area-inset-bottom));}}
   @media(prefers-reduced-motion:reduce){#genPill .gen-dots i {animation:none;opacity:.8;}}
 
   /* The home opens on a scene from each featured world. */
@@ -2079,19 +2090,19 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/calendar.js?build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="pandora-consistency.js?v=369&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/calendar.js?build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=db0020153b21110c8c8f64b8146c377a55caf5e7f8a2ab9669b007939cd9dba5"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -15762,11 +15773,6 @@ function showChoices(choices) {
 
   // No "직접 입력" button — the input box below is always available for free input
   document.getElementById('gameScreen').appendChild(choiceDiv);
-  const measure = new ResizeObserver(([entry]) => {
-    if (!choiceDiv.isConnected) { measure.disconnect(); return; }
-    document.documentElement.style.setProperty('--choice-height', entry.contentRect.height + 'px');
-  });
-  measure.observe(choiceDiv);
 }
 
 // ===== INPUT MODE =====

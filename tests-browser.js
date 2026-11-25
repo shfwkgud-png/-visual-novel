@@ -1429,6 +1429,38 @@ async function hogwartsArtCheck(ctx) {
     if(ctx.mobile) await page.screenshot({path:path.join(ARTIFACTS,'hermione-dialogue-mobile.png')});
     await page.evaluate(()=>{historyPos=dialogueLog.length-1;renderHistoryEntry();});
   });
+  await check(ctx, 'short and long lines start at the same reading height', async () => {
+    const samples = await page.evaluate(() => {
+      const reader = document.getElementById('dialogueContent');
+      const stage = document.getElementById('dialogueBox').getBoundingClientRect();
+      const original = historyPos, count = dialogueLog.length;
+      const samples = [];
+      try {
+        for (const speaker of ['나레이터', '해리 포터']) {
+          for (const repeats of [1, 60]) {
+            dialogueLog.push({speaker, text:'교실에 정적이 흘렀다. '.repeat(repeats).trim()});
+            historyPos = dialogueLog.length - 1;
+            renderHistoryEntry();
+            const anchor = reader.getBoundingClientRect().top;
+            const textTop = dialogueText.getBoundingClientRect().top;
+            reader.scrollTop = reader.scrollHeight;
+            samples.push({anchor:(anchor-stage.top)/stage.height, textTop, scroll:reader.scrollTop,
+              atEnd:reader.scrollTop+reader.clientHeight>=reader.scrollHeight-1});
+          }
+        }
+      } finally {
+        dialogueLog.splice(count);
+        historyPos = original;
+        renderHistoryEntry();
+      }
+      return samples;
+    });
+    for (const sample of samples) assert.ok(Math.abs(sample.anchor-.61)<.002,'reading starts at 61% of the stage');
+    for (const i of [0, 2]) {
+      assert.ok(Math.abs(samples[i].textTop-samples[i+1].textTop)<1,'line length must not move the first line');
+      assert.ok(samples[i+1].scroll>0 && samples[i+1].atEnd,'the last line can still be read');
+    }
+  });
   await check(ctx, 'Hogwarts spellbook, first lesson and magic-only state save', async () => {
     await drainDialogue(page);
     // Spellbook is now tested independently after the cinematic art fixture.
