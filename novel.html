@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a">
+<meta name="pandora-build" content="fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -1950,6 +1950,8 @@
   <div id="slotInner" onclick="event.stopPropagation()">
     <div id="slotTitle">세이브 슬롯 <span class="c-hint">분기 실험용 — 자동 저장과 별개</span></div>
     <div id="slotList"></div>
+    <button class="my-btn" onclick="backupPlayingSave()">현재 플레이 클라우드 백업</button>
+    <div id="slotBackupStatus" role="status" aria-live="polite"></div>
     <button class="my-btn" onclick="toggleSlots()">닫기</button>
   </div>
 </div>
@@ -2090,19 +2092,19 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/calendar.js?build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=b3374309733e0a79e8a4d24f3f60486a1457f93d64586cdcd20be568056e146a"></script>
+<script src="pandora-consistency.js?v=369&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/calendar.js?build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=fc711b625078a41bdd85431dcba23469cbdfd6652df0022f7bb108b544fc1686"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -9477,10 +9479,12 @@ function hasSyncAuth() { return !!(authToken() || syncToken()); }
 
 // Login permits play and reads. Cloud writes require a checked baseline for this
 // page/account; a fresh browser must never replace an existing backup on login.
-let _syncTimer = null, _syncEpoch = 0, _cloudWriteScope = '';
+let _syncTimer = null, _scheduledStory = '', _syncEpoch = 0, _cloudWriteScope = '';
 let _cloudBaseline = new Map();
 let _cloudRevisions = new Map(), _cloudAtomic = false;
 let _cloudBlockedKeys = new Set();
+const _initialBackupSlots=new Set();
+let _syncMessage='';
 const _cloudPendingWrites = new Set(), _cloudWriteQueues = new Map();
 const _cloudImportTransactions = new Set();
 let _lastSyncStories = null, _lastSyncUploads = null;
@@ -9488,11 +9492,31 @@ function cloudWriteScope() {
   const t = authToken();
   return t ? 'account:' + t : (syncToken() ? 'legacy:' + syncToken() : '');
 }
+// The signed account token's first field is the public account id. Never store the token as a preference.
+function backupDeviceAccount() {
+  const parts=authToken().split('.');
+  return parts.length===3 && /^[A-Za-z0-9+/]+=*$/.test(parts[0]) ? parts[0] : '';
+}
+function rememberDeviceBackup(on) {
+  try {
+    const id=backupDeviceAccount();
+    if(on && id)localStorage.setItem('vn_backup_device',id);
+    else localStorage.removeItem('vn_backup_device');
+  } catch {}
+}
+async function resumeDeviceBackup() {
+  try {
+    const id=backupDeviceAccount();
+    if(id && localStorage.getItem('vn_backup_device')===id && !cloudWritesEnabled())await enableCloudBackup();
+  } catch {}
+}
 function cloudWritesEnabled(scope = cloudWriteScope(), epoch = _syncEpoch) {
   return !!scope && scope === cloudWriteScope() && scope === _cloudWriteScope && epoch === _syncEpoch;
 }
 function pauseCloudWrites() {
   clearTimeout(_syncTimer); _syncTimer = null;
+  _scheduledStory='';
+  _initialBackupSlots.clear(); _syncMessage='';
   _syncEpoch++; _cloudWriteScope = ''; _cloudBaseline = new Map(); _cloudBlockedKeys = new Set();
   _cloudRevisions = new Map(); _cloudAtomic = false;
   window._cloudVersionImport = null;
@@ -9543,6 +9567,34 @@ function cloudDataKey(key) {
   return key === 'stories' || key === 'uploads' || /^(?:save:.+|slot[1-3]:.+|vn_slot_.+_[1-3]|endings:.+)$/.test(key)
     || key === 'tokens:' + (authUser() || 'local');
 }
+function cloudSaveBody(key,value) {
+  if(!/^(?:save:|slot[1-3]:|vn_slot_)/.test(key))return value;
+  const save={...cloudValue(value)};
+  for(const field of ['apiKey','orKey','openrouterKey','nimUrl','cfg'])delete save[field];
+  return save;
+}
+function sameCloudData(key,a,b) {
+  if(!/^(?:save:|slot[1-3]:|vn_slot_)/.test(key))return cloudComparable(a)===cloudComparable(b);
+  const x=cloudSaveBody(key,a),y=cloudSaveBody(key,b);
+  delete x.savedAt;delete y.savedAt;
+  return cloudComparable(x)===cloudComparable(y);
+}
+// A later turn count alone cannot distinguish two branches. Compare every retained
+// message at the same absolute position, including the last completed exchange.
+function followsCloudStory(key,local,remote) {
+  if(!key.startsWith('save:')||!cloudPayloadPresent(key,local)||!cloudPayloadPresent(key,remote))return false;
+  const a=cloudValue(local),b=cloudValue(remote),startA=a.histDropped||0,startB=b.histDropped||0;
+  if(a.playerName!==b.playerName || !(a.turnCount>b.turnCount) ||
+     !Number.isSafeInteger(startA)||!Number.isSafeInteger(startB)||startA<0||startB<0)return false;
+  const end=startB+b.gameHistory.length, start=Math.max(startA,startB);
+  if(end-start<2||startA+a.gameHistory.length<=end)return false;
+  if(b.gameHistory.at(-1)?.role!=='assistant'||b.gameHistory.at(-2)?.role!=='user')return false;
+  for(let i=start;i<end;i++){
+    const x=a.gameHistory[i-startA],y=b.gameHistory[i-startB];
+    if(!x||!y||typeof y.content!=='string'||!y.content||x.role!==y.role||x.content!==y.content)return false;
+  }
+  return true;
+}
 function localCloudValue(key) {
   if (key === 'stories') return getLocalStories();
   if (key === 'uploads') return getUploads();
@@ -9553,6 +9605,17 @@ function localCloudValue(key) {
   if (key.startsWith('endings:')) return cloudValue(localStorage.getItem('vn_endings_' + key.slice(8)));
   if (key === 'tokens:' + (authUser() || 'local')) return cloudValue(localStorage.getItem('vn_tokens'));
   return null;
+}
+function slotBackupKeys(localKey) {
+  const m=/^vn_slot_(.+)_([1-3])$/.exec(localKey);
+  if(!m)return [];
+  const canonical='slot'+m[2]+':'+m[1];
+  const existing=[canonical,localKey].filter(key=>_cloudBaseline.has(key));
+  return existing.length?existing:[canonical];
+}
+async function syncLocalSlot(localKey,raw,ctx) {
+  for(const key of slotBackupKeys(localKey))if(!await syncPut(key,raw,ctx))return false;
+  return true;
 }
 function cloudPayloadPresent(key, raw) {
   const v = cloudValue(raw);
@@ -9636,7 +9699,9 @@ async function enableCloudBackup() {
     let conflicts = 0;
     for (const [key, remote] of entries) {
       if (cloudPayloadEmpty(key, remote)) continue;
-      if (!cloudPayloadPresent(key, remote) || cloudComparable(remote) !== cloudComparable(localCloudValue(key))) {
+      const local=localCloudValue(key);
+      if (!cloudPayloadPresent(key, remote) || !cloudPayloadPresent(key,local) ||
+          (!sameCloudData(key,remote,local) && !followsCloudStory(key,local,remote))) {
         if (key.startsWith('tokens:')) _cloudBlockedKeys.add(key);
         else conflicts++;
       }
@@ -9648,18 +9713,21 @@ async function enableCloudBackup() {
     if ([...entries.keys()].some(key => !ctx.revisions || !ctx.revisions.get(key)))
       throw new Error('백업 버전을 확인하지 못해 쓰기를 켜지 않았습니다. 서버 업데이트 후 다시 확인하세요.');
     _cloudBaseline = entries; _cloudAtomic = true; _cloudWriteScope = ctx.scope;
+    for(const k of bulkKeys(/^vn_slot_/))_initialBackupSlots.add(k);
+    rememberDeviceBackup(true);
     renderMyProfile();
-    syncStatus('이 창에서 클라우드 백업을 켰습니다. 다른 기기의 변경이 발견되면 자동으로 멈춥니다.');
+    syncStatus('자동 백업을 켰습니다. 같은 계정으로 다시 열면 서버 기록을 확인한 뒤 이어갑니다.');
     scheduleAutoBackup();
     return true;
   } catch (e) { if (ctx.scope === cloudWriteScope() && ctx.epoch === _syncEpoch) syncStatus(e.message || '백업 확인 실패'); return false; }
 }
 function disableCloudBackup() {
+  rememberDeviceBackup(false);
   pauseCloudWrites(); renderMyProfile();
   syncStatus('클라우드 백업을 껐습니다. 플레이는 이 기기에 계속 저장됩니다.');
 }
 window.addEventListener('storage', e => {
-  if (e.key === null || ['vn_auth', 'vn_sync_token'].includes(e.key)) {
+  if (e.key === null || ['vn_auth', 'vn_sync_token'].includes(e.key) || (e.key==='vn_backup_device' && e.newValue!==backupDeviceAccount())) {
     pauseCloudWrites(); renderMyProfile();
   }
 });
@@ -9729,7 +9797,7 @@ function renderMyProfile() {
       `<div class="sync-btn-row" style="margin-top:8px"><button class="my-btn" onclick="${cloudWritesEnabled() ? 'disableCloudBackup()' : 'enableCloudBackup()'}">${cloudWritesEnabled() ? '자동 백업 끄기' : '자동 백업 켜기'}</button>` +
       `<button class="my-btn" onclick="backupAll(true)" ${cloudWritesEnabled() ? '' : 'disabled'}>↑ 지금 백업</button></div>` +
       `<button class="my-btn" style="margin-top:8px" onclick="showCloudHistory()">이전 백업 보기 · 빈 슬롯으로 복구</button><div id="cloudHistoryPanel"></div>` +
-      `<div id="syncStatus" class="c-hint" style="text-align:center;white-space:pre-line;overflow-wrap:anywhere"></div>` +
+      `<div id="syncStatus" class="c-hint" style="text-align:center;white-space:pre-line;overflow-wrap:anywhere">${esc(_syncMessage)}</div>` +
       `<div id="acctMsg" class="c-hint" style="text-align:center"></div>`;
   }
 }
@@ -9818,6 +9886,7 @@ function afterLogin(d) {
   syncStatus('로그인 완료. 클라우드 업로드는 꺼져 있습니다. “백업 확인”으로 기존 데이터를 먼저 확인하세요.');
 }
 function doLogout() {
+  rememberDeviceBackup(false);
   pauseCloudWrites();
   localStorage.removeItem('vn_auth');
   localStorage.removeItem('vn_auth_user');
@@ -9856,6 +9925,7 @@ async function migrateLegacy(silent) {
 }
 
 function syncStatus(msg) {
+  _syncMessage=msg;
   const el = document.getElementById('syncStatus');
   if (el) el.textContent = msg;
 }
@@ -9884,10 +9954,9 @@ async function offloadSaves(keepId) {
     if (keepKeys.has(k)) continue;
     const raw = bulkGet(k);
     if (!raw) continue;
-    const cloudKey = /^vn_slot_/.test(k) ? k
-                   : 'save:' + (k === 'nakin_save' ? 'nakin' : k.slice(8));
     let ok = false;
-    try { ok = await syncPut(cloudKey, raw, ctx); } catch {}
+    try { ok = /^vn_slot_/.test(k) ? await syncLocalSlot(k,raw,ctx)
+      : await syncPut('save:'+(k==='nakin_save'?'nakin':k.slice(8)),raw,ctx); } catch {}
     if (!ok) continue;                       // ★올리지 못했으면 절대 지우지 않는다
     if (!cloudWritesEnabled(ctx.scope, ctx.epoch) || bulkGet(k) !== raw) continue;
     bulkDel(k); moved++; freed += raw.length;
@@ -9905,10 +9974,23 @@ async function pullSave(id) {
     return bulkSetSilent(k, typeof v === 'string' ? v : JSON.stringify(v));
   } catch { return false; }
 }
+async function putCheckedCloudVersion(key,body,ctx,revision) {
+  assertCloudContext(ctx);
+  if(!revision)throw new Error('서버의 백업 버전을 확인할 수 없습니다.');
+  const res=await fetch(SYNC_URL+'/sync?key='+encodeURIComponent(key),{
+    method:'PUT',headers:{'Content-Type':'application/json',...ctx.headers,'If-Match':revision},body
+  });
+  assertCloudContext(ctx);
+  if(res.status===409||res.status===412)throw new Error('다른 기기가 먼저 저장해 업로드를 멈췄습니다. 서버의 새 백업과 이 기기의 저장을 모두 보존했습니다.');
+  if(!res.ok)throw new Error('클라우드 백업 실패 (HTTP '+res.status+')');
+  const next=cloudRevision(res);
+  if(!next)throw new Error('업로드의 새 버전을 확인하지 못했습니다. 이 기기의 저장을 보존하고 백업을 멈췄습니다.');
+  return next;
+}
 async function syncPut(key, value, ctx = cloudReadContext()) {
   if (!_cloudAtomic || !cloudWritesEnabled(ctx.scope, ctx.epoch) || !cloudDataKey(key) || _cloudBlockedKeys.has(key)) return false;
   let body;
-  try { if (!cloudPayloadPresent(key, value)) return false; body = typeof value === 'string' ? value : JSON.stringify(value); }
+  try { if (!cloudPayloadPresent(key, value)) return false; body = JSON.stringify(cloudValue(cloudSaveBody(key,value))); }
   catch { return false; }
   const previous = _cloudWriteQueues.get(key) || Promise.resolve();
   const pending = (async () => {
@@ -9923,15 +10005,8 @@ async function syncPut(key, value, ctx = cloudReadContext()) {
       const revision = ctx.revisions && ctx.revisions.get(key);
       if (!revision) throw new Error('서버의 백업 버전을 확인할 수 없어 업로드를 멈췄습니다. 이 기기의 저장은 유지됩니다.');
       if (cloudComparable(remote) === cloudComparable(body)) return true;
-      const res = await fetch(`${SYNC_URL}/sync?key=${encodeURIComponent(key)}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', ...ctx.headers, 'If-Match': revision }, body
-      });
+      const nextRevision=await putCheckedCloudVersion(key,body,ctx,revision);
       if (!cloudWritesEnabled(ctx.scope, ctx.epoch)) return false;
-      if (res.status === 409 || res.status === 412)
-        throw new Error('다른 기기가 먼저 저장해 업로드를 멈췄습니다. 서버의 새 백업과 이 기기의 저장을 모두 보존했습니다.');
-      if (!res.ok) throw new Error('클라우드 백업 실패 (HTTP ' + res.status + ')');
-      const nextRevision = cloudRevision(res);
-      if (!nextRevision) throw new Error('업로드의 새 버전을 확인하지 못했습니다. 이 기기의 저장을 보존하고 백업을 멈췄습니다.');
       _cloudRevisions.set(key, nextRevision);
       _cloudBaseline.set(key, cloudValue(body));
       return true;
@@ -9964,6 +10039,33 @@ async function syncGet(key, ctx = cloudReadContext()) {
   const value = await res.json();
   assertCloudContext(ctx);
   return value;
+}
+
+async function backupPlayingSave() {
+  const status=document.getElementById('slotBackupStatus');
+  const ctx=cloudReadContext(),story=STORY.id,key='save:'+story;
+  if(!ctx.scope){status.textContent='MY에서 로그인하면 현재 플레이를 백업할 수 있습니다.';return false;}
+  const raw=bulkGet(saveKeyFor(story));
+  if(!raw||!cloudPayloadPresent(key,raw)){status.textContent='이 기기에 백업할 현재 플레이 저장이 없습니다.';return false;}
+  const save=cloudSaveBody(key,raw);
+  try {
+    status.textContent='현재 플레이와 서버 버전을 확인하는 중…';
+    await Promise.allSettled([..._cloudPendingWrites]);
+    await requireAtomicCloud(ctx);
+    const remote=await syncGet(key,ctx),revision=ctx.revisions?.get(key);
+    if(!revision)throw new Error('서버 버전을 확인하지 못했습니다.');
+    if(STORY.id!==story||bulkGet(saveKeyFor(story))!==raw)throw new Error('플레이가 진행되어 저장이 바뀌었습니다. 최신 턴에서 다시 눌러 주세요.');
+    if(remote===null || !sameCloudData(key,save,remote)){
+      if(remote!==null && !confirm('서버의 현재 플레이 ('+(remote.turnCount??'?')+'턴)를 이 기기의 '+(save.turnCount??'?')+'턴으로 백업할까요? 서버 버전 기록에 반영되며, 수동 슬롯은 별도로 보관됩니다.')){
+        status.textContent='백업을 취소했습니다.';return false;
+      }
+      const next=await putCheckedCloudVersion(key,JSON.stringify(save),ctx,revision);
+      if(cloudWritesEnabled(ctx.scope,ctx.epoch)){_cloudBaseline.set(key,save);_cloudRevisions.set(key,next);}
+    }
+    assertCloudContext(ctx);
+    try { localStorage.setItem('vn_last_backup',String(Date.now())); } catch {}
+    status.textContent='현재 플레이 '+(save.turnCount??'?')+'턴 클라우드 백업 완료';return true;
+  } catch(e){status.textContent=e.message||'현재 플레이 백업에 실패했습니다.';return false;}
 }
 
 async function showCloudHistory() {
@@ -10024,7 +10126,7 @@ async function importCloudVersion(key, revision, expectedScope) {
   if (!match || !/^[a-zA-Z0-9-]{1,100}$/.test(revision)) return false;
   const storyId = match[1];
   if (!allStories()[storyId]) { syncStatus('먼저 “없는 데이터 가져오기”로 해당 에피소드를 가져와 주세요.'); return false; }
-  pauseCloudWrites(); renderMyProfile();
+  rememberDeviceBackup(false); pauseCloudWrites(); renderMyProfile();
   const ctx = cloudReadContext(), job = {}; window._cloudVersionImport = job;
   try {
     await requireAtomicCloud(ctx);
@@ -10062,8 +10164,8 @@ async function backupAll(manual) {
     let n = 0;
     const entries = [['stories', getLocalStories()], ['uploads', getUploads()]];
     for (const k of bulkKeys(/^vn_save_|^nakin_save$|^vn_slot_/)) {
-      const key = /^vn_slot_/.test(k) ? k : 'save:' + (k === 'nakin_save' ? 'nakin' : k.slice(8));
-      entries.push([key, bulkGet(k)]);
+      const keys=/^vn_slot_/.test(k)?slotBackupKeys(k):['save:'+(k==='nakin_save'?'nakin':k.slice(8))];
+      for(const key of keys)entries.push([key,bulkGet(k)]);
     }
     for (const k of lsKeys(/^vn_endings_/)) entries.push(['endings:' + k.slice(11), localStorage.getItem(k)]);
     for (const [key, value] of entries) {
@@ -10110,7 +10212,7 @@ async function addCloudSave(key, raw, ctx = cloudReadContext()) {
 // Fill absent data only; never replace a divergent local save or API settings.
 async function restoreAll() {
   if (!authToken()) { syncStatus('로그인이 필요합니다'); return; }
-  pauseCloudWrites(); renderMyProfile();
+  rememberDeviceBackup(false); pauseCloudWrites(); renderMyProfile();
   if (!confirm('이 기기에 없는 에피소드·저장·슬롯만 가져옵니다. 이미 있는 데이터와 AI 연결 설정은 바꾸지 않으며, 클라우드 업로드는 꺼진 상태로 유지합니다. 계속할까요?')) return;
   syncStatus('백업을 읽고 확인하는 중…');
   const ctx = cloudReadContext();
@@ -10175,13 +10277,22 @@ async function restoreAll() {
 // Auto-backup: piggybacks on autoSave, debounced so bursts of turns coalesce
 function scheduleAutoBackup() {
   if (!cloudWritesEnabled()) return;
+  if(_syncTimer!==null && _scheduledStory===STORY.id)return;
   clearTimeout(_syncTimer);
   const ctx = cloudReadContext(), storyId = STORY.id;
+  _scheduledStory=storyId;
   _syncTimer = setTimeout(async () => {
     _syncTimer = null;
     if (!cloudWritesEnabled(ctx.scope, ctx.epoch) || STORY.id !== storyId) return;
     const raw = bulkGet(saveKeyFor(storyId));
-    if (raw) await syncPut('save:' + storyId, raw, ctx);
+    if (raw && await syncPut('save:' + storyId, raw, ctx)) {
+      try { localStorage.setItem('vn_last_backup',String(Date.now())); } catch {}
+    }
+    for(const k of [..._initialBackupSlots]){
+      if(!cloudWritesEnabled(ctx.scope,ctx.epoch))return;
+      const slot=bulkGet(k);
+      if(!slot || await syncLocalSlot(k,slot,ctx))_initialBackupSlots.delete(k);
+    }
     try { const st = JSON.stringify(getLocalStories()); if (st !== _lastSyncStories && cloudPayloadPresent('stories', st) && await syncPut('stories', st, ctx)) _lastSyncStories = st; } catch {}
     try { const up = JSON.stringify(getUploads()); if (up !== _lastSyncUploads && cloudPayloadPresent('uploads', up) && await syncPut('uploads', up, ctx)) _lastSyncUploads = up; } catch {}
     if (window._tokensDirty && cloudWritesEnabled(ctx.scope, ctx.epoch)) {
@@ -11371,8 +11482,9 @@ function persistCfg() {
   //   안 끝나 앱이 로딩에 갇힌다. 4초 안에 안 열리면 localStorage 폴백으로 부팅을 계속한다
   //   다음 실행에서 IDB를 재시도한다. 클라우드 백업은 별도로 확인·활성화해야 한다.
   let _slow = false;
+  const bulkLoaded=bulkInit();
   await Promise.race([
-    bulkInit(),
+    bulkLoaded,
     new Promise(r => setTimeout(() => { _slow = true; r(); }, 4000))
   ]);
   if (_slow && !_bulkDB) {
@@ -11397,6 +11509,7 @@ function persistCfg() {
   } catch {}
   document.getElementById('mainScreen').style.display = 'flex';
   renderHome();
+  void bulkLoaded.then(resumeDeviceBackup).catch(()=>{});
 })();
 
 // Force-fetch the latest version (works even in fullscreen PWA with no address bar).
@@ -18038,7 +18151,14 @@ function saveToSlot(n) {
   had = !!bulkGet(slotKey(n));
   if (had && !confirm(`슬롯 ${n}을 덮어쓸까요?`)) return;
   if (!bulkSetSilent(slotKey(n), JSON.stringify(currentSavePayload()))) { lsFull(slotKey(n), '슬롯 세이브'); return; }
-  try { syncPut('slot' + n + ':' + STORY.id, bulkGet(slotKey(n))).catch(() => {}); } catch {}
+  const status=document.getElementById('slotBackupStatus');
+  status.textContent='슬롯 '+n+' 기기 저장 · '+(cloudWritesEnabled()?'클라우드 백업 중…':'자동 백업 꺼짐');
+  if(cloudWritesEnabled()){
+    const id=STORY.id, saved=bulkGet(slotKey(n));
+    syncLocalSlot(slotKey(n),saved,cloudReadContext()).then(ok=>{
+      if(STORY.id===id && bulkGet(slotKey(n))===saved)status.textContent='슬롯 '+n+' 기기 저장 · '+(ok?'클라우드 백업 완료':'클라우드 백업 미확인');
+    });
+  }
   renderSlots();
 }
 

@@ -464,7 +464,7 @@ async function playthrough(ctx) {
   await check(ctx, 'two turns, slot save, regenerate and undo keep exact state', async () => {
     await openSlots(page);
     await page.locator('#slotList .slot-item').first().getByRole('button', { name: '저장', exact: true }).click();
-    await page.locator('#slotPanel .my-btn').click();
+    await page.locator('#slotPanel').getByRole('button',{name:'닫기',exact:true}).click();
     await enterText(page, SECOND_INPUT);
     await waitGold(page, 21);
     const actions=page.locator('#redoBar button');
@@ -776,7 +776,7 @@ async function longSessionChecks(ctx) {
           summary: storySummary, boundary: summaryIndex, dropped: histDropped, turn: turnCount }));
         await openSlots(page);
         await page.locator('#slotList .slot-item').first().getByRole('button', { name: '저장', exact: true }).click();
-        await page.locator('#slotPanel .my-btn').click();
+        await page.locator('#slotPanel').getByRole('button',{name:'닫기',exact:true}).click();
       }
     }
     await page.waitForFunction(() => !window._summaryPending);

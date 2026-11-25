@@ -346,6 +346,51 @@ test('a new page never inherits another page cloud-write permission', async () =
   assert.equal(second.fetches.length, 0);
 });
 
+test('an opted-in phone rechecks its own account, resumes an exact continuation and rejects divergent history',async()=>{
+  const account={vn_auth:'YWNjb3VudEE=.12345.test',vn_auth_user:'Fixture A'};
+  const old=saveFixture(4);old.gameHistory=[{role:'user',content:'첫 기록'},{role:'assistant',content:'첫 수업 결과'}];
+  const current={...old,turnCount:5,gameHistory:[...old.gameHistory,{role:'user',content:'다음 날'},{role:'assistant',content:'둘째 수업'}]};
+  const first=harness({storage:account,bulk:{nakin_save:JSON.stringify(old)},remote:{'save:nakin':old}});
+  await enable(first);const storage=Object.fromEntries(first.storage);
+  const reopened=harness({storage,bulk:{nakin_save:JSON.stringify(current)},remote:{'save:nakin':old}});
+  await reopened.sb.resumeDeviceBackup();
+  assert(reopened.sb.cloudWritesEnabled());assert.equal(reopened.puts().length,0);
+  const firstTimer=[...reopened.timers.keys()][0];
+  for(let i=0;i<50;i++)reopened.sb.scheduleAutoBackup();
+  assert.deepEqual([...reopened.timers.keys()],[firstTimer]);await reopened.fire(firstTimer);
+  assert.equal(JSON.parse(reopened.remote.get('save:nakin')).turnCount,5);
+  reopened.sb.disableCloudBackup();assert(!reopened.storage.has('vn_backup_device'));
+  const fork=clone(current);fork.gameHistory[1].content='다른 선택';
+  const divergent=harness({storage,bulk:{nakin_save:JSON.stringify(fork)},remote:{'save:nakin':old}});
+  await divergent.sb.resumeDeviceBackup();assert(!divergent.sb.cloudWritesEnabled());assert.equal(divergent.puts().length,0);
+  const savedAgain=harness({storage,bulk:{nakin_save:JSON.stringify({...old,savedAt:old.savedAt+50})},remote:{'save:nakin':old}});
+  await savedAgain.sb.resumeDeviceBackup();assert(savedAgain.sb.cloudWritesEnabled());
+  const other=harness({storage:{...storage,vn_auth:'YWNjb3VudEI=.12345.test'}});
+  await other.sb.resumeDeviceBackup();assert.equal(other.fetches.length,0);
+});
+test('one-off current-play backup works with automatic backup off, strips keys, and preserves named slots',async()=>{
+  const local={...saveFixture(12),apiKey:'fixture-device-key'};
+  const h=harness({bulk:{nakin_save:JSON.stringify(local)},remote:{'slot1:nakin':saveFixture(7),'save:nakin':saveFixture(3)}});
+  h.sb.confirmResult=false;
+  assert.equal(await h.sb.backupPlayingSave(),false);assert.equal(h.puts().length,0);
+  h.sb.confirmResult=true;assert.equal(await h.sb.backupPlayingSave(),true);
+  assert.deepEqual(h.puts().map(h.key),['save:nakin']);assert(h.puts()[0].headers['If-Match']);
+  assert.equal(JSON.parse(h.remote.get('save:nakin')).turnCount,12);
+  assert(!h.remote.get('save:nakin').includes('fixture-device-key'));assert(!h.sb.cloudWritesEnabled());
+  assert.equal(h.remote.get('slot1:nakin').turnCount,7);
+  h.setRemote('save:nakin',saveFixture(18));h.setFetch(call=>call.method==='PUT'?h.response(412,{}):undefined);
+  assert.equal(await h.sb.backupPlayingSave(),false);assert.equal(h.remote.get('save:nakin').turnCount,18);
+});
+test('enabling backup uploads an existing local slot with the same server key as a later slot save',async()=>{
+  const old=saveFixture(7);
+  for(const legacy of [true,false]){
+    const key=legacy?'vn_slot_nakin_1':'slot1:nakin';
+    const h=harness({bulk:{vn_slot_nakin_1:JSON.stringify(old)},remote:legacy?{[key]:old}:{}});
+    await enable(h);await h.fire([...h.timers.keys()][0]);assert(h.remote.has(key));
+    h.sb.saveToSlot(1);await until(()=>h.puts().some(c=>h.key(c)===key && JSON.parse(c.body).turnCount===4),'slot upload');
+    assert.equal(h.remote.size,1);
+  }
+});
 test('a nonempty remote save missing locally blocks enable without any cloud write', async () => {
   const h = harness({ remote: { 'save:nakin': saveFixture(40) } });
   await h.sb.enableCloudBackup(); await tick();
