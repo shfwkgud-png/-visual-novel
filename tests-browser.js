@@ -96,7 +96,7 @@ async function startServer() {
     if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
       res.writeHead(404); res.end(); return;
     }
-    const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+    const mime = { '.woff2': 'font/woff2', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
       '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
     res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', ETag: '"browser-fixture"' });
     if (req.method === 'HEAD') { res.end(); return; }
@@ -299,8 +299,7 @@ async function createFixturePage(origin, mobile, options = {}) {
   page.on('dialog', dialog => dialog.accept());
   await page.goto(origin + '/novel.html', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
-  await page.locator('.enter-btn').click();
-  await page.locator('#introScreen').waitFor({ state: 'hidden' });
+  await page.locator('#libraryHeader').waitFor({state:'visible'});
   return { context, page, net, errors, mobile };
 }
 
@@ -419,8 +418,7 @@ async function configureAndStart(ctx) {
       perStoryModel: 'google/gemini-3.8-flash', keptGeminiKey: true, nimUrl: 'https://nim-fixture.invalid' });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
-    await page.locator('.enter-btn').click();
-    await page.locator('#introScreen').waitFor({ state: 'hidden' });
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('#tabMy').click();
     await page.locator('#pageMy button').filter({ hasText: 'AI 연결 설정' }).click();
     assert.equal(await page.locator('#freeTestModeChk').isChecked(), true);
@@ -493,8 +491,7 @@ async function playthrough(ctx) {
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
-    await page.locator('.enter-btn').click();
-    await page.locator('#introScreen').waitFor({ state: 'hidden' });
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('#tabMy').click();
     await page.locator('#myStories .play-item').filter({ hasText: FIXTURE.title }).click();
     await page.locator('#detailContinueBtn').click();
@@ -528,8 +525,7 @@ async function playthrough(ctx) {
     await flushLocalSave(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
-    await page.locator('.enter-btn').click();
-    await page.locator('#introScreen').waitFor({ state: 'hidden' });
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('#tabMy').click();
     await page.locator('#myStories .play-item').filter({ hasText: FIXTURE.title }).click();
     await page.locator('#detailContinueBtn').click();
@@ -809,8 +805,7 @@ async function longSessionChecks(ctx) {
     const stateBefore = net.calls.filter(call => call.kind === 'state').length;
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.getElementById('mainScreen')?.style.display === 'flex');
-    await page.locator('.enter-btn').click();
-    await page.locator('#introScreen').waitFor({ state: 'hidden' });
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('#tabMy').click();
     await page.locator('#myStories .play-item').filter({ hasText: LONG_STORY_FIXTURE.title }).click();
     await page.locator('#detailContinueBtn').click();
@@ -846,8 +841,7 @@ async function longSessionChecks(ctx) {
     for(let i=0;i<2;i++){
       await flushLocalSave(page);
       await page.reload({waitUntil:'domcontentloaded'});
-      await page.locator('.enter-btn').click();
-      await page.locator('#introScreen').waitFor({state:'hidden'});
+      await page.locator('#libraryHeader').waitFor({state:'visible'});
       await page.locator('#tabMy').click();
       await page.locator('#myStories .play-item').filter({hasText:LONG_STORY_FIXTURE.title}).click();
       await page.locator('#detailContinueBtn').click();
@@ -1010,7 +1004,7 @@ async function hogwartsRPCheck(ctx){
     await flushLocalSave(page);
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.getElementById('mainScreen')?.style.display==='flex');
-    await page.locator('.enter-btn').click();
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
     await page.locator('#detailContinueBtn').click();
     await drainDialogue(page);
@@ -1065,7 +1059,7 @@ async function hogwartsRPCheck(ctx){
     await flushLocalSave(page);
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.getElementById('mainScreen')?.style.display==='flex');
-    await page.locator('.enter-btn').click();
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
     await page.locator('#detailContinueBtn').click();
     await drainDialogue(page);
@@ -1120,6 +1114,19 @@ async function hogwartsRPCheck(ctx){
 async function libraryNavigationCheck(ctx) {
   const {page}=ctx;
   await check(ctx,'library controls, genre filter and storage open before a game starts',async()=>{
+    await page.locator('#tabPlays').click();
+    await page.getByRole('button',{name:'작품 검색'}).click();
+    const query=page.getByRole('searchbox');
+    await query.fill('호그와트');
+    assert.equal(await page.locator('#rowAllCards .mini-card').count(),1);
+    assert.equal(await page.locator('.feature-wrap').isVisible(),false);
+    await query.fill('일치하지않는작품987');
+    assert.ok(await page.getByRole('status').filter({hasText:'일치하는 작품이 없습니다.'}).isVisible());
+    await query.press('Escape');
+    assert.equal(await query.isVisible(),false);
+    assert.ok(await page.locator('#rowAllCards .mini-card').count()>1);
+    assert.ok(await page.evaluate(async()=> (await document.fonts.load('600 16px "Pretendard Variable"','판도라')).length>0));
+    assert.match(await page.locator('#dialogueText').evaluate(el=>getComputedStyle(el).fontFamily),/Noto Serif KR/);
     const library=page.locator('#homeHero');
     assert.ok((await library.boundingBox()).width >= (ctx.mobile ? 350 : 850));
     await page.locator('#heroNext').click();
@@ -1689,7 +1696,7 @@ async function appUpdateChecks(ctx){
     assert.equal(await page.evaluate(()=>APP_BUILD),fixture.latest);
     assert.equal(await page.evaluate(()=>checkAppUpdate()),false);
     assert.equal(await page.locator('#appUpdateBanner').count(),0);
-    await page.locator('.enter-btn').click();
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
     await page.locator('#detailContinueBtn').click();await drainDialogue(page);
     assert.deepEqual(await snapshot(),before,'refresh must keep character, progress, ability and connection preferences');
@@ -1768,7 +1775,7 @@ async function hogwartsLooksCheck(ctx){
       profile:gameState.hogwarts.magic.profile,visuals:gameState.hogwarts.visuals}));
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.getElementById('mainScreen')?.style.display==='flex');
-    await page.locator('.enter-btn').click();
+    await page.locator('#libraryHeader').waitFor({state:'visible'});
     await page.locator('[onclick="openStoryDetail(\'hogwarts\')"]:visible').first().click();
     await page.locator('#detailContinueBtn').click();
     await drainDialogue(page);

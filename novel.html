@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b">
+<meta name="pandora-build" content="48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -15,10 +15,10 @@
 <meta name="theme-color" content="#0a0a0f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png?v=2">
-<title>PANDORA — AI Chatbot Universe</title>
+<title>판도라 · 이야기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;700&amp;display=swap" media="print" onload="this.media='all'">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500&family=Cinzel:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap');
-  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+  @font-face { font-family:'Pretendard Variable'; src:url('ui/pretendard-1.3.9.woff2') format('woff2'); font-weight:100 900; font-style:normal; font-display:swap; }
 
   :root {
     --bg: #0a0a0f;
@@ -87,7 +87,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: var(--ui);
     /* ★iOS PWA 하단 검은띠 근본해결(2026-07-12, diag검증): body를 position:fixed;inset:0로
        두면 iOS 홈스크린 PWA(black-translucent)에서 뷰포트가 793으로 클램프돼 하단 59px 틈이 생김.
        height:100vh + overflow:hidden 로 락하면 뷰포트가 852로 정상화되고 fixed 자식들이 바닥까지 참.
@@ -98,93 +98,112 @@
     touch-action: manipulation;
   }
 
-  /* Library shell — light paper, dark ink, and the artwork of the selected story. */
+  /* Catalog, navigation and shared interface type. */
   :root {
-    --paper:#f4f0e6; --ink:#252722; --quiet:#68675d; --rule:#ccc7bb;
-    --wine:#753c35; --rust:#914539; --cream:#fcf5e6;
-    --serif:'Noto Serif KR',Batang,Georgia,serif;
-    --ui:'Pretendard Variable',Pretendard,'Noto Sans KR',system-ui,sans-serif;
+    --ui:'Pretendard Variable',Pretendard,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+    --night:#141416; --elevated:#232326; --line:#38383d; --soft:#a6a6ae;
+    --ui-link:#99baff; --action:#325fd7; --action-ink:#fff;
   }
+  body,button,input,select,textarea {font-family:var(--ui);}
   #mainScreen,#storyDetail,#creatorScreen,#apiScreen {
-    --bg:var(--paper); --panel:#e9e5da; --text:var(--ink); --text-dim:var(--quiet);
-    --border:var(--rule); --gold:var(--wine); --gold-dim:#a08375;
-    color:var(--ink); font-family:var(--ui); color-scheme:light;
+    --bg:var(--night);--panel:var(--elevated);--text:#f7f7f8;--text-dim:var(--soft);
+    --border:var(--line);--gold:var(--ui-link);--gold-dim:#505e79;
+    font-family:var(--ui);color:var(--text);color-scheme:dark;
   }
-  #introScreen { position:fixed; inset:0; z-index:2000; display:grid; align-items:end;
-    background:#27231d url('sd_samples/backgrounds/hogwarts/flourish_blotts_portrait.webp') center 40%/cover;
-    transition:opacity .4s ease; color:var(--cream); }
-  #introScreen::before { content:"";position:absolute;inset:0;background:linear-gradient(0deg,#151511f2 0%,#15151165 52%,#15151116 80%); }
-  #introScreen.fade-out-screen { opacity:0; pointer-events:none; }
-  .intro-container { position:relative; width:min(100%,1100px); margin-inline:auto; padding:30px max(6%,24px) max(10vh,calc(36px + env(safe-area-inset-bottom))); }
-  .brand-title,.library-brand { font:normal 500 clamp(74px,14vw,172px)/.96 Georgia,'Times New Roman',serif; letter-spacing:-.073em; }
-  .brand-subtitle { margin:17px 0 42px; font:400 clamp(15px,2vw,23px)/1.5 var(--serif); letter-spacing:.1em; }
-  .enter-btn { display:inline-flex; align-items:center; justify-content:space-between; gap:52px; padding:13px 17px; border:0; border-radius:2px;
-    font:650 15px var(--ui); background:var(--paper); color:var(--ink); cursor:pointer; }
-  .enter-btn span,.hero-badge i { font:normal 19px Georgia,serif; }
-  #mainScreen { position:fixed;inset:0;display:none;flex-direction:column;background:var(--paper);z-index:1001; }
-  #libraryHeader { display:flex; align-items:stretch; justify-content:space-between; flex:none; gap:10px; padding:env(safe-area-inset-top) clamp(15px,4vw,56px) 0;
-    border-bottom:1px solid var(--rule); background:var(--paper); }
-  .library-brand { border:0; background:transparent; color:var(--ink); font-size:clamp(32px,4.5vw,54px); padding:10px 0 14px; cursor:pointer; }
-  #tabBar {display:flex; align-items:stretch; gap:clamp(10px,2.4vw,34px);}
-  .tab-btn {display:block; color:var(--quiet); font:550 clamp(12px,1.5vw,15px) var(--ui); padding:4px 2px 0; background:none; border:0; border-bottom:3px solid transparent; cursor:pointer;}
-  .tab-btn.active {color:var(--wine);border-color:currentColor;}
-  #mainContent {flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 0 calc(32px + env(safe-area-inset-bottom));scrollbar-gutter:stable;}
-  .main-tab-page {max-width:1260px;margin:0 auto;}
-  #homeHero {display:flex; gap:0; overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;}
-  #homeHero::-webkit-scrollbar,.row-scroll::-webkit-scrollbar,#genreChips::-webkit-scrollbar {display:none;}
-  .hero-slide {border:0;padding:0;display:grid;grid-template-rows:clamp(192px,30svh,300px) auto;flex:0 0 100%;min-width:0;text-align:left;
-    background:#28322f;color:var(--cream);cursor:pointer;scroll-snap-align:start;font-family:var(--ui);}
-  .feature-art {display:block;width:100%;height:100%;background-color:#353830;}
-  .hero-info {display:block;padding:20px clamp(19px,4vw,52px) 24px;}
-  .feature-genre {font-size:12px;font-weight:600;color:#ddc99e;letter-spacing:.06em;}
-  .hero-title,.hero-desc {display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;}
-  .hero-title {font:600 clamp(24px,4.2vw,52px)/1.28 var(--serif);letter-spacing:-.055em;-webkit-line-clamp:3;margin:6px 0 9px;word-break:keep-all;overflow-wrap:anywhere;}
-  .hero-desc {font-size:clamp(13px,1.3vw,16px);line-height:1.65;color:#e4e3d9;-webkit-line-clamp:2;max-width:49ch;}
-  .hero-badge {display:inline-flex;align-items:center;gap:17px;margin-top:17px;border-bottom:1px solid #a29e89;padding:0 0 3px;color:var(--cream);font-size:13px;font-weight:650;}
-  #heroDots {display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 clamp(19px,4vw,52px);height:40px;border-bottom:1px solid var(--rule);}
-  #heroDots[hidden]{display:none;} #heroDots button {border:0;background:none;color:var(--ink);font:18px Georgia;min-width:38px;height:100%;cursor:pointer;}
-  #heroDots button:disabled {opacity:.35;cursor:default;} #heroPosition {font:12px/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--quiet);}
-  .home-row {margin:24px clamp(19px,4vw,52px) 36px;}
-  .row-title,.page-title {margin:0 0 15px;font:600 clamp(23px,3vw,38px)/1.35 var(--serif);letter-spacing:-.06em;color:var(--ink);}
-  #catalogCount {font:500 13px var(--ui);vertical-align:middle;color:var(--quiet);letter-spacing:0;}
-  #genreChips {display:flex;gap:15px;overflow-x:auto;scrollbar-width:none;border-block:1px solid var(--rule);margin:0 0 19px;}
-  .g-chip {flex:none;color:var(--quiet);background:none;border:0;border-bottom:2px solid transparent;padding:12px 2px 10px;font:550 13px var(--ui);cursor:pointer;}
-  .g-chip.on {color:var(--wine);border-color:currentColor;}
-  .row-scroll {display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;}
-  #rowAllCards {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(128px,45%),1fr));gap:21px 14px;overflow:visible;}
-  .mini-card {display:block;text-align:left;font:inherit;color:inherit;border:0;background:none;cursor:pointer;align-self:start;min-width:0;}
-  #rowPlayingCards .mini-card {flex:0 0 clamp(130px,16vw,175px);}
-  .mini-cover {display:block;width:100%;aspect-ratio:4/5;background-color:#373732;box-shadow:inset 0 0 0 1px #14181512;}
-  .mini-title {font:650 15px/1.42 var(--ui);margin-top:9px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:keep-all;}
-  .mini-sub {display:block;color:var(--quiet);font-size:12px;margin-top:3px;}
-  #pageMy,#pagePlays {max-width:950px;padding:clamp(24px,4vw,52px) clamp(18px,4vw,52px);}
-  .page-title {padding-bottom:16px;border-bottom:2px solid var(--ink);}
-  .play-item {display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px 0;border-bottom:1px solid var(--rule);}
-  .play-cover {width:48px;height:64px;flex:none;background:#383833;}
-  .play-info {flex:1;min-width:0;} .play-title {font-size:15px;font-weight:650;line-height:1.4;}
-  .play-sub,.play-sub b {font-size:12px;color:var(--quiet);font-weight:400;margin-top:4px;}
-  .play-go,.browse-link {color:var(--wine);font:650 13px var(--ui);border:0;background:none;padding:11px 4px;cursor:pointer;}
-  .play-go .tri {margin-right:4px;} .empty-note {padding:50px 0;text-align:center;color:var(--quiet);}
-  .my-section {padding:16px 0 22px;border-bottom:1px solid var(--rule);}
-  .my-label,.detail-label {font:650 17px/1.5 var(--ui);margin-bottom:10px;}
-  .my-btn {width:100%;border:1px solid var(--border);padding:12px 14px;background:var(--panel);color:var(--text);font:600 14px var(--ui);border-radius:3px;margin:3px 0;cursor:pointer;}
-  #mySettings .my-btn {display:flex;align-items:center;justify-content:space-between;background:transparent;border:0;border-top:1px solid var(--rule);padding:13px 2px;text-align:left;}
-  #mySettings .my-btn::after {content:'';width:6px;height:6px;border:solid var(--quiet);border-width:1px 1px 0 0;transform:rotate(45deg);margin-right:3px;}
-  #myEditor>.my-btn {width:auto;padding-inline:18px;background:var(--ink);color:var(--paper);}
-  @media(min-width:600px) and (pointer:fine) {
-    #appFrame:has(#mainScreen[style*="flex"]){width:100%;box-shadow:none;}
+  #mainScreen,#creatorScreen,#apiScreen {
+    --bg:#fff;--text:#18191c;--text-dim:#646871;--soft:#686c74;--line:#e7e8eb;--elevated:#f2f3f5;
+    --border:#d9dce2;--panel:#f2f3f5;--ui-link:#295ac1;--gold:var(--ui-link);--gold-dim:#a3b8dd;
+    color:var(--text);color-scheme:light;
   }
-  @media(min-width:700px) {
-    #introScreen {background-image:url('sd_samples/backgrounds/hogwarts/flourish_blotts.webp');}
-    .hero-slide {grid-template-columns:1.14fr 1fr;grid-template-rows:clamp(290px,40vh,460px);}
-    .hero-info {align-self:center;padding:28px clamp(28px,4vw,56px);} .hero-desc {-webkit-line-clamp:3;}
-    #pageHome {padding-top:22px;} #homeHero {margin:0 clamp(19px,4vw,52px);}
-    #rowAllCards {grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:25px 20px;}
-    #pageMy[style*="block"] {display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:0 36px;align-content:start;}
+  #mainScreen {position:fixed;inset:0;display:none;flex-direction:column;z-index:1001;background:var(--bg);}
+  #libraryHeader {display:flex;align-items:center;gap:20px;flex:none;padding:calc(6px + env(safe-area-inset-top)) max(18px,calc((100% - 1160px)/2)) 6px;background:var(--bg);}
+  .library-brand,.search-toggle,.tab-btn {border:0;background:transparent;color:inherit;cursor:pointer;}
+  .library-brand {display:inline-flex;align-items:center;gap:8px;padding:6px 0;font-size:25px;font-weight:830;letter-spacing:-.07em;}
+  .brand-mark {display:inline-block;width:19px;height:23px;border-radius:5px 9px 8px 2px;background:#3a63db;transform:skew(-12deg);position:relative;}
+  .brand-mark::after {content:'';position:absolute;right:4px;top:5px;width:7px;height:7px;background:#fff;border-radius:2px 3px 3px 1px;}
+  .search-toggle {margin-left:auto;width:44px;height:44px;display:grid;place-items:center;}
+  .search-icon {width:17px;height:17px;border:2px solid currentColor;border-radius:50%;display:inline-block;position:relative;flex:none;}
+  .search-icon::after {content:'';position:absolute;right:-5px;bottom:-3px;width:7px;height:2px;border-radius:1px;transform:rotate(45deg);background:currentColor;}
+  #tabBar {position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;justify-content:space-around;align-items:stretch;padding:4px 12px max(6px,env(safe-area-inset-bottom));background:#fffffff7;border-top:1px solid var(--line);}
+  .tab-btn {flex:1;min-height:48px;font-size:12px;font-weight:570;color:var(--soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
+  .tab-btn.active {color:#1c1e24;font-weight:720;} .nav-icon {display:block;position:relative;width:19px;height:17px;}
+  .nav-home::before,.nav-home::after,.nav-my::before,.nav-my::after {content:'';position:absolute;border:1.8px solid currentColor;}
+  .nav-home::before {width:12px;height:12px;transform:rotate(45deg);left:3px;top:1px;border-radius:3px 2px 2px;border-right:0;border-bottom:0;}
+  .nav-home::after {width:12px;height:9px;left:3px;bottom:0;border-top:0;border-radius:0 0 2px 2px;}
+  .nav-plays {border:1.8px solid currentColor;border-radius:4px;} .nav-plays::after {content:'';position:absolute;top:3px;left:6px;border-left:6px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;}
+  .nav-my::before {width:6px;height:6px;border-radius:50%;top:0;left:6px;} .nav-my::after {width:15px;height:7px;left:1px;bottom:0;border-radius:9px 9px 3px 3px;}
+  #mainContent {flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:calc(84px + env(safe-area-inset-bottom));}
+  .main-tab-page {max-width:1196px;margin-inline:auto;}
+  #catalogSearch {display:flex;align-items:center;gap:8px;margin:4px 18px 22px;}
+  #catalogSearch[hidden],#heroDots[hidden],#pageHome:has(#catalogSearch:not([hidden])) :is(.feature-wrap,#rowPlaying) {display:none !important;}
+  #catalogSearch label {display:flex;align-items:center;gap:12px;flex:1;min-width:0;background:#f1f2f4;color:#666a73;padding:0 15px;border-radius:12px;}
+  #catalogSearch input {min-width:0;width:100%;height:46px;background:none;border:0;color:#18191c;font-size:16px;}
+  #catalogSearch button {color:#383d46;border:0;background:none;font-size:15px;min-height:44px;cursor:pointer;}
+  .feature-wrap {position:relative;margin:4px 16px 24px;overflow:hidden;border-radius:18px;background:#202126;isolation:isolate;}
+  #homeHero {display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;}
+  #homeHero::-webkit-scrollbar,#genreChips::-webkit-scrollbar,.row-scroll::-webkit-scrollbar {display:none;}
+  .hero-slide {border:0;position:relative;isolation:isolate;flex:0 0 100%;min-width:0;height:clamp(265px,34svh,330px);display:flex;align-items:end;text-align:left;padding:0;background:#151518;color:white;cursor:pointer;scroll-snap-align:start;}
+  .feature-art {position:absolute;inset:0;z-index:-2;background-position:center 22% !important;}
+  .hero-slide::after {content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(0deg,#09090feb 0%,#09090f85 29%,transparent 69%),linear-gradient(90deg,#0b0b122a,transparent 75%);}
+  .hero-info {display:flex;flex-direction:column;align-items:start;padding:20px;width:100%;gap:6px;}
+  .feature-genre {font:620 13px/1.4 var(--ui);color:#ececf1;}
+  .hero-title {font:760 clamp(25px,4vw,44px)/1.2 var(--ui);letter-spacing:-.045em;text-wrap:balance;word-break:keep-all;}
+  .hero-title,.hero-desc,.mini-title {display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+  .hero-desc {font:450 14px/1.5 var(--ui);color:#dddde4;-webkit-line-clamp:1;width:100%;}
+  .hero-badge {display:inline-flex;align-items:center;gap:8px;background:#fff;color:#202126;padding:7px 12px 7px 13px;border-radius:8px;font:700 13px var(--ui);margin-top:6px;} .hero-badge i {font:600 16px/1 var(--ui);}
+  #heroDots {position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:2px;height:34px;padding:0 3px;background:#121216bd;color:white;border-radius:20px;font:600 12px var(--ui);font-variant-numeric:tabular-nums;}
+  #heroDots button {width:29px;height:34px;cursor:pointer;border:0;background:none;color:#fff;font:16px var(--ui);} #heroDots button:disabled {opacity:.4;cursor:default;}
+  .home-row {margin:0 16px 30px;}
+  .row-title,.page-title {font:740 22px/1.35 var(--ui);letter-spacing:-.04em;margin:0 0 14px;}
+  #catalogCount {font:570 14px var(--ui);color:var(--soft);vertical-align:middle;}
+  #genreChips {display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px;}
+  .g-chip {flex:none;padding:8px 13px;border-radius:20px;font:580 14px var(--ui);border:0;background:#f2f3f5;color:#4d5159;cursor:pointer;}
+  .g-chip.on {background:#202126;color:#fff;font-weight:700;}
+  .row-scroll {display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;}
+  #rowAllCards {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 9px;overflow:visible;}
+  .mini-card {display:block;align-self:start;text-align:left;font:inherit;color:inherit;border:0;background:transparent;cursor:pointer;min-width:0;}
+  .resume-card {display:flex;align-items:center;gap:12px;flex:0 0 min(90%,350px);border:1px solid var(--line);border-radius:12px;padding:8px;background:white;color:var(--text);cursor:pointer;text-align:left;}
+  .resume-art {width:46px;height:54px;border-radius:6px;flex:none;} .resume-copy {min-width:0;flex:1;}
+  .resume-copy strong,.resume-copy small {display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .resume-copy strong {font:670 15px/1.5 var(--ui);} .resume-copy small {font:460 13px/1.5 var(--ui);color:var(--soft);}
+  .resume-card i {font:12px var(--ui);padding:8px;color:var(--ui-link);}
+
+  .mini-cover {display:block;aspect-ratio:4/5;border-radius:10px;background-color:var(--elevated);}
+  .mini-title {font:640 15px/1.38 var(--ui);letter-spacing:-.025em;margin-top:9px;word-break:keep-all;overflow-wrap:anywhere;}
+  .mini-sub {display:block;color:var(--soft);font:450 13px/1.45 var(--ui);margin-top:2px;}
+  #pageMy,#pagePlays {max-width:960px;padding:18px;}
+  .page-title {font-size:26px;margin:0 0 20px;}
+  .play-item {display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px 0;border-bottom:1px solid var(--line);}
+  .play-cover {width:50px;height:64px;border-radius:7px;flex:none;background:#303035;}
+  .play-info {flex:1;min-width:0;} .play-title {font-size:16px;font-weight:650;line-height:1.4;}
+  .play-sub,.play-sub b {font-size:13px;color:var(--soft);font-weight:450;margin-top:4px;}
+  .play-go,.browse-link {color:var(--ui-link);font:620 14px var(--ui);border:none;background:none;padding:10px 4px;cursor:pointer;}
+  .play-go .tri {margin-right:4px;} .empty-note {padding:44px 0;text-align:center;color:var(--soft);grid-column:1/-1;}
+  .my-section {margin-bottom:16px;padding:18px;background:#f6f7f9;border-radius:14px;}
+  .my-label,.detail-label {font:700 17px/1.45 var(--ui);margin-bottom:10px;}
+  .my-btn {width:100%;border:0;border-radius:9px;padding:12px 14px;background:var(--panel);color:var(--text);font:590 14px var(--ui);margin:3px 0;cursor:pointer;}
+  #mySettings .my-btn {display:flex;align-items:center;justify-content:space-between;background:none;padding:13px 0;text-align:left;}
+  #mySettings .my-btn::after {content:'';width:7px;height:7px;border:solid #9c9ca5;border-width:1.5px 1.5px 0 0;transform:rotate(45deg);margin-right:3px;}
+  #myProfile .my-btn {word-break:keep-all;line-height:1.4;background:#fff;}
+  #myProfile .my-btn:disabled {color:#898d95;background:#eceef1;cursor:default;}
+  #syncBtnRow button:first-child {background:var(--action);color:white;}
+  #myEditor>.my-btn {width:auto;color:var(--ui-link);background:#e7efff;}
+  @media(max-width:349px){#rowAllCards{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(min-width:600px) and (pointer:fine){#appFrame:has(#mainScreen[style*="flex"]){width:100%;box-shadow:none;}}
+  @media(min-width:700px){
+    #libraryHeader {gap:46px;min-height:66px;border-bottom:1px solid var(--line);}
+    #tabBar {position:static;width:auto;gap:23px;align-self:stretch;background:none;border:0;padding:0;}
+    .tab-btn {flex:none;flex-direction:row;font-size:15px;gap:7px;}
+    #mainContent {padding-bottom:36px;} #pageHome {padding-top:18px;}
+    .hero-slide {height:clamp(295px,37vh,390px);}
+    .feature-art {left:25%;background-position:center 12% !important;}
+    .hero-slide::after {background:linear-gradient(90deg,#151518 8%,#151518f2 26%,#15151876 46%,transparent 69%),linear-gradient(0deg,#09090f6b,transparent 55%);}
+    .hero-info {align-self:center;padding:35px 42px;width:55%;gap:10px;} .hero-desc {-webkit-line-clamp:2;max-width:37ch;}
+    #rowAllCards {grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:24px 16px;}
+    #pageMy[style*="block"] {display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:0 24px;align-content:start;}
     #pageMy .page-title {grid-column:1/-1;} #myProfile,#mySettings,#myAdmin {grid-column:1;} #myEditor {grid-column:2;grid-row:2/span 4;}
   }
-  @media(prefers-reduced-motion:reduce){#introScreen{transition:none;}}
-  :where(button,select,summary,[tabindex]):focus-visible {outline:2px solid #ba7042;outline-offset:-2px;}
+  :where(button,select,summary,[tabindex]):focus-visible {outline:2px solid #82aaff;outline-offset:-2px;}
 
   /* ===== STORY DETAIL ===== */
   #storyDetail {
@@ -461,7 +480,7 @@
     padding: 11px 14px;
     border-radius: 12px;
     font-size: 0.88rem;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: var(--ui);
     outline: none;
   }
   .profile-input:focus { border-color: var(--gold); }
@@ -470,7 +489,7 @@
   .prov-btn {
     background: rgba(20,16,32,0.7); border: 1px solid rgba(225,29,72,0.3);
     color: var(--text-dim); padding: 8px 18px; border-radius: 20px;
-    cursor: pointer; font-size: 0.82rem; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; font-size: 0.82rem; font-family: var(--ui);
     transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s ease-out;
   }
   .prov-btn:active { transform: scale(0.97); }
@@ -482,14 +501,14 @@
     background: var(--panel); border: 1px solid rgba(225,29,72,0.3); color: var(--text);
     padding: 13px 18px; border-radius: 24px; width: min(360px, 85vw);
     font-size: 0.82rem; outline: none; text-align: center;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: var(--ui);
   }
   #nimUrlInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(225,29,72,0.12); }
   #nimModelSel {
     background: var(--panel); border: 1px solid rgba(225,29,72,0.3); color: var(--text);
     padding: 13px 18px; border-radius: 24px; width: min(360px, 85vw);
     font-size: 0.82rem; outline: none; text-align: center;
-    font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+    font-family: var(--ui); cursor: pointer;
   }
   #nimModelSel:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(225,29,72,0.12); }
   #apiKeyInput {
@@ -925,7 +944,7 @@
   #endingCard.show { opacity: 1; }
   #endingInner { text-align: center; padding: 0 30px; max-width: 420px; }
   #endingFin {
-    font-family: 'Cinzel', serif;
+    font-family: var(--ui);
     font-size: 0.9rem; letter-spacing: 0.6em; text-indent: 0.6em;
     color: var(--gold-dim); margin-bottom: 18px;
   }
@@ -1050,7 +1069,7 @@
     padding: 9px 16px;
     border-radius: 19px;
     font-size: 0.85rem;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: var(--ui);
     outline: none;
     /* contenteditable div: min-height instead of fixed height, grows a bit */
     min-height: 39px;
@@ -1189,7 +1208,7 @@
   .status-tab {
     background: rgba(20,16,32,0.6); border: 1px solid rgba(255,255,255,0.12);
     color: var(--text-dim); padding: 8px 16px; border-radius: 20px;
-    cursor: pointer; font-size: 0.82rem; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; font-size: 0.82rem; font-family: var(--ui);
     transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s ease-out;
   }
   .status-tab:active { transform: scale(0.97); }
@@ -1365,7 +1384,7 @@
     padding: 11px 16px;
     border-radius: 12px;
     cursor: pointer;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: var(--ui);
     font-size: 0.8rem;
     line-height: 1.4;
     text-align: left;
@@ -1459,7 +1478,7 @@
   .redo-btn {
     background: var(--glass); border: 1px solid rgba(225,29,72,0.25); color: var(--text-dim);
     padding: 5px 11px; border-radius: 14px; cursor: pointer;
-    font-size: 0.7rem; font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.7rem; font-family: var(--ui);
     white-space: nowrap; transition: border-color 0.18s, color 0.18s, transform 0.12s ease-out;
   }
   .redo-btn:active { transform: scale(0.95); border-color: var(--gold); color: var(--text); }
@@ -1478,160 +1497,155 @@
     #dialoguePanel { min-height: 64px; }
   }
 
-  #appUpdateBanner {position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);width:min(385px,calc(100vw - 24px));z-index:9999;
-    display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;background:#f4f0e6;color:#252722;border:1px solid #afa897;border-left:3px solid #753c35;box-shadow:0 5px 18px #0004;font:14px/1.4 var(--ui);}
-  #appUpdateBanner span {flex:1;} #appUpdateBanner button {flex:none;white-space:nowrap;cursor:pointer;border:0;padding:6px 10px;border-radius:2px;background:#753c35;color:#fff;}
-  #appUpdateBanner button:last-child {background:none;color:#56594e;font-size:18px;}
-  /* Catalogue, studio and settings share the typography of the library. */
-  #storyDetail {background:var(--paper);}
-  .detail-back {background:#262a25ed;color:#fff;border-radius:2px;width:42px;height:42px;font-size:18px;}
-  #detailCover {height:clamp(205px,36svh,400px);}
-  #detailCover::after {background:linear-gradient(0deg,#14191430,transparent 32%);}
-  #detailBody {margin:0;padding:23px clamp(20px,4vw,54px) calc(95px + env(safe-area-inset-bottom));}
-  #detailTitle {font:600 clamp(27px,4vw,54px)/1.28 var(--serif);letter-spacing:-.06em;color:var(--ink);word-break:keep-all;}
-  #detailTags {gap:0;margin:12px 0;} .d-tag {background:none;border:0;border-radius:0;padding:0 10px;font:600 12px var(--ui);color:var(--quiet);}
-  .d-tag:first-child {padding-left:0;color:var(--wine);} .d-tag+.d-tag {border-left:1px solid var(--rule);}
-  #detailDesc {color:var(--ink);font:400 15px/1.8 var(--ui);max-width:65ch;}
-  .detail-label {border-top:1px solid var(--rule);margin:22px 0 12px;padding-top:18px;}
-  #detailChars {gap:13px;align-items:flex-start;} .d-char {font:inherit;border:0;background:none;padding:0;cursor:pointer;} .d-char,.d-char-img,.d-char-name {display:block;width:72px;} .d-char-img {height:86px;border:0;border-radius:2px;background-color:#343a35;}
-  .d-char-name {font-size:12px;line-height:1.45;color:var(--quiet);word-break:keep-all;overflow-wrap:anywhere;} #timeflowRow {border:0;border-left:2px solid var(--wine);border-radius:0;}
-  #detailEndings {display:grid;gap:2px;} .end-item {font-size:13px;border-bottom:1px solid var(--rule);padding:9px 0;}
-  .end-item.locked {color:var(--quiet);} .end-item.got {color:var(--wine);}
-  #detailActions {background:var(--paper);border-top:1px solid var(--rule);}
-  #detailActions button,#cPrevBtn,#cNextBtn {border-radius:3px;}
-  #detailContinueBtn,#cNextBtn {background:var(--wine);}
-  #detailActions:has(#detailContinueBtn:disabled) #detailNewBtn {background:var(--ink);color:var(--paper);flex:2;}
+  #appUpdateBanner {position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);width:min(385px,calc(100vw - 24px));z-index:9999;display:flex;align-items:center;gap:8px;padding:10px 12px 10px 16px;background:#26272b;color:#fff;border-radius:13px;box-shadow:0 4px 18px #0003;font:540 14px/1.45 var(--ui);}
+  #appUpdateBanner span {flex:1;} #appUpdateBanner button {flex:none;white-space:nowrap;cursor:pointer;border:0;padding:8px 12px;border-radius:8px;background:#e7eeff;color:#264fb5;font-weight:650;}
+  #appUpdateBanner button:last-child {background:none;color:#ddd;font-size:18px;}
+
+  /* Story information uses the cover and the actual cast gallery. */
+  .detail-back {background:#19191dcc;color:white;border-radius:50%;width:42px;height:42px;font:20px var(--ui);}
+  #storyDetail {background:var(--night);} #detailCover {height:clamp(212px,32svh,320px);display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center;isolation:isolate;overflow:hidden;}
+  #detailCover::after {z-index:-1;background:linear-gradient(0deg,var(--night),#14141680 50%,#14141688);backdrop-filter:blur(12px);}
+  #detailPoster {display:block;height:85%;width:auto;aspect-ratio:3/4;max-width:70%;min-height:0;object-fit:cover;object-position:center 25%;border-radius:10px;box-shadow:0 8px 25px #0006;}
+  #detailPoster[hidden] {display:none;}
+  #detailBody {margin:0;padding:10px 20px calc(98px + env(safe-area-inset-bottom));}
+  #detailTitle {font:740 clamp(24px,3.5vw,42px)/1.3 var(--ui);letter-spacing:-.04em;color:#fff;word-break:keep-all;}
+  #detailTags {gap:6px;margin:12px 0;} .d-tag {background:#29292e;border:none;border-radius:6px;padding:4px 8px;font:550 12px var(--ui);color:#dedee4;}
+  #detailDesc {color:#dedee4;font:450 15px/1.65 var(--ui);max-width:64ch;}
+  .detail-label {border:0;margin:22px 0 12px;color:#f6f6f8;}
+  #detailChars {gap:14px;align-items:flex-start;} .d-char {font:inherit;border:0;background:none;padding:0;cursor:pointer;} .d-char,.d-char-img,.d-char-name {display:block;width:68px;}
+  .d-char-img {height:68px;border:0;border-radius:50%;background-color:#343439;} .d-char-name {font:500 13px/1.4 var(--ui);color:#d1d1d8;overflow-wrap:anywhere;word-break:keep-all;}
+  #timeflowRow {background:var(--panel);border:0;border-radius:10px;} #timeflowRow input {accent-color:var(--action);}
+  #detailEndings {display:grid;gap:2px;} .end-item {font-size:14px;border-bottom:1px solid var(--line);padding:10px 0;}
+  .end-item.locked {color:var(--soft);} .end-item.got {color:var(--ui-link);}
+  #detailActions {background:#141416fa;border-top:1px solid var(--line);}
+  #detailActions button,#cPrevBtn,#cNextBtn {border-radius:11px;font:680 16px var(--ui);}
+  #detailContinueBtn,#cNextBtn,#detailActions:has(#detailContinueBtn:disabled) #detailNewBtn {background:var(--action);color:white;border:0;}
   #detailContinueBtn:disabled {display:none;}
-  #creatorScreen {background:var(--paper);}
-  #creatorHeader,#creatorBody,#creatorNav,#creatorSteps {width:min(100%,780px);margin-inline:auto;}
-  #creatorHeader {padding-block:calc(14px + env(safe-area-inset-top)) 12px;}
-  #creatorTitle,#apiModal h1 {font:600 24px/1.4 var(--serif);letter-spacing:-.055em;color:var(--ink);}
-  #creatorSteps {gap:0;border-block:1px solid var(--rule);padding-block:0;}
-  .c-pill,.c-pill.on {color:var(--quiet);background:transparent;border:none;border-radius:0;padding:13px 0;border-bottom:2px solid transparent;}
-  .c-pill.on {color:var(--wine);border-color:var(--wine);}
-  .profile-input,#apiModal select,#apiModal input:not([type=checkbox]),#freeModelInput {
-    border:1px solid var(--border);background:var(--bg);color:var(--text);font:400 16px/1.5 var(--ui);border-radius:3px; }
-  #creatorBody {padding-top:20px;} #aiDraftCard {background:#e8e5d9;border:0;border-left:3px solid #77795d;border-radius:0;}
-  .c-face,.c-emo,.c-char-item {border-radius:3px;} #creatorNav {border-color:var(--rule);}
-  #apiModal {align-items:stretch;background:var(--paper);width:min(540px,94vw);border:0;border-top:4px solid var(--wine);border-radius:3px;gap:12px;padding:22px;}
-  #apiModal {padding:0;overflow:hidden;gap:0;}
-  .settings-heading {display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);padding:14px 20px;}
-  #apiModal .settings-fields {display:flex;flex:1 1 auto;min-height:0;flex-direction:column;gap:12px;overflow-y:auto;overscroll-behavior:contain;padding:18px 20px;}
-  .settings-fields>* {max-width:100%;flex-shrink:0;} .settings-fields input:not([type=checkbox]) {min-width:0;padding:10px 12px;}
-  #apiModal>.start-btn {width:auto;margin:10px 20px 14px;border:0;border-radius:2px;min-height:42px;background:var(--wine);color:white;box-shadow:none;font:650 15px var(--ui);}
-  #providerRow {width:100%;gap:0;} #apiModal .prov-btn {flex:1;border-radius:0;background:transparent;border:0;border-bottom:1px solid var(--rule);color:var(--quiet);}
-  #apiModal .prov-btn.active {border-bottom:2px solid var(--wine);color:var(--wine);background:transparent;}
-  #apiModal button:not(.prov-btn) {border-radius:3px;} #settingsCloseBtn {min-height:40px;}
-  #imgViewerBtns button,#endingBtns button {border-radius:3px;} #endingBtns button.primary {background:#794039;}
+
+  /* Workbench and utility sheets. */
+  #creatorScreen {background:var(--bg);}
+  #creatorHeader,#creatorBody,#creatorNav,#creatorSteps {width:min(100%,760px);margin-inline:auto;}
+  #creatorHeader {padding-block:calc(12px + env(safe-area-inset-top)) 12px;}
+  #creatorHeader .detail-back {background:#f2f3f5;color:#30343b;}
+  #creatorTitle,#apiModal h1 {font:720 23px/1.35 var(--ui);letter-spacing:-.035em;color:var(--text);}
+  #creatorSteps {gap:0;padding-block:0;border-bottom:1px solid var(--line);}
+  .c-pill,.c-pill.on {color:var(--soft);background:none;border:0;border-radius:0;padding:12px 0;border-bottom:2px solid transparent;font:600 14px var(--ui);}
+  .c-pill.on {color:var(--ui-link);border-color:currentColor;}
+  .profile-input,#apiModal select,#apiModal input:not([type=checkbox]),#freeModelInput {border:1px solid var(--border);background:var(--bg);color:var(--text);font:450 16px/1.5 var(--ui);border-radius:10px;}
+  #creatorBody {padding-top:16px;} #aiDraftCard {background:#f0f4ff;border:0;border-radius:13px;padding:16px;}
+  .c-face,.c-emo,.c-char-item {border-radius:9px;} #creatorNav {border-color:var(--line);}
+  #apiScreen {align-items:flex-end;background:#0a0a0f85;}
+  #apiModal {width:min(100%,540px);max-height:min(92dvh,850px);align-items:stretch;background:#fff;border:0;border-radius:22px 22px 0 0;gap:0;padding:0;overflow:hidden;}
+  .settings-heading {display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:16px 20px 12px;}
+  #apiModal .settings-fields {display:flex;flex:1 1 auto;min-height:0;flex-direction:column;gap:12px;overflow-y:auto;overscroll-behavior:contain;padding:16px 20px;}
+  .settings-fields>* {max-width:100%;flex-shrink:0;} .settings-fields input:not([type=checkbox]) {min-width:0;padding:11px 12px;}
+  #apiModal>.start-btn {width:auto;margin:10px 20px max(14px,env(safe-area-inset-bottom));border:0;min-height:47px;background:var(--action);color:white;box-shadow:none;font:680 16px var(--ui);}
+  #providerRow {width:100%;gap:3px;background:#eeeef1;border-radius:10px;padding:3px;}
+  #apiModal .prov-btn {flex:1;border-radius:8px;background:none;border:0;color:#50535b;}
+  #apiModal .prov-btn.active {background:#fff;color:#22242a;box-shadow:0 1px 4px #19203220;}
+  #apiModal button:not(.prov-btn),#imgViewerBtns button,#endingBtns button {border-radius:10px;} #settingsCloseBtn {min-height:40px;color:#51545b;}
+  #endingFin,#endingTitle {font-family:var(--ui);letter-spacing:-.035em;} #endingBtns button.primary {background:var(--action);}
+  @media(min-width:700px){#apiScreen{align-items:center;}#apiModal{border-radius:20px;}}
   @media(min-width:760px) and (pointer:fine){
     #storyDetail[style*="flex"] {display:grid !important;grid-template-columns:minmax(270px,40%) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;overflow:hidden;}
-    #detailCover {grid-row:1/3;height:100%;}
+    #detailCover {grid-row:1/3;height:100%;} #detailPoster {height:auto;width:68%;max-height:75%;}
     #detailBody {overflow-y:auto;padding:clamp(32px,6vw,84px) clamp(24px,4vw,64px) 32px;}
     #detailActions {position:static;grid-column:2;padding-inline:clamp(24px,4vw,64px);}
   }
 
-  /* Reader controls sit on the stage; the manuscript and cast stay untouched. */
-  #topBar {padding-inline:12px;background:linear-gradient(#101411d9,#10141180 78%,transparent);}
-  .top-btns {gap:1px;} #titleText {letter-spacing:0;font-size:13px;color:#fbf5e8;}
-  #topBar .top-btn {background:transparent;backdrop-filter:none;border:0;border-radius:0;padding:6px 8px;min-height:38px;color:#f2ede1;font:600 12px var(--ui);}
-  #topBar .top-btn.active {box-shadow:inset 0 -2px #dcb58c;color:#f5d5a7;}
-  #sceneBanner {max-width:calc(100% - 28px);left:14px;transform:none;background:#18201de6;border:0;border-left:2px solid #c5a778;border-radius:0;padding:3px 11px;color:#f1eada;}
-  #sceneBanner .hwOpen {min-height:28px;font:500 12px var(--ui);} #sceneBanner .hwOpen b {color:#e7c597;}
-  #topMenu {background:#242a25;border:1px solid #797a66;border-radius:4px;padding:6px;}
-  #topMenu button {border-radius:0;min-height:36px;border-bottom:1px solid #ffffff16;text-align:left;}
-  .choice-btn {border-radius:2px;background:rgba(23,28,25,.88);border-left:2px solid #b2a185;color:#fff8ea;padding:11px 13px;min-height:40px;}
-  .choice-num {font:italic 15px Georgia,serif;color:#e0c599;}
-  #userInput {border-color:#8c8e7b;background:#202620ed;color:#fff8ec;border-radius:3px;}
-  #userInput:focus {border-color:#ceb58f;box-shadow:none;} #sendBtn {background:#e9d9b9;color:#292d22;border-radius:3px;box-shadow:none;font-size:22px;line-height:1;}
-  #redoBar {gap:4px;} .redo-btn {border:0;border-radius:2px;color:#eee5d5;background:#171d1ada;min-height:29px;}
-  #genPill {background:#202721ee;border-block-color:#938a72;} #genPill .gen-dots i {background:#cfb891;}
-  #statusPanel,#backlogPanel,#rewindBox,#idolBoard,#slotInner {--text:#efe9dd;--text-dim:#bcbcb0;--gold:#e7c598;--gold-dim:#8f7960;--bg:#202721;--panel:#2c332c;--border:#50594e;
-    background:var(--bg);color:var(--text);font-family:var(--ui);}
-  #statusHeader,#backlogHeader {background:#252e26;border-bottom:1px solid #556052;}
-  #statusTabs {overflow-x:auto;scrollbar-width:none;gap:0;} .status-tab {white-space:nowrap;}
-  #statusHeader .status-tab {color:#c9cbbd;background:none;border:0;border-radius:0;padding:10px 7px;}
-  #statusHeader .status-tab.active {color:#f9e5bd;box-shadow:inset 0 -2px #d1ae7d;}
-  #statusClose,#backlogClose {color:#e9dfcd;border:1px solid #626857;border-radius:2px;background:none;min-height:35px;}
-  .char-card {background:transparent;border:0;border-bottom:1px solid #475145;border-radius:0;margin-bottom:0;padding:13px 1px;}
-  .char-card img {border:0;border-radius:2px;} .intimacy-fill {background:#ad8666;}
-  #backlogHeader span,#slotTitle,#rewindBox .rw-head {font:600 22px/1.5 var(--serif);letter-spacing:-.04em;color:#f1e6d1;}
-  .log-entry {margin-bottom:0;padding:16px 0;border-bottom:1px solid #485046;}
-  .log-speaker {color:#ddc7a4;}
-  .log-text {border:0;background:transparent;border-radius:0;padding:4px 0;}
-  .log-player .log-text,.log-text.log-player {border-left:2px solid #b39371;background:#30382d;color:#f2e2cc;padding:8px 12px;} #slotInner {border:1px solid #66705f;border-radius:4px;}
-  .slot-item,#rewindBox .rw-item,#idolBoard .ib-card {border:0;border-bottom:1px solid #485347;background:transparent;border-radius:0;}
-  .slot-btn,#idolBoard .ib-confirm,#idolBoard .ib-slot {border-radius:3px;}
-  #rewindBox {position:fixed;z-index:1450;padding-inline:max(18px,calc((100% - 680px)/2));}
-  #rewindBox .rw-close,#idolBoard .ib-close {border-radius:2px;}
-  #rewindBox .rw-turn {color:#debf95;} #rewindBox .rw-ago,#rewindBox .rw-sub {color:#c4c6b9;}
+  /* UI over the scene. Dialogue text and speaker typography retain their own rules. */
+  #gameScreen,#slotInner,#rewindBox,#endingCard,#imgViewer {font-family:var(--ui);--accent:#a6c2ff;--gold:#acbeff;--gold-dim:#647498;--panel:#242429;--text:#f6f6f8;--text-dim:#b2b2bd;--border:#47474f;}
+  #topBar {padding-inline:9px;background:linear-gradient(#0b0b10d9,#10101578 76%,transparent);}
+  #titleText,.sit-label,.char-name,.status-tab,.log-speaker,#genPill,#userInput,.redo-btn,.choice-btn {font-family:var(--ui);}
+  #titleText {letter-spacing:-.015em;font-size:13px;color:#f4f4f7;}
+  .top-btns {gap:0;} #topBar .top-btn {background:transparent;backdrop-filter:none;border:0;border-radius:8px;padding:6px 8px;min-height:40px;color:#fff;font:600 13px var(--ui);}
+  #topBar .top-btn.active {background:#ffffff26;color:#c3d6ff;}
+  #sceneBanner {max-width:calc(100% - 24px);left:12px;transform:none;background:#17171cbf;color:#f3f3f6;border:1px solid #ffffff26;border-radius:9px;padding:2px 9px;}
+  #sceneBanner .hwOpen {min-height:32px;font:500 13px var(--ui);} #sceneBanner .hwOpen b {color:#c1d6ff;}
+  #topMenu {background:#242429f8;border:1px solid #45454b;border-radius:14px;padding:5px;}
+  #topMenu button {border:0;border-radius:8px;padding-inline:12px;min-height:39px;text-align:left;font-size:14px;}
+  .choice-btn {background:#19191ee0;color:white;border:1px solid #ffffff28;border-radius:11px;min-height:42px;padding:11px 13px;font:520 14px/1.45 var(--ui);}
+  .choice-num {font:700 13px var(--ui);color:#c1d4ff;}
+  #userInput {background:#212126ee;color:#fafafa;border:1px solid #64646c;border-radius:14px;font-family:var(--ui);}
+  #userInput:focus {border-color:#a8beff;box-shadow:none;} #sendBtn {color:#151519;background:#f1f2f4;border-radius:50%;box-shadow:none;font-size:23px;}
+  #redoBar {gap:5px;} .redo-btn {background:#1b1b20c9;color:#f1f1f4;border:1px solid #ffffff19;border-radius:8px;min-height:30px;font-size:12px;}
+  #genPill {background:#1e1e24ed;border-block-color:#505059;} #genPill .gen-dots i {background:#c2ceef;}
+  #statusPanel,#backlogPanel,#rewindBox,#idolBoard,#slotInner {--bg:#19191c;--panel:#242429;--border:#424249;--text:#f5f5f7;--text-dim:#b7b7c1;--gold:#b0c8ff;--gold-dim:#596887;background:var(--bg);color:var(--text);font-family:var(--ui);}
+  #statusHeader,#backlogHeader {background:#1e1e22;border-bottom:1px solid var(--border);}
+  #statusTabs {overflow-x:auto;scrollbar-width:none;gap:3px;} .status-tab {white-space:nowrap;}
+  #statusHeader .status-tab {color:#b9b9c2;background:none;border:0;border-radius:8px;padding:10px 8px;}
+  #statusHeader .status-tab.active {background:#33333c;color:white;}
+  #statusClose,#backlogClose {color:#ededf1;border:0;border-radius:8px;background:#303035;min-height:36px;}
+  .char-card {background:var(--panel);border:0;border-radius:12px;margin:0 0 9px;padding:12px;}
+  .char-card img {border:0;border-radius:50%;} .intimacy-fill {background:#9caee9;}
+  #backlogHeader span,#slotTitle,#rewindBox .rw-head {font:700 21px/1.45 var(--ui);letter-spacing:-.03em;color:var(--text);}
+  .log-entry {margin:0;padding:14px 0;border-bottom:1px solid #36363c;} .log-speaker {color:#bfceee;}
+  .log-text {border:0;background:none;border-radius:0;padding:5px 0;} .log-player .log-text,.log-text.log-player {background:#2b2c34;color:#f2f2fa;border:0;border-radius:9px;padding:10px 12px;}
+  #slotInner {border:0;border-radius:16px;} .slot-item,#rewindBox .rw-item,#idolBoard .ib-card {border:0;background:var(--panel);border-radius:10px;}
+  .slot-btn,#idolBoard .ib-confirm,#idolBoard .ib-slot,#rewindBox .rw-close,#idolBoard .ib-close {border-radius:9px;}
+  #idolBoard .ib-confirm {background:var(--action);color:#fff;}
+  #rewindBox {position:fixed;z-index:1450;padding-inline:max(16px,calc((100% - 680px)/2));}
+  #rewindBox .rw-turn {color:#b9ceff;} #rewindBox .rw-ago,#rewindBox .rw-sub {color:#b5b5c0;}
 
-  /* School almanac. Month selection and appointments are two facing pages on wide screens. */
-  #hwCalendar {color-scheme:light;width:min(740px,calc(100vw - 24px));max-height:calc(100dvh - max(22px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));
-    margin:auto;overflow:auto;overscroll-behavior:contain;padding:0;border:0;border-radius:4px;background:var(--paper);color:var(--ink);box-shadow:0 15px 70px #0008;font:14px/1.5 var(--ui);}
-  #hwCalendar::backdrop {background:#0c120fbb;}
-  .almanac-cover {position:relative;display:flex;align-items:flex-end;min-height:95px;padding:16px 20px;color:#fff7e8;
-    background:linear-gradient(85deg,#17241ff2,#15221c67),url('sd_samples/backgrounds/hogwarts/hogwarts_courtyard.webp') center 45%/cover;}
-  .almanac-cover h2 {font:600 27px/1.3 var(--serif);letter-spacing:-.055em;}
+  /* Month grid beside its agenda on desktop; a bottom sheet on phones. */
+  #hwCalendar {color-scheme:light;width:min(100%,730px);max-width:100vw;max-height:calc(100dvh - max(18px,env(safe-area-inset-top)));margin:auto auto 0;overflow:auto;overscroll-behavior:contain;padding:0 0 env(safe-area-inset-bottom);border:0;border-radius:22px 22px 0 0;background:#fff;color:#191a1e;box-shadow:0 16px 50px #0003;font:14px/1.5 var(--ui);}
+  #hwCalendar::backdrop {background:#0c0d138f;} .almanac-cover {display:flex;align-items:center;justify-content:space-between;padding:15px 20px 10px;background:#fff;position:sticky;top:0;z-index:2;border-bottom:1px solid #ececf0;}
+  .almanac-cover h2 {font:730 22px/1.35 var(--ui);letter-spacing:-.035em;}
   #hwCalendar button,#hwCalendar select {cursor:pointer;font:inherit;color:inherit;border:0;background:none;}
-  #hwCalendar .almanac-cover button {position:absolute;right:10px;top:9px;width:38px;height:38px;font:26px/1 Georgia;color:#fff8ec;background:#192019b8;border-radius:2px;}
-  .almanac-month,.almanac-agenda {padding:15px 19px;}
-  .almanac-month nav {display:flex;align-items:center;gap:4px;margin:0 0 8px;min-height:42px;}
-  #hwMonth {width:fit-content;max-width:56%;margin-right:auto;font:600 19px var(--serif) !important;letter-spacing:-.05em;}
-  #hwCalendar #hwToday {color:var(--wine);padding:4px 7px;font-size:13px;}
-  #hwPrev,#hwNext {min-width:32px;min-height:38px;font:24px Georgia !important;} #hwCalendar button:disabled {opacity:.35;cursor:default;}
+  #hwCalendar .almanac-cover button {width:36px;height:36px;border-radius:50%;background:#f2f3f5;color:#4c4e55;font:24px/1 var(--ui);}
+  .almanac-month,.almanac-agenda {padding:12px 20px;}
+  .almanac-month nav {display:flex;align-items:center;gap:4px;min-height:42px;margin-bottom:4px;}
+  #hwCalendar #hwMonth {max-width:55%;margin-right:auto;font:700 20px var(--ui);letter-spacing:-.035em;}
+  #hwCalendar #hwToday {color:#2858b9;background:#eef3ff;border-radius:8px;padding:5px 9px;font-weight:600;}
+  #hwCalendar :is(#hwPrev,#hwNext) {min-width:34px;min-height:38px;font:24px var(--ui);} #hwCalendar button:disabled {opacity:.35;cursor:default;}
   .hwWeek,#hwDays {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));text-align:center;}
-  .hwWeek {font-size:11px;color:var(--quiet);padding-block:6px;border-bottom:1px solid var(--rule);}
-  #hwDays {margin-top:5px;} #hwDays button {position:relative;justify-self:center;width:100%;max-width:44px;height:37px;border:1px solid transparent;font-variant-numeric:tabular-nums;border-radius:3px;}
-  #hwDays button[aria-current=date] {border-color:#9c8166;} #hwDays button[aria-pressed=true] {background:#334438;color:white;}
-  .hwDots {display:flex;gap:3px;position:absolute;bottom:3px;left:0;right:0;justify-content:center;}
-  .hwDots span,.almanac-key span::before {background:#98613e;width:5px;height:5px;border-radius:50%;}
-  .hwDots .meeting,.almanac-key span+span::before {background:#397875;} #hwDays [aria-pressed=true] .hwDots span {outline:1px solid #fff;}
-  .almanac-key {display:flex;justify-content:flex-end;gap:12px;color:var(--quiet);font-size:11px;margin-top:7px;} .almanac-key span::before {content:'';display:inline-block;margin:0 4px 2px 0;}
-  .almanac-agenda {border-top:1px solid var(--rule);background:#eae6da;} .almanac-agenda h3 {font:650 17px/1.4 var(--serif);margin:0 0 5px;}
-  #hwDateDetail {border-bottom:1px solid #c5bcaa;margin-bottom:16px;padding-bottom:12px;}
-  #hwCalendar p,#hwCalendar small {display:block;margin:4px 0;color:#4d5047;line-height:1.55;}
-  #hwDateDetail h4 {font:650 15px/1.5 var(--ui);color:var(--ink);}
-  #hwDateDetail .hwLessons {padding:8px 0 0;list-style:none;color:#51564b;font:12px/1.6 var(--ui);}
-  .hwLessons li+li {margin-top:2px;}
-  #hwDateDetail .hwTravel {width:100%;margin:6px 0 2px;padding:9px 10px;border-radius:2px;background:#34463a;color:#fff8ea;font-weight:600;text-align:left;}
-  #hwDiary button {display:flex;align-items:baseline;gap:10px;text-align:left;width:100%;padding:9px 0;border-bottom:1px solid #cfc8b8;}
-  #hwDiary strong {width:32px;flex:none;color:#70513c;font-size:13px;} .hwName {flex:1;} .hwType,.hwMeeting {font-size:11px;color:var(--wine);} .hwMeeting {color:#286662;}
-  @media(min-width:680px){.almanac-cover{height:124px;padding:22px 28px;}.almanac-leaves{display:grid;grid-template-columns:1.04fr 1fr;}.almanac-agenda{border:0;border-left:1px solid var(--rule)}.almanac-month,.almanac-agenda{padding:19px 22px;}}
+  .hwWeek {font-size:12px;color:#686d79;padding-block:7px;}
+  #hwDays button {position:relative;justify-self:center;width:100%;max-width:41px;height:36px;border:1px solid transparent;border-radius:12px;font-weight:520;font-variant-numeric:tabular-nums;}
+  #hwDays button[aria-current=date] {border-color:#9aaacd;} #hwDays button[aria-pressed=true] {background:#2e5bc9;color:white;font-weight:700;}
+  .hwDots {position:absolute;bottom:3px;left:0;right:0;display:flex;gap:3px;justify-content:center;}
+  .hwDots span,.almanac-key span::before {background:#4875d3;width:5px;height:5px;border-radius:50%;}
+  .hwDots .meeting,.almanac-key span+span::before {background:#ac507c;} #hwDays [aria-pressed=true] .hwDots span {outline:1px solid white;}
+  .almanac-key {display:flex;justify-content:flex-end;gap:12px;font-size:12px;color:#555b66;margin-top:8px;} .almanac-key span::before {content:'';display:inline-block;margin:0 4px 2px 0;}
+  .almanac-agenda {border-top:6px solid #f3f4f6;}
+  .almanac-agenda h3 {font:700 18px/1.35 var(--ui);margin:4px 0 8px;letter-spacing:-.03em;}
+  #hwDateDetail {border-bottom:1px solid #e5e7ec;padding-bottom:12px;margin-bottom:16px;}
+  #hwCalendar p,#hwCalendar small {display:block;margin:5px 0;color:#5c616b;line-height:1.5;}
+  #hwDateDetail h4 {font:640 16px/1.5 var(--ui);} #hwDateDetail .hwLessons {padding:8px 0 0;list-style:none;color:#535b69;font:13px/1.65 var(--ui);}
+  #hwDateDetail .hwTravel {margin:7px 0 2px;width:100%;min-height:43px;padding:9px 12px;border-radius:10px;background:var(--action);color:white;font-weight:650;}
+  #hwDiary button {display:flex;align-items:baseline;gap:10px;text-align:left;width:100%;padding:12px 0;border-bottom:1px solid #eef0f3;}
+  #hwDiary strong {flex:none;min-width:30px;font-size:14px;color:#414754;} .hwName {flex:1;} .hwType,.hwMeeting {font-size:12px;color:#395e9f;} .hwMeeting {color:#94456f;}
+  @media(min-width:680px){#hwCalendar{margin:auto;border-radius:20px;}.almanac-leaves{display:grid;grid-template-columns:1.04fr 1fr;}.almanac-agenda{border:0;border-left:1px solid #e8e9ed;}.almanac-month,.almanac-agenda{padding:18px 20px;}}
 
 </style>
 </head>
 <body>
 <div id="appFrame">
 
-<!-- ===== PANDORA INTRO (landing screen) ===== -->
-<div id="introScreen">
-  <div class="intro-container">
-    <h1 class="brand-title">Pandora</h1>
-    <p class="brand-subtitle">열지 말았어야 할 상자</p>
-    <button class="enter-btn" onclick="enterApp()">서재 열기 <span aria-hidden="true">↗</span></button>
-  </div>
-</div>
-
 <div id="mainScreen">
   <header id="libraryHeader">
-    <button class="library-brand" aria-label="판도라 서재 홈" onclick="switchMainTab('home')">Pandora</button>
+    <button class="library-brand" aria-label="판도라 홈" onclick="switchMainTab('home')"><i class="brand-mark" aria-hidden="true"></i>판도라</button>
     <nav id="tabBar" aria-label="주요 메뉴">
-      <button class="tab-btn active" id="tabHome" aria-current="page" onclick="switchMainTab('home')">서재</button>
-      <button class="tab-btn" id="tabPlays" onclick="switchMainTab('plays')">내 플레이</button>
-      <button class="tab-btn" id="tabMy" onclick="switchMainTab('my')">내 작업실</button>
+      <button class="tab-btn active" id="tabHome" aria-current="page" onclick="switchMainTab('home')"><i class="nav-icon nav-home" aria-hidden="true"></i>홈</button>
+      <button class="tab-btn" id="tabPlays" onclick="switchMainTab('plays')"><i class="nav-icon nav-plays" aria-hidden="true"></i>내 플레이</button>
+      <button class="tab-btn" id="tabMy" onclick="switchMainTab('my')"><i class="nav-icon nav-my" aria-hidden="true"></i>내 작업실</button>
     </nav>
+    <button type="button" class="search-toggle" aria-label="작품 검색" aria-controls="catalogSearch" aria-expanded="false" onclick="toggleCatalogSearch()"><i class="search-icon" aria-hidden="true"></i></button>
   </header>
   <div id="mainContent">
     <!-- 홈 -->
     <div class="main-tab-page" id="pageHome">
-      <div id="homeHero" onscroll="updateHeroDots()"></div>
+      <form id="catalogSearch" hidden role="search" onsubmit="event.preventDefault()">
+        <label><i class="search-icon" aria-hidden="true"></i><input id="catalogQuery" type="search" aria-label="작품 제목이나 장르" placeholder="작품 제목이나 장르 검색" oninput="renderCatalog()" onkeydown="if(event.key==='Escape'){event.preventDefault();toggleCatalogSearch()}"></label>
+        <button type="button" onclick="toggleCatalogSearch()">취소</button>
+      </form>
+      <div class="feature-wrap"><div id="homeHero" onscroll="updateHeroDots()"></div>
       <nav id="heroDots" aria-label="표지 넘기기">
         <button type="button" id="heroPrev" aria-label="이전 표지" onclick="moveFeature(-1)">←</button>
         <span id="heroPosition"></span>
         <button type="button" id="heroNext" aria-label="다음 표지" onclick="moveFeature(1)">→</button>
-      </nav>
+      </nav></div>
       <div class="home-row" id="rowPlaying" style="display:none">
-        <h2 class="row-title">이어서 읽기</h2>
+        <h2 class="row-title">이어서 플레이</h2>
         <div class="row-scroll" id="rowPlayingCards"></div>
       </div>
       <div class="home-row">
@@ -1666,8 +1680,8 @@
 
 <!-- ===== STORY DETAIL (개요 + 새로하기/이어하기) ===== -->
 <div id="storyDetail">
-  <button class="detail-back" aria-label="서재로 돌아가기" onclick="closeStoryDetail()">←</button>
-  <div id="detailCover"></div>
+  <button class="detail-back" aria-label="작품 목록으로 돌아가기" onclick="closeStoryDetail()">←</button>
+  <div id="detailCover"><img id="detailPoster" alt="" hidden onerror="this.hidden=true"></div>
   <div id="detailBody">
     <div id="detailTitle"></div>
     <div id="detailTags"></div>
@@ -2024,19 +2038,19 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/calendar.js?build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=b68b83604997ec48575e9e217dea957bce5b90958d3516faef74c4246b6dca1b"></script>
+<script src="pandora-consistency.js?v=369&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/calendar.js?build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -8737,6 +8751,9 @@ function timeAgo(ts) {
 
 // ===== MAIN SHELL =====
 function switchMainTab(t) {
+  const search = document.getElementById('catalogSearch');
+  if (!search.hidden) setCatalogSearch(false);
+
   document.getElementById('pageHome').style.display = t === 'home' ? 'block' : 'none';
   document.getElementById('pagePlays').style.display = t === 'plays' ? 'block' : 'none';
   document.getElementById('pageMy').style.display = t === 'my' ? 'block' : 'none';
@@ -8760,30 +8777,63 @@ function renderHome() {
   const heroEl = document.getElementById('homeHero');
   heroEl.innerHTML = featureIds.map(id => {
     const s = stories[id];
+    const cover = catalogCover(s);
     return `<button type="button" class="hero-slide" onclick="openStoryDetail('${id}')">` +
-      `<span class="feature-art" style="background:${coverBg(s)}"></span>` +
-      `<span class="hero-info"><span class="feature-genre">${esc(storyCat(s))}</span><span class="hero-title">${esc(s.title)}</span>` +
-      `<span class="hero-desc">${esc(s.desc || '')}</span><span class="hero-badge">작품 보기 <i aria-hidden="true">↗</i></span></span></button>`;
+      `<span class="feature-art" style="background:${cover}"></span>` +
+      `<span class="hero-info"><span class="feature-genre">${esc(s.genre || storyCat(s))}</span><span class="hero-title">${esc(s.title)}</span>` +
+      `<span class="hero-desc">${esc(s.desc || '')}</span><span class="hero-badge">작품 보기 <i aria-hidden="true">›</i></span></span></button>`;
   }).join('');
   document.getElementById('heroDots').hidden = ids.length < 2;
   updateHeroDots();
-  // 플레이 중 row
-  const playing = ids.filter(id => saveInfoFor(id));
-  const rowP = document.getElementById('rowPlaying');
-  rowP.style.display = playing.length ? 'block' : 'none';
-  function storyCard(id, caption) {
-    const s = stories[id];
-    return `<button type="button" class="mini-card" onclick="openStoryDetail('${id}')"><span class="mini-cover" style="background:${coverBg(s)}"></span>` +
-      `<span class="mini-title">${esc(s.title)}</span><span class="mini-sub">${esc(caption)}</span></button>`;
-  }
-  document.getElementById('rowPlayingCards').innerHTML = playing.map(id => storyCard(id, timeAgo(saveInfoFor(id).savedAt))).join('');
+  const playing = Object.entries(stories).map(([id,story]) => ({id,story,save:saveInfoFor(id)}))
+    .filter(item => item.save).sort((a,b) => (b.save.savedAt || 0) - (a.save.savedAt || 0));
+  document.getElementById('rowPlaying').style.display = playing.length ? 'block' : 'none';
+  document.getElementById('rowPlayingCards').innerHTML = playing.map(({id,story,save}) =>
+    `<button class="resume-card" type="button" onclick="quickContinue('${id}')"><span class="resume-art" style="background:${catalogCover(story)}"></span>` +
+    `<span class="resume-copy"><strong>${esc(story.title)}</strong><small>${esc([save.gameState?.time, timeAgo(save.savedAt)].filter(Boolean).join(' · '))}</small></span><i aria-hidden="true">▶</i></button>`
+  ).join('');
+  renderCatalog(stories);
+}
+
+function catalogCover(story) {
+  if (story.id === 'hogwarts' && BUILTIN_STORIES.hogwarts && story.cover === BUILTIN_STORIES.hogwarts.cover)
+    return coverBg({ ...story, cover:'ui/hogwarts-flight-cover.webp' });
+  return coverBg(story);
+}
+function storyCard(story, id, caption) {
+  return `<button type="button" class="mini-card" onclick="openStoryDetail('${id}')"><span class="mini-cover" style="background:${catalogCover(story)}"></span>` +
+    `<span class="mini-title">${esc(story.title)}</span><span class="mini-sub">${esc(caption)}</span></button>`;
+}
+function setCatalogSearch(open) {
+  const form = document.getElementById('catalogSearch');
+  const field = document.getElementById('catalogQuery');
+  form.hidden = !open;
+  document.querySelector('.search-toggle').setAttribute('aria-expanded',String(open));
+  if (open) field.focus();
+  else field.value = '';
+}
+function toggleCatalogSearch() {
+  const open = document.getElementById('catalogSearch').hidden;
+  if (open) switchMainTab('home');
+  setCatalogSearch(open);
+  if (!open) document.querySelector('.search-toggle').focus();
+  renderCatalog();
+}
+function renderCatalog(stories = allStories()) {
+  const ids = Object.keys(stories);
   const cats = ['전체', ...new Set(ids.map(id => storyCat(stories[id])))];
   if (!cats.includes(homeFilter)) homeFilter = '전체';
   document.getElementById('genreChips').innerHTML = cats.map(c =>
     `<button type="button" aria-pressed="${c === homeFilter}" class="g-chip${c === homeFilter ? ' on' : ''}" onclick="setHomeFilter('${c}')">${c}</button>`).join('');
-  const showIds = homeFilter === '전체' ? ids : ids.filter(id => storyCat(stories[id]) === homeFilter);
-  document.getElementById('catalogCount').textContent = showIds.length;
-  document.getElementById('rowAllCards').innerHTML = showIds.map(id => storyCard(id, storyCat(stories[id]))).join('');
+  const query = document.getElementById('catalogQuery').value.trim().toLocaleLowerCase('ko');
+  const matches = ids.filter(id => {
+    const s = stories[id], genre = storyCat(s);
+    return (homeFilter === '전체' || homeFilter === genre) && [s.title,s.genre,genre].join(' ').toLocaleLowerCase('ko').includes(query);
+  });
+  document.getElementById('catalogCount').textContent = matches.length;
+  document.getElementById('rowAllCards').innerHTML = matches.length
+    ? matches.map(id => storyCard(stories[id],id,storyCat(stories[id]))).join('')
+    : '<p class="empty-note" role="status">일치하는 작품이 없습니다.</p>';
 }
 
 // Broad genre category for the home filter (keyword mapping — order matters)
@@ -8800,7 +8850,7 @@ function storyCat(s) {
   if (/헌터|히어로|좀비|아포칼립스|현대/.test(g)) return '현대액션';
   return '기타';
 }
-function setHomeFilter(c) { homeFilter = c; renderHome(); }
+function setHomeFilter(c) { homeFilter = c; renderCatalog(); document.querySelector('#genreChips [aria-pressed="true"]')?.focus({preventScroll:true}); }
 
 // 커버 배경 = 실제 커버 이미지 위 + 장르 무드 그라디언트 폴백(로딩/실패/무커버 시
 // 플랫 회색 대신 장르 분위기의 다크 그라디언트가 보이게 — 1C, 유저 지적 2026-07-17)
@@ -8838,7 +8888,7 @@ function renderPlays() {
   const items = Object.keys(stories).filter(id => saveInfoFor(id));
   const list = document.getElementById('playsList');
   if (!items.length) {
-    list.innerHTML = '<div class="empty-note">진행 중인 이야기가 없습니다.<br><button type="button" class="browse-link" onclick="switchMainTab(\'home\')">서재에서 작품 찾기 →</button></div>';
+    list.innerHTML = '<div class="empty-note">진행 중인 이야기가 없습니다.<br><button type="button" class="browse-link" onclick="switchMainTab(\'home\')">홈에서 작품 찾기 →</button></div>';
     return;
   }
   list.innerHTML = items.map(id => {
@@ -8894,6 +8944,10 @@ function openStoryDetail(id) {
   const portraitCover = s.customBgs?.hogwarts_courtyard;
   const usePortraitCover = s.id === 'hogwarts' && portraitCover?.url === s.cover && portraitCover.portraitUrl;
   detailCover.style.background = usePortraitCover ? coverBg({ ...s, cover: portraitCover.portraitUrl }) : coverBg(s);
+  const poster = document.getElementById('detailPoster');
+  if (s.cover) poster.src = usePortraitCover && s.cover === BUILTIN_STORIES.hogwarts?.cover ? 'ui/hogwarts-flight-cover.webp' : s.cover;
+  else poster.removeAttribute('src');
+  poster.hidden = !s.cover;
   if (usePortraitCover) detailCover.style.backgroundPosition = 'center 32%';
   document.getElementById('detailTitle').textContent = s.title;
   const chars = s.characters || {};
@@ -8901,7 +8955,7 @@ function openStoryDetail(id) {
   document.getElementById('detailTags').innerHTML =
     `<span class="d-tag">${esc(s.genre || '다크 판타지')}</span><span class="d-tag">등장인물 ${charIds.length}</span>` +
     (s.id && s.id[0] === 'u' ? '<span class="d-tag">내 에피소드</span>' : '') +
-    (saveInfoFor(id) ? `<span class="d-tag" style="color:var(--wine)">진행 중</span>` : '') +
+    (saveInfoFor(id) ? `<span class="d-tag" style="color:var(--ui-link)">진행 중</span>` : '') +
     (endingsFor(id).length ? `<span class="d-tag" style="color:var(--gold)">엔딩 ${endingsFor(id).length}개 달성</span>` : '');
   document.getElementById('detailDesc').textContent = s.desc || '';
   // Hogwarts has a larger simulation roster than its illustrated cast.
@@ -11273,17 +11327,9 @@ function persistCfg() {
       if (cfg.provider || FREE_TEST_MODE) setProvider(FREE_TEST_MODE ? 'openrouter' : cfg.provider);
     }
   } catch {}
-  // PANDORA intro shows first; 접속하기 fades it out into the main shell
   document.getElementById('mainScreen').style.display = 'flex';
   renderHome();
 })();
-
-// Intro → main shell (no page reload: fade the intro overlay away)
-function enterApp() {
-  const intro = document.getElementById('introScreen');
-  intro.classList.add('fade-out-screen');
-  setTimeout(() => { intro.style.display = 'none'; }, 800);
-}
 
 // Force-fetch the latest version (works even in fullscreen PWA with no address bar).
 // Game state is in localStorage, so 이어하기 restores after reload.
