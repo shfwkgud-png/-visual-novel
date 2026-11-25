@@ -84,6 +84,31 @@ for(const [date,number] of [['1991-09-03',1],['1991-09-17',3],['1991-09-24',4]])
 }
 const elementary=M.agenda(legacy,'1991-09-17'),nextLesson=M.agenda(legacy,'1991-09-24');
 assert.equal(M.agenda(legacy,'1991-09-23')[0].unit.spell,'lumos');
+assert(M.context(legacy,{date:'1991-09-24',slot:0}).includes(elementary[0].unit.topic));
+assert.match(M.context(legacy,{date:'1996-09-03',slot:0}),/새 학년의 첫 시간이며 과목 입문을 다시 연출하지 않는다/);
+// A different number or date on the same assignment is still a repeated lesson.
+const electiveIds=SUBJECTS.filter(s=>s.group==='선택').map(s=>s.id);
+function checkTimetable(electives){
+  const student=M.createState(),topics=new Set();student.electives=electives;
+  for(let t=Date.UTC(1991,8,1);t<Date.UTC(1998,4,2);t+=86400000){
+    const date=new Date(t).toISOString().slice(0,10);
+    for(const lesson of M.curriculum(student,date)){
+      const key=lesson.subject+'|'+lesson.topic;
+      assert(lesson.approach && !/undefined|null/.test(key),date+' '+key);
+      assert(!topics.has(key),date+' repeats '+key);
+      topics.add(key);
+    }
+  }
+  assert.equal(topics.size,2645);
+}
+checkTimetable([]);
+for(const a of electiveIds){
+  checkTimetable([a]);
+  for(const b of electiveIds.filter(id=>id!==a)){
+    checkTimetable([a,b]);
+    for(const c of electiveIds.filter(id=>id!==a && id!==b))checkTimetable([a,b,c]);
+  }
+}
 assert.notEqual(elementary[0].unit.topic,nextLesson[0].unit.topic);
 assert.notEqual(elementary[1].unit.topic,nextLesson[1].unit.topic);
 const xpBefore=JSON.stringify(legacy);
