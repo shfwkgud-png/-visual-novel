@@ -467,7 +467,13 @@ async function playthrough(ctx) {
     await page.locator('#slotPanel .my-btn').click();
     await enterText(page, SECOND_INPUT);
     await waitGold(page, 21);
-    await page.locator('#redoBar button').filter({ hasText: '다시 답변' }).click();
+    const actions=page.locator('#redoBar button');
+    assert.equal(await actions.count(),3);
+    for(const action of await actions.all()) assert.ok(await action.isVisible());
+    const undoRow=await page.locator('#redoBar').boundingBox();
+    const composer=await page.locator('#inputRow').boundingBox();
+    assert.ok(undoRow.y+undoRow.height<=composer.y,'turn actions remain directly above the composer');
+    await actions.filter({ hasText: '다시 답변' }).click();
     await waitGold(page, 21);
     assert.equal(net.calls.filter(c => c.kind === 'main').length, 3);
     await page.locator('#redoBar button').filter({ hasText: '되돌리기' }).click();
@@ -1079,6 +1085,9 @@ async function hogwartsRPCheck(ctx){
       await within(seen.promise,'cold canon request after slot restore');
       assert.deepEqual(await page.evaluate(()=>({busy:sendBtn.disabled,owned:!!window._inputRequest,
         pill:document.getElementById('genPill').style.display})),{busy:true,owned:true,pill:'block'});
+      const waiting=await page.locator('#genPill').boundingBox();
+      const stage=await page.locator('#gameScreen').boundingBox();
+      assert.ok(waiting.y > stage.y + stage.height * .7,'sending feedback stays at the foot of the scene');
       await page.evaluate(()=>handlePlayerInput('중복 제출 검사용 입력'));
       await page.waitForFunction(()=>gameHistory.at(-1)?._stateExtract?.status==='applied' &&
         gameHistory.at(-2)?.content.includes('빈 의자 옆에 앉아도'),null,{timeout:16000});
@@ -1129,9 +1138,11 @@ async function libraryNavigationCheck(ctx) {
     assert.match(await page.locator('#dialogueText').evaluate(el=>getComputedStyle(el).fontFamily),/Noto Serif KR/);
     const library=page.locator('#homeHero');
     assert.ok((await library.boundingBox()).width >= (ctx.mobile ? 350 : 850));
-    await page.locator('#heroNext').click();
-    await page.waitForFunction(()=>document.querySelector('#heroPosition').textContent.startsWith('2 /'));
-    await page.locator('#heroPrev').click();
+    const features=page.locator('#heroDots button');
+    assert.equal(await features.count(),3);
+    await features.nth(1).click();
+    await page.waitForFunction(()=>document.querySelectorAll('#heroDots button')[1].getAttribute('aria-pressed')==='true');
+    await features.first().click();
     await page.locator('#genreChips').getByRole('button',{name:'판타지',exact:true}).click();
     const genres=await page.locator('#rowAllCards .mini-sub').allTextContents();
     assert.ok(genres.length && genres.every(genre=>genre==='판타지'));
@@ -1194,6 +1205,20 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(arrival.bg,'slytherin_common_room');
     assert(arrival.speakers.some(x=>x==='덤블도어'));
     assert(arrival.speakers.some(x=>x==='슬리데린 반장'));
+    const geometry=await page.evaluate(()=>{
+      const choices=document.querySelector('#gameScreen > #choiceBox');
+      const buttons=[...choices.querySelectorAll('button')];
+      return {
+        top:choices.getBoundingClientRect().top,headerBottom:document.querySelector('#topBar').getBoundingClientRect().bottom,
+        first:buttons[0].getBoundingClientRect().top,screenHeight:choices.parentElement.clientHeight,
+        stacked:buttons.every((button,i)=>!i || button.getBoundingClientRect().top>=buttons[i-1].getBoundingClientRect().bottom),
+        background:getComputedStyle(buttons[0]).backgroundColor,
+        noHorizontalScroll:choices.scrollWidth===choices.clientWidth
+      };
+    });
+    assert.ok(geometry.top>=geometry.headerBottom-1 && geometry.first<geometry.screenHeight/2,'choices sit just below the header');
+    assert.ok(geometry.stacked && geometry.noHorizontalScroll,'choice bubbles form one vertical list');
+    assert.equal(geometry.background,'rgba(16, 16, 22, 0.55)');
     const controls = await page.locator('#choiceBox .choice-btn').allTextContents();
     assert.ok(controls.every(text => !/다음 장면|장면 마치기|마법 도감/.test(text)));
     await chooseHogwartsMenu(page,'호그와트 달력');
@@ -1253,7 +1278,7 @@ async function hogwartsArtCheck(ctx) {
     assert.equal(scene.dorm, 'sd_samples/backgrounds/hogwarts/slytherin_dormitory_portrait.webp');
     assert.equal(scene.room, 'sd_samples/backgrounds/hogwarts/slytherin_common_room_portrait.webp');
     assert.equal(scene.art.length, 2);
-    assert.deepEqual(scene.filters, ['blur(6px) brightness(0.78)', 'blur(6px) brightness(0.78)']);
+    assert.deepEqual(scene.filters, ['blur(2px) brightness(0.9)', 'blur(2px) brightness(0.9)']);
     assert.ok(scene.art.every(([,src,width]) => src.startsWith('sd_samples/characters/hogwarts/') && width === 1024));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_harry' && src.endsWith('/3_anger_v5.webp')));
     assert.ok(scene.art.some(([id,src]) => id === 'sprite_ron' && src.endsWith('/4_sadness_v6.webp')));

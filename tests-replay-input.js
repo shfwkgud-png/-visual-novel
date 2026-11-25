@@ -94,7 +94,7 @@ function harness() {
     'restoreAndReplay', 'restoreAndReplayInner', 'resetTurnLineKeys', 'enqueueLine', 'dropLogEntry',
     '_echoNorm', '_sameText', '_isNarrationEcho', 'splitNarration', 'processResponse', 'resetSprites',
     'showNextDialogue', 'sceneVisualSnapshot', 'typeText', 'scheduleAuto', 'navNext', 'enterInputMode',
-    'liftDialogueForInput', 'resetDialogueLift', 'sendMessage', 'handlePlayerInput', 'dispatchPlayerInput', 'exitToMain'];
+    'sendMessage', 'handlePlayerInput', 'dispatchPlayerInput', 'exitToMain'];
   vm.runInContext(names.map(grab).join('\n'), sb);
   async function advance(ms) {
     const target = time + ms; let steps = 0;

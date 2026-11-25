@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="pandora-build" content="48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602">
+<meta name="pandora-build" content="57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -967,54 +967,11 @@
     border: none; color: #ffffff; font-weight: 800;
   }
 
-  /* GENERATION BAND — player's line in a thin FULL-WIDTH strip while the AI
-     writes: no chip/box, just hairlines above & below (Frontia). */
-  #genPill {
-    display: none;
-    position: fixed;
-    /* 40%는 하단 검은줄 시절 기준 — 현 레이아웃 정중앙으로 (유저 지적 2026-07-16) */
-    top: 50%; left: 0; right: 0;
-    transform: translateY(-50%);
-    z-index: 5;
-    padding: 11px 28px 9px;
-    background: rgba(8,8,14,0.45);
-    border-top: 1px solid rgba(255,255,255,0.16);
-    border-bottom: 1px solid rgba(255,255,255,0.16);
-    backdrop-filter: blur(12px) saturate(130%);
-    -webkit-backdrop-filter: blur(12px) saturate(130%);
-    color: #f2ecdf;
-    font-family: 'Noto Serif KR', serif;
-    font-size: 0.85rem;
-    line-height: 1.6;
-    letter-spacing: 0.015em;
-    text-align: center;
-    pointer-events: none;
-    animation: pillIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
-  }
-  @keyframes pillIn {
-    from { opacity: 0; transform: translateY(calc(-50% + 8px)); }
-    to   { opacity: 1; transform: translateY(-50%); }
-  }
-  #genPill .gen-text {
-    display: block;
-    word-break: break-word;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-  }
-  #genPill .gen-dots {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 7px;
-  }
-  #genPill .gen-dots i {
-    width: 4.5px; height: 4.5px;
-    border-radius: 50%;
-    background: var(--gold);
-    opacity: 0.25;
-    animation: dotBreathe 1.3s ease-in-out infinite;
-  }
-  #genPill .gen-dots i:nth-child(2) { animation-delay: 0.18s; }
-  #genPill .gen-dots i:nth-child(3) { animation-delay: 0.36s; }
+  #genPill {display:none;position:fixed;z-index:5;pointer-events:none;}
+  #genPill .gen-dots {display:flex;}
+  #genPill .gen-dots i {display:block;border-radius:50%;animation:dotBreathe 1.3s ease-in-out infinite;}
+  #genPill .gen-dots i:nth-child(2) {animation-delay:.18s;}
+  #genPill .gen-dots i:nth-child(3) {animation-delay:.36s;}
   @keyframes dotBreathe {
     0%, 100% { opacity: 0.22; transform: translateY(0); }
     45%      { opacity: 1;    transform: translateY(-3px); }
@@ -1564,12 +1521,9 @@
   #sceneBanner .hwOpen {min-height:32px;font:500 13px var(--ui);} #sceneBanner .hwOpen b {color:#c1d6ff;}
   #topMenu {background:#242429f8;border:1px solid #45454b;border-radius:14px;padding:5px;}
   #topMenu button {border:0;border-radius:8px;padding-inline:12px;min-height:39px;text-align:left;font-size:14px;}
-  .choice-btn {background:#19191ee0;color:white;border:1px solid #ffffff28;border-radius:11px;min-height:42px;padding:11px 13px;font:520 14px/1.45 var(--ui);}
-  .choice-num {font:700 13px var(--ui);color:#c1d4ff;}
   #userInput {background:#212126ee;color:#fafafa;border:1px solid #64646c;border-radius:14px;font-family:var(--ui);}
   #userInput:focus {border-color:#a8beff;box-shadow:none;} #sendBtn {color:#151519;background:#f1f2f4;border-radius:50%;box-shadow:none;font-size:23px;}
-  #redoBar {gap:5px;} .redo-btn {background:#1b1b20c9;color:#f1f1f4;border:1px solid #ffffff19;border-radius:8px;min-height:30px;font-size:12px;}
-  #genPill {background:#1e1e24ed;border-block-color:#505059;} #genPill .gen-dots i {background:#c2ceef;}
+  #redoBar {gap:6px;} .redo-btn {background:rgba(16,16,22,.55);color:#ede8e3;border:1px solid #ffffff27;min-height:32px;font-size:12px;}
   #statusPanel,#backlogPanel,#rewindBox,#idolBoard,#slotInner {--bg:#19191c;--panel:#242429;--border:#424249;--text:#f5f5f7;--text-dim:#b7b7c1;--gold:#b0c8ff;--gold-dim:#596887;background:var(--bg);color:var(--text);font-family:var(--ui);}
   #statusHeader,#backlogHeader {background:#1e1e22;border-bottom:1px solid var(--border);}
   #statusTabs {overflow-x:auto;scrollbar-width:none;gap:3px;} .status-tab {white-space:nowrap;}
@@ -1616,6 +1570,97 @@
   #hwDiary strong {flex:none;min-width:30px;font-size:14px;color:#414754;} .hwName {flex:1;} .hwType,.hwMeeting {font-size:12px;color:#395e9f;} .hwMeeting {color:#94456f;}
   @media(min-width:680px){#hwCalendar{margin:auto;border-radius:20px;}.almanac-leaves{display:grid;grid-template-columns:1.04fr 1fr;}.almanac-agenda{border:0;border-left:1px solid #e8e9ed;}.almanac-month,.almanac-agenda{padding:18px 20px;}}
 
+
+  /* A stable portrait stage, with dialogue and response tools at its foot. */
+  #gameScreen {pointer-events:none;}
+  #gameScreen > :is(#topBar,#topMenu,#inputBar,#statusPanel,#backlogPanel,#idolBoard,#hwCalendar) {pointer-events:auto;}
+  #topBar {padding:calc(4px + env(safe-area-inset-top)) 11px 14px 6px;align-items:flex-start;background:linear-gradient(to bottom,#090b10bc,transparent);}
+  .top-left {gap:3px;align-items:flex-start;} .scene-heading {display:flex;flex-direction:column;justify-content:center;min-width:0;min-height:43px;}
+  #titleText {font:670 14px/1.4 var(--ui);color:#fff;opacity:1;letter-spacing:-.025em;}
+  #topBar .reader-back,#topBar .reader-icon,#topBar #moreBtn {display:grid;place-items:center;width:37px;height:42px;min-height:0;padding:0;}
+  #topBar svg,#sendBtn svg {width:20px;height:20px;}
+  #topBar .top-btns {align-items:center;gap:1px;}
+  #topBar #autoBtn {min-height:40px;font:650 11px var(--ui);letter-spacing:.045em;color:#eee;}
+  #topBar #autoBtn.active {color:#ffd9a7;background:transparent;} #topBar #autoBtn.active::before {content:'●';font-size:7px;margin-right:4px;}
+  #topBar #sceneBanner {position:static;transform:none;max-width:100%;padding:0;border:0;border-radius:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-align:left;color:#e7e3dd;}
+  #sceneBanner .hwOpen {display:flex;align-items:center;gap:5px;min-height:24px;width:100%;padding:0;color:inherit;font:480 11.5px/1.4 var(--ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #sceneBanner .date-glyph {position:relative;display:inline-block;flex:none;width:11px;height:10px;border:1px solid currentColor;border-radius:2px;margin:0;color:inherit;}
+  #sceneBanner .date-glyph::after {content:'';position:absolute;inset:2px 0 auto;border-top:1px solid currentColor;}
+  #topMenu {max-height:calc(100dvh - 90px - env(safe-area-inset-top));overflow-y:auto;}
+  #dialogueBox {background:linear-gradient(0deg,#090b10 1%,#090b10eF 13%,#090b10af 29%,#090b1050 43%,transparent 64%);}
+  #dialogueContent {top:auto;bottom:calc(max(var(--reply-height,0px),env(safe-area-inset-bottom)) + 22px);padding:0 23px;max-height:min(39lvh,calc(100lvh - var(--reply-height,0px) - 86px - env(safe-area-inset-top)));overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;scrollbar-width:thin;}
+  #dialogueBox:has(+ #genPill[style*="block"]) #dialogueContent {bottom:calc(98px + env(safe-area-inset-bottom));}
+  #nameplate {margin:0 0 7px;padding:0 0 0 9px;border:0;border-left:2px solid #e9c39a;}
+  #speakerName {font:670 14px/1.35 var(--ui);color:#ffebce;letter-spacing:0;}
+  #dialoguePanel {min-height:0;} #continueHint {position:static;text-align:right;color:#f6d9b6;font-size:11px;margin-top:6px;}
+  #inputBar {padding:0 16px calc(11px + env(safe-area-inset-bottom));gap:6px;background:linear-gradient(0deg,#0a0b10f8 40%,#0a0b10b0 79%,transparent);}
+  #inputRow {gap:3px;min-height:45px;padding:2px 4px;border:1px solid #ffffff36;background:#17191dec;border-radius:23px;}
+  #inputRow:focus-within {border-color:#e4c9a8;}
+  #userInput,#userInput:focus {color:#f6f3f0;min-height:37px;max-height:85px;padding:9px;border:0;background:none;box-shadow:none;font:450 15px/1.45 var(--ui);}
+  #userInput:empty::before {color:#b9b7bd;}
+  #sendBtn {display:grid;place-items:center;flex:none;width:35px;height:35px;background:#f4dfbf;color:#31291e;box-shadow:none;}
+  #choiceBox {position:absolute;top:var(--choice-top,calc(64px + env(safe-area-inset-top)));left:0;right:0;z-index:18;
+    display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 14px;max-height:45%;overflow-y:auto;overscroll-behavior-y:contain;pointer-events:none;}
+  #choiceBox .choice-btn {flex:none;pointer-events:auto;}
+  body:has(#choiceBox) #dialogueContent {
+    max-height:min(39lvh,max(48px,calc(100lvh - var(--choice-top,64px) - var(--choice-height,0px) - var(--reply-height,0px) - 34px)));
+  }
+  #gameScreen:has(#inputBar.kb-open) #choiceBox {display:none;}
+  #genPill,#appFrame #genPill {top:auto;bottom:calc(15px + env(safe-area-inset-bottom));left:auto;right:20px;width:max-content;max-width:calc(100% - 40px);transform:none;padding:0;border:0;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;animation:none;text-align:right;color:#fff;}
+  #genPill .gen-text {width:fit-content;max-width:100%;margin-left:auto;padding:8px 13px;background:#292b32f2;border-radius:14px 14px 3px 14px;font:500 13px/1.5 var(--ui);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+  #genPill .gen-text:empty {display:none;} .wait-caption {display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;font:520 12px var(--ui);color:#e4dbcf;}
+  #genPill .gen-dots {margin:0;gap:3px;} #genPill .gen-dots i {width:4px;height:4px;background:#edcba5;}
+  @media(max-height:540px){#dialogueContent {bottom:calc(var(--reply-height,0px) + 7px);max-height:36lvh;padding-inline:16px;} #inputBar{padding-bottom:max(4px,env(safe-area-inset-bottom));}}
+  @media(prefers-reduced-motion:reduce){#genPill .gen-dots i {animation:none;opacity:.8;}}
+
+  /* The home opens on a scene from each featured world. */
+  #pageHome {max-width:none;padding-top:0;}
+  .feature-wrap {margin:0 0 25px;border-radius:0;background:#151519;}
+  .hero-slide {height:clamp(355px,49svh,480px);background:#17171b;}
+  .feature-art {inset:0;background-position:center 35% !important;}
+  .feature-cast {position:absolute;z-index:-2;inset:0 0 0 18%;pointer-events:none;}
+  .feature-person {position:absolute;bottom:-1%;width:auto;height:90%;max-width:none;object-fit:contain;filter:drop-shadow(-6px 3px 12px #10101840);}
+  .person-harry {right:1%;height:94%;} .person-hermione {right:42%;height:76%;}
+  .person-siren {right:0;height:97%;}
+  .hero-slide::after {background:linear-gradient(0deg,#111217 0%,#101116e6 8%,#11121868 36%,transparent 67%),linear-gradient(80deg,#10111670,transparent 67%);}
+  .hero-info {padding:0 22px 21px;gap:5px;width:100%;}
+  .feature-genre {font:620 12px/1.5 var(--ui);color:#f1dac0;}
+  .hero-title {display:block;font:780 clamp(31px,7.8vw,43px)/1.11 var(--ui);letter-spacing:-.057em;}
+  .hero-desc {color:#ede9e4;font:480 14px/1.55 var(--ui);margin-top:2px;}
+  .hero-badge {margin-top:7px;background:none;color:white;border-bottom:1px solid #ffffff83;border-radius:0;padding:0 0 4px;gap:14px;font:650 13px var(--ui);}
+  #heroDots {position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:0;height:auto;padding:0 16px;border-radius:0;background:#111217;}
+  #heroDots button {width:auto;height:auto;min-height:43px;padding:9px 6px;border:0;border-bottom:2px solid transparent;color:#a8a7ac;border-radius:0;background:none;font:580 13px/1.4 var(--ui);}
+  #heroDots button[aria-pressed=true] {color:#fff1e0;border-bottom-color:#ead3b1;}
+  .home-row {width:calc(100% - 32px);max-width:1160px;margin-inline:auto;}
+  @media(max-width:699px){
+    #mainScreen:has(#tabHome.active):has(#catalogSearch[hidden]) #libraryHeader {background:#15161b;color:#fff;}
+    #mainScreen:has(#tabHome.active):has(#catalogSearch[hidden]) .brand-mark {background:#f1d6af;}
+    #mainScreen:has(#tabHome.active):has(#catalogSearch[hidden]) .brand-mark::after {background:#15161b;}
+    #tabBar {color:#17191c;}
+    .hero-slide[data-feature="idol"] .feature-art {background-size:100% auto,cover !important;background-position:center 15%,center !important;background-color:#111217;}
+    .hero-slide[data-feature="idol"]::after {background:linear-gradient(0deg,#111217 10%,#111217d5 30%,transparent 65%);}
+
+  }
+  @media(min-width:700px){
+    .feature-wrap {background:#111217;}
+    .hero-slide {height:clamp(350px,45vh,500px);}
+    .feature-art {left:0;background-position:center 43% !important;}
+    .hero-slide::after {background:linear-gradient(90deg,#111217f0 0%,#111217c4 25%,#1112176b 49%,transparent 71%),linear-gradient(0deg,#111217df,transparent 35%);}
+    .feature-cast {right:max(4%,calc((100% - 1180px)/2));left:auto;width:min(56%,760px);}
+    .person-harry {right:12%;height:111%;bottom:-16%;} .person-hermione {right:49%;height:86%;bottom:-7%;}
+    .person-siren {right:18%;height:104%;bottom:-7%;}
+    .hero-info {align-self:center;width:55%;padding:22px 16px 28px max(36px,calc((100% - 1130px)/2));gap:9px;}
+    .hero-title {font-size:clamp(42px,4.9vw,72px);} .hero-desc {max-width:40ch;}
+    #heroDots {max-width:680px;margin:auto;} #heroDots button {min-height:49px;font-size:14px;}
+  }
+  @media(max-width:349px),(max-height:650px) and (max-width:699px){.hero-slide{height:clamp(260px,47svh,350px);}.hero-title{font-size:30px;}}
+
+  body:has(#charLayer .char-sprite) :is(#bgLayer,#bgLayerB) {filter:blur(2px) brightness(.9);}
+  #charLayer .char-sprite.silent {filter:brightness(.56) saturate(.78);}
+  body[data-story="hogwarts"] #charLayer[data-count="2"] .char-sprite.silent:first-child {--tx:8%;}
+  body[data-story="hogwarts"] #charLayer[data-count="2"] .char-sprite.silent:last-child {--tx:-8%;}
+  body[data-story="hogwarts"] #charLayer[data-count="2"] .char-sprite.speaking {height:calc(78% * var(--arScale,1));max-width:102vw;--sc:1.08;}
+  @media(min-width:600px) and (pointer:fine){body[data-story="hogwarts"] #appFrame #charLayer[data-count="2"] .char-sprite.speaking {max-width:102cqw;}}
 </style>
 </head>
 <body>
@@ -1639,11 +1684,7 @@
         <button type="button" onclick="toggleCatalogSearch()">취소</button>
       </form>
       <div class="feature-wrap"><div id="homeHero" onscroll="updateHeroDots()"></div>
-      <nav id="heroDots" aria-label="표지 넘기기">
-        <button type="button" id="heroPrev" aria-label="이전 표지" onclick="moveFeature(-1)">←</button>
-        <span id="heroPosition"></span>
-        <button type="button" id="heroNext" aria-label="다음 표지" onclick="moveFeature(1)">→</button>
-      </nav></div>
+      <nav id="heroDots" aria-label="추천 작품"></nav></div>
       <div class="home-row" id="rowPlaying" style="display:none">
         <h2 class="row-title">이어서 플레이</h2>
         <div class="row-scroll" id="rowPlayingCards"></div>
@@ -1944,30 +1985,31 @@
   </div>
 </div>
 
-<!-- GENERATION PILL — shows the player's typed line while the AI writes (Frontia) -->
-<div id="genPill"><span class="gen-text"></span><span class="gen-dots"><i></i><i></i><i></i></span></div>
+<div id="genPill" role="status" aria-live="polite"><span class="gen-text"></span><span class="wait-caption"><span class="gen-dots" aria-hidden="true"><i></i><i></i><i></i></span>답변 작성 중</span></div>
 
 <!-- GAME SCREEN (UI layer, sized to visible area) -->
 <div id="gameScreen">
 
   <div id="topBar">
     <div class="top-left">
+      <button type="button" class="top-btn reader-back" aria-label="작품 홈으로" onclick="exitToMain()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg></button>
       <button class="top-btn icon" id="planBtn" style="display:none" onclick="openIdolBoard()"
               title="일정 보드" aria-label="일정 보드">
         <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h5"/></svg>
         <i class="badge"></i></button>
-      <span id="titleText">낙인의 검 <span style="font-size:0.7em;opacity:0.6">v369</span></span>
+      <div class="scene-heading"><span id="titleText">낙인의 검 </span><div id="sceneBanner" onclick="openIdolBoard()"></div></div>
     </div>
     <div class="top-btns">
       <button class="top-btn" id="autoBtn" onclick="toggleAuto()">AUTO</button>
-      <button class="top-btn" onclick="toggleBacklog()">기록</button>
-      <button class="top-btn" onclick="toggleStatus()">상태</button>
+      <button class="top-btn reader-icon" aria-label="대화 기록" title="대화 기록" onclick="toggleBacklog()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5c3-1 6-.5 9 1.5 3-2 6-2.5 9-1.5v13c-3-1-6-.5-9 1.5-3-2-6-2.5-9-1.5zM12 7v13"/></svg></button>
+
       <button class="top-btn icon" id="moreBtn" onclick="toggleTopMenu(event)" title="더보기" aria-label="더보기"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></button>
     </div>
   </div>
 
   <!-- 상시 피드백: 시간·현재 이벤트 캡슐 + 호감도 델타 토스트 (2026-07-20 UX) -->
   <div id="topMenu">
+  <button onclick="closeTopMenu();toggleStatus()">상태 보기</button>
   <div id="hogwartsMenu" style="display:contents"></div>
   <button onclick="Ambient.toggle(); syncTopMenu()"><span id="tmBgmLabel">배경음악</span><i id="tmBgmDot"></i></button>
   <button onclick="closeTopMenu(); toggleSlots()">세이브 슬롯</button>
@@ -1975,7 +2017,6 @@
   <button onclick="toggleSplitPipe(); syncTopMenu()"><span id="tmSplitLabel">본문 먼저 읽기</span><i id="tmSplitDot"></i></button>
   <button onclick="closeTopMenu(); exitToMain()">홈으로</button>
 </div>
-<div id="sceneBanner" onclick="openIdolBoard()"></div>
 <dialog id="hwCalendar" aria-labelledby="hwCalendarTitle">
   <header class="almanac-cover"><h2 id="hwCalendarTitle">호그와트 달력</h2><button type="button" aria-label="달력 닫기" onclick="this.closest('dialog').close()">×</button></header>
   <div class="almanac-leaves"><div class="almanac-month">
@@ -2013,16 +2054,16 @@
 
   <div id="inputBar">
     <div id="redoBar">
-      <button class="redo-btn" onclick="regenerate()">↺ 다시 답변</button>
-      <button class="redo-btn" onclick="undoInput()">↩ 되돌리기</button>
-      <button class="redo-btn" onclick="openRewind()">시점 되감기</button>
+      <button type="button" class="redo-btn" onclick="regenerate()">↻ 다시 답변</button>
+      <button type="button" class="redo-btn" onclick="undoInput()">↶ 되돌리기</button>
+      <button type="button" class="redo-btn" onclick="openRewind()">« 시점 되감기</button>
     </div>
     <div id="inputRow">
       <!-- contenteditable (not textarea): iOS attaches its form-assistant bar
            (⌄⌄✓) to real form fields only — this way it never appears (Frontia). -->
       <div id="userInput" role="textbox" aria-label="대사 또는 행동 입력" contenteditable="plaintext-only" enterkeyhint="send"
-           data-placeholder="(주위를 둘러본다) 또는 대사 입력" onkeydown="handleKey(event)"></div>
-      <button id="sendBtn" aria-label="대사 보내기">↑</button>
+           data-placeholder="대사나 행동을 입력하세요" onkeydown="handleKey(event)"></div>
+      <button id="sendBtn" aria-label="대사 보내기"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 13-7-4 14-3-5-6-2zM11 14l7-9"/></svg></button>
     </div>
   </div>
 
@@ -2038,19 +2079,19 @@
 
 </div><!-- /#appFrame -->
 
-<script src="pandora-consistency.js?v=369&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/art.js?v=7&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/looks.js?v=1&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/story.js?v=11&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/time.js?v=4&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/profile.js?v=1&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/magic.js?v=5&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/world.js?v=15&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/calendar.js?build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
-<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=48d9fda786afc7921ac3f627a1a83c97a442daa069396c5558614ff7ee4ef602"></script>
+<script src="pandora-consistency.js?v=369&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/art.js?v=7&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/looks.js?v=1&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/story.js?v=11&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/scene-director.js?v=9&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/time.js?v=4&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/profile.js?v=1&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/magic.js?v=5&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/chapter-director.js?v=9&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/world.js?v=15&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/calendar.js?build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/canon-engine.js?v=2&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
+<script src="storypacks/hogwarts-au/canon-bridge.js?v=7&build=57808d79f07aeec13608c216a2de0f514233e1218c4e1ce19b63dc8a4051c643"></script>
 <script>
 // ===== ERROR CATCHER (temp) — show any JS/promise error on screen =====
 function showErr(label, detail) {
@@ -8773,20 +8814,37 @@ function switchMainTab(t) {
 function renderHome() {
   const stories = allStories();
   const ids = Object.keys(stories);
-  const featureIds = ids.includes('hogwarts') ? ['hogwarts', ...ids.filter(id => id !== 'hogwarts')] : ids;
-  const heroEl = document.getElementById('homeHero');
-  heroEl.innerHTML = featureIds.map(id => {
-    const s = stories[id];
-    const cover = catalogCover(s);
-    return `<button type="button" class="hero-slide" onclick="openStoryDetail('${id}')">` +
-      `<span class="feature-art" style="background:${cover}"></span>` +
-      `<span class="hero-info"><span class="feature-genre">${esc(s.genre || storyCat(s))}</span><span class="hero-title">${esc(s.title)}</span>` +
-      `<span class="hero-desc">${esc(s.desc || '')}</span><span class="hero-badge">작품 보기 <i aria-hidden="true">›</i></span></span></button>`;
-  }).join('');
-  document.getElementById('heroDots').hidden = ids.length < 2;
-  updateHeroDots();
   const playing = Object.entries(stories).map(([id,story]) => ({id,story,save:saveInfoFor(id)}))
     .filter(item => item.save).sort((a,b) => (b.save.savedAt || 0) - (a.save.savedAt || 0));
+  const featureEl = document.getElementById('homeHero');
+  const picks = [...new Set([playing[0]?.id,'hogwarts','hero','idol'])].filter(id => stories[id]).slice(0,3);
+  const featureIds = picks.length ? picks : ids.slice(0,3);
+  const features = {
+    hogwarts:{title:'해리포터: 호그와트의 7년',short:'호그와트',lines:['해리포터','호그와트의 7년'],scene:'sd_samples/backgrounds/hogwarts/hogwarts_courtyard.webp',cast:['hermione','harry'],desc:'1991년, 호그와트에서 시작되는 당신의 7년.'},
+    hero:{title:'가면의 시대',short:'가면의 시대',scene:'sd_samples/backgrounds/hero/starforce_lobby.webp',cast:['siren'],desc:'누구를 믿을 것인가. 스타포스가 지배하는 히어로의 세계.'},
+    idol:{title:'무대 뒤 3분',short:'무대 뒤 3분',desc:'무대 뒤에서 다섯 멤버와 함께하는 아이돌 경영 이야기.'}
+  };
+  const titles=[];
+  featureEl.innerHTML = featureIds.map(id => {
+    const story=stories[id], base=BUILTIN_STORIES[id];
+    const feature=base && story.cover===base.cover && story.title===base.title ? features[id] : null;
+    titles.push(feature?.short || story.title);
+    const background=feature?.scene ? coverBg({...story,cover:feature.scene}) : catalogCover(story);
+    const cast=(feature?.cast || []).map(actor=>`<img class="feature-person person-${actor}" src="ui/feature-${actor}.webp" alt="" draggable="false">`).join('');
+    const title=feature?.lines && story.title===feature.title ? feature.lines.map(esc).join('<br>') : esc(story.title);
+    const save=playing.find(item=>item.id===id)?.save;
+    const progress=save && [save.gameState?.time,save.gameState?.location].filter(Boolean).join(' · ');
+    const desc=progress || (feature && story.desc===base.desc ? feature.desc : story.desc || '');
+    const action=save ? 'quickContinue' : 'openStoryDetail';
+    return `<button type="button" class="hero-slide" data-feature="${feature ? id : 'cover'}" onclick="${action}('${id}')"><span class="feature-art" style="background:${background}"></span>` +
+      `<span class="feature-cast" aria-hidden="true">${cast}</span><span class="hero-info"><span class="feature-genre">${esc(story.genre || storyCat(story))}</span>` +
+      `<span class="hero-title">${title}</span><span class="hero-desc">${esc(desc)}</span><span class="hero-badge">${save ? '이어서 플레이' : '작품 보기'} <i aria-hidden="true">→</i></span></span></button>`;
+  }).join('');
+  featureEl.scrollLeft=0;
+  const tabs=document.getElementById('heroDots');
+  tabs.hidden=featureIds.length<2;
+  tabs.innerHTML=titles.map((title,i)=>`<button type="button" onclick="showFeature(${i})">${esc(title)}</button>`).join('');
+  updateHeroDots();
   document.getElementById('rowPlaying').style.display = playing.length ? 'block' : 'none';
   document.getElementById('rowPlayingCards').innerHTML = playing.map(({id,story,save}) =>
     `<button class="resume-card" type="button" onclick="quickContinue('${id}')"><span class="resume-art" style="background:${catalogCover(story)}"></span>` +
@@ -8872,15 +8930,12 @@ function coverBg(s) {
 
 function updateHeroDots() {
   const el = document.getElementById('homeHero');
-  const count = el.children.length;
   const index = Math.round(el.scrollLeft / (el.clientWidth || 1));
-  document.getElementById('heroPosition').textContent = (count ? index + 1 : 0) + ' / ' + count;
-  document.getElementById('heroPrev').disabled = index <= 0;
-  document.getElementById('heroNext').disabled = index >= count - 1;
+  [...document.querySelectorAll('#heroDots button')].forEach((button,i) => button.setAttribute('aria-pressed', String(i === index)));
 }
-function moveFeature(direction) {
-  const el = document.getElementById('homeHero');
-  el.scrollBy({ left: direction * el.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+function showFeature(index) {
+  const el=document.getElementById('homeHero');
+  el.scrollTo({left:el.clientWidth * index,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
 }
 
 function renderPlays() {
@@ -10933,6 +10988,8 @@ function setNameplate(name, charId) {
   // Protagonist has no face sprite — never show an avatar for the player
   if (name && name === playerName) charId = null;
   currentSpeakerCharId = charId || null;
+  const reading = document.getElementById('dialogueContent');
+  if (reading) reading.scrollTop = 0;
   speakerNameEl.textContent = name || '';
   if (charId && CHARACTERS[charId]) {
     const num = charId.replace('f', '');
@@ -11827,7 +11884,6 @@ function restoreAndReplayInner(save, checkTimeflow) {
   document.getElementById('continueHint').style.display = 'none';
   const staleChoices = document.getElementById('choiceBox');
   if (staleChoices) staleChoices.remove();
-  resetDialogueLift();
   window._startPhase = 'playing';   // 이어하기는 본편 진행 중 — 시작 플로우 상태머신 스킵
   // ★세이브 로드도 턴 경계다(2026-08-18 감사 확증) — 저장 직전 마지막 줄과 불러온 뒤 첫 줄이
   //   우연히 같으면 정당한 줄이 중복차단에 걸릴 수 있었다. 히스토리는 잘라도(컷) 이 두 키는
@@ -12019,16 +12075,9 @@ async function beginStory() {
 
 // ===== THINKING INDICATOR =====
 function showThinking() {
-  // Frontia-style: show the player's own line in a centered pill with animated
-  // dots (no atmospheric filler text).
   const pill = document.getElementById('genPill');
-  const gt = pill.querySelector('.gen-text');
-  gt.textContent = window._genText || '';
-  gt.style.display = window._genText ? 'block' : 'none';
-  pill.querySelector('.gen-dots').style.marginTop = window._genText ? '8px' : '2px';
+  pill.querySelector('.gen-text').textContent = window._genText || '';
   pill.style.display = 'block';
-  setNameplate('···', null);
-  dialogueText.innerHTML = '';
   document.getElementById('continueHint').style.display = 'none';
 }
 
@@ -13177,7 +13226,6 @@ async function callGemini(activeCharIds = [], retryCount = 0) {
   // Hide input while the AI is generating/outputting
   inputBar.style.display = 'none';
   inputMode = false;
-  resetDialogueLift();
   const cbOld = document.getElementById('choiceBox');
   if (cbOld) cbOld.remove();
 
@@ -15166,14 +15214,14 @@ function setupInputHandlers() {
   }, { passive: true });
 
   document.addEventListener('touchend', (e) => {
-    if (isInteractive(e.target)) return;
+    if (!document.getElementById('gameScreen').getClientRects().length || isInteractive(e.target) || document.querySelector('dialog[open]')) return;
     const t = e.changedTouches[0];
-    const dy = Math.abs(t.clientY - touchStartY);
-    const dxAbs = Math.abs(t.clientX - touchStartX);
-    if (dy > 60 || dxAbs > 80) return; // ignore scrolls/drags, only real taps
+    if (Math.abs(t.clientY-touchStartY)>12 || Math.abs(t.clientX-touchStartX)>16) return;
+    // A tap can reveal controls under the same finger. Consume its synthetic click.
+    if (e.cancelable) e.preventDefault();
     handleTap(t.clientX);
     lastHandledTime = Date.now();
-  });
+  }, {passive:false});
 
   document.addEventListener('click', (e) => {
     if (Date.now() - lastHandledTime < 500) return; // touch already handled this
@@ -15182,11 +15230,20 @@ function setupInputHandlers() {
   });
 
   document.addEventListener('keydown', (e) => {
-    if (document.activeElement === userInput) return;
+    if (document.activeElement === userInput || document.activeElement?.closest('#inputBar,dialog,#topMenu')) return;
+    if (!document.getElementById('gameScreen').getClientRects().length) return;
     if (e.key === 'ArrowLeft') historyBack();
     else if (e.key === 'ArrowRight') historyForward();
   });
 
+  const dock = document.getElementById('inputBar');
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--reply-height', dock.offsetHeight+'px');
+  }).observe(dock);
+  const topBar = document.getElementById('topBar');
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--choice-top', (topBar.offsetHeight + 2) + 'px');
+  }).observe(topBar);
   setupViewportHeight();
 }
 
@@ -15376,7 +15433,6 @@ function historyBack() {
     // Clear the screen so old dialogue is fully readable
     if (cb) cb.style.display = 'none';
     inputBar.style.display = 'none';
-    resetDialogueLift();
   }
   if (historyPos > 0) {
     let np = historyPos - 1;
@@ -15454,7 +15510,7 @@ function exitHistory() {
   // Restore the input/choices that were hidden for history viewing
   const cb = document.getElementById('choiceBox');
   if (cb && p.choiceVisible) cb.style.display = 'flex';
-  if (p.inputVisible) { inputBar.style.display = 'flex'; liftDialogueForInput(); }
+  if (p.inputVisible) inputBar.style.display = 'flex';
 }
 
 // ===== CHOICES =====
@@ -15622,7 +15678,7 @@ function showChoices(choices) {
   }
   // 판정 아님 — placeholder 원복
   try { const _in = document.getElementById('userInput');
-    if (_in && _in.dataset.placeholder !== '(주위를 둘러본다) 또는 대사 입력') _in.dataset.placeholder = '(주위를 둘러본다) 또는 대사 입력'; } catch {}
+    if (_in && _in.dataset.placeholder !== '대사나 행동을 입력하세요') _in.dataset.placeholder = '대사나 행동을 입력하세요'; } catch {}
   // ★모델이 **명시적으로 빈 배열**을 준 턴은 "지금은 선택지를 주지 말라"는 지시다.
   //   프롬프트가 '전투·충돌·판정 장면에서는 반드시 빈 배열'을 요구하는데, 앱이 보장 선택지로
   //   덮어써서 대련 한복판에 '▶ 계속 — 장면을 이어간다'가 뜨고 있었다(2026-08-18 유저 스샷).
@@ -15688,41 +15744,29 @@ function showChoices(choices) {
   document.getElementById('continueHint').style.display = 'none';
   inputBar.style.display = 'flex';
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
-  document.getElementById('redoBar').style.display = hasHistory ? 'flex' : 'none';
-  liftDialogueForInput();
+  const actions=document.getElementById('redoBar');
+  actions.style.display = hasHistory ? 'flex' : 'none';
 
   const choiceDiv = document.createElement('div');
   choiceDiv.id = 'choiceBox';
-  choiceDiv.style.cssText = `
-    position:absolute; top:var(--choiceTop, calc(50px + env(safe-area-inset-top))); left:0; right:0;
-    display:flex; flex-direction:column; align-items:center;
-    gap:6px; z-index:18; padding:0 14px;
-    max-height:55%; overflow-y:auto;
-    pointer-events:none;
-  `;
-
-  layoutTopStack();
+  choiceDiv.setAttribute('role','group');
+  choiceDiv.setAttribute('aria-label','선택지');
   choices.forEach((choice, i) => {
     const btn = document.createElement('button');
     btn.innerHTML = `<span class="choice-num">${i + 1}</span><span></span>`;
     btn.lastElementChild.textContent = choiceDisplayText(choice);
     btn.className = 'choice-btn';
-    btn.style.pointerEvents = 'auto';   // 컨테이너는 투명 통과, 버튼만 받는다
     btn.onclick = () => selectChoice(choice);
     choiceDiv.appendChild(btn);
   });
 
   // No "직접 입력" button — the input box below is always available for free input
   document.getElementById('gameScreen').appendChild(choiceDiv);
-}
-
-// Lift dialogue text above the input bar so it stays readable
-function liftDialogueForInput() {
-  const hasHistory = gameHistory.some(h => h.role === 'assistant');
-  dialogueBox.style.paddingBottom = hasHistory ? '128px' : '96px';
-}
-function resetDialogueLift() {
-  dialogueBox.style.paddingBottom = '';
+  const measure = new ResizeObserver(([entry]) => {
+    if (!choiceDiv.isConnected) { measure.disconnect(); return; }
+    document.documentElement.style.setProperty('--choice-height', entry.contentRect.height + 'px');
+  });
+  measure.observe(choiceDiv);
 }
 
 // ===== INPUT MODE =====
@@ -15734,8 +15778,8 @@ function enterInputMode() {
   const hasHistory = gameHistory.some(h => h.role === 'assistant');
   const failedFirst = gameHistory[gameHistory.length - 1]?.role === 'user'
     && (!window._startPhase || window._startPhase === 'playing');
-  document.getElementById('redoBar').style.display = hasHistory || failedFirst ? 'flex' : 'none';
-  liftDialogueForInput();
+  const actions=document.getElementById('redoBar');
+  actions.style.display = hasHistory || failedFirst ? 'flex' : 'none';
 }
 
 function handleKey(e) {
@@ -16567,23 +16611,6 @@ function toggleSplitPipe() {
     showStatToast(c.splitPipe === false ? '요청 절약 — 본문과 상태를 한 번에 처리합니다' : '본문 먼저 읽기 — 상태 정리는 뒤에서 이어집니다');
   } catch {}
 }
-// ★상단 적층(상단바 → 배너 → 선택지)을 실측으로 쌓는다.
-//   하드코딩 px으로 두면 버튼이 줄바꿈되거나 배너가 뜰 때마다 서로를 덮는다
-//   (2026-07-26: 배너가 버튼을 덮음 → 배너가 1번 선택지를 덮음, 같은 원인 두 번).
-function layoutTopStack() {
-  try {
-    const root = document.documentElement;
-    const tb = document.getElementById('topBar');
-    const bn = document.getElementById('sceneBanner');
-    const tbH = tb ? tb.getBoundingClientRect().height : 44;
-    root.style.setProperty('--bannerTop', (tbH + 4) + 'px');
-    const bnH = (bn && getComputedStyle(bn).display !== 'none') ? bn.getBoundingClientRect().height : 0;
-    root.style.setProperty('--choiceTop', (tbH + 4 + (bnH ? bnH + 6 : 2)) + 'px');
-  } catch {}
-}
-window.addEventListener('resize', layoutTopStack);
-window.addEventListener('orientationchange', () => setTimeout(layoutTopStack, 220));
-
 function updateSceneBanner() {
   const el = document.getElementById('sceneBanner');
   if (!el) return;
@@ -16605,18 +16632,17 @@ function updateSceneBanner() {
     pb.style.display = on ? '' : 'none';
     if (on) pb.classList.toggle('need', IDOL_SIM.needPlan(gameState.idol));
   }
-  if (!t && !ev && !biz) { el.style.display = 'none'; layoutTopStack(); return; }
+  if (!t && !ev && !biz) { el.style.display = 'none'; return; }
   if(STORY.id==='hogwarts' && gameState.hogwarts?.house && window.PandoraHogwartsCalendar){
     const btn=document.createElement('button');btn.className='hwOpen';btn.type='button';
-    const name=document.createElement('b');name.textContent='달력';
+    const name=document.createElement('b');name.className='date-glyph';name.setAttribute('aria-hidden','true');
     btn.append(name,document.createTextNode(t+(ev?' · '+ev:'')));
     btn.setAttribute('aria-label','호그와트 달력 열기 · '+t);
     btn.onclick=e=>{e.stopPropagation();openHogwartsCalendar();};
-    el.replaceChildren(btn);el.style.display='block';layoutTopStack();return;
+    el.replaceChildren(btn);el.style.display='block';return;
   }
   el.innerHTML = [biz, t ? `🕐 ${t}` : '', ev ? `<span class="ev">📌 ${ev}</span>` : ''].filter(Boolean).join(' · ');
   el.style.display = 'block';
-  layoutTopStack();
 }
 // 구 세이브 보정 — 시스템이 계속 붙다 보니 옛 세이브엔 없는 필드가 생긴다.
 //   진행 수치(자금·팬·주차)는 건드리지 않고 **빠진 구조만** 채운다.
