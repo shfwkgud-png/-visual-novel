@@ -344,7 +344,7 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
   const hairlineVersions = { malfoy: 'v4', cho: 'v7', maxime: 'v6' };
   for (const [scene, setting, moment, actors] of scenes) {
     for (const actor of actors.split(' ')) {
-      const version = scene === 'hairline' ? (hairlineVersions[actor] || 'v2') : actor === 'malfoy' && scene === 'resting' ? 'v4' : actor === 'malfoy' && scene === 'cheek_pull' ? 'v2' : 'v1';
+      const version = scene === 'hairline' ? (hairlineVersions[actor] || 'v2') : actor === 'malfoy' && scene === 'resting' ? 'v4' : actor === 'malfoy' && scene === 'cheek_pull' ? 'v3' : 'v1';
       art.eventCGs[actor + '/' + scene] = {
         actor, setting, moment, kind: 'adult', outfit: 'default',
         portrait: 'sd_samples/characters/hogwarts/' + actor + '/2d/' + art.sprites[actor].normal + '.webp',

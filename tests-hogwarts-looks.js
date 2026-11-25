@@ -102,7 +102,7 @@ for(const actor of 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah 
   }
 }
 assert.equal(story.eventCGs['malfoy/resting'].url,q+'malfoy/resting_v4.webp');
-assert.equal(story.eventCGs['malfoy/cheek_pull'].url,q+'malfoy/cheek_pull_v2.webp');
+assert.equal(story.eventCGs['malfoy/cheek_pull'].url,q+'malfoy/cheek_pull_v3.webp');
 const adultPrompt=L.prompt(story.characters,story.eventCGs,before);
 assert(adultPrompt.includes('/hair_tie, /cheek_pull, /resting, /hairline'));
 assert(adultPrompt.includes('/hair_tie=상대가 머리를 묶는 순간'));
