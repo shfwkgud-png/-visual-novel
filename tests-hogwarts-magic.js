@@ -84,6 +84,22 @@ for(const [date,number] of [['1991-09-03',1],['1991-09-17',3],['1991-09-24',4]])
 }
 const elementary=M.agenda(legacy,'1991-09-17'),nextLesson=M.agenda(legacy,'1991-09-24');
 assert.equal(M.agenda(legacy,'1991-09-23')[0].unit.spell,'lumos');
+const timetablePrompt=M.context(legacy,{date:'1991-09-23',slot:1});
+assert.match(timetablePrompt,/9월 24일 화요일 아침 변신술 \/ 오후 약초학/);
+assert.match(timetablePrompt,/9월 25일 수요일 아침 마법의 역사 \/ 오후 어둠의 마법 방어술/);
+assert.match(timetablePrompt,/9월 27일 금요일 아침 비행 \/ 오후 천문학/);
+const incorrect='(시간표를 짚으며) 방어술은 내일 화요일 오전이야. 수요일엔 약초학이랑 천문학이 배정되어 있잖아. 오늘 오후에 마법약 수업 끝나면 내일 방어술 예습을 하자.';
+const correct=text=>M.correctSchoolDialogue(legacy,'1991-09-23',text);
+const repaired=correct(incorrect);
+assert.equal(repaired,'(시간표를 짚으며) 9월 24일 화요일 오전에는 변신술 수업이 있어. 9월 25일 수요일에는 아침 마법의 역사, 오후 어둠의 마법 방어술 수업이 있어. 오늘 오후에 마법약 수업 끝나면 내일 수업 예습을 하자.');
+assert.equal(correct(repaired),repaired,'the stream and the saved turn may both process the same text');
+assert.equal(correct('내일 수요일 오전은 변신술이야.'),'9월 24일 화요일 오전에는 변신술 수업이 있어.');
+assert.equal(correct('9월 24일 오후엔 변신술 수업이 있어.'),'9월 24일 화요일 오후에는 약초학 수업이 있어.');
+assert.equal(correct('토요일 아침엔 주문학 수업이 있어요.'),'9월 28일 토요일 아침에는 정규 수업이 없어요.');
+for(const line of ['9월 24일 오후에 약초학 수업이 있습니다.','내일 수업 뒤에 따로 방어술을 연습할래?',
+  '내일 오전에 방어술을 개인 지도할 거예요.','수요일엔 도서관에서 보자.']){
+  assert.equal(correct(line),line);
+}
 assert(M.context(legacy,{date:'1991-09-24',slot:0}).includes(elementary[0].unit.topic));
 assert.match(M.context(legacy,{date:'1996-09-03',slot:0}),/새 학년의 첫 시간이며 과목 입문을 다시 연출하지 않는다/);
 // A different number or date on the same assignment is still a repeated lesson.

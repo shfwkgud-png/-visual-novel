@@ -870,7 +870,9 @@ async function longSessionChecks(ctx) {
 const HOGWARTS_CAPTURE_SCENE='루핀은 결박된 페티그루의 지팡이를 회수했다. 도주를 막은 일행은 목격 증거와 함께 그를 마법부 경비대에 인계했다.';
 function hogwartsArtReply(kind, user = '', body = {}) {
   if(user.endsWith('안뜰에서 도서관으로 간다.')){
-    if(kind==='main')return {background:'library',narration:'도서관 문을 열고 안으로 들어간다.',dialogue:[]};
+    if(kind==='main')return {background:'library',narration:'도서관 문을 열고 안으로 들어간다.',dialogue:[
+      {char_id:'hermione',speaker:'헤르미온느',text:'어둠의 마법 방어술은 내일 화요일 오전이야. 수요일엔 약초학이랑 천문학이 배정되어 있잖아.'}
+    ]};
     if(kind==='state')return {state_update:{},choices:['서가를 살핀다'],chronicle:[]};
   }
   if(user.includes('목요일 오후 도서관에서 그 책을 같이 볼래?') || user.includes('도서관 약속 · 파드마 파틸')){
@@ -1676,6 +1678,18 @@ async function hogwartsSocialCheck(ctx){
     const arrival=net.prompts.findLast(p=>p.kind==='main').messages.map(m=>m.content).join('\n');
     assert.match(arrival,/실제 장면 기록에 이미 나온 수업: 변신술/);
     assert.match(arrival,/마법 주문학 6차시/);
+    assert.match(arrival,/9월 24일 화요일 아침 변신술 \/ 오후 약초학/);
+    const scheduleTurn=await page.evaluate(()=>({
+      history:JSON.parse(gameHistory.at(-1).content).dialogue.map(line=>line.text).join(' '),
+      visible:dialogueLog.filter(line=>line.char_id==='hermione').map(line=>line.text).join(' '),
+      date:gameState.hogwarts.date
+    }));
+    for(const text of [scheduleTurn.history,scheduleTurn.visible]){
+      assert.match(text,/9월 24일 화요일 오전에는 변신술 수업이 있어/);
+      assert.match(text,/9월 25일 수요일에는 아침 마법의 역사, 오후 어둠의 마법 방어술 수업이 있어/);
+      assert.doesNotMatch(text,/방어술은 내일|약초학이랑 천문학/);
+    }
+    assert.equal(scheduleTurn.date,'1991-09-23');
     assert.match(arrival,/고양이가 교수로 변하는 첫 시범과 자기소개를 다시 시작하지 않는다/);
     assert.match(arrival,/도착한 뒤에만 마주칠 수 있는 사람/);assert.match(arrival,/프레드 위즐리\(fred\)/);
     // Put Padma back at her table for the pre-social save/appointment path.

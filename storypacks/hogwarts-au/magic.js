@@ -381,6 +381,49 @@
       return {slot,unit,label:unit?lessonLabel(unit):'자유활동 · 정해진 수업 없음'};
     });
   }
+  const schoolWeekdays='일월화수목금토';
+  const schoolPeriods=['아침','오후'];
+  const dateKey=date=>date.toISOString().slice(0,10);
+  const dateCaption=date=>(date.getUTCMonth()+1)+'월 '+date.getUTCDate()+'일 '+schoolWeekdays[date.getUTCDay()]+'요일';
+  const schoolDate=(from,offset)=>new Date(Date.parse(from+'T00:00:00Z')+offset*86400000);
+  const subjectNames=new Map([...SUBJECTS.map(({name,id})=>[name,id]),
+    ['방어술','defense'],['주문학','charms'],['마법 역사','history'],['마법약학','potions'],['비행술','flying']]);
+  const subjectPattern=[...subjectNames.keys()].sort((a,b)=>b.length-a.length).join('|');
+  const subjectMention=new RegExp('(?:^|[^가-힣])('+subjectPattern+')(?=$|[^가-힣]|[은는이가을를와과도에])','gu');
+  const studyAhead=new RegExp('(내일|모레)\\s+('+subjectPattern+')(?=\\s+예습)','gu');
+  function correctSchoolDialogue(s,date,text){
+    const today=schoolDate(date,0);
+    if(typeof text!=='string'||!valid(s)||!Number.isFinite(+today))return text;
+    return text.replace(/[^.!?。！？\n]+[.!?。！？]*/gu,sentence=>{
+      if(/[?？]|지난\s*(?:주|달|수업)|다음\s*주|연기|휴강|보충|특강|개인\s*지도|(?:다고|라고)\s*(?:들었|했|말했)|아니라|대신|없(?:어|다고|습니다)/.test(sentence))return sentence;
+      // shortcut: correct dated timetable claims and explicit preparation for a scheduled class, not arbitrary RP plans.
+      const dates=[...sentence.matchAll(/(?:^|[^가-힣])(?:(오늘|내일|모레)(?:\s*([일월화수목금토])요일)?|(\d{1,2})월\s*(\d{1,2})일|([일월화수목금토])요일)/gu)];
+      const periods=[...sentence.matchAll(/(?:^|[^가-힣])(아침|오전|오후|저녁|밤)(?=$|[^가-힣]|[은는이가에엔])/gu)];
+      const announced=/배정|시간표|수업(?:이|은|는)?\s*(?:있|열|시작|예정)|(?:이야|이잖아|이에요|예요|입니다|있어|있지|있습니다)[.!。！\s]*$/.test(sentence);
+      const subjects=[...sentence.matchAll(subjectMention)].map(m=>subjectNames.get(m[1]));
+      if(dates.length===1&&periods.length<=1&&announced&&subjects.length){
+        const [,relative,claimedDay,month,day,weekday]=dates[0];
+        const offset=relative?['오늘','내일','모레'].indexOf(relative):(schoolWeekdays.indexOf(weekday)-today.getUTCDay()+7)%7;
+        const target=month ? Array.from({length:8},(_,i)=>schoolDate(date,i))
+          .find(d=>d.getUTCMonth()+1===Number(month)&&d.getUTCDate()===Number(day)) : schoolDate(date,offset);
+        if(!target)return sentence;
+        const period=periods[0]?.[1];
+        const slot=period?['아침','오전'].includes(period)?0:period==='오후'?1:2:null;
+        const lessons=agenda(s,dateKey(target)).filter(row=>row.unit&&(slot===null||row.slot===slot));
+        if(subjects.some(subject=>!lessons.some(row=>row.unit.subject===subject))||claimedDay&&claimedDay!==schoolWeekdays[target.getUTCDay()]){
+          const lead=sentence.match(/^\s*(?:\([^)]*\)\s*)?/u)[0];
+          const polite=/(?:요|습니다)[.!。！\s]*$/.test(sentence);
+          const when=dateCaption(target)+(period?' '+period:'');
+          const classes=lessons.map(row=>(slot===null?schoolPeriods[row.slot]+' ' : '')+row.unit.name).join(', ');
+          return lead+when+'에는 '+(classes?classes+' 수업이 '+(polite?'있어요.':'있어.'):(polite?'정규 수업이 없어요.':'정규 수업이 없어.'));
+        }
+      }
+      return sentence.replace(studyAhead,(fragment,relative,name)=>{
+        const target=schoolDate(date,relative==='내일'?1:2);
+        return agenda(s,dateKey(target)).some(row=>row.unit?.subject===subjectNames.get(name))?fragment:relative+' 수업';
+      });
+    });
+  }
   const teachers={mcgonagall:'transfiguration',flitwick:'charms',snape:'potions',sprout:'herbology',
     binns:'history',sinistra:'astronomy',hooch:'flying'};
   const teacherNames={맥고나걸:'transfiguration',플리트윅:'charms',스프라우트:'herbology',
@@ -416,9 +459,17 @@
     }
   }
   function schoolContext(s,ctx){
-    const date=ctx.date||s.lastDate,year=schoolYear(date),plan=schoolPlan(s,year);
+    const date=ctx.date||s.lastDate;
+    const today=schoolDate(date,0);
+    if(!Number.isFinite(+today))return '기준 날짜가 확정된 뒤 달력에서 수업 일정을 확인한다.';
+    const year=schoolYear(date),plan=schoolPlan(s,year);
     const schedule=agenda(s,date);
-    const lines=[schedule.map(u=>(u.slot?'오후':'아침')+' '+u.label).join(' / ')||'정규 수업 없음'];
+    const lines=[dateCaption(today)+' '+(schedule.map(u=>schoolPeriods[u.slot]+' '+u.label).join(' / ')||'정규 수업 없음')];
+    const forecast=Array.from({length:7},(_,i)=>{
+      const target=schoolDate(date,i+1),lessons=agenda(s,dateKey(target));
+      return dateCaption(target)+' '+(lessons.map(row=>schoolPeriods[row.slot]+' '+(row.unit?.name||'공강')).join(' / ')||'정규 수업 없음');
+    });
+    lines.push('학사 달력에 확정된 앞으로 7일: '+forecast.join(' | ')+'. 정규 수업과 예습 일정은 이 표를 그대로 따른다. 대사에서 수업 날짜를 안내할 때 한 문장에 하루씩 말하고, 시간대는 아침과 오후로 표현한다. 이 범위 밖은 달력을 확인한다.');
     const seen=SUBJECTS.filter(x=>s.seenClasses?.[x.id]).map(x=>x.name);
     if(seen.length)lines.push('실제 장면 기록에 이미 나온 수업: '+seen.join(', ')+'. 그 수업의 첫 만남·첫 시범을 다시 열지 않는다.');
     const current=schedule.find(u=>u.slot===ctx.slot);
@@ -635,6 +686,6 @@
       +(PROFILE?PROFILE.context(s):'');
   }
   return Object.freeze({SUBJECTS,SPELLS,SPELL_BY_ID,ALIASES,createState,valid,schoolYear,rank,courseAllowed,
-    lesson,curriculum,agenda,recordClasses,restoreClasses,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
+    lesson,curriculum,agenda,correctSchoolDialogue,recordClasses,restoreClasses,passiveSchool,examGrade,elective,seekDarkAccess,certify,cast,page,availableTraining,practiceChoices,
     findIncantation,parseCommand,parseFreeCast,context,LESSON_THRESHOLD});
 });
