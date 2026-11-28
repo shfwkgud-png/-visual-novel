@@ -89,6 +89,17 @@ test('split scene contract contains only scene fields and keeps time/combat owne
   assert.ok(!c.includes('## 상태 기록 계약'));
   assert.ok(c.includes('state_update, choices, chronicle은 별도 기록관'));
 });
+test('Hogwarts main requests explicitly allow CG metadata in both scene modes', () => {
+  for (const split of [true, false]) {
+    const request = captureMain({ storyId: 'hogwarts', split });
+    const contract = request.system.split('## 이번 호출의 출력 계약').at(-1);
+    assert.equal(schemaFrom(contract).visuals, null);
+    assert.ok(contract.includes('visuals에는'));
+    assert.ok(contract.includes('cgConsent는 연애(romance) 삽화에만'));
+    if (split) assert.match(contract, /출력 키는 [^\n]*visuals/);
+  }
+  assert.equal(schemaFrom(contracts().sceneOutputContract(true)).visuals, undefined);
+});
 test('integrated scene mode keeps state, choices and chronicle in a valid JSON example', () => {
   const c = contracts().sceneOutputContract(false, true), sample = schemaFrom(c);
   assert.deepEqual(copy(sample.state_update), {});

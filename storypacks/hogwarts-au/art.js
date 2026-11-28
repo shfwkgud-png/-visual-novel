@@ -353,3 +353,22 @@ window.PANDORA_HOGWARTS_ART.eventCGs = {
     }
   }
 }
+
+// Only user-selected bathroom poses with a matching local asset.
+{
+  const art = window.PANDORA_HOGWARTS_ART;
+  const bathScenes = [
+    ['bath_reclining', '반장 욕실 욕조에 옆으로 기대 앉은 모습', 'malfoy hermione luna cho fleur hannah katie lavender marietta narcissa bellatrix myrtle'],
+    ['bath_witcher', '반장 욕실 욕조 양쪽에 팔을 걸치고 다리를 앞으로 뻗은 모습', 'malfoy hermione cho daphne fleur ginny hannah katie marietta alicia bellatrix maxime myrtle'],
+    ['bath_manga', '반장 욕실 욕조에서 두 손을 머리 뒤로 받친 모습', 'malfoy crabbe goyle hermione cho daphne fleur ginny hannah katie lavender marietta alicia narcissa bellatrix maxime myrtle'],
+  ];
+  for (const [scene, setting, actors] of bathScenes) {
+    for (const actor of actors.split(' ')) {
+      art.eventCGs[actor + '/' + scene] = {
+        actor, setting, kind: 'bath', outfit: 'default',
+        portrait: 'sd_samples/characters/hogwarts/' + actor + '/2d/' + art.sprites[actor].normal + '.webp',
+        url: 'sd_samples/cg/hogwarts/' + actor + '/' + scene + '_v1.webp',
+      };
+    }
+  }
+}

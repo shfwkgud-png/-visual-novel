@@ -70,11 +70,15 @@ assert(!L.prompt(custom,scenes,before).includes('hermione/together('));
 const privateScene={...scenes,'hermione/facial':{
   actor:'hermione',portrait:chars.hermione.img,outfit:'default',kind:'adult',url:'r2:nsfw_hogwarts_hermione_facial'
 }};
-const adult={cg:'hermione/facial',dialogue:[{char_id:'hermione'}],visuals:{action:'adult',cgPartner:'player',cgConsent:'mutual'}};
+const adult={cg:'hermione/facial',dialogue:[{char_id:'hermione'}],visuals:{action:'adult',cgPartner:'player'}};
 assert.equal(L.scene(before,adult,'library',chars,privateScene,[]).cg,'hermione/facial');
-assert.equal(L.scene(before,{...adult,visuals:{cgPartner:'player',cgConsent:'mutual'}},'library',chars,privateScene,[]).cg,null);
-assert.equal(L.scene(before,{...adult,visuals:{action:'adult',cgPartner:'other',cgConsent:'mutual'}},'library',chars,privateScene,[]).cg,null);
+assert.equal(L.scene(before,{...adult,visuals:{cgPartner:'player'}},'library',chars,privateScene,[]).cg,null);
+assert.equal(L.scene(before,{...adult,visuals:{action:'adult',cgPartner:'other'}},'library',chars,privateScene,[]).cg,null);
 assert.equal(L.scene(before,{...adult,dialogue:[]},'library',chars,privateScene,[]).cg,null);
+const silentAdult={...adult,dialogue:[{char_id:null,onstage:['hermione']}]};
+assert.equal(L.scene(before,silentAdult,'library',chars,privateScene,[]).cg,'hermione/facial');
+assert.equal(L.scene(before,{...silentAdult,visuals:{...adult.visuals,cgConsent:null}},'library',chars,privateScene,[]).cg,'hermione/facial');
+assert.equal(L.scene(before,{...silentAdult,dialogue:[{char_id:null,onstage:['ron']}]},'library',chars,privateScene,[]).cg,null);
 assert.equal(L.scene(before,adult,'library',custom,privateScene,[]).cg,null);
 assert.equal(L.url('hermione/facial',privateScene,chars),'r2:nsfw_hogwarts_hermione_facial');
 assert.equal(L.url('hermione/facial',{'hermione/facial':{...privateScene['hermione/facial'],url:'r2:nsfw_hogwarts_harry_facial'}},chars),null);
@@ -95,8 +99,9 @@ for(const actor of 'alicia bellatrix cho crabbe daphne fleur ginny goyle hannah 
     assert.equal(entry.portrait,story.characters[actor].img,key);
     if(scene==='hairline') assert.equal(entry.url,q+actor+'/hairline_'+({malfoy:'v4',cho:'v7',maxime:'v6'}[actor]||'v2')+'.webp',key);
     assert(fs.existsSync(entry.url),key+' asset missing');
-    const sample={cg:key,dialogue:[{char_id:actor}],visuals:{action:'adult',cgPartner:'player',cgConsent:'mutual',cgMoment:moment}};
+    const sample={cg:key,dialogue:[{char_id:actor}],visuals:{action:'adult',cgPartner:'player',cgMoment:moment}};
     assert.equal(L.scene(before,sample,'library',story.characters,story.eventCGs,[]).cg,key);
+    assert.equal(L.scene(before,{...sample,dialogue:[{char_id:null,onstage:[actor]}]},'library',story.characters,story.eventCGs,[]).cg,key);
     assert.equal(L.scene(before,{...sample,visuals:{...sample.visuals,cgMoment:'before_other'}},'library',story.characters,story.eventCGs,[]).cg,null);
     assert.equal(L.scene(before,{...sample,visuals:{...sample.visuals,action:'romance'}},'library',story.characters,story.eventCGs,[]).cg,null);
   }
@@ -109,6 +114,22 @@ assert(adultPrompt.includes('/hair_tie=상대가 머리를 묶는 순간'));
 assert(adultPrompt.includes('/cheek_pull=머리를 묶은 뒤, 헤어라인 전'));
 assert(adultPrompt.includes('cgMoment="after_hair_tie"'));
 assert(adultPrompt.includes('cgMoment="before_bed"'));
+assert(!adultPrompt.split('\n').find(line=>line.startsWith('성인용 CG는')).includes('cgConsent'));
+const bathEntries=Object.entries(story.eventCGs).filter(([,entry])=>entry.kind==='bath');
+assert.equal(bathEntries.length,42);
+assert.deepEqual(bathEntries.filter(([,entry])=>entry.actor==='luna').map(([key])=>key),['luna/bath_reclining']);
+assert.equal(story.eventCGs['crabbe/bath_witcher'],undefined);
+for(const [key,entry] of bathEntries){
+  const sample={cg:key,dialogue:[{char_id:null,onstage:[entry.actor]}],visuals:{action:'bathing'}};
+  assert.equal(L.url(key,story.eventCGs,story.characters),entry.url,key);
+  assert(fs.existsSync(entry.url),key+' asset missing');
+  assert.equal(L.scene(before,sample,'prefects_bathroom',story.characters,story.eventCGs,[]).cg,key);
+  assert.equal(L.scene(before,sample,'library',story.characters,story.eventCGs,[]).cg,null);
+  assert.equal(L.scene(before,{...sample,visuals:{}},'prefects_bathroom',story.characters,story.eventCGs,[]).cg,null);
+  assert.equal(L.scene(before,{...sample,dialogue:[]},'prefects_bathroom',story.characters,story.eventCGs,[]).cg,null);
+}
+assert(adultPrompt.includes('visuals.action="bathing"'));
+assert(!adultPrompt.includes('luna/bath_manga'));
 const html=fs.readFileSync('./novel.html','utf8');
 const cgFn=html.match(/function cgUrlFor\(name\) \{[\s\S]*?\n\}/)?.[0];
 assert(cgFn);
@@ -118,4 +139,9 @@ const resolved=vm.runInNewContext(cgFn+'\ncgUrlFor("hermione/facial")',{
 });
 assert(resolved.includes('name=nsfw_hogwarts_hermione_facial'));
 assert(resolved.includes('t=test-token'));
+const bathUrl=vm.runInNewContext(cgFn+'\ncgUrlFor("malfoy/bath_manga")',{
+  STORY:{id:'hogwarts',eventCGs:story.eventCGs},CHARACTERS:story.characters,
+  window:{PandoraHogwartsLooks:L}
+});
+assert.equal(bathUrl,q+'malfoy/bath_manga_v1.webp');
 console.log('PASS Hogwarts looks: wardrobe fallback, spectators, player-only mutual CG, appearance consistency, history snapshots and legacy defaults');
