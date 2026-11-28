@@ -758,6 +758,16 @@
   customBgs
 }, {
     characters,
+    auReferenceRule: '\n[호그와트 AU의 인물 지칭] 드레이코 말포이(malfoy)는 루시우스와 나시사의 딸인 성인 여성이다. 원작, 과거 대화, 요약의 남성 지칭보다 이 설정이 우선한다. 나레이션·대사·선택지에서는 말포이 또는 드레이코로 지칭하고, 대명사가 필요하면 그녀를 쓴다. 집안 사람이 격식을 갖춰 부르는 상황이라면 아가씨라고 한다. 말포이에게 그·아들·도련님을 쓰지 않는다.',
+    normalizeReferences(text) {
+      if (typeof text !== 'string') return text;
+      // shortcut: correct explicit references to Draco; an unlabelled pronoun can refer to another person.
+      return text
+        .replace(/((?:루시우스|나시사)\s+말포이\s*도련님)|((?:드레이코(?:\s+말포이)?|말포이(?:\s+가문의)?)\s*)도련님/g,
+          (original,other,draco) => other ? original : draco+'아가씨')
+        .replace(/((?:루시우스|나시사)\s+말포이[,，]\s*그)|((?:드레이코(?:\s+말포이)?|말포이)[,，]\s*)그(?=(?:는|가|에게|를|의|도|와)(?:\s|[,.!?]|$))/g,
+          (original,other,draco) => other ? original : draco+'그녀');
+    },
     eventCGs: { ...(art.eventCGs || {}), ...adultCGs },
     worldLore: lore + '\n\n' + [
       '## 이름으로 지정된 NPC끼리의 관계',

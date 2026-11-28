@@ -869,11 +869,12 @@ async function longSessionChecks(ctx) {
 
 const HOGWARTS_CAPTURE_SCENE='루핀은 결박된 페티그루의 지팡이를 회수했다. 도주를 막은 일행은 목격 증거와 함께 그를 마법부 경비대에 인계했다.';
 function hogwartsArtReply(kind, user = '', body = {}) {
-  if(user.endsWith('안뜰에서 도서관으로 간다.')){
-    if(kind==='main')return {background:'library',narration:'도서관 문을 열고 안으로 들어간다.',dialogue:[
+  const input=/\[플레이어 입력\] ([\s\S]*?)\n\[본편 응답/.exec(user)?.[1]||user;
+  if(input.endsWith('안뜰에서 도서관으로 간다.')){
+    if(kind==='main')return {background:'library',narration:'도서관 문을 열고 안으로 들어간다. 드레이코 말포이, 그는 책장을 넘긴다.',dialogue:[
       {char_id:'hermione',speaker:'헤르미온느',text:'어둠의 마법 방어술은 내일 화요일 오전이야. 수요일엔 약초학이랑 천문학이 배정되어 있잖아.'}
     ]};
-    if(kind==='state')return {state_update:{},choices:['서가를 살핀다'],chronicle:[]};
+    if(kind==='state')return {state_update:{},choices:['말포이 도련님에게 책을 건넨다.','서가를 살핀다'],chronicle:[]};
   }
   if(user.includes('목요일 오후 도서관에서 그 책을 같이 볼래?') || user.includes('도서관 약속 · 파드마 파틸')){
     if(kind==='state')return {state_update:{},choices:['책을 펼친다'],chronicle:[]};
@@ -894,7 +895,6 @@ function hogwartsArtReply(kind, user = '', body = {}) {
       dialogue:[{char_id:'hermione',speaker:'헤르미온느',emotion:'smile',text:npc?'난 크룸과 춤추러 갈게.':'좋아. 이번 곡은 너랑 출게.'}],
       visuals:{cgPartner:npc?'krum':'player',cgConsent:'mutual'},mood:null};
   }
-  const input=/\[플레이어 입력\] ([\s\S]*?)\n\[본편 응답/.exec(user)?.[1]||user;
   if(input.endsWith('플리트윅 교수의 오후 수업을 마친다.')){
     const narration='오후 마법 수업이 끝났다. 학생들이 양피지를 챙긴다.';
     const text='다음 수업에 뵙죠!';
@@ -1672,6 +1672,7 @@ async function hogwartsSocialCheck(ctx){
     }
     await page.locator('#hwCalendar button[aria-label="달력 닫기"]').click();
     await page.evaluate(()=>{setBg('hogwarts_courtyard');gameState.location='안뜰';});
+    const promptStart=net.prompts.length;
     await enterText(page,'안뜰에서 도서관으로 간다.');
     await page.waitForFunction(()=>currentBgFile==='library');
     await drainDialogue(page);
@@ -1679,6 +1680,11 @@ async function hogwartsSocialCheck(ctx){
     assert.match(arrival,/실제 장면 기록에 이미 나온 수업: 변신술/);
     assert.match(arrival,/마법 주문학 6차시/);
     assert.match(arrival,/9월 24일 화요일 아침 변신술 \/ 오후 약초학/);
+    assert.match(arrival,/드레이코 말포이\(malfoy\).*딸인 성인 여성/);
+    assert.match(await page.locator('#choiceBox').innerText(),/말포이 아가씨에게 책을 건넨다/);
+    assert.equal(await page.evaluate(()=>dialogueLog.some(line=>line.text.includes('드레이코 말포이, 그녀는 책장을 넘긴다.'))),true);
+    const recorder=net.prompts.slice(promptStart).find(p=>p.kind==='state');
+    if(recorder)assert.match(recorder.messages[0].content,/드레이코 말포이\(malfoy\).*딸인 성인 여성/);
     const scheduleTurn=await page.evaluate(()=>({
       history:JSON.parse(gameHistory.at(-1).content).dialogue.map(line=>line.text).join(' '),
       visible:dialogueLog.filter(line=>line.char_id==='hermione').map(line=>line.text).join(' '),

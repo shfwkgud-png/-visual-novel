@@ -9,7 +9,7 @@ new Function('window',fs.readFileSync('storypacks/hogwarts-au/story.js','utf8'))
 const story=window.PANDORA_HOGWARTS_STORY;
 const src=fs.readFileSync('novel.html','utf8');
 const grab=name=>{
-  const start=src.indexOf('\nfunction '+name+'(');
+  const start=src.search(new RegExp('\\n(?:async )?function '+name+'\\('));
   assert(start>=0,name);
   return src.slice(start,src.indexOf('\n}',start)+2);
 };
@@ -45,6 +45,13 @@ assert.match(story.worldLore,/이미 일어난 사건과 약속·관계 변화�
 
 const sb={CHARACTERS:c,gameState:{metChars:{}},turnCount:0,playerName:'검증자'};
 vm.createContext(sb);vm.runInContext(grab('getCharPrompt'),sb);
+assert.match(story.auReferenceRule,/드레이코 말포이\(malfoy\).*딸인 성인 여성/);
+assert.equal(story.normalizeReferences('드레이코 말포이, 그에게 편지를 건넸다.'),'드레이코 말포이, 그녀에게 편지를 건넸다.');
+assert.equal(story.normalizeReferences('말포이 도련님에게 말을 건다.'),'말포이 아가씨에게 말을 건다.');
+assert.equal(story.normalizeReferences('루시우스 말포이, 그는 해리를 보았다.'),'루시우스 말포이, 그는 해리를 보았다.');
+assert.equal(story.normalizeReferences('론 도련님과 그에게 편지를 주었다.'),'론 도련님과 그에게 편지를 주었다.');
+assert.match(grab('requestStateExtract'),/STORY\.auReferenceRule/);
+assert.match(grab('genFallbackChoices'),/STORY\.auReferenceRule/);
 const first=['harry','ron','neville','luna','ginny','malfoy'];
 const crowded=sb.getCharPrompt([...first,'hermione'],first);
 assert(crowded.includes('헤르미온느 그레인저(hermione) — 말투: '+c.hermione.speech),
